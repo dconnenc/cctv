@@ -1,13 +1,8 @@
-export const Home = () => {
+export default function Home() {
   return (
-    <div className="home">
-      <header className="home__header">
-        <h1>Welcome to cc.tv</h1>
-        <p>Your go-to platform for live streaming and video content.</p>
-      </header>
-      <main className="home__main">
-        <p>Explore our features and start streaming today!</p>
-      </main>
-    </div>
+    <section className="page flex-centered">
+      <h1 className="hero-title">{'CCTV'}</h1>
+      <p className="hero-subtitle">{'CHICAGO COMEDY TV'}</p>
+    </section>
   );
 }

@@ -1,13 +1,43 @@
 :root {
-  --bg: #0f172a;
-  --panel: #111827;
-  --text: #e5e7eb;
-  --muted: #94a3b8;
-  --brand: #6366f1;
+  --white: #ffffff;
+  --yellow: #ffff00;
+  --red: #ff4911;
+  --blue: #3300ff;
+  --green: #2fff2f;
+  --pink: #ff00f5;
+  --teal: #7df9ff;
 }
 
-* {
-  box-sizing: border-box;
+.app {
+  top: 0;
+  left: 0;
+  min-height: 100dvh; /* mobile-friendly viewport height */
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  z-index: 1; /* sit above static background */
+}
+
+.app__main {
+  flex: 1 1 auto;
+  width: 100%;
+  min-height: 0; /* allow child to stretch */
+}
+
+/* Router link styles */
+.link {
+  font-weight: 400;
+  font-size: clamp(16px, 4vw, 20px);
+  color: var(--yellow);
+  text-decoration: none;
+}
+
+.link:hover {
+  text-decoration: underline;
+}
+.link--active {
+  font-weight: 800;
 }
 
 html,
@@ -16,54 +46,42 @@ body,
   height: 100%;
 }
 
+/* Reset default page margins to allow full-bleed layout */
+html,
 body {
   margin: 0;
-  background: radial-gradient(1200px 600px at 10% 10%, #1f2937 0%, var(--bg) 60%);
-  color: var(--text);
-  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial,
-    Apple Color Emoji, Segoe UI Emoji, Segoe UI Symbol;
+  padding: 0;
 }
 
-.app {
-  min-height: 100%;
+body {
+  font-family: 'Poppins', sans-serif;
+}
+
+.flex-centered {
   display: flex;
   flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
 }
 
-.app__header {
-  padding: 32px 24px 0;
-  text-align: center;
-}
-
-.app__header h1 {
-  margin: 0 0 8px;
-  font-size: 2rem;
-}
-
-.app__header p {
+/* Reusable hero styles */
+.hero-title {
   margin: 0;
-  color: var(--muted);
+  font-size: clamp(72px, 22vw, 250px);
+  position: relative;
+  z-index: 10;
+  font-weight: 800;
+  text-align: center;
+  line-height: 1;
+  color: var(--white);
 }
 
-.app__main {
-  flex: 1;
-  display: grid;
-  place-items: center;
-  padding: 24px;
-}
-
-.btn {
-  background: var(--brand);
-  color: white;
-  border: 0;
-  padding: 12px 16px;
-  border-radius: 8px;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.btn:hover {
-  filter: brightness(1.05);
+.hero-subtitle {
+  margin: 0;
+  text-align: center;
+  font-size: clamp(16px, 5vw, 32px);
+  color: var(--white);
 }
 
 .tv-static {
@@ -72,38 +90,156 @@ body {
   left: 0;
   width: 100vw;
   height: 100vh;
-  background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><filter id="noiseFilter"><feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="4" stitchTiles="stitch"/></filter><rect width="100%" height="100%" filter="url(%23noiseFilter)"/></svg>') repeat;
-  animation: staticAnim 0.2s steps(10) infinite, flicker 0.3s infinite alternate;
-  z-index: 9999;
+  background-color: rgba(0, 0, 0, 0.85);
+  filter: brightness(0.25);
+  background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><filter id="noiseFilter"><feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="4" stitchTiles="stitch"/></filter><rect width="100%" height="100%" filter="url(%23noiseFilter)"/></svg>')
+    repeat;
+  animation:
+    staticAnim 0.2s steps(10) infinite,
+    flicker 0.3s infinite alternate;
+  z-index: 0;
   pointer-events: none;
   overflow: hidden;
 }
 
+/* Scanlines overlay */
 .tv-static::after {
-  content: "";
+  content: '';
   position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
+  inset: 0;
   background-image: repeating-linear-gradient(
     to bottom,
-    rgba(0, 0, 0, 0.1) 0px,
-    rgba(0, 0, 0, 0.1) 1px,
-    transparent 1px,
-    transparent 3px
+    rgba(255, 255, 255, 0.03) 0px,
+    rgba(255, 255, 255, 0.03) 1px,
+    rgba(0, 0, 0, 0.05) 1px,
+    rgba(0, 0, 0, 0.05) 2px,
+    transparent 2px,
+    transparent 4px
   );
-  pointer-events: none;
-  z-index: 1;
+  background-size: 100% 4px;
   mix-blend-mode: multiply;
+  animation: scan 6s linear infinite;
+  z-index: 1;
+}
+
+/* Occasional horizontal screen tear band */
+.tv-static::before {
+  content: '';
+  position: absolute;
+  left: -2%;
+  width: 104%;
+  height: 8%;
+  background: inherit; /* reuse noise */
+  filter: contrast(160%) brightness(140%) saturate(120%);
+  opacity: 0;
+  transform: translateY(-20%) translateX(0) skewX(0deg);
+  animation: tear 9s ease-in-out infinite;
+  z-index: 2;
+}
+
+/* Full-size route pages */
+.page {
+  width: 100%;
+  height: 100%;
+  max-width: 1260px;
+  margin: 0 auto;
+  padding: 16px;
+  position: relative;
+  z-index: 10;
 }
 
 @keyframes staticAnim {
-  0%   { background-position: 0 0; }
-  100% { background-position: 100px 100px; }
+  0% {
+    background-position: 0 0;
+  }
+  100% {
+    background-position: 100px 100px;
+  }
 }
 
 @keyframes flicker {
-  from { opacity: 0.95; }
-  to { opacity: 1; }
+  from {
+    opacity: 0.95;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Slow vertical motion for scanlines to simulate roll */
+@keyframes scan {
+  0% {
+    background-position: 0 0;
+    opacity: 0.18;
+  }
+  45% {
+    background-position: 0 25px;
+    opacity: 0.22;
+  }
+  50% {
+    background-position: 0 0;
+    opacity: 0.2;
+  }
+  100% {
+    background-position: 0 25px;
+    opacity: 0.22;
+  }
+}
+
+/* Periodic horizontal tear band that drifts down the screen */
+@keyframes tear {
+  0%, 86% {
+    opacity: 0;
+    top: -12%;
+    transform: translateX(0) skewX(0deg);
+  }
+  88% {
+    opacity: 0.75;
+    top: 10%;
+    transform: translateX(-2%) skewX(-1.5deg);
+  }
+  90% {
+    opacity: 0.9;
+    top: 35%;
+    transform: translateX(2.5%) skewX(2deg);
+  }
+  92% {
+    opacity: 0.85;
+    top: 58%;
+    transform: translateX(-1.5%) skewX(-1deg);
+  }
+  94% {
+    opacity: 0.6;
+    top: 78%;
+    transform: translateX(1%) skewX(0.5deg);
+  }
+  96% {
+    opacity: 0.35;
+    top: 95%;
+    transform: translateX(-0.5%) skewX(0deg);
+  }
+  100% {
+    opacity: 0;
+    top: 110%;
+    transform: translateX(0) skewX(0deg);
+  }
+}
+
+.topnav {
+  min-height: 56px;
+  margin-top: 0;
+  top: 0;
+  position: relative;
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  padding: 8px env(safe-area-inset-right) 8px env(safe-area-inset-left);
+  flex-wrap: wrap;
+  z-index: 1000;
+}
+
+.topnav:hover {
+  background-color: rgba(255, 255, 255, 0.5);
 }
