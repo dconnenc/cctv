@@ -1,5 +1,4 @@
-:root {
-}
+/* Static background + CRT effects */
 
 /* Stronger CRT-style vignette around edges */
 .app::after {
@@ -42,6 +41,104 @@
   z-index: 0;
   pointer-events: none;
   overflow: hidden;
+}
+
+/* TV power-on overlay effect */
+.tv-on-effect {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  pointer-events: none;
+  animation: tvOnBg 900ms ease-out forwards;
+}
+
+.tv-on-effect::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 100vw;
+  height: 100vh;
+  transform: translate(-50%, -50%) scaleX(0) scaleY(0.005);
+  transform-origin: center;
+  background: #ffffff;
+  box-shadow:
+    0 0 20px rgba(255, 255, 255, 0.6),
+    0 0 80px rgba(255, 255, 255, 0.35),
+    0 0 160px rgba(255, 255, 255, 0.15);
+  filter: blur(0.5px);
+  animation: tvOnFlash 900ms ease-out forwards;
+}
+
+/* During boot, animate routed content from 0%→100% height via scaleY */
+.app--booting .wink-container {
+  transform-origin: center;
+  /* start a bit later than the TV flash for separation */
+  animation: tvOnContent 900ms ease-out 220ms both;
+  will-change: transform, opacity, filter;
+}
+
+@keyframes tvOnContent {
+  0% {
+    opacity: 0;
+    transform: scaleY(0.001);
+    filter: brightness(0.85) contrast(1.08);
+  }
+  20% {
+    opacity: 0.35;
+    transform: scaleY(0.03);
+  }
+  45% {
+    opacity: 0.7;
+    transform: scaleY(0.35);
+  }
+  70% {
+    opacity: 0.9;
+    transform: scaleY(0.8);
+  }
+  100% {
+    opacity: 1;
+    transform: scaleY(1);
+    filter: none;
+  }
+}
+
+/* Channel change overlay (route transition) */
+/* (channel-change overlay removed; using content-only wink instead) */
+
+@keyframes tvOnBg {
+  0% {
+    background: #000;
+  }
+  70% {
+    background: #000;
+  }
+  100% {
+    background: transparent;
+  }
+}
+
+@keyframes tvOnFlash {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scaleX(0) scaleY(0.005);
+  }
+  15% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scaleX(1.2) scaleY(0.01);
+  }
+  45% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scaleX(1.2) scaleY(0.2);
+  }
+  70% {
+    opacity: 0.9;
+    transform: translate(-50%, -50%) scaleX(1.1) scaleY(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scaleX(1) scaleY(1);
+  }
 }
 
 /* Scanlines overlay */
