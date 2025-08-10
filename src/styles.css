@@ -188,7 +188,8 @@ body {
 
 /* Periodic horizontal tear band that drifts down the screen */
 @keyframes tear {
-  0%, 86% {
+  0%,
+  86% {
     opacity: 0;
     top: -12%;
     transform: translateX(0) skewX(0deg);
