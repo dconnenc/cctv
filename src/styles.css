@@ -19,25 +19,12 @@
   z-index: 1; /* sit above static background */
 }
 
+/* Vignette, static, and tear styles moved to src/static.css */
+
 .app__main {
   flex: 1 1 auto;
   width: 100%;
   min-height: 0; /* allow child to stretch */
-}
-
-/* Router link styles */
-.link {
-  font-weight: 400;
-  font-size: clamp(16px, 4vw, 20px);
-  color: var(--yellow);
-  text-decoration: none;
-}
-
-.link:hover {
-  text-decoration: underline;
-}
-.link--active {
-  font-weight: 800;
 }
 
 html,
@@ -62,7 +49,8 @@ body {
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  height: 100%;
+  min-height: 100dvh;
+  width: 100%;
 }
 
 /* Reusable hero styles */
@@ -75,6 +63,11 @@ body {
   text-align: center;
   line-height: 1;
   color: var(--white);
+  text-shadow:
+    0 0 6px rgba(255, 255, 255, 0.55),
+    0 0 14px rgba(255, 255, 255, 0.35),
+    1px 0 2px rgba(255, 0, 0, 0.25),
+    -1px 0 2px rgba(0, 255, 255, 0.25);
 }
 
 .hero-subtitle {
@@ -82,60 +75,14 @@ body {
   text-align: center;
   font-size: clamp(16px, 5vw, 32px);
   color: var(--white);
+  text-shadow:
+    0 0 4px rgba(255, 255, 255, 0.45),
+    0 0 10px rgba(255, 255, 255, 0.3),
+    0.5px 0 1px rgba(255, 0, 0, 0.25),
+    -0.5px 0 1px rgba(0, 255, 255, 0.25);
 }
 
-.tv-static {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background-color: rgba(0, 0, 0, 0.85);
-  filter: brightness(0.25);
-  background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><filter id="noiseFilter"><feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="4" stitchTiles="stitch"/></filter><rect width="100%" height="100%" filter="url(%23noiseFilter)"/></svg>')
-    repeat;
-  animation:
-    staticAnim 0.2s steps(10) infinite,
-    flicker 0.3s infinite alternate;
-  z-index: 0;
-  pointer-events: none;
-  overflow: hidden;
-}
-
-/* Scanlines overlay */
-.tv-static::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background-image: repeating-linear-gradient(
-    to bottom,
-    rgba(255, 255, 255, 0.03) 0px,
-    rgba(255, 255, 255, 0.03) 1px,
-    rgba(0, 0, 0, 0.05) 1px,
-    rgba(0, 0, 0, 0.05) 2px,
-    transparent 2px,
-    transparent 4px
-  );
-  background-size: 100% 4px;
-  mix-blend-mode: multiply;
-  animation: scan 6s linear infinite;
-  z-index: 1;
-}
-
-/* Occasional horizontal screen tear band */
-.tv-static::before {
-  content: '';
-  position: absolute;
-  left: -2%;
-  width: 104%;
-  height: 8%;
-  background: inherit; /* reuse noise */
-  filter: contrast(160%) brightness(140%) saturate(120%);
-  opacity: 0;
-  transform: translateY(-20%) translateX(0) skewX(0deg);
-  animation: tear 9s ease-in-out infinite;
-  z-index: 2;
-}
+/* Alternating tear overlays: single- then double-band */
 
 /* Full-size route pages */
 .page {
@@ -148,89 +95,26 @@ body {
   z-index: 10;
 }
 
-@keyframes staticAnim {
-  0% {
-    background-position: 0 0;
-  }
-  100% {
-    background-position: 100px 100px;
-  }
+.link {
+  font-weight: 400;
+  font-size: clamp(16px, 4vw, 20px);
+  color: var(--yellow);
+  text-decoration: none;
 }
 
-@keyframes flicker {
-  from {
-    opacity: 0.95;
-  }
-  to {
-    opacity: 1;
-  }
+.link:hover {
+  text-decoration: underline;
 }
-
-/* Slow vertical motion for scanlines to simulate roll */
-@keyframes scan {
-  0% {
-    background-position: 0 0;
-    opacity: 0.18;
-  }
-  45% {
-    background-position: 0 25px;
-    opacity: 0.22;
-  }
-  50% {
-    background-position: 0 0;
-    opacity: 0.2;
-  }
-  100% {
-    background-position: 0 25px;
-    opacity: 0.22;
-  }
-}
-
-/* Periodic horizontal tear band that drifts down the screen */
-@keyframes tear {
-  0%,
-  86% {
-    opacity: 0;
-    top: -12%;
-    transform: translateX(0) skewX(0deg);
-  }
-  88% {
-    opacity: 0.75;
-    top: 10%;
-    transform: translateX(-2%) skewX(-1.5deg);
-  }
-  90% {
-    opacity: 0.9;
-    top: 35%;
-    transform: translateX(2.5%) skewX(2deg);
-  }
-  92% {
-    opacity: 0.85;
-    top: 58%;
-    transform: translateX(-1.5%) skewX(-1deg);
-  }
-  94% {
-    opacity: 0.6;
-    top: 78%;
-    transform: translateX(1%) skewX(0.5deg);
-  }
-  96% {
-    opacity: 0.35;
-    top: 95%;
-    transform: translateX(-0.5%) skewX(0deg);
-  }
-  100% {
-    opacity: 0;
-    top: 110%;
-    transform: translateX(0) skewX(0deg);
-  }
+.link--active {
+  font-weight: 800;
 }
 
 .topnav {
   min-height: 56px;
   margin-top: 0;
   top: 0;
-  position: relative;
+  width: 100%;
+  position: absolute;
   display: flex;
   flex-direction: row;
   justify-content: center;

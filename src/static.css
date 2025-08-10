@@ -1,0 +1,267 @@
+:root {
+}
+
+/* Stronger CRT-style vignette around edges */
+.app::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
+  /* Layered corner vignettes + center falloff for near-black corners */
+  background:
+    radial-gradient(120% 120% at 0% 0%, rgba(0, 0, 0, 0.44) 35%, rgba(0, 0, 0, 0) 62%),
+    radial-gradient(120% 120% at 100% 0%, rgba(0, 0, 0, 0.44) 35%, rgba(0, 0, 0, 0) 62%),
+    radial-gradient(120% 120% at 0% 100%, rgba(0, 0, 0, 0.44) 35%, rgba(0, 0, 0, 0) 62%),
+    radial-gradient(120% 120% at 100% 100%, rgba(0, 0, 0, 0.44) 35%, rgba(0, 0, 0, 0) 62%),
+    radial-gradient(
+      110% 85% at 50% 50%,
+      rgba(0, 0, 0, 0) 46%,
+      rgba(0, 0, 0, 0.3) 72%,
+      rgba(0, 0, 0, 0.425) 100%
+    );
+  box-shadow:
+    inset 0 0 220px rgba(0, 0, 0, 0.325),
+    inset 0 0 420px rgba(0, 0, 0, 0.25);
+  /* Use normal blending so corners can go truly dark */
+}
+
+.tv-static {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.85);
+  filter: brightness(0.25);
+  background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><filter id="noiseFilter"><feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="4" stitchTiles="stitch"/></filter><rect width="100%" height="100%" filter="url(%23noiseFilter)"/></svg>')
+    repeat;
+  animation:
+    staticAnim 0.2s steps(10) infinite,
+    flicker 0.3s infinite alternate;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+/* Scanlines overlay */
+.tv-static::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: repeating-linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.03) 0px,
+    rgba(255, 255, 255, 0.03) 1px,
+    rgba(0, 0, 0, 0.05) 1px,
+    rgba(0, 0, 0, 0.05) 2px,
+    transparent 2px,
+    transparent 4px
+  );
+  background-size: 100% 4px;
+  mix-blend-mode: multiply;
+  animation: scan 6s linear infinite;
+  z-index: 1;
+}
+
+/* Alternating tear overlays: single- then double-band */
+.tear-single,
+.tear-double,
+.tear-band {
+  position: absolute;
+  pointer-events: none;
+}
+
+.tear-single {
+  left: -2%;
+  width: 104%;
+  height: 8%;
+  background: inherit; /* inherit noise from tv-static */
+  filter: blur(1.5px) contrast(140%) brightness(130%) saturate(110%);
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0) 0%,
+    rgba(0, 0, 0, 1) 18%,
+    rgba(0, 0, 0, 1) 82%,
+    rgba(0, 0, 0, 0) 100%
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0) 0%,
+    rgba(0, 0, 0, 1) 18%,
+    rgba(0, 0, 0, 1) 82%,
+    rgba(0, 0, 0, 0) 100%
+  );
+  animation: tearSingle 10s linear infinite;
+  will-change: top, opacity, transform;
+  z-index: 2;
+}
+
+.tear-double {
+  inset: 0;
+  background: inherit; /* pass noise to children */
+  z-index: 2;
+  animation: cycleDouble 10s linear infinite;
+}
+
+.tear-band {
+  left: -2%;
+  width: 104%;
+  background: inherit;
+  filter: blur(1.5px) contrast(140%) brightness(130%) saturate(110%);
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0) 0%,
+    rgba(0, 0, 0, 1) 18%,
+    rgba(0, 0, 0, 1) 82%,
+    rgba(0, 0, 0, 0) 100%
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0) 0%,
+    rgba(0, 0, 0, 1) 18%,
+    rgba(0, 0, 0, 1) 82%,
+    rgba(0, 0, 0, 0) 100%
+  );
+  will-change: top, opacity, transform;
+}
+
+.tear-band--small {
+  height: 4%;
+  animation: tearDoubleSmall 10s linear infinite;
+  animation-delay: 0.7s; /* more spacing from medium band */
+}
+
+.tear-band--medium {
+  height: 7%;
+  animation: tearDoubleMed 10s linear infinite;
+}
+
+@keyframes staticAnim {
+  0% {
+    background-position: 0 0;
+  }
+  100% {
+    background-position: 100px 100px;
+  }
+}
+
+@keyframes flicker {
+  from {
+    opacity: 0.95;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Slow vertical motion for scanlines to simulate roll */
+@keyframes scan {
+  0% {
+    background-position: 0 0;
+    opacity: 0.18;
+  }
+  45% {
+    background-position: 0 25px;
+    opacity: 0.22;
+  }
+  50% {
+    background-position: 0 0;
+    opacity: 0.2;
+  }
+  100% {
+    background-position: 0 25px;
+    opacity: 0.22;
+  }
+}
+
+/* 10s cycle: first 5s single tear, next 5s double tear */
+@keyframes tearSingle {
+  0% {
+    opacity: 0;
+    top: -12%;
+    transform: translateX(0) skewX(0deg);
+  }
+  5% {
+    opacity: 0.45;
+    top: -4%;
+    transform: translateX(-0.4%) skewX(-0.3deg);
+  }
+  25% {
+    opacity: 0.85;
+    top: 25%;
+    transform: translateX(0.8%) skewX(0.6deg);
+  }
+  50% {
+    opacity: 0;
+    top: 110%;
+    transform: translateX(0) skewX(0deg);
+  }
+  50.01% {
+    opacity: 0;
+    top: -12%;
+  }
+  100% {
+    opacity: 0;
+    top: -12%;
+  }
+}
+
+@keyframes cycleDouble {
+  0%,
+  49.99% {
+    opacity: 0;
+  }
+  50%,
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes tearDoubleSmall {
+  0%,
+  49.99% {
+    opacity: 0;
+    top: -12%;
+    transform: translateX(0) skewX(0deg);
+  }
+  55% {
+    opacity: 0.5;
+    top: -2%;
+    transform: translateX(-0.3%) skewX(-0.25deg);
+  }
+  75% {
+    opacity: 0.85;
+    top: 40%;
+    transform: translateX(0.7%) skewX(0.5deg);
+  }
+  100% {
+    opacity: 0;
+    top: 110%;
+    transform: translateX(0) skewX(0deg);
+  }
+}
+
+@keyframes tearDoubleMed {
+  0%,
+  49.99% {
+    opacity: 0;
+    top: -16%;
+    transform: translateX(0) skewX(0deg);
+  }
+  52% {
+    opacity: 0.55;
+    top: -6%;
+    transform: translateX(0.4%) skewX(0.35deg);
+  }
+  72% {
+    opacity: 0.9;
+    top: 32%;
+    transform: translateX(-1%) skewX(-0.7deg);
+  }
+  100% {
+    opacity: 0;
+    top: 110%;
+    transform: translateX(0) skewX(0deg);
+  }
+}
