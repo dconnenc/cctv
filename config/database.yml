@@ -1,0 +1,21 @@
+default: &default
+  adapter: postgresql
+  encoding: unicode
+  # For details on connection pooling, see Rails configuration guide
+  # https://guides.rubyonrails.org/configuring.html#database-pooling
+  pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
+
+
+development:
+  <<: *default
+  database: cctv_development
+
+test:
+  <<: *default
+  database: cctv_test
+
+production:
+  <<: *default
+  database: cctv_production
+  username: cctv
+  password: <%= ENV["CCTV_DATABASE_PASSWORD"] %>
