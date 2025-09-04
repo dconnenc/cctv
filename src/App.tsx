@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import Home from './Pages/home';
 import About from './Pages/about';
 import Join from './Pages/join';
+import Lobby from './Pages/lobby';
 import Admin from './Pages/admin';
 import Stylesheet from './Pages/stylesheet';
 import { TopNav } from './Components/topnav';
@@ -25,6 +26,7 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/about" element={<About />} />
           <Route path="/join" element={<Join />} />
+          <Route path="/lobby/:sessionKey" element={<Lobby />} />
           <Route path="/admin" element={<Admin />} />
           <Route path="/stylesheet" element={<Stylesheet />} />
         </RouteWink>
