@@ -5,7 +5,7 @@ export default function Join() {
       <p className="hero-subtitle">{'Enter the secret code:'}</p>
       <input className="join-input" type="text" placeholder="Secret Code" />
       <button className="join-submit" type="button">
-        {'Submit'}
+        {'submit'}
       </button>
     </section>
   );

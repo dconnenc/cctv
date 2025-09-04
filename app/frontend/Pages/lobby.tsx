@@ -15,11 +15,10 @@ export default function Lobby() {
 
   return (
     <section className="page flex-centered">
-      <h3 style={{ marginBottom: '1rem' }}>{'Lobby'}</h3>
       {!isValid ? (
         <>
           <p style={{ color: 'var(--yellow)', marginBottom: '0.75rem' }}>
-            {'Missing or invalid session key in the URL.'}
+            {'missing or invalid session key in the URL.'}
           </p>
           <Link className="link" to="/join">
             {'Enter a session key'}
@@ -27,17 +26,28 @@ export default function Lobby() {
         </>
       ) : (
         <>
-          <p className="hero-subtitle" style={{ marginBottom: '0.75rem' }}>
-            {'Session:'}
-          </p>
+          <h5 style={{ marginBottom: '1rem' }}>{'Lobby:'}</h5>
           <p style={{ fontWeight: 600 }}>{displayKey}</p>
-          <p style={{ marginTop: '1rem', opacity: 0.85 }}>{'Ready to validate and connect…'}</p>
+          {/* <p style={{ marginTop: '1rem', opacity: 0.85 }}>{'ready to validate and connect…'}</p> */}
+          <form>
+            <input
+              className="join-input"
+              type="text"
+              name="user-display-name"
+              placeholder="enter display name"
+            />
+          </form>
           <Link
             className="link"
             to={`/join?session=${encodeURIComponent(displayKey)}`}
-            style={{ marginTop: '0.75rem' }}
+            style={{
+              marginTop: '0.75rem',
+              border: '1px solid var(--yellow)',
+              borderRadius: 4,
+              padding: '6px 12px',
+            }}
           >
-            {'Continue to join'}
+            {'click to join'}
           </Link>
         </>
       )}
