@@ -7,6 +7,9 @@
   --pink: #ff00f5;
   --teal: #7df9ff;
   --nav-h: 56px;
+  --tv-glow:
+    0 0 4px rgba(255, 255, 255, 0.45), 0 0 10px rgba(255, 255, 255, 0.3),
+    0.5px 0 1px rgba(255, 0, 0, 0.25), -0.5px 0 1px rgba(0, 255, 255, 0.25);
 }
 
 .app {
@@ -56,32 +59,49 @@ body {
 }
 
 /* Reusable hero styles */
-.hero-title {
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
   margin: 0;
-  font-size: clamp(72px, 22vw, 250px);
+  font-size: clamp(4rem, 9vw, 200px);
   position: relative;
   z-index: 10;
   font-weight: 800;
   text-align: center;
   line-height: 1;
   color: var(--white);
-  text-shadow:
-    0 0 6px rgba(255, 255, 255, 0.55),
-    0 0 14px rgba(255, 255, 255, 0.35),
-    1px 0 2px rgba(255, 0, 0, 0.25),
-    -1px 0 2px rgba(0, 255, 255, 0.25);
+  text-shadow: var(--tv-glow);
 }
 
-.hero-subtitle {
+h2 {
+  font-size: clamp(3rem, 8vw, 200px);
+}
+
+h3 {
+  font-size: clamp(2.5rem, 7vw, 150px);
+}
+
+h4 {
+  font-size: clamp(2rem, 6vw, 150px);
+}
+
+h5 {
+  font-size: clamp(1.75rem, 5vw, 150px);
+}
+h6 {
+  font-size: clamp(1.5rem, 4vw, 150px);
+}
+
+p,
+label {
   margin: 0;
   text-align: center;
-  font-size: clamp(16px, 5vw, 32px);
+  font-size: clamp(1rem, 4vw, 24px);
   color: var(--white);
-  text-shadow:
-    0 0 4px rgba(255, 255, 255, 0.45),
-    0 0 10px rgba(255, 255, 255, 0.3),
-    0.5px 0 1px rgba(255, 0, 0, 0.25),
-    -0.5px 0 1px rgba(0, 255, 255, 0.25);
+  text-shadow: var(--tv-glow);
 }
 
 /* Alternating tear overlays: single- then double-band */
