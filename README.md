@@ -1,47 +1,24 @@
-# React + TypeScript SPA (Vite)
+# README
 
-A minimal Single Page Application scaffold using Vite, React 18, and TypeScript.
+This README would normally document whatever steps are necessary to get the
+application up and running.
 
-## Prerequisites
+Things you may want to cover:
 
-- Node.js 18+ recommended (Vite 5 requires Node 18)
+* Ruby version
 
-## Setup
+* System dependencies
 
-- Install dependencies: `npm install`
-- Start dev server: `npm run dev`
-- Build for production: `npm run build`
-- Preview build locally: `npm run preview`
+* Configuration
 
-## Checks
+* Database creation
 
-- Typecheck: `npm run typecheck`
-- Format: `npm run format`
-- Format check: `npm run format:check`
+* Database initialization
 
-## Project Structure
+* How to run the test suite
 
-- `index.html`: App entry HTML with `#root`
-- `src/main.tsx`: React root renderer
-- `src/App.tsx`: Starter component
-- `src/styles.css`: Minimal global styles
-- `vite.config.ts`: Vite config with React plugin
-- `tsconfig*.json`: TypeScript config
-- `.prettierrc`, `.prettierignore`: Prettier config files
+* Services (job queues, cache servers, search engines, etc.)
 
-## Notes
+* Deployment instructions
 
-- This is a SPA base; add routing (e.g., React Router) as needed.
-- If you use path aliases, update `tsconfig.json` and Vite `resolve.alias`.
-
-## Routing
-
-- Library: `react-router-dom@6`
-- Entry: `src/main.tsx` wraps the app with `BrowserRouter`.
-- Routes: Defined in `src/App.tsx` using `<Routes>` and `<Route>`.
-- Example pages: `src/Pages/Home.tsx`, `src/Pages/About.tsx`.
-
-## Git Hooks
-
-- Pre-commit: runs `npm run format:check` via `simple-git-hooks`.
-- After `npm install`, the `prepare` script configures hooks automatically.
+* ...
