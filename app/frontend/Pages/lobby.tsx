@@ -1,5 +1,5 @@
 import { useMemo, useState, useEffect } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 
 // Generate a browser fingerprint
 const generateFingerprint = () => {
@@ -25,6 +25,7 @@ const generateFingerprint = () => {
 
 export default function Lobby() {
   const params = useParams();
+  const navigate = useNavigate();
   const rawKey = decodeURIComponent(params.sessionKey || '');
 
   const [name, setName] = useState('');
@@ -122,7 +123,15 @@ export default function Lobby() {
   };
 
   const handleStartSession = () => {
-    console.log('Start Session clicked');
+    const url =
+      'https://docs.google.com/presentation/d/1Cv8YG-nTIzXVwxRExVGRTUObtDVuyP2f8FArsWVlPGs/edit?usp=sharing';
+    fetch(`/api/lobby/${encodeURIComponent(displayKey)}/start`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url }),
+    })
+      .then(() => fetchSessionInfo())
+      .catch(() => {});
   };
 
   // Fetch session info and participants
@@ -165,6 +174,14 @@ export default function Lobby() {
     // Cleanup interval on unmount
     return () => clearInterval(interval);
   }, [isValid, user, displayKey]);
+
+  // Redirect everyone to the start URL once started
+  useEffect(() => {
+    const info: any = sessionInfo as any;
+    if (info && info.started && info.start_url) {
+      window.location.href = info.start_url as string;
+    }
+  }, [sessionInfo]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

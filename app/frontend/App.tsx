@@ -4,6 +4,7 @@ import Home from './Pages/home';
 import About from './Pages/about';
 import Join from './Pages/join';
 import Lobby from './Pages/lobby';
+import SessionView from './Pages/session';
 import Admin from './Pages/admin';
 import Stylesheet from './Pages/stylesheet';
 import { TopNav } from './Components/topnav';
@@ -28,6 +29,7 @@ function App() {
           <Route path="/join" element={<Join />} />
           <Route path="/admin" element={<Admin />} />
           <Route path="/lobby/:sessionKey" element={<Lobby />} />
+          <Route path="/session/:sessionKey" element={<SessionView />} />
           <Route path="/stylesheet" element={<Stylesheet />} />
         </RouteWink>
       </div>

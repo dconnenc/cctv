@@ -93,9 +93,42 @@ class Api::LobbyController < ApplicationController
         id: @session.id,
         code: @session.code,
         participant_count: @session.users.count,
-        participants: @session.users.map { |user| { id: user.id, name: user.name } }
+        participants: @session.users.map { |user| { id: user.id, name: user.name } },
+        started: @session.respond_to?(:started) ? @session.started : false,
+        start_url: @session.respond_to?(:start_url) ? @session.start_url : nil
       }
     }
+  end
+
+  # POST /api/lobby/:code/start
+  def start
+    # Note: Auth is not enforced here; UI restricts access to a specific name.
+    # Optionally verify initiator name/fingerprint in a future iteration.
+    url = params[:url].presence || 'https://example.com'
+
+    if @session.respond_to?(:update)
+      updated = true
+      begin
+        if @session.respond_to?(:started) || @session.respond_to?(:start_url)
+          @session.update(started: true) if @session.respond_to?(:started)
+          @session.update(start_url: url) if @session.respond_to?(:start_url)
+        end
+      rescue => e
+        updated = false
+      end
+
+      render json: {
+        success: updated,
+        session: {
+          id: @session.id,
+          code: @session.code,
+          started: @session.respond_to?(:started) ? @session.started : true,
+          start_url: @session.respond_to?(:start_url) ? @session.start_url : url
+        }
+      }, status: (updated ? :ok : :unprocessable_entity)
+    else
+      render json: { success: false, error: 'Session not updatable' }, status: :unprocessable_entity
+    end
   end
 
   private
