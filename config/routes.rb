@@ -9,6 +9,23 @@ Rails.application.routes.draw do
   get "service-worker" => "rails/pwa#service_worker", as: :pwa_service_worker
   get "manifest" => "rails/pwa#manifest", as: :pwa_manifest
 
+  namespace :api do
+    resources :sessions, only: [:create] do
+      collection do
+        post :join
+      end
+    end
+
+    # Lobby routes
+    get '/lobby/:code', to: 'lobby#show'
+    post '/lobby/:code/join', to: 'lobby#join'
+    post 'lobby/:code/check_fingerprint', to: 'lobby#check_fingerprint'
+  end
+
+  get '/join', to: 'application#index'
+  get '/lobby/:sessionKey', to: 'application#index'
+
+
   get '*path', to: 'application#index', constraints: ->(request) do
     !request.xhr? && request.format.html?
   end
