@@ -23,7 +23,7 @@ export default function Join() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          code: code.trim().toUpperCase()
+          code: code.trim().toUpperCase(),
         }),
       });
 
@@ -79,11 +79,7 @@ export default function Join() {
           </p>
         )}
 
-        <button
-          className="join-submit"
-          type="submit"
-          disabled={isLoading || !code.trim()}
-        >
+        <button className="join-submit" type="submit" disabled={isLoading || !code.trim()}>
           {isLoading ? 'Joining...' : 'Submit'}
         </button>
       </form>
