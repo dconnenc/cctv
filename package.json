@@ -1,6 +1,10 @@
 {
   "private": true,
   "type": "module",
+  "scripts": {
+    "format": "prettier --write \"{app,config,lib,public}/**/*.{js,jsx,ts,tsx,css,scss,md,json,yml,yaml}\"",
+    "format:check": "prettier --check \"{app,config,lib,public}/**/*.{js,jsx,ts,tsx,css,scss,md,json,yml,yaml}\""
+  },
   "dependencies": {
     "react": "^18.3.1",
     "react-dom": "^18.3.1",

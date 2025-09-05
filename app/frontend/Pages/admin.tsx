@@ -74,7 +74,7 @@ export default function Admin() {
                 className="link"
                 style={{ fontSize: 16 }}
               >
-                {`Open /lobby/${key}`}
+                {`go to lobby`}
               </a>
             </div>
           )}

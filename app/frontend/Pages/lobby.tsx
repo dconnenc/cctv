@@ -230,7 +230,6 @@ export default function Lobby() {
       {!isValid ? (
         <>
           <p style={{ color: 'var(--yellow)', marginBottom: '0.75rem' }}>
-            Missing or invalid session key in the URL.
           </p>
           <Link className="link" to="/join">
             Enter a session key
@@ -309,6 +308,7 @@ export default function Lobby() {
       ) : (
         // Name input form
         <>
+<<<<<<< HEAD
           <p className="hero-subtitle" style={{ marginBottom: '0.75rem' }}>
             Session: {displayKey}
           </p>
