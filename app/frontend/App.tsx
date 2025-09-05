@@ -8,7 +8,7 @@ import Admin from './Pages/admin';
 import Stylesheet from './Pages/stylesheet';
 import { TopNav } from './Components/topnav';
 import { BackgroundStatic } from './Components/BackgroundStatic';
-import { RouteWink } from './Components/route-wink';
+import { RouteWink } from './Components/routeWink';
 
 function App() {
   const [booting, setBooting] = useState(true);

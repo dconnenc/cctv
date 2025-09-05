@@ -13,7 +13,7 @@ const generateFingerprint = () => {
     navigator.userAgent.slice(-50), // Last 50 chars to avoid being too long
     screen.width + 'x' + screen.height,
     Intl.DateTimeFormat().resolvedOptions().timeZone,
-    navigator.language
+    navigator.language,
   ].join('|');
 
   const fingerprint = randomId + '_' + btoa(browserInfo).slice(0, 20);
@@ -33,7 +33,7 @@ export default function Lobby() {
   const [error, setError] = useState('');
   const [user, setUser] = useState(null);
   const [sessionInfo, setSessionInfo] = useState(null);
-  const [participants, setParticipants] = useState([]);
+  const [participants, setParticipants] = useState<any>([]);
   const [isPolling, setIsPolling] = useState(false);
   const [fingerprint] = useState(() => generateFingerprint());
   const [glitchingElement, setGlitchingElement] = useState(null);
@@ -56,19 +56,18 @@ export default function Lobby() {
 
       const glitchTimeout = setTimeout(() => {
         // Define all possible elements that can glitch
-        const glitchableElements = [
-          'session-key',
-          'participants-count',
-          'players-header'
-        ];
+        const glitchableElements = ['session-key', 'participants-count', 'players-header'];
 
         // Add participant elements if they exist
         if (participants.length > 0) {
-          glitchableElements.push(`participant-${participants[Math.floor(Math.random() * participants.length)].id}`);
+          glitchableElements.push(
+            `participant-${participants[Math.floor(Math.random() * participants.length)].id}`,
+          );
         }
 
         // Choose random element to glitch
-        const randomElement = glitchableElements[Math.floor(Math.random() * glitchableElements.length)];
+        const randomElement =
+          glitchableElements[Math.floor(Math.random() * glitchableElements.length)];
         setGlitchingElement(randomElement);
 
         // Remove glitch after 5 seconds and start next cycle
@@ -93,15 +92,18 @@ export default function Lobby() {
 
     setIsCheckingFingerprint(true);
     try {
-      const response = await fetch(`/api/lobby/${encodeURIComponent(displayKey)}/check_fingerprint`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
+      const response = await fetch(
+        `/api/lobby/${encodeURIComponent(displayKey)}/check_fingerprint`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            fingerprint: fingerprint,
+          }),
         },
-        body: JSON.stringify({
-          fingerprint: fingerprint
-        }),
-      });
+      );
 
       const data = await response.json();
 
@@ -117,6 +119,10 @@ export default function Lobby() {
     } finally {
       setIsCheckingFingerprint(false);
     }
+  };
+
+  const handleStartSession = () => {
+    console.log('Start Session clicked');
   };
 
   // Fetch session info and participants
@@ -179,9 +185,9 @@ export default function Lobby() {
         },
         body: JSON.stringify({
           user: {
-            name: name.trim()
+            name: name.trim(),
           },
-          fingerprint: fingerprint
+          fingerprint: fingerprint,
         }),
       });
 
@@ -192,7 +198,7 @@ export default function Lobby() {
         setSessionInfo(data.session);
         setParticipants(data.session.participants || []);
       } else {
-        setError(data.errors ? data.errors.join(', ') : (data.error || 'Failed to join session'));
+        setError(data.errors ? data.errors.join(', ') : data.error || 'Failed to join session');
       }
     } catch (err) {
       setError('Connection error. Please try again.');
@@ -229,8 +235,7 @@ export default function Lobby() {
     <section className="page flex-centered">
       {!isValid ? (
         <>
-          <p style={{ color: 'var(--yellow)', marginBottom: '0.75rem' }}>
-          </p>
+          <p style={{ color: 'var(--yellow)', marginBottom: '0.75rem' }}></p>
           <Link className="link" to="/join">
             Enter a session key
           </Link>
@@ -246,20 +251,22 @@ export default function Lobby() {
           </h1>
           <p style={{ marginBottom: '1rem', opacity: 0.85 }}>
             <span className={glitchingElement === 'participants-count' ? 'glitch' : ''}>
-              Participants: {sessionInfo?.participant_count || participants.length}
+              Participants: {participants.length}
             </span>
             {isPolling && <span style={{ marginLeft: '0.5rem', fontSize: '0.8rem' }}>🔄</span>}
           </p>
 
           {/* Participants List */}
-          <div style={{
-            width: '100%',
-            maxWidth: '300px',
-            backgroundColor: 'rgba(255, 255, 255, 0.1)',
-            borderRadius: '8px',
-            padding: '1rem',
-            marginBottom: '1rem'
-          }}>
+          <div
+            style={{
+              width: '100%',
+              maxWidth: '300px',
+              backgroundColor: 'rgba(255, 255, 255, 0.1)',
+              borderRadius: '8px',
+              padding: '1rem',
+              marginBottom: '1rem',
+            }}
+          >
             <h4
               className={glitchingElement === 'players-header' ? 'glitch' : ''}
               style={{ margin: '0 0 0.75rem 0', fontSize: '1rem', opacity: 0.9 }}
@@ -267,11 +274,13 @@ export default function Lobby() {
               Players in Lobby:
             </h4>
             {participants.length > 0 ? (
-              <ul style={{
-                listStyle: 'none',
-                padding: 0,
-                margin: 0
-              }}>
+              <ul
+                style={{
+                  listStyle: 'none',
+                  padding: 0,
+                  margin: 0,
+                }}
+              >
                 {participants.map((participant) => (
                   <li
                     key={participant.id}
@@ -279,18 +288,39 @@ export default function Lobby() {
                       padding: '0.5rem 0',
                       borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
                       display: 'flex',
-                      alignItems: 'center'
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      position: 'relative',
                     }}
                   >
                     <span
-                      className={glitchingElement === `participant-${participant.id}` ? 'glitch' : ''}
+                      className={
+                        glitchingElement === `participant-${participant.id}` ? 'glitch' : ''
+                      }
                       style={{
                         fontWeight: participant.id === user.id ? 600 : 400,
-                        color: participant.id === user.id ? 'var(--green)' : 'inherit'
+                        color: participant.id === user.id ? 'var(--green)' : 'inherit',
                       }}
                     >
                       {participant.name}
                     </span>
+                    {user?.name === 'dillon c' && participant.name === 'dillon c' && (
+                      <button
+                        type="button"
+                        onClick={handleStartSession}
+                        style={{
+                          background: 'transparent',
+                          border: '1px solid rgba(255,255,255,0.35)',
+                          color: 'inherit',
+                          borderRadius: '4px',
+                          padding: '0.2rem 0.5rem',
+                          cursor: 'pointer',
+                          fontSize: '0.85rem',
+                        }}
+                      >
+                        Start Session
+                      </button>
+                    )}
                   </li>
                 ))}
               </ul>
@@ -313,9 +343,7 @@ export default function Lobby() {
           </p>
 
           <form onSubmit={handleSubmit} style={{ width: '100%', maxWidth: '300px' }}>
-            <p style={{ marginBottom: '0.75rem', opacity: 0.85 }}>
-              Enter your name to join:
-            </p>
+            <p style={{ marginBottom: '0.75rem', opacity: 0.85 }}>Enter your name to join:</p>
 
             <input
               className="join-input"
@@ -330,16 +358,10 @@ export default function Lobby() {
             />
 
             {error && (
-              <p style={{ color: 'red', marginBottom: '0.75rem', fontSize: '0.9rem' }}>
-                {error}
-              </p>
+              <p style={{ color: 'red', marginBottom: '0.75rem', fontSize: '0.9rem' }}>{error}</p>
             )}
 
-            <button
-              className="join-submit"
-              type="submit"
-              disabled={isLoading || !name.trim()}
-            >
+            <button className="join-submit" type="submit" disabled={isLoading || !name.trim()}>
               {isLoading ? 'Joining...' : 'Join Session'}
             </button>
           </form>
