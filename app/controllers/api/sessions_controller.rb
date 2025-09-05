@@ -1,11 +1,9 @@
 class Api::SessionsController < ApplicationController
   skip_before_action :verify_authenticity_token
 
-  before_action :find_session_by_code, only: [:join]
-
   # POST /api/sessions
   def create
-    @session = Session.new(code: generate_session_code)
+    @session = Session.new(code: generate_session_code.downcase)
 
     if @session.save
       render json: {
@@ -27,6 +25,15 @@ class Api::SessionsController < ApplicationController
 
   # POST /api/sessions/join
   def join
+    @session = Session.find_by_code(params[:code].downcase)
+
+    if @session.blank?
+      render json: {
+        success: false,
+        error: "Session not found with code: #{code}"
+      }, status: :not_found
+    end
+
     render json: {
       success: true,
       session: {
@@ -47,17 +54,6 @@ class Api::SessionsController < ApplicationController
 
   def join_params
     params.require(:code)
-  end
-
-  def find_session_by_code
-    @session = Session.find_by_code(code.downcase)
-
-    unless @session
-      render json: {
-        success: false,
-        error: "Session not found with code: #{code}"
-      }, status: :not_found
-    end
   end
 
   def generate_session_code

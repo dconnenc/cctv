@@ -19,8 +19,14 @@ class Session < ApplicationRecord
     users.include?(user)
   end
 
-  # Add a user to this session
-  def add_user(user)
-    users << user unless has_user?(user)
+  # Add a user to this session with fingerprint
+  def add_user(user, fingerprint)
+    return if has_user?(user)
+    session_participants.create!(user: user, fingerprint: fingerprint)
+  end
+
+  # Find participant by fingerprint
+  def find_participant_by_fingerprint(fingerprint)
+    session_participants.includes(:user).find_by(fingerprint: fingerprint)
   end
 end

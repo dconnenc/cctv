@@ -17,8 +17,10 @@ ActiveRecord::Schema[7.2].define(version: 2025_09_04_203240) do
   create_table "session_participants", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.uuid "user_id", null: false
     t.uuid "session_id", null: false
+    t.string "fingerprint", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.index ["session_id", "fingerprint"], name: "index_session_participants_on_session_id_and_fingerprint"
     t.index ["session_id"], name: "index_session_participants_on_session_id"
     t.index ["user_id", "session_id"], name: "index_session_participants_on_user_id_and_session_id", unique: true
     t.index ["user_id"], name: "index_session_participants_on_user_id"

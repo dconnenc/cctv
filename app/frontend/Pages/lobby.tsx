@@ -1,17 +1,42 @@
 import { useMemo, useState, useEffect } from 'react';
 import { Link, useParams } from 'react-router-dom';
 
+// Generate a browser fingerprint
+const generateFingerprint = () => {
+  // Try to get existing fingerprint from localStorage
+  const stored = localStorage.getItem('browser_fingerprint');
+  if (stored) return stored;
+
+  // Generate new fingerprint combining random ID with browser characteristics
+  const randomId = 'fp_' + Math.random().toString(36).substr(2, 9) + Date.now().toString(36);
+  const browserInfo = [
+    navigator.userAgent.slice(-50), // Last 50 chars to avoid being too long
+    screen.width + 'x' + screen.height,
+    Intl.DateTimeFormat().resolvedOptions().timeZone,
+    navigator.language
+  ].join('|');
+
+  const fingerprint = randomId + '_' + btoa(browserInfo).slice(0, 20);
+
+  // Store for future use
+  localStorage.setItem('browser_fingerprint', fingerprint);
+  return fingerprint;
+};
+
 export default function Lobby() {
   const params = useParams();
   const rawKey = decodeURIComponent(params.sessionKey || '');
 
   const [name, setName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isCheckingFingerprint, setIsCheckingFingerprint] = useState(true);
   const [error, setError] = useState('');
   const [user, setUser] = useState(null);
   const [sessionInfo, setSessionInfo] = useState(null);
   const [participants, setParticipants] = useState([]);
   const [isPolling, setIsPolling] = useState(false);
+  const [fingerprint] = useState(() => generateFingerprint());
+  const [glitchingElement, setGlitchingElement] = useState(null);
 
   const { isValid, displayKey } = useMemo(() => {
     const trimmed = (rawKey || '').trim();
@@ -20,6 +45,79 @@ export default function Lobby() {
       displayKey: trimmed,
     };
   }, [rawKey]);
+
+  // Glitch effect management
+  useEffect(() => {
+    if (!user || participants.length === 0) return;
+
+    const startGlitchCycle = () => {
+      // Random interval between 20-60 seconds (20000-60000ms)
+      const nextGlitchTime = Math.random() * 40000 + 20000;
+
+      const glitchTimeout = setTimeout(() => {
+        // Define all possible elements that can glitch
+        const glitchableElements = [
+          'session-key',
+          'participants-count',
+          'players-header'
+        ];
+
+        // Add participant elements if they exist
+        if (participants.length > 0) {
+          glitchableElements.push(`participant-${participants[Math.floor(Math.random() * participants.length)].id}`);
+        }
+
+        // Choose random element to glitch
+        const randomElement = glitchableElements[Math.floor(Math.random() * glitchableElements.length)];
+        setGlitchingElement(randomElement);
+
+        // Remove glitch after 5 seconds and start next cycle
+        setTimeout(() => {
+          setGlitchingElement(null);
+          startGlitchCycle(); // Schedule next glitch
+        }, 5000);
+      }, nextGlitchTime);
+
+      return glitchTimeout;
+    };
+
+    const timeout = startGlitchCycle();
+
+    // Cleanup on unmount
+    return () => clearTimeout(timeout);
+  }, [user, participants]);
+
+  // Check if fingerprint already exists in session
+  const checkExistingFingerprint = async () => {
+    if (!isValid) return;
+
+    setIsCheckingFingerprint(true);
+    try {
+      const response = await fetch(`/api/lobby/${encodeURIComponent(displayKey)}/check_fingerprint`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          fingerprint: fingerprint
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        // User already exists in session, auto-join
+        setUser(data.user);
+        setSessionInfo(data.session);
+      }
+      // If not successful, user needs to enter name (normal flow)
+    } catch (err) {
+      console.error('Error checking fingerprint:', err);
+      // Continue with normal flow if fingerprint check fails
+    } finally {
+      setIsCheckingFingerprint(false);
+    }
+  };
 
   // Fetch session info and participants
   const fetchSessionInfo = async () => {
@@ -41,6 +139,13 @@ export default function Lobby() {
     }
   };
 
+  // Check fingerprint on component mount
+  useEffect(() => {
+    if (isValid) {
+      checkExistingFingerprint();
+    }
+  }, [isValid, displayKey, fingerprint]);
+
   // Set up polling for session updates
   useEffect(() => {
     if (!isValid || !user) return;
@@ -48,8 +153,8 @@ export default function Lobby() {
     // Fetch immediately when user joins
     fetchSessionInfo();
 
-    // Set up polling every 5 seconds
-    const interval = setInterval(fetchSessionInfo, 5000);
+    // Set up polling every 3 seconds
+    const interval = setInterval(fetchSessionInfo, 3000);
 
     // Cleanup interval on unmount
     return () => clearInterval(interval);
@@ -75,7 +180,8 @@ export default function Lobby() {
         body: JSON.stringify({
           user: {
             name: name.trim()
-          }
+          },
+          fingerprint: fingerprint
         }),
       });
 
@@ -109,10 +215,18 @@ export default function Lobby() {
     }
   };
 
+  // Show loading while checking fingerprint
+  if (isCheckingFingerprint) {
+    return (
+      <section className="page flex-centered">
+        <h3 style={{ marginBottom: '1rem' }}>Lobby</h3>
+        <p style={{ opacity: 0.85 }}>Checking if you're already in this session...</p>
+      </section>
+    );
+  }
+
   return (
     <section className="page flex-centered">
-      <h3 style={{ marginBottom: '1rem' }}>Lobby</h3>
-
       {!isValid ? (
         <>
           <p style={{ color: 'var(--yellow)', marginBottom: '0.75rem' }}>
@@ -125,14 +239,16 @@ export default function Lobby() {
       ) : user ? (
         // User has successfully joined
         <>
-          <p className="hero-subtitle" style={{ marginBottom: '0.75rem' }}>
-            Welcome, {user.name}!
-          </p>
-          <p style={{ fontWeight: 600, marginBottom: '0.5rem' }}>
-            Session: {displayKey}
-          </p>
+          <h1
+            className={glitchingElement === 'session-key' ? 'glitch' : ''}
+            style={{ marginBottom: '0.5rem' }}
+          >
+            {displayKey}
+          </h1>
           <p style={{ marginBottom: '1rem', opacity: 0.85 }}>
-            Participants: {sessionInfo?.participant_count || participants.length}
+            <span className={glitchingElement === 'participants-count' ? 'glitch' : ''}>
+              Participants: {sessionInfo?.participant_count || participants.length}
+            </span>
             {isPolling && <span style={{ marginLeft: '0.5rem', fontSize: '0.8rem' }}>🔄</span>}
           </p>
 
@@ -145,7 +261,10 @@ export default function Lobby() {
             padding: '1rem',
             marginBottom: '1rem'
           }}>
-            <h4 style={{ margin: '0 0 0.75rem 0', fontSize: '1rem', opacity: 0.9 }}>
+            <h4
+              className={glitchingElement === 'players-header' ? 'glitch' : ''}
+              style={{ margin: '0 0 0.75rem 0', fontSize: '1rem', opacity: 0.9 }}
+            >
               Players in Lobby:
             </h4>
             {participants.length > 0 ? (
@@ -164,18 +283,14 @@ export default function Lobby() {
                       alignItems: 'center'
                     }}
                   >
-                    <span style={{
-                      marginRight: '0.5rem',
-                      color: participant.id === user.id ? 'var(--green)' : 'inherit'
-                    }}>
-                      {participant.id === user.id ? '👑' : '👤'}
-                    </span>
-                    <span style={{
-                      fontWeight: participant.id === user.id ? 600 : 400,
-                      color: participant.id === user.id ? 'var(--green)' : 'inherit'
-                    }}>
+                    <span
+                      className={glitchingElement === `participant-${participant.id}` ? 'glitch' : ''}
+                      style={{
+                        fontWeight: participant.id === user.id ? 600 : 400,
+                        color: participant.id === user.id ? 'var(--green)' : 'inherit'
+                      }}
+                    >
                       {participant.name}
-                      {participant.id === user.id && ' (You)'}
                     </span>
                   </li>
                 ))}
@@ -187,9 +302,6 @@ export default function Lobby() {
             )}
           </div>
 
-          <p style={{ color: 'var(--green)', textAlign: 'center' }}>
-            ✓ Successfully joined the session!
-          </p>
           <p style={{ marginTop: '1rem', opacity: 0.75, fontSize: '0.9rem' }}>
             Waiting for the game to start...
           </p>

@@ -14,10 +14,12 @@ class AddSessionAndUserTables < ActiveRecord::Migration[7.2]
     create_table :session_participants, id: :uuid do |t|
       t.references :user, null: false, foreign_key: true, type: :uuid
       t.references :session, null: false, foreign_key: true, type: :uuid
+      t.string :fingerprint, null: false
       t.timestamps
     end
 
     add_index :sessions, :code, unique: true
     add_index :session_participants, [:user_id, :session_id], unique: true
+    add_index :session_participants, [:session_id, :fingerprint]
   end
 end

@@ -19,10 +19,12 @@ Rails.application.routes.draw do
     # Lobby routes
     get '/lobby/:code', to: 'lobby#show'
     post '/lobby/:code/join', to: 'lobby#join'
+    post 'lobby/:code/check_fingerprint', to: 'lobby#check_fingerprint'
   end
 
   get '/join', to: 'application#index'
   get '/lobby/:sessionKey', to: 'application#index'
+
 
   get '*path', to: 'application#index', constraints: ->(request) do
     !request.xhr? && request.format.html?
