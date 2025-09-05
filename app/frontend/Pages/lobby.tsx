@@ -308,7 +308,6 @@ export default function Lobby() {
       ) : (
         // Name input form
         <>
-<<<<<<< HEAD
           <p className="hero-subtitle" style={{ marginBottom: '0.75rem' }}>
             Session: {displayKey}
           </p>
