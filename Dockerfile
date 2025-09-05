@@ -25,9 +25,11 @@ ENV RAILS_ENV="production" \
 # Throw-away build stage to reduce size of final image
 FROM base AS build
 
-# Install packages needed to build gems
+# Install packages needed to build gems AND Node.js for Vite
 RUN apt-get update -qq && \
-    apt-get install --no-install-recommends -y build-essential git libpq-dev pkg-config && \
+    apt-get install --no-install-recommends -y build-essential git libpq-dev pkg-config curl && \
+    curl -fsSL https://deb.nodesource.com/setup_18.x | bash - && \
+    apt-get install -y nodejs && \
     rm -rf /var/lib/apt/lists /var/cache/apt/archives
 
 # Install application gems
@@ -39,11 +41,12 @@ RUN bundle install && \
 # Copy application code
 COPY . .
 
+# Install Node dependencies and build Vite assets
+RUN npm install
+RUN bin/vite build
+
 # Precompile bootsnap code for faster boot times
 RUN bundle exec bootsnap precompile app/ lib/
-
-
-
 
 # Final stage for app image
 FROM base

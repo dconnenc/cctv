@@ -1,24 +1,16 @@
 # README
 
-This README would normally document whatever steps are necessary to get the
-application up and running.
+## Setup
 
-Things you may want to cover:
+* `yarn install`
+* `bundle install`
+* `bundle exec rake db:create db:migrate`
+* `gem install foreman`
+* `foreman start -f Procfile.dev`
 
-* Ruby version
+## Testing
 
-* System dependencies
+To test, create a new "session" from the console:
 
-* Configuration
-
-* Database creation
-
-* Database initialization
-
-* How to run the test suite
-
-* Services (job queues, cache servers, search engines, etc.)
-
-* Deployment instructions
-
-* ...
+* `bundle exec rails c`
+* `> Session.create(code: "some code")`
