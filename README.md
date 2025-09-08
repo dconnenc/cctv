@@ -12,16 +12,16 @@
 
 `bundle exec rails c`
 
-### Create a new session
+### Create a new experience
 
-* `> Session.create(code: "some code")`
+* `> Experience.create(code: "some code")`
 
-### Destroying an existing session
+### Destroying an existing experience
 
-* `> session = Session.find_by(code: "some code")`
-* `> session.destroy`
+* `> experience = Experience.find_by(code: "some code")`
+* `> experience.destroy`
 
-## Setting up Sessions in Production
+## Setting up Experience in Production
 
 * Navigate to the [cctv render web service](https://dashboard.render.com/web/srv-d2tep43uibrs73entts0)
 * Click Connect > ssh and copy the cmd

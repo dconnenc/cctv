@@ -26,14 +26,14 @@ const generateFingerprint = () => {
 export default function Lobby() {
   const params = useParams();
   const navigate = useNavigate();
-  const rawKey = decodeURIComponent(params.sessionKey || '');
+  const rawKey = decodeURIComponent(params.code || '');
 
   const [name, setName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isCheckingFingerprint, setIsCheckingFingerprint] = useState(true);
   const [error, setError] = useState('');
   const [user, setUser] = useState(null);
-  const [sessionInfo, setSessionInfo] = useState(null);
+  const [experienceInfo, setExperienceInfo] = useState(null);
   const [participants, setParticipants] = useState<any>([]);
   const [isPolling, setIsPolling] = useState(false);
   const [fingerprint] = useState(() => generateFingerprint());
@@ -57,7 +57,7 @@ export default function Lobby() {
 
       const glitchTimeout = setTimeout(() => {
         // Define all possible elements that can glitch
-        const glitchableElements = ['session-key', 'participants-count', 'players-header'];
+        const glitchableElements = ['experience-key', 'participants-count', 'players-header'];
 
         // Add participant elements if they exist
         if (participants.length > 0) {
@@ -87,7 +87,7 @@ export default function Lobby() {
     return () => clearTimeout(timeout);
   }, [user, participants]);
 
-  // Check if fingerprint already exists in session
+  // Check if fingerprint already exists in experience
   const checkExistingFingerprint = async () => {
     if (!isValid) return;
 
@@ -109,9 +109,9 @@ export default function Lobby() {
       const data = await response.json();
 
       if (data.success) {
-        // User already exists in session, auto-join
+        // User already exists in experience, auto-join
         setUser(data.user);
-        setSessionInfo(data.session);
+        setExperienceInfo(data.experience);
       }
       // If not successful, user needs to enter name (normal flow)
     } catch (err) {
@@ -122,7 +122,7 @@ export default function Lobby() {
     }
   };
 
-  const handleStartSession = () => {
+  const handleStartExperience = () => {
     const url =
       'https://docs.google.com/presentation/d/1Cv8YG-nTIzXVwxRExVGRTUObtDVuyP2f8FArsWVlPGs/edit?usp=sharing';
     fetch(`/api/lobby/${encodeURIComponent(displayKey)}/start`, {
@@ -130,12 +130,12 @@ export default function Lobby() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ url }),
     })
-      .then(() => fetchSessionInfo())
+      .then(() => fetchExperienceInfo())
       .catch(() => {});
   };
 
-  // Fetch session info and participants
-  const fetchSessionInfo = async () => {
+  // Fetch experience info and participants
+  const fetchExperienceInfo = async () => {
     if (!isValid) return;
 
     setIsPolling(true);
@@ -144,11 +144,11 @@ export default function Lobby() {
       const data = await response.json();
 
       if (data.success) {
-        setSessionInfo(data.session);
-        setParticipants(data.session.participants || []);
+        setExperienceInfo(data.experience);
+        setParticipants(data.experience.participants || []);
       }
     } catch (err) {
-      console.error('Error fetching session info:', err);
+      console.error('Error fetching experience info:', err);
     } finally {
       setIsPolling(false);
     }
@@ -161,15 +161,15 @@ export default function Lobby() {
     }
   }, [isValid, displayKey, fingerprint]);
 
-  // Set up polling for session updates
+  // Set up polling for experience updates
   useEffect(() => {
     if (!isValid || !user) return;
 
     // Fetch immediately when user joins
-    fetchSessionInfo();
+    fetchExperienceInfo();
 
     // Set up polling every 3 seconds
-    const interval = setInterval(fetchSessionInfo, 3000);
+    const interval = setInterval(fetchExperienceInfo, 3000);
 
     // Cleanup interval on unmount
     return () => clearInterval(interval);
@@ -177,11 +177,11 @@ export default function Lobby() {
 
   // Redirect everyone to the start URL once started
   useEffect(() => {
-    const info: any = sessionInfo as any;
+    const info: any = experienceInfo as any;
     if (info && info.started && info.start_url) {
       window.location.href = info.start_url as string;
     }
-  }, [sessionInfo]);
+  }, [experienceInfo]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -212,10 +212,10 @@ export default function Lobby() {
 
       if (data.success) {
         setUser(data.user);
-        setSessionInfo(data.session);
-        setParticipants(data.session.participants || []);
+        setExperienceInfo(data.experience);
+        setParticipants(data.experience.participants || []);
       } else {
-        setError(data.errors ? data.errors.join(', ') : data.error || 'Failed to join session');
+        setError(data.errors ? data.errors.join(', ') : data.error || 'Failed to join experience');
       }
     } catch (err) {
       setError('Connection error. Please try again.');
@@ -243,7 +243,7 @@ export default function Lobby() {
     return (
       <section className="page flex-centered">
         <h3 style={{ marginBottom: '1rem' }}>Lobby</h3>
-        <p style={{ opacity: 0.85 }}>Checking if you're already in this session...</p>
+        <p style={{ opacity: 0.85 }}>Checking if you've already joined...</p>
       </section>
     );
   }
@@ -254,14 +254,14 @@ export default function Lobby() {
         <>
           <p style={{ color: 'var(--yellow)', marginBottom: '0.75rem' }}></p>
           <Link className="link" to="/join">
-            Enter a session key
+            Enter a code
           </Link>
         </>
       ) : user ? (
         // User has successfully joined
         <>
           <h1
-            className={glitchingElement === 'session-key' ? 'glitch' : ''}
+            className={glitchingElement === 'experience-key' ? 'glitch' : ''}
             style={{ marginBottom: '0.5rem' }}
           >
             {displayKey}
@@ -324,7 +324,7 @@ export default function Lobby() {
                     {user?.name === 'dillon c' && participant.name === 'dillon c' && (
                       <button
                         type="button"
-                        onClick={handleStartSession}
+                        onClick={handleStartExperience}
                         style={{
                           background: 'transparent',
                           border: '1px solid rgba(255,255,255,0.35)',
@@ -335,7 +335,7 @@ export default function Lobby() {
                           fontSize: '0.85rem',
                         }}
                       >
-                        Start Session
+                        Start Experience
                       </button>
                     )}
                   </li>
@@ -356,7 +356,7 @@ export default function Lobby() {
         // Name input form
         <>
           <p className="hero-subtitle" style={{ marginBottom: '0.75rem' }}>
-            Session: {displayKey}
+            {displayKey}
           </p>
 
           <form onSubmit={handleSubmit} style={{ width: '100%', maxWidth: '300px' }}>
@@ -379,7 +379,7 @@ export default function Lobby() {
             )}
 
             <button className="join-submit" type="submit" disabled={isLoading || !name.trim()}>
-              {isLoading ? 'Joining...' : 'Join Session'}
+              {isLoading ? 'Joining...' : 'Join'}
             </button>
           </form>
         </>

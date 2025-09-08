@@ -9,7 +9,7 @@ export default function Join() {
     e.preventDefault();
 
     if (!code.trim()) {
-      setError('Please enter a session code');
+      setError('Please enter a code');
       return;
     }
 
@@ -17,7 +17,7 @@ export default function Join() {
     setError('');
 
     try {
-      const response = await fetch('/api/sessions/join', {
+      const response = await fetch('/api/experiences/join', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -33,11 +33,11 @@ export default function Join() {
         // Redirect to the lobby URL
         window.location.href = data.lobby_url;
       } else {
-        setError(data.error || 'Failed to join session');
+        setError(data.error || 'Failed to join experiences');
       }
     } catch (err) {
       setError('Connection error. Please try again.');
-      console.error('Join session error:', err);
+      console.error('Join experiences error:', err);
     } finally {
       setIsLoading(false);
     }

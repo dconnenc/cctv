@@ -10,22 +10,22 @@ Rails.application.routes.draw do
   get "manifest" => "rails/pwa#manifest", as: :pwa_manifest
 
   namespace :api do
-    resources :sessions, only: [:create] do
+    resources :experiences, only: [:create] do
       collection do
         post :join
       end
     end
 
     # Lobby routes
-    get '/lobby/:code', to: 'lobby#show'
-    post '/lobby/:code/join', to: 'lobby#join'
-    post 'lobby/:code/check_fingerprint', to: 'lobby#check_fingerprint'
+    get '/lobby/:code', to: 'experience_lobby#show'
+    post '/lobby/:code/join', to: 'experience_lobby#join'
+    post 'lobby/:code/check_fingerprint', to: 'experience_lobby#check_fingerprint'
     post '/lobby/:code/start', to: 'lobby#start'
   end
 
   get '/join', to: 'application#index'
-  get '/lobby/:sessionKey', to: 'application#index'
-  get '/session/:sessionKey', to: 'application#index'
+  get '/lobby/:code', to: 'application#index'
+  get '/experiences/:code', to: 'application#index'
 
 
   get '*path', to: 'application#index', constraints: ->(request) do

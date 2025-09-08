@@ -11,9 +11,9 @@ export default function Admin() {
     setError(null);
 
     const formData = new FormData(e.currentTarget);
-    const raw = (formData.get('session-key') as string | null)?.trim() || '';
+    const raw = (formData.get('experience-key') as string | null)?.trim() || '';
     if (!raw) {
-      setError('Please enter a session key.');
+      setError('Please enter a experience key.');
       setKey('');
       setQrSrc(null);
       return;
@@ -32,14 +32,14 @@ export default function Admin() {
     <section className="page flex-centered">
       <h3 style={{ marginBottom: '2rem' }}>{'admin portal'}</h3>
       <form action="" className="admin-form" onSubmit={handleSubmit}>
-        <label style={{ display: 'block' }} htmlFor="session-key">
+        <label style={{ display: 'block' }} htmlFor="experience-key">
           {'generate new secret key:'}
         </label>
         <input
           style={{ marginRight: '.5rem' }}
-          name="session-key"
-          id="session-key"
-          placeholder="Set Session Key"
+          name="experience-key"
+          id="experience-key"
+          placeholder="Set Experience Key"
         />
         <input type="submit" value="submit" />
       </form>
