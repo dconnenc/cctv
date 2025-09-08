@@ -10,29 +10,34 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2025_09_05_000001) do
+ActiveRecord::Schema[7.2].define(version: 2025_09_08_185043) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
-  create_table "session_participants", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+  # Custom types defined in this database.
+  # Note that some types may not work with other database engines. Be careful if changing database.
+  create_enum "participant_status", ["registered", "active"]
+
+  create_table "experience_participants", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.uuid "user_id", null: false
-    t.uuid "session_id", null: false
-    t.string "fingerprint", null: false
+    t.uuid "experience_id", null: false
+    t.enum "status", default: "registered", null: false, enum_type: "participant_status"
+    t.datetime "joined_at", precision: nil
+    t.string "fingerprint"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["session_id", "fingerprint"], name: "index_session_participants_on_session_id_and_fingerprint"
-    t.index ["session_id"], name: "index_session_participants_on_session_id"
-    t.index ["user_id", "session_id"], name: "index_session_participants_on_user_id_and_session_id", unique: true
-    t.index ["user_id"], name: "index_session_participants_on_user_id"
+    t.index ["experience_id", "status"], name: "index_experience_participants_on_experience_id_and_status"
+    t.index ["experience_id"], name: "index_experience_participants_on_experience_id"
+    t.index ["fingerprint"], name: "index_experience_participants_on_fingerprint"
+    t.index ["user_id", "experience_id"], name: "index_experience_participants_on_user_id_and_experience_id", unique: true
+    t.index ["user_id"], name: "index_experience_participants_on_user_id"
   end
 
-  create_table "sessions", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+  create_table "experiences", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.string "name", null: false
     t.string "code", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.boolean "started", default: false, null: false
-    t.string "start_url"
-    t.index ["code"], name: "index_sessions_on_code", unique: true
   end
 
   create_table "users", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -41,6 +46,6 @@ ActiveRecord::Schema[7.2].define(version: 2025_09_05_000001) do
     t.datetime "updated_at", null: false
   end
 
-  add_foreign_key "session_participants", "sessions"
-  add_foreign_key "session_participants", "users"
+  add_foreign_key "experience_participants", "experiences", on_delete: :cascade
+  add_foreign_key "experience_participants", "users", on_delete: :cascade
 end

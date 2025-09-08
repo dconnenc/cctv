@@ -2,7 +2,7 @@ export const startGlitchCycle = () => {
   const nextGlitchTime = Math.random() * 40000 + 20000;
 
   const glitchTimeout = setTimeout(() => {
-    const glitchableElements = ['session-key', 'participants-count', 'players-header'];
+    const glitchableElements = ['experience-key', 'participants-count', 'players-header'];
 
     if (participants.length > 0) {
       glitchableElements.push(
