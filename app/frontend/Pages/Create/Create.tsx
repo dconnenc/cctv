@@ -1,4 +1,6 @@
-import { FormEvent, useState } from 'react';
+import { FormEvent, useMemo, useRef, useState } from 'react';
+
+import { TextInput } from '../../Components/TextInput/TextInput';
 
 import styles from './Create.module.scss';
 
@@ -6,6 +8,8 @@ import styles from './Create.module.scss';
 export default function Create() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [lobbyUrl, setLobbyUrl] = useState();
+  const nameRef = useRef<HTMLInputElement>(null);
 
   const handleCreate = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -41,8 +45,8 @@ export default function Create() {
       const data = await response.json();
 
       if (data.success) {
-        // Redirect to the lobby URL
-        window.location.href = data.lobby_url;
+        setLobbyUrl(data.lobby_url);
+        // window.location.href = data.lobby_url;
       } else {
         setError(data.error || 'Failed to join experiences');
       }
@@ -54,13 +58,33 @@ export default function Create() {
     }
   };
 
+  const qrCode = useMemo(() => {
+    if (!lobbyUrl) return null;
+
+    return `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(
+      lobbyUrl,
+    )}`;
+  }, [lobbyUrl]);
+
+  if (qrCode) {
+    return (
+      <section className="page flex-centered">
+        <h1 className={styles.title}>Exprience: {nameRef.current?.value}</h1>
+        <img src={qrCode} alt={`QR code for /lobby/${lobbyUrl}`} />
+        <a href={lobbyUrl} className={styles.link}>
+          Go to lobby
+        </a>
+      </section>
+    );
+  }
+
   return (
     <section className="page flex-centered">
-      <h1>{'Create'}</h1>
+      <h1 className={styles.title}>Create experience</h1>
       <form className={styles.form} onSubmit={handleCreate}>
         {isLoading && <p>Creating...</p>}
-        <input name="experience-name" type="text" placeholder="Name" />
-        <input name="experience-code" type="text" placeholder="Code" />
+        <TextInput ref={nameRef} label="Name" name="experience-name" type="text" />
+        <TextInput label="Code" name="experience-code" type="text" />
         {error && <p className={styles.error}>{error}</p>}
         <button type="submit">Create</button>
       </form>

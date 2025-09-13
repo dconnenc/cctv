@@ -1,6 +1,7 @@
 .form {
     display: flex;
     flex-direction: column;
+    gap: 12px;
 }
 
 .error {
@@ -8,4 +9,21 @@
     color: var(--yellow);
     padding-top: 12px;
     font-size: 16px;
+}
+
+.title {
+    font-size: 24px;
+    padding-bottom: 24px;
+}
+
+.link {
+    font-weight: 400;
+    font-size: clamp(16px, 4vw, 20px);
+    color: var(--yellow);
+    text-decoration: none;
+    padding-top: 24px;
+}
+
+.link:hover {
+    text-decoration: underline;
 }

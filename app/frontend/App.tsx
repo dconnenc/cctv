@@ -5,7 +5,6 @@ import About from './Pages/about';
 import Join from './Pages/join';
 import Lobby from './Pages/lobby';
 import Experience from './Pages/Experience';
-import Admin from './Pages/admin';
 import Stylesheet from './Pages/stylesheet';
 import { TopNav } from './Components/topnav';
 import { BackgroundStatic } from './Components/BackgroundStatic';
@@ -31,7 +30,6 @@ function App() {
           <Route path="/about" element={<About />} />
           <Route path="/join" element={<Join />} />
           <Route path="/create" element={<Create />} />
-          <Route path="/admin" element={<Admin />} />
           <Route path="/lobby/:code" element={<Lobby />} />
           <Route path="/experience/:code" element={<Experience />} />
           <Route path="/stylesheet" element={<Stylesheet />} />
