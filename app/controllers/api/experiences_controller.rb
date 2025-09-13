@@ -3,13 +3,14 @@ class Api::ExperiencesController < ApplicationController
 
   # POST /api/experiences
   def create
-    @experience = Experience.new(code: generate_experience_code.downcase)
+    @experience = Experience.new(experience_create_params)
 
     if @experience.save
       render json: {
         success: true,
         experience: {
           id: @experience.id,
+          name: @experience.name,
           code: @experience.code,
           created_at: @experience.created_at
         },
@@ -18,7 +19,7 @@ class Api::ExperiencesController < ApplicationController
     else
       render json: {
         success: false,
-        errors: @experience.errors.full_messages
+        error: @experience.errors.full_messages.join(', ')
       }, status: :unprocessable_entity
     end
   end
@@ -48,17 +49,15 @@ class Api::ExperiencesController < ApplicationController
 
   private
 
-  def experience_params
-    params.require(:experience).permit(:code)
+  def experience_create_params
+    {
+      name: params[:name],
+      code: params[:code]&.downcase || Experience.generate_code.downcase
+    }
   end
 
   def join_params
     params.require(:code)
-  end
-
-  def generate_experience_code
-    # Use provided code or generate a new one
-    experience_params[:code].presence || Experience.generate_code
   end
 
   def lobby_url(code)

@@ -1,7 +1,7 @@
-import { useMemo, useState, useEffect } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { useMemo, useState, useEffect, ChangeEvent, FormEvent } from 'react';
+import { Link, useParams } from 'react-router-dom';
 
-// Generate a browser fingerprint
+/** Generate a browser fingerprint */
 const generateFingerprint = () => {
   // Try to get existing fingerprint from localStorage
   const stored = localStorage.getItem('browser_fingerprint');
@@ -23,21 +23,24 @@ const generateFingerprint = () => {
   return fingerprint;
 };
 
+interface Participant {
+  id: string;
+  name: string;
+}
+
 export default function Lobby() {
   const params = useParams();
-  const navigate = useNavigate();
   const rawKey = decodeURIComponent(params.code || '');
 
   const [name, setName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isCheckingFingerprint, setIsCheckingFingerprint] = useState(true);
   const [error, setError] = useState('');
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState<Participant | null>(null);
   const [experienceInfo, setExperienceInfo] = useState(null);
-  const [participants, setParticipants] = useState<any>([]);
-  const [isPolling, setIsPolling] = useState(false);
+  const [participants, setParticipants] = useState<Participant[]>([]);
   const [fingerprint] = useState(() => generateFingerprint());
-  const [glitchingElement, setGlitchingElement] = useState(null);
+  const [glitchingElement, setGlitchingElement] = useState<string | null>(null);
 
   const { isValid, displayKey } = useMemo(() => {
     const trimmed = (rawKey || '').trim();
@@ -138,7 +141,6 @@ export default function Lobby() {
   const fetchExperienceInfo = async () => {
     if (!isValid) return;
 
-    setIsPolling(true);
     try {
       const response = await fetch(`/api/lobby/${encodeURIComponent(displayKey)}`);
       const data = await response.json();
@@ -149,8 +151,6 @@ export default function Lobby() {
       }
     } catch (err) {
       console.error('Error fetching experience info:', err);
-    } finally {
-      setIsPolling(false);
     }
   };
 
@@ -183,7 +183,7 @@ export default function Lobby() {
     }
   }, [experienceInfo]);
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     if (!name.trim()) {
@@ -225,16 +225,10 @@ export default function Lobby() {
     }
   };
 
-  const handleInputChange = (e) => {
+  const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
     setName(e.target.value);
     if (error) {
       setError('');
-    }
-  };
-
-  const handleKeyPress = (e) => {
-    if (e.key === 'Enter') {
-      handleSubmit(e);
     }
   };
 
@@ -270,7 +264,6 @@ export default function Lobby() {
             <span className={glitchingElement === 'participants-count' ? 'glitch' : ''}>
               Participants: {participants.length}
             </span>
-            {isPolling && <span style={{ marginLeft: '0.5rem', fontSize: '0.8rem' }}>🔄</span>}
           </p>
 
           {/* Participants List */}
@@ -368,7 +361,6 @@ export default function Lobby() {
               placeholder="Your Name"
               value={name}
               onChange={handleInputChange}
-              onKeyPress={handleKeyPress}
               disabled={isLoading}
               maxLength={255}
               style={{ marginBottom: '0.5rem' }}

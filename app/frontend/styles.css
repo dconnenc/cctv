@@ -25,19 +25,6 @@
 
 /* Vignette, static, and tear styles moved to src/static.css */
 
-.app__main {
-  flex: 1 1 auto;
-  width: 100%;
-  min-height: 0; /* allow child to stretch */
-  padding-top: var(--nav-h); /* keep content below fixed nav */
-}
-
-html,
-body,
-#root {
-  height: 100%;
-}
-
 /* Reset default page margins to allow full-bleed layout */
 html,
 body {
@@ -50,7 +37,7 @@ body {
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  min-height: calc(100dvh - var(--nav-h));
+  /* min-height: calc(100dvh - var(--nav-h)); */
   width: 100%;
 }
 

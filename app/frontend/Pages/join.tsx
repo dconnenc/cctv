@@ -5,7 +5,7 @@ export default function Join() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async e => {
     e.preventDefault();
 
     if (!code.trim()) {
@@ -43,7 +43,7 @@ export default function Join() {
     }
   };
 
-  const handleInputChange = (e) => {
+  const handleInputChange = e => {
     setCode(e.target.value);
     // Clear error when user starts typing
     if (error) {
@@ -51,7 +51,7 @@ export default function Join() {
     }
   };
 
-  const handleKeyPress = (e) => {
+  const handleKeyPress = e => {
     if (e.key === 'Enter') {
       handleSubmit(e);
     }

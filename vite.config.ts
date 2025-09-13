@@ -4,7 +4,9 @@ import RubyPlugin from 'vite-plugin-ruby'
 
 export default defineConfig({
   plugins: [
-    ReactPlugin(),
+    ReactPlugin({
+      jsxRuntime: 'automatic'
+    }),
     RubyPlugin(),
   ]
 })
