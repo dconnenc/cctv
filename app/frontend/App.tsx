@@ -1,15 +1,8 @@
 import { Route } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import Home from './Pages/home';
-import About from './Pages/about';
-import Join from './Pages/join';
-import Lobby from './Pages/lobby';
-import Experience from './Pages/Experience';
-import Stylesheet from './Pages/stylesheet';
-import { TopNav } from './Components/topnav';
-import { BackgroundStatic } from './Components/BackgroundStatic';
-import { RouteWink } from './Components/routeWink';
-import Create from './Pages/Create/Create';
+
+import { TopNav, BackgroundStatic, RouteWink } from '@cctv/components';
+import { Home, About, Join, Lobby, Experience, Stylesheet, Create } from '@cctv/pages';
 
 import styles from './App.module.scss';
 

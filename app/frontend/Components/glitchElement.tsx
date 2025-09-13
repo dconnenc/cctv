@@ -1,4 +1,9 @@
-export const startGlitchCycle = () => {
+import { Participant } from '@cctv/types';
+
+export const startGlitchCycle = (
+  participants: Participant[],
+  setGlitchingElement: (element?: string) => void,
+) => {
   const nextGlitchTime = Math.random() * 40000 + 20000;
 
   const glitchTimeout = setTimeout(() => {
@@ -10,13 +15,15 @@ export const startGlitchCycle = () => {
       );
     }
 
+    // Choose random element to glitch
     const randomElement = glitchableElements[Math.floor(Math.random() * glitchableElements.length)];
     setGlitchingElement(randomElement);
 
+    // Remove glitch after 5 seconds and start next cycle
     setTimeout(() => {
-      setGlitchingElement(null);
-      startGlitchCycle();
-    }, 5000);
+      setGlitchingElement(undefined);
+      startGlitchCycle(participants, setGlitchingElement);
+    }, 5000); // Schedule next glitch
   }, nextGlitchTime);
 
   return glitchTimeout;

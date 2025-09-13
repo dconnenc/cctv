@@ -1,32 +1,11 @@
 import { useMemo, useState, useEffect, ChangeEvent, FormEvent } from 'react';
 import { Link, useParams } from 'react-router-dom';
+import { generateFingerprint } from '../utils';
+import { MOCK_POLL_EXPERIENCE } from '../mocks';
+import { Experience, Participant } from '@cctv/types';
+import { startGlitchCycle } from '@cctv/components';
 
-/** Generate a browser fingerprint */
-const generateFingerprint = () => {
-  // Try to get existing fingerprint from localStorage
-  const stored = localStorage.getItem('browser_fingerprint');
-  if (stored) return stored;
-
-  // Generate new fingerprint combining random ID with browser characteristics
-  const randomId = 'fp_' + Math.random().toString(36).substr(2, 9) + Date.now().toString(36);
-  const browserInfo = [
-    navigator.userAgent.slice(-50), // Last 50 chars to avoid being too long
-    screen.width + 'x' + screen.height,
-    Intl.DateTimeFormat().resolvedOptions().timeZone,
-    navigator.language,
-  ].join('|');
-
-  const fingerprint = randomId + '_' + btoa(browserInfo).slice(0, 20);
-
-  // Store for future use
-  localStorage.setItem('browser_fingerprint', fingerprint);
-  return fingerprint;
-};
-
-interface Participant {
-  id: string;
-  name: string;
-}
+import { ExperienceContainer } from '@cctv/experiences';
 
 export default function Lobby() {
   const params = useParams();
@@ -36,11 +15,13 @@ export default function Lobby() {
   const [isLoading, setIsLoading] = useState(false);
   const [isCheckingFingerprint, setIsCheckingFingerprint] = useState(true);
   const [error, setError] = useState('');
-  const [user, setUser] = useState<Participant | null>(null);
-  const [experienceInfo, setExperienceInfo] = useState(null);
+  const [user, setUser] = useState<Participant>();
+  const [experienceInfo, setExperienceInfo] = useState();
   const [participants, setParticipants] = useState<Participant[]>([]);
-  const [fingerprint] = useState(() => generateFingerprint());
-  const [glitchingElement, setGlitchingElement] = useState<string | null>(null);
+  const [glitchingElement, setGlitchingElement] = useState<string>();
+  const [experience, setExperience] = useState<Experience>();
+
+  const fingerprint = useMemo(() => generateFingerprint(), []);
 
   const { isValid, displayKey } = useMemo(() => {
     const trimmed = (rawKey || '').trim();
@@ -54,37 +35,7 @@ export default function Lobby() {
   useEffect(() => {
     if (!user || participants.length === 0) return;
 
-    const startGlitchCycle = () => {
-      // Random interval between 20-60 seconds (20000-60000ms)
-      const nextGlitchTime = Math.random() * 40000 + 20000;
-
-      const glitchTimeout = setTimeout(() => {
-        // Define all possible elements that can glitch
-        const glitchableElements = ['experience-key', 'participants-count', 'players-header'];
-
-        // Add participant elements if they exist
-        if (participants.length > 0) {
-          glitchableElements.push(
-            `participant-${participants[Math.floor(Math.random() * participants.length)].id}`,
-          );
-        }
-
-        // Choose random element to glitch
-        const randomElement =
-          glitchableElements[Math.floor(Math.random() * glitchableElements.length)];
-        setGlitchingElement(randomElement);
-
-        // Remove glitch after 5 seconds and start next cycle
-        setTimeout(() => {
-          setGlitchingElement(null);
-          startGlitchCycle(); // Schedule next glitch
-        }, 5000);
-      }, nextGlitchTime);
-
-      return glitchTimeout;
-    };
-
-    const timeout = startGlitchCycle();
+    const timeout = startGlitchCycle(participants, setGlitchingElement);
 
     // Cleanup on unmount
     return () => clearTimeout(timeout);
@@ -126,6 +77,11 @@ export default function Lobby() {
   };
 
   const handleStartExperience = () => {
+    // Cam - Added this to test specific experiences
+    setExperience(MOCK_POLL_EXPERIENCE);
+
+    return;
+
     const url =
       'https://docs.google.com/presentation/d/1Cv8YG-nTIzXVwxRExVGRTUObtDVuyP2f8FArsWVlPGs/edit?usp=sharing';
     fetch(`/api/lobby/${encodeURIComponent(displayKey)}/start`, {
@@ -232,6 +188,10 @@ export default function Lobby() {
     }
   };
 
+  if (experience && user) {
+    return <ExperienceContainer experience={experience} user={user} />;
+  }
+
   // Show loading while checking fingerprint
   if (isCheckingFingerprint) {
     return (
@@ -314,7 +274,8 @@ export default function Lobby() {
                     >
                       {participant.name}
                     </span>
-                    {user?.name === 'dillon c' && participant.name === 'dillon c' && (
+                    {/* First person to join is whoever created */}
+                    {participants?.at(0)?.id === user?.id && (
                       <button
                         type="button"
                         onClick={handleStartExperience}

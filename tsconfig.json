@@ -14,7 +14,20 @@
     "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
-    "noFallthroughCasesInSwitch": true
+    "noFallthroughCasesInSwitch": true,
+    "baseUrl": ".",
+      "paths": {
+        "@cctv/core": ["./app/frontend/Core"],
+        "@cctv/core/*": ["./app/frontend/Core/*"],
+        "@cctv/components": ["./app/frontend/Components"],
+        "@cctv/components/*": ["./app/frontend/Components/*"],
+        "@cctv/experiences": ["./app/frontend/Experiences"],
+        "@cctv/experiences/*": ["./app/frontend/Experiences/*"],
+        "@cctv/pages": ["./app/frontend/Pages"],
+        "@cctv/pages/*": ["./app/frontend/Pages/*"],
+        "@cctv/utils": ["./app/frontend/utils"],
+        "@cctv/types": ["./app/frontend/types"]
+      }
   },
   "include": ["app/frontend/**/*"],
   "references": [{ "path": "./tsconfig.node.json" }]
