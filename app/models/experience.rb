@@ -2,6 +2,7 @@ class Experience < ApplicationRecord
   has_many :experience_participants, dependent: :destroy
   has_many :users, through: :experience_participants
 
+  validates :name, presence: true, length: { minimum: 1, maximum: 255 }
   validates :code, presence: true, uniqueness: true, length: { minimum: 1, maximum: 255 }
 
   # Convenience method to find experience by code
