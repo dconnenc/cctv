@@ -1,6 +1,6 @@
 import { FormEvent, useMemo, useRef, useState } from 'react';
 
-import { TextInput } from '../../Components/TextInput/TextInput';
+import { Button, TextInput } from '@cctv/core';
 
 import styles from './Create.module.scss';
 
@@ -86,7 +86,7 @@ export default function Create() {
         <TextInput ref={nameRef} label="Name" name="experience-name" type="text" />
         <TextInput label="Code" name="experience-code" type="text" />
         {error && <p className={styles.error}>{error}</p>}
-        <button type="submit">Create</button>
+        <Button type="submit">Create</Button>
       </form>
     </section>
   );
