@@ -1,28 +1,6 @@
 import { useMemo, useState, useEffect } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 
-// Generate a browser fingerprint
-const generateFingerprint = () => {
-  // Try to get existing fingerprint from localStorage
-  const stored = localStorage.getItem('browser_fingerprint');
-  if (stored) return stored;
-
-  // Generate new fingerprint combining random ID with browser characteristics
-  const randomId = 'fp_' + Math.random().toString(36).substr(2, 9) + Date.now().toString(36);
-  const browserInfo = [
-    navigator.userAgent.slice(-50), // Last 50 chars to avoid being too long
-    screen.width + 'x' + screen.height,
-    Intl.DateTimeFormat().resolvedOptions().timeZone,
-    navigator.language,
-  ].join('|');
-
-  const fingerprint = randomId + '_' + btoa(browserInfo).slice(0, 20);
-
-  // Store for future use
-  localStorage.setItem('browser_fingerprint', fingerprint);
-  return fingerprint;
-};
-
 export default function Lobby() {
   const params = useParams();
   const navigate = useNavigate();
@@ -36,7 +14,6 @@ export default function Lobby() {
   const [experienceInfo, setExperienceInfo] = useState(null);
   const [participants, setParticipants] = useState<any>([]);
   const [isPolling, setIsPolling] = useState(false);
-  const [fingerprint] = useState(() => generateFingerprint());
   const [glitchingElement, setGlitchingElement] = useState(null);
 
   const { isValid, displayKey } = useMemo(() => {
@@ -46,81 +23,6 @@ export default function Lobby() {
       displayKey: trimmed,
     };
   }, [rawKey]);
-
-  // Glitch effect management
-  useEffect(() => {
-    if (!user || participants.length === 0) return;
-
-    const startGlitchCycle = () => {
-      // Random interval between 20-60 seconds (20000-60000ms)
-      const nextGlitchTime = Math.random() * 40000 + 20000;
-
-      const glitchTimeout = setTimeout(() => {
-        // Define all possible elements that can glitch
-        const glitchableElements = ['experience-key', 'participants-count', 'players-header'];
-
-        // Add participant elements if they exist
-        if (participants.length > 0) {
-          glitchableElements.push(
-            `participant-${participants[Math.floor(Math.random() * participants.length)].id}`,
-          );
-        }
-
-        // Choose random element to glitch
-        const randomElement =
-          glitchableElements[Math.floor(Math.random() * glitchableElements.length)];
-        setGlitchingElement(randomElement);
-
-        // Remove glitch after 5 seconds and start next cycle
-        setTimeout(() => {
-          setGlitchingElement(null);
-          startGlitchCycle(); // Schedule next glitch
-        }, 5000);
-      }, nextGlitchTime);
-
-      return glitchTimeout;
-    };
-
-    const timeout = startGlitchCycle();
-
-    // Cleanup on unmount
-    return () => clearTimeout(timeout);
-  }, [user, participants]);
-
-  // Check if fingerprint already exists in experience
-  const checkExistingFingerprint = async () => {
-    if (!isValid) return;
-
-    setIsCheckingFingerprint(true);
-    try {
-      const response = await fetch(
-        `/api/lobby/${encodeURIComponent(displayKey)}/check_fingerprint`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            fingerprint: fingerprint,
-          }),
-        },
-      );
-
-      const data = await response.json();
-
-      if (data.success) {
-        // User already exists in experience, auto-join
-        setUser(data.user);
-        setExperienceInfo(data.experience);
-      }
-      // If not successful, user needs to enter name (normal flow)
-    } catch (err) {
-      console.error('Error checking fingerprint:', err);
-      // Continue with normal flow if fingerprint check fails
-    } finally {
-      setIsCheckingFingerprint(false);
-    }
-  };
 
   const handleStartExperience = () => {
     const url =
@@ -140,7 +42,7 @@ export default function Lobby() {
 
     setIsPolling(true);
     try {
-      const response = await fetch(`/api/lobby/${encodeURIComponent(displayKey)}`);
+      const response = await fetch(`/api/experiences/${encodeURIComponent(displayKey)}`);
       const data = await response.json();
 
       if (data.success) {
@@ -153,13 +55,6 @@ export default function Lobby() {
       setIsPolling(false);
     }
   };
-
-  // Check fingerprint on component mount
-  useEffect(() => {
-    if (isValid) {
-      checkExistingFingerprint();
-    }
-  }, [isValid, displayKey, fingerprint]);
 
   // Set up polling for experience updates
   useEffect(() => {
@@ -174,14 +69,6 @@ export default function Lobby() {
     // Cleanup interval on unmount
     return () => clearInterval(interval);
   }, [isValid, user, displayKey]);
-
-  // Redirect everyone to the start URL once started
-  useEffect(() => {
-    const info: any = experienceInfo as any;
-    if (info && info.started && info.start_url) {
-      window.location.href = info.start_url as string;
-    }
-  }, [experienceInfo]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -204,7 +91,6 @@ export default function Lobby() {
           user: {
             name: name.trim(),
           },
-          fingerprint: fingerprint,
         }),
       });
 

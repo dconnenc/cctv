@@ -2,46 +2,11 @@ class Api::ExperienceLobbyController < ApplicationController
   skip_before_action :verify_authenticity_token
   before_action :find_experience_by_code
 
-  # POST /api/lobby/:code/check_fingerprint
-  def check_fingerprint
-    fingerprint = params[:fingerprint]
-
-    if fingerprint.blank?
-      render json: { success: false, error: 'Fingerprint required' }, status: :bad_request
-      return
-    end
-
-    participant = @experience.find_participant_by_fingerprint(fingerprint)
-
-    if participant
-      render json: {
-        success: true,
-        user: {
-          id: participant.user.id,
-          name: participant.user.name
-        },
-        experience: {
-          id: @experience.id,
-          code: @experience.code,
-          participant_count: @experience.users.count
-        }
-      }
-    else
-      render json: { success: false, message: 'Fingerprint not found in experience' }
-    end
-  end
-
   # POST /api/lobby/:code/join
   def join
-    fingerprint = join_params[:fingerprint]
+    # Check if user already exists in this experience
+    existing_participant = @experience.has_participant(fingerprint)
 
-    if fingerprint.blank?
-      render json: { success: false, error: 'Fingerprint required' }, status: :bad_request
-      return
-    end
-
-    # Check if fingerprint already exists in this experience
-    existing_participant = @experience.find_participant_by_fingerprint(fingerprint)
     if existing_participant
       render json: {
         success: true,
@@ -117,11 +82,11 @@ class Api::ExperienceLobbyController < ApplicationController
   private
 
   def user_params
-    params.require(:user).permit(:name)
+    params.require(:user).permit(:email)
   end
 
   def join_params
-    params.permit(:fingerprint).merge(params.require(:user).permit(:name))
+    params.permit(:fingerprint).merge(params.require(:user).permit(:email))
   end
 
   def find_experience_by_code

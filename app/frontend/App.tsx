@@ -5,6 +5,7 @@ import About from './Pages/about';
 import Join from './Pages/join';
 import Lobby from './Pages/lobby';
 import Experience from './Pages/Experience';
+import Register from './Pages/Register';
 import Admin from './Pages/admin';
 import Stylesheet from './Pages/stylesheet';
 import { TopNav } from './Components/topnav';
@@ -28,8 +29,8 @@ function App() {
           <Route path="/about" element={<About />} />
           <Route path="/join" element={<Join />} />
           <Route path="/admin" element={<Admin />} />
-          <Route path="/lobby/:code" element={<Lobby />} />
           <Route path="/experience/:code" element={<Experience />} />
+          <Route path="/experience/:code/register" element={<Register />} />
           <Route path="/stylesheet" element={<Stylesheet />} />
         </RouteWink>
       </div>
