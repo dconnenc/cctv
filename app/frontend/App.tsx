@@ -1,4 +1,4 @@
-import { Route, Routes } from 'react-router-dom';
+import { Route } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import Home from './Pages/home';
 import About from './Pages/about';
@@ -10,6 +10,9 @@ import Stylesheet from './Pages/stylesheet';
 import { TopNav } from './Components/topnav';
 import { BackgroundStatic } from './Components/BackgroundStatic';
 import { RouteWink } from './Components/routeWink';
+import Create from './Pages/Create/Create';
+
+import styles from './App.module.scss';
 
 function App() {
   const [booting, setBooting] = useState(true);
@@ -22,11 +25,12 @@ function App() {
     <div className={`app${booting ? ' app--booting' : ''}`}>
       <BackgroundStatic />
       <TopNav />
-      <div className="app__main">
+      <div className={styles.root}>
         <RouteWink>
           <Route path="/" element={<Home />} />
           <Route path="/about" element={<About />} />
           <Route path="/join" element={<Join />} />
+          <Route path="/create" element={<Create />} />
           <Route path="/admin" element={<Admin />} />
           <Route path="/lobby/:code" element={<Lobby />} />
           <Route path="/experience/:code" element={<Experience />} />
