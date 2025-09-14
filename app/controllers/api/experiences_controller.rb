@@ -24,14 +24,14 @@ class Api::ExperiencesController < Api::BaseController
         render json: {
           success: false,
           message: "Failed to create experience",
-          errors: experience.errors.full_messages
+          error: experience.errors.full_messages.to_sentence
         }, status: :unprocessable_entity
       end
     else
       render json: {
         success: false,
         message: "Invalid experience code",
-        errors: [message]
+        error: message
       }, status: :unprocessable_entity
     end
   end
@@ -136,10 +136,6 @@ class Api::ExperiencesController < Api::BaseController
   end
 
   private
-
-  def experience_params
-    params.require(:experience).permit(:code)
-  end
 
   def join_params
     params.require(:code)
