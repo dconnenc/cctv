@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
+import qaLogger from '@cctv/utils/qaLogger'
 
 export default function Join() {
   const [code, setCode] = useState('')
@@ -40,12 +41,17 @@ export default function Join() {
       const data = await response.json()
 
       if (response.ok) {
-        // User is already registered - store JWT and redirect to experience
         if (data.status === 'registered') {
+          // User is already registered - store JWT and redirect to experience
+          qaLogger(`User already registrated, redirecting to: ${data.url}`)
+
           localStorage.setItem('experience_jwt', data.jwt)
           window.location.href = data.url
         } else if (data.status === 'needs_registration') {
           // User needs to register - redirect to registration page
+          qaLogger(`User needs registration, redirecting to: ${data.url}`)
+
+          console.log("User needs registration")
           window.location.href = data.url
         }
       } else {

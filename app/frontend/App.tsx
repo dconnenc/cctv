@@ -22,8 +22,8 @@ function App() {
           <Route path="/about" element={<About />} />
           <Route path="/join" element={<Join />} />
           <Route path="/create" element={<Create />} />
-          <Route path="/experience/:code" element={<Experience />} />
-          <Route path="/experience/:code/register" element={<Register />} />
+          <Route path="/experiences/:code" element={<Experience />} />
+          <Route path="/experiences/:code/register" element={<Register />} />
           <Route path="/stylesheet" element={<Stylesheet />} />
         </RouteWink>
       </div>

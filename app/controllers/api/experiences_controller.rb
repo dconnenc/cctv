@@ -18,7 +18,7 @@ class Api::ExperiencesController < Api::BaseController
             code: experience.code,
             created_at: experience.created_at
           },
-          url: experience_path(experience.code)
+          url: generate_experience_path(experience.code)
         }, status: :created
       else
         render json: {
@@ -83,13 +83,14 @@ class Api::ExperiencesController < Api::BaseController
     if current_user && experience.user_registered?(current_user)
       render json: {
         jwt: experience.jwt_token_for(current_user),
-        experience_url: experience_path(experience.code),
+        url: generate_experience_path(experience.code),
         status: "registered"
       }
     else
       render json: {
         experience_code: code,
-        status: "needs_registration"
+        status: "needs_registration",
+        url: "/experiences/#{experience.code}/register"
       }
     end
   end
@@ -130,7 +131,7 @@ class Api::ExperiencesController < Api::BaseController
 
     render json: {
       jwt: experience.jwt_token_for(user),
-      experience_url: experience_path(experience.code),
+      url: generate_experience_path(experience.code),
       status: "registered"
     }
   end
@@ -143,5 +144,9 @@ class Api::ExperiencesController < Api::BaseController
 
   def register_params
     params.permit(:code, :email, :name)
+  end
+
+  def generate_experience_path(code)
+    "/experiences/#{code}"
   end
 end
