@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 
+import styles from './Experience.module.scss';
+
 export default function Experience() {
   const params = useParams();
   const navigate = useNavigate();
@@ -88,8 +90,8 @@ export default function Experience() {
   if (experienceState === 'loading') {
     return (
       <section className="page flex-centered">
-        <h1 style={{ marginBottom: '0.5rem' }}>{code || 'Experience'}</h1>
-        <p style={{ opacity: 0.85 }}>Preparing experience…</p>
+        <h1 className={styles.title}>{code || 'Experience'}</h1>
+        <p className={styles.subtitle}>Preparing experience…</p>
       </section>
     );
   }
@@ -98,8 +100,8 @@ export default function Experience() {
   if (error) {
     return (
       <section className="page flex-centered">
-        <h1 style={{ marginBottom: '0.5rem' }}>{code || 'Experience'}</h1>
-        <p style={{ color: 'var(--yellow)', marginBottom: '1rem' }}>{error}</p>
+        <h1 className={styles.title}>{code || 'Experience'}</h1>
+        <p className={styles.error}>{error}</p>
         <button onClick={() => navigate('/join')} className="join-submit">
           Try Again
         </button>
@@ -113,59 +115,36 @@ export default function Experience() {
       <section className="page flex-centered">
         {!isValid ? (
           <>
-            <p style={{ color: 'var(--yellow)', marginBottom: '0.75rem' }}>Invalid code</p>
-            <Link className="link" to="/join">
+            <p className={styles.invalidCode}>Invalid code</p>
+            <Link className={styles.link} to="/join">
               Enter a code
             </Link>
           </>
         ) : (
           // User is authenticated and in lobby
           <>
-            <h1 style={{ marginBottom: '0.5rem' }}>{code}</h1>
-            <p style={{ marginBottom: '1rem', opacity: 0.85 }}>
+            <h1 className={styles.title}>{code}</h1>
+            <p className={styles.participantsCount}>
               Participants: {participants.length}
-              {isPolling && <span style={{ marginLeft: '0.5rem', fontSize: '0.8rem' }}>🔄</span>}
+              {isPolling && <span className={styles.loadingSpinner}>🔄</span>}
             </p>
 
             {/* Participants List */}
-            <div
-              style={{
-                width: '100%',
-                maxWidth: '300px',
-                backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                borderRadius: '8px',
-                padding: '1rem',
-                marginBottom: '1rem',
-              }}
-            >
-              <h4 style={{ margin: '0 0 0.75rem 0', fontSize: '1rem', opacity: 0.9 }}>
+            <div className={styles.participantsContainer}>
+              <h4 className={styles.participantsTitle}>
                 Players in Lobby:
               </h4>
               {participants.length > 0 ? (
-                <ul
-                  style={{
-                    listStyle: 'none',
-                    padding: 0,
-                    margin: 0,
-                  }}
-                >
+                <ul className={styles.participantsList}>
                   {participants.map((participant) => (
                     <li
                       key={participant.id}
-                      style={{
-                        padding: '0.5rem 0',
-                        borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        position: 'relative',
-                      }}
+                      className={styles.participantItem}
                     >
                       <span
-                        style={{
-                          fontWeight: participant.id === user?.id ? 600 : 400,
-                          color: participant.id === user?.id ? 'var(--green)' : 'inherit',
-                        }}
+                        className={`${styles.participantName} ${
+                          participant.id === user?.id ? styles.currentUser : ''
+                        }`}
                       >
                         {participant.name || participant.email}
                       </span>
@@ -173,13 +152,13 @@ export default function Experience() {
                   ))}
                 </ul>
               ) : (
-                <p style={{ margin: 0, opacity: 0.7, fontStyle: 'italic' }}>
+                <p className={styles.loadingParticipants}>
                   Loading participants...
                 </p>
               )}
             </div>
 
-            <p style={{ marginTop: '1rem', opacity: 0.75, fontSize: '0.9rem' }}>
+            <p className={styles.waitingMessage}>
               Waiting for the experience to start...
             </p>
           </>
