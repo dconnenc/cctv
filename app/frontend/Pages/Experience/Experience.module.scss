@@ -1,0 +1,95 @@
+.title {
+  margin-bottom: 0.5rem;
+}
+
+// Subtitle and general text styles
+.subtitle {
+  opacity: 0.85;
+}
+
+// Error states
+.error {
+  color: var(--yellow);
+  margin-bottom: 1rem;
+}
+
+.invalidCode {
+  color: var(--yellow);
+  margin-bottom: 0.75rem;
+}
+
+// Link styles
+.link {
+  font-weight: 400;
+  font-size: clamp(16px, 4vw, 20px);
+  color: var(--yellow);
+  text-decoration: none;
+}
+
+.link:hover {
+  text-decoration: underline;
+}
+
+// Lobby state styles
+.participantsCount {
+  margin-bottom: 1rem;
+  opacity: 0.85;
+}
+
+.loadingSpinner {
+  margin-left: 0.5rem;
+  font-size: 0.8rem;
+}
+
+// Participants container
+.participantsContainer {
+  width: 100%;
+  max-width: 300px;
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+.participantsTitle {
+  margin: 0 0 0.75rem 0;
+  font-size: 1rem;
+  opacity: 0.9;
+}
+
+.participantsList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.participantItem {
+  padding: 0.5rem 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: relative;
+}
+
+.participantName {
+  font-weight: 400;
+  color: inherit;
+
+  &.currentUser {
+    font-weight: 600;
+    color: var(--green);
+  }
+}
+
+.loadingParticipants {
+  margin: 0;
+  opacity: 0.7;
+  font-style: italic;
+}
+
+.waitingMessage {
+  margin-top: 1rem;
+  opacity: 0.75;
+  font-size: 0.9rem;
+}
