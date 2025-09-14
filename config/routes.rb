@@ -1,5 +1,5 @@
 Rails.application.routes.draw do
-  # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
+  passwordless_for :users
 
   # Reveal health status on /up that returns 200 if the app boots with no exceptions, otherwise 500.
   # Can be used by load balancers and uptime monitors to verify that the app is live.
@@ -10,27 +10,20 @@ Rails.application.routes.draw do
   get "manifest" => "rails/pwa#manifest", as: :pwa_manifest
 
   namespace :api do
-    resources :experiences, only: [:create] do
+    resources :experiences, only: [:create, :show] do
       collection do
         post :join
+        post :register
       end
     end
-
-    # Lobby routes
-    get '/lobby/:code', to: 'experience_lobby#show'
-    post '/lobby/:code/join', to: 'experience_lobby#join'
-    post 'lobby/:code/check_fingerprint', to: 'experience_lobby#check_fingerprint'
-    post '/lobby/:code/start', to: 'lobby#start'
   end
 
-  get '/join', to: 'application#index'
-  get '/lobby/:code', to: 'application#index'
-  get '/experiences/:code', to: 'application#index'
+  get '/experiences/register', to: 'spa#index'
+  get '/experiences/:code', to: 'spa#index'
 
-
-  get '*path', to: 'application#index', constraints: ->(request) do
+  get '*path', to: 'spa#index', constraints: ->(request) do
     !request.xhr? && request.format.html?
   end
 
-  root 'application#index'
+  root 'spa#index'
 end

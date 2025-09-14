@@ -4,8 +4,18 @@ import { TextInput } from '@cctv/core';
 import { usePost } from '@cctv/hooks';
 import { ExperienceCreateResponse } from '@cctv/types';
 import { getFormData } from '@cctv/utils';
+import { useSearchParams } from 'react-router-dom'
+import { qaLogger } from '@cctv/utils'
 
 export default function Join() {
+  // Check for prefilled code from QR code or URL params
+  useEffect(() => {
+    const prefilledCode = searchParams.get('code')
+    if (prefilledCode) {
+      setCode(prefilledCode.toUpperCase())
+    }
+  }, [searchParams])
+
   const id = useId();
   const { post, isLoading, error, setError } = usePost<ExperienceCreateResponse>({
     url: '/api/experiences/join',
@@ -24,16 +34,45 @@ export default function Join() {
 
     const response = await post(
       JSON.stringify({
-        code: code.trim().toUpperCase(),
+        code: code.trim(),
       }),
     );
 
-    if (response?.success) {
-      window.location.href = response.lobby_url;
+    if (response.ok) {
+      if (data.status === 'registered') {
+        // User is already registered - store JWT and redirect to experience
+        qaLogger(`User already registrated, redirecting to: ${data.url}`)
+
+        localStorage.setItem('experience_jwt', data.jwt)
+        window.location.href = data.url
+      } else if (data.status === 'needs_registration') {
+        // User needs to register - redirect to registration page
+        qaLogger(`User needs registration, redirecting to: ${data.url}`)
+
+        console.log("User needs registration")
+        window.location.href = data.url
+      }
     } else {
-      setError(response?.error || 'Failed to join experience');
+      setError(data.error || 'Failed to join experience')
     }
-  };
+  } catch (err) {
+    setError('Connection error. Please try again.')
+    console.error('Join experience error:', err)
+  }
+
+  const handleInputChange = (e) => {
+    setCode(e.target.value)
+    // Clear error when user starts typing
+    if (error) {
+      setError('')
+    }
+  }
+
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter') {
+      handleSubmit(e)
+    }
+  }
 
   return (
     <section className="page flex-centered">
@@ -55,5 +94,5 @@ export default function Join() {
         </button>
       </form>
     </section>
-  );
+  )
 }
