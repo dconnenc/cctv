@@ -1,24 +1,32 @@
-import { useId, forwardRef } from 'react';
+import { InputHTMLAttributes, forwardRef, useId } from 'react';
+
 import styles from './TextInput.module.scss';
 
-interface TextInputProps {
-  label: string;
-  name: string;
-  type: string;
-  placeholder?: string;
+interface TextInputProps extends InputHTMLAttributes<HTMLInputElement> {
+  label?: string;
 }
 
 /** Reusable text input component */
 export const TextInput = forwardRef<HTMLInputElement, TextInputProps>(
-  ({ label, name, type, placeholder }, ref) => {
-    const inputId = useId();
+  ({ label, name, type = 'text', placeholder, disabled, id }, ref) => {
+    const generatedId = useId();
+    const inputId = id || generatedId;
 
     return (
       <div className={styles.input}>
-        <label className={styles.label} htmlFor={inputId}>
-          {label}
-        </label>
-        <input ref={ref} id={inputId} name={name} type={type} placeholder={placeholder} />
+        {label && (
+          <label className={styles.label} htmlFor={inputId}>
+            {label}
+          </label>
+        )}
+        <input
+          ref={ref}
+          id={inputId}
+          name={name}
+          type={type}
+          placeholder={placeholder}
+          disabled={disabled}
+        />
       </div>
     );
   },

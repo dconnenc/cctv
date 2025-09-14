@@ -1,11 +1,17 @@
-import { useMemo, useState, useEffect, ChangeEvent, FormEvent } from 'react';
-import { Link, useParams } from 'react-router-dom';
-import { generateFingerprint } from '../utils';
-import { MOCK_POLL_EXPERIENCE } from '../mocks';
-import { Experience, Participant } from '@cctv/types';
-import { startGlitchCycle } from '@cctv/components';
+import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from 'react';
 
+import { Link, useParams } from 'react-router-dom';
+
+import { startGlitchCycle } from '@cctv/components';
 import { ExperienceContainer } from '@cctv/experiences';
+import { Experience, Participant } from '@cctv/types';
+
+import {
+  MOCK_MULTISTEP_FORM_EXPERIENCE,
+  MOCK_POLL_EXPERIENCE,
+  MOCK_QUESTION_EXPERIENCE,
+} from '../mocks';
+import { generateFingerprint } from '../utils';
 
 export default function Lobby() {
   const params = useParams();
@@ -78,7 +84,7 @@ export default function Lobby() {
 
   const handleStartExperience = () => {
     // Cam - Added this to test specific experiences
-    setExperience(MOCK_POLL_EXPERIENCE);
+    setExperience(MOCK_MULTISTEP_FORM_EXPERIENCE);
 
     return;
 

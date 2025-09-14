@@ -1,6 +1,8 @@
 import { Experience, Participant } from '@cctv/types';
 
+import MultistepForm from '../MultistepForm/MultistepForm';
 import Poll from '../Poll/Poll';
+import Question from '../Question/Question';
 
 export default function ExperienceContainer({
   experience,
@@ -12,6 +14,10 @@ export default function ExperienceContainer({
   switch (experience.type) {
     case 'poll':
       return <Poll user={user} {...experience} />;
+    case 'question':
+      return <Question user={user} {...experience} />;
+    case 'multistep_form':
+      return <MultistepForm user={user} {...experience} />;
     default:
       return null;
   }

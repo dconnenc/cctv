@@ -1,77 +1,48 @@
-import { useState } from 'react';
+import { FormEvent, useId } from 'react';
+
+import { TextInput } from '@cctv/core';
+import { usePost } from '@cctv/hooks';
+import { ExperienceCreateResponse } from '@cctv/types';
+import { getFormData } from '@cctv/utils';
 
 export default function Join() {
-  const [code, setCode] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
+  const id = useId();
+  const { post, isLoading, error, setError } = usePost<ExperienceCreateResponse>({
+    url: '/api/experiences/join',
+  });
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    if (!code.trim()) {
+    const formData = getFormData<{ code?: string }>(e.currentTarget);
+    const code = formData.code;
+
+    if (!code || code.trim() === '') {
       setError('Please enter a code');
       return;
     }
 
-    setIsLoading(true);
-    setError('');
+    const response = await post(
+      JSON.stringify({
+        code: code.trim().toUpperCase(),
+      }),
+    );
 
-    try {
-      const response = await fetch('/api/experiences/join', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          code: code.trim().toUpperCase(),
-        }),
-      });
-
-      const data = await response.json();
-
-      if (data.success) {
-        // Redirect to the lobby URL
-        window.location.href = data.lobby_url;
-      } else {
-        setError(data.error || 'Failed to join experiences');
-      }
-    } catch (err) {
-      setError('Connection error. Please try again.');
-      console.error('Join experiences error:', err);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleInputChange = (e) => {
-    setCode(e.target.value);
-    // Clear error when user starts typing
-    if (error) {
-      setError('');
-    }
-  };
-
-  const handleKeyPress = (e) => {
-    if (e.key === 'Enter') {
-      handleSubmit(e);
+    if (response?.success) {
+      window.location.href = response.lobby_url;
+    } else {
+      setError(response?.error || 'Failed to join experience');
     }
   };
 
   return (
     <section className="page flex-centered">
-      <p className="hero-subtitle">Enter the secret code:</p>
+      <label htmlFor={id} className="hero-subtitle">
+        Enter the secret code:
+      </label>
 
       <form onSubmit={handleSubmit}>
-        <input
-          className="join-input"
-          type="text"
-          placeholder="Secret Code"
-          value={code}
-          onChange={handleInputChange}
-          onKeyPress={handleKeyPress}
-          disabled={isLoading}
-          maxLength={50}
-        />
+        <TextInput id={id} name="code" disabled={isLoading} maxLength={50} />
 
         {error && (
           <p className="error-message" style={{ color: 'red', marginTop: '8px' }}>
@@ -79,7 +50,7 @@ export default function Join() {
           </p>
         )}
 
-        <button className="join-submit" type="submit" disabled={isLoading || !code.trim()}>
+        <button className="join-submit" type="submit" disabled={isLoading}>
           {isLoading ? 'Joining...' : 'Submit'}
         </button>
       </form>

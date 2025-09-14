@@ -23,6 +23,8 @@
         "@cctv/components/*": ["./app/frontend/Components/*"],
         "@cctv/experiences": ["./app/frontend/Experiences"],
         "@cctv/experiences/*": ["./app/frontend/Experiences/*"],
+        "@cctv/hooks": ["./app/frontend/Hooks"],
+        "@cctv/hooks/*": ["./app/frontend/Hooks/*"],
         "@cctv/pages": ["./app/frontend/Pages"],
         "@cctv/pages/*": ["./app/frontend/Pages/*"],
         "@cctv/utils": ["./app/frontend/utils"],
