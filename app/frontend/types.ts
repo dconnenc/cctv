@@ -31,6 +31,27 @@ export interface BaseExperience {
   created_at: string;
 }
 
+export interface ExperienceRegisterResponse {
+  success: boolean;
+  experience_code: string;
+  status: 'registered';
+  url: string;
+  jwt: string;
+  error?: string;
+}
+
+export interface ExperienceNeedsRegistrationResponse {
+  success: boolean;
+  experience_code: string;
+  status: 'needs_registration';
+  url: string;
+  error?: string;
+}
+
+export type ExperienceJoinResponse =
+  | ExperienceRegisterResponse
+  | ExperienceNeedsRegistrationResponse;
+
 export interface ExperienceCreateResponse {
   success: boolean;
   experience: BaseExperience;

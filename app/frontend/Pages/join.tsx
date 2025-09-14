@@ -1,25 +1,26 @@
-import { FormEvent, useId, useEffect } from 'react';
+import { FormEvent, useId, useMemo } from 'react';
+
+import { useSearchParams } from 'react-router-dom';
 
 import { TextInput } from '@cctv/core';
 import { usePost } from '@cctv/hooks';
-import { ExperienceCreateResponse } from '@cctv/types';
+import { ExperienceJoinResponse } from '@cctv/types';
 import { getFormData } from '@cctv/utils';
-import { useSearchParams } from 'react-router-dom'
-import { qaLogger } from '@cctv/utils'
+import { qaLogger } from '@cctv/utils';
 
 export default function Join() {
-  const [searchParams] = useSearchParams()
+  const [searchParams] = useSearchParams();
 
   // Check for prefilled code from QR code or URL params
-  useEffect(() => {
-    const prefilledCode = searchParams.get('code')
+  const code = useMemo(() => {
+    const prefilledCode = searchParams.get('code');
     if (prefilledCode) {
-      setCode(prefilledCode.toUpperCase())
+      return prefilledCode.toUpperCase();
     }
-  }, [searchParams])
+  }, [searchParams]);
 
   const id = useId();
-  const { post, isLoading, error, setError } = usePost<ExperienceCreateResponse>({
+  const { post, isLoading, error, setError } = usePost<ExperienceJoinResponse>({
     url: '/api/experiences/join',
   });
 
@@ -40,38 +41,33 @@ export default function Join() {
       }),
     );
 
-    if (response.error === undefined) {
-      if (response.status === 'registered') {
+    if (!response) {
+      setError('Failed to join experience');
+      return;
+    }
+
+    if (response.error != null) {
+      setError(response.error || 'Failed to join experience');
+    }
+
+    switch (response.status) {
+      case 'registered':
         // User is already registered - store JWT and redirect to experience
-        qaLogger(`User already registrated, redirecting to: ${response.url}`)
-
-        localStorage.setItem('experience_jwt', response.jwt)
-        window.location.href = response.url
-      } else if (response.status === 'needs_registration') {
+        qaLogger(`User already registrated, redirecting to: ${response.url}`);
+        localStorage.setItem('experience_jwt', response.jwt);
+        window.location.href = response.url;
+        break;
+      case 'needs_registration':
         // User needs to register - redirect to registration page
-        qaLogger(`User needs registration, redirecting to: ${response.url}`)
-
-        console.log("User needs registration")
-        window.location.href = response.url
-      }
-    } else {
-      setError(response.error || 'Failed to join experience')
+        qaLogger(`User needs registration, redirecting to: ${response.url}`);
+        console.log('User needs registration');
+        window.location.href = response.url;
+        break;
+      default:
+        console.log(`Unknown response status encountered: ${response}`);
+        break;
     }
-  }
-
-  const handleInputChange = (e) => {
-    setCode(e.target.value)
-    // Clear error when user starts typing
-    if (error) {
-      setError('')
-    }
-  }
-
-  const handleKeyPress = (e) => {
-    if (e.key === 'Enter') {
-      handleSubmit(e)
-    }
-  }
+  };
 
   return (
     <section className="page flex-centered">
@@ -80,7 +76,7 @@ export default function Join() {
       </label>
 
       <form onSubmit={handleSubmit}>
-        <TextInput id={id} name="code" disabled={isLoading} maxLength={50} />
+        <TextInput defaultValue={code} id={id} name="code" disabled={isLoading} maxLength={50} />
 
         {error && (
           <p className="error-message" style={{ color: 'red', marginTop: '8px' }}>
@@ -93,5 +89,5 @@ export default function Join() {
         </button>
       </form>
     </section>
-  )
+  );
 }
