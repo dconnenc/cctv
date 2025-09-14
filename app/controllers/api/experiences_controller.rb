@@ -16,9 +16,9 @@ class Api::ExperiencesController < Api::BaseController
           experience: {
             id: experience.id,
             code: experience.code,
-            created_at: experience.created_at
+            created_at: experience.created_at,
+            url: generate_experience_path(experience.code)
           },
-          url: generate_experience_path(experience.code)
         }, status: :created
       else
         render json: {

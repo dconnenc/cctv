@@ -9,7 +9,8 @@ import styles from './Create.module.scss';
 
 /** Form page for creating a new experience */
 export default function Create() {
-  const [lobbyUrl, setLobbyUrl] = useState<string>();
+  const [experienceUrl, setExperienceUrl] = useState<string>();
+  const [experienceCodeActual, setExperienceCodeActual] = useState<string>();
   const nameRef = useRef<HTMLInputElement>(null);
 
   const { post, isLoading, error, setError } = usePost<ExperienceCreateResponse>({
@@ -39,23 +40,24 @@ export default function Create() {
       }),
     );
 
-    setLobbyUrl(response?.lobby_url);
+    setExperienceUrl(response?.experience?.url);
+    setExperienceCodeActual(response?.experience?.code);
   };
 
   const qrCode = useMemo(() => {
-    if (!lobbyUrl) return null;
+    if (!experienceUrl) return null;
 
     return `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(
-      lobbyUrl,
+      experienceUrl,
     )}`;
-  }, [lobbyUrl]);
+  }, [experienceUrl]);
 
   if (qrCode) {
     return (
       <section className="page flex-centered">
         <h1 className={styles.title}>Exprience: {nameRef.current?.value}</h1>
-        <img src={qrCode} alt={`QR code for /lobby/${lobbyUrl}`} />
-        <a href={lobbyUrl} className={styles.link}>
+        <img src={qrCode} alt={`QR code for joining an experience`} />
+        <a href={experienceUrl} className={styles.link}>
           Go to lobby
         </a>
       </section>
