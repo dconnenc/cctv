@@ -10,18 +10,18 @@ export const MOCK_POLL_EXPERIENCE: PollExperience = {
 export const MOCK_QUESTION_EXPERIENCE: QuestionExperience = {
   type: 'question',
   question: 'What is your favorite color?',
-  key: 'favorite_color',
+  formKey: 'favorite_color',
 };
 
 export const MOCK_MULTISTEP_FORM_EXPERIENCE: MultistepFormExperience = {
   type: 'multistep_form',
   questions: [
-    { type: 'question', question: 'What is your favorite color?', key: 'favorite_color' },
-    { type: 'question', question: 'What is your email?', key: 'email', inputType: 'email' },
+    { type: 'question', question: 'What is your favorite color?', formKey: 'favorite_color' },
+    { type: 'question', question: 'What is your email?', formKey: 'email', inputType: 'email' },
     {
       type: 'question',
       question: 'What is your phone number?',
-      key: 'phone_number',
+      formKey: 'phone_number',
       inputType: 'tel',
     },
   ],

@@ -50,3 +50,27 @@
   display: flex;
   gap: 12px;
 }
+
+.legend,
+.value {
+  position: relative;
+  z-index: 3;
+  font-size: 28px;
+  width: 100%;
+  color: var(--yellow);
+}
+
+.legend {
+  font-size: 32px;
+  color: white;
+}
+
+.value {
+  padding: 12px 0;
+}
+
+.submittedValue {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}

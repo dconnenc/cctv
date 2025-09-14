@@ -3,6 +3,7 @@ import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 
 import { startGlitchCycle } from '@cctv/components';
+import { Button } from '@cctv/core';
 import { ExperienceContainer } from '@cctv/experiences';
 import { Experience, Participant } from '@cctv/types';
 
@@ -10,8 +11,9 @@ import {
   MOCK_MULTISTEP_FORM_EXPERIENCE,
   MOCK_POLL_EXPERIENCE,
   MOCK_QUESTION_EXPERIENCE,
-} from '../mocks';
-import { generateFingerprint } from '../utils';
+} from '../../mocks';
+import { generateFingerprint } from '../../utils';
+import styles from './Lobby.module.scss';
 
 export default function Lobby() {
   const params = useParams();
@@ -194,8 +196,19 @@ export default function Lobby() {
     }
   };
 
+  const isAdmin = useMemo(() => participants.at(0)?.id === user?.id, [participants, user]);
+
   if (experience && user) {
-    return <ExperienceContainer experience={experience} user={user} />;
+    return (
+      <div className={styles.experienceContainer}>
+        <ExperienceContainer key={experience.type} experience={experience} user={user} />
+        {isAdmin && (
+          <Button type="button" onClick={() => setExperience(undefined)}>
+            Cancel
+          </Button>
+        )}
+      </div>
+    );
   }
 
   // Show loading while checking fingerprint
@@ -342,6 +355,23 @@ export default function Lobby() {
             </button>
           </form>
         </>
+      )}
+      {isAdmin && (
+        <div className={styles.admin}>
+          <p>
+            <span className={styles.adminWarning}>Admin only.</span> Start an experience by clicking
+            the button below.
+          </p>
+          <Button type="button" onClick={() => setExperience(MOCK_POLL_EXPERIENCE)}>
+            Start Poll
+          </Button>
+          <Button type="button" onClick={() => setExperience(MOCK_QUESTION_EXPERIENCE)}>
+            Start Question
+          </Button>
+          <Button type="button" onClick={() => setExperience(MOCK_MULTISTEP_FORM_EXPERIENCE)}>
+            Start Multistep Form
+          </Button>
+        </div>
       )}
     </section>
   );

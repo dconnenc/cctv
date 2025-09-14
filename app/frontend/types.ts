@@ -13,7 +13,7 @@ export interface PollExperience {
 export interface QuestionExperience {
   type: 'question';
   question: string;
-  key: string;
+  formKey: string;
   inputType?: 'text' | 'number' | 'email' | 'password' | 'tel';
 }
 

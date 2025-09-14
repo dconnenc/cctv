@@ -28,6 +28,7 @@ export default function MultistepForm({
 }: MultistepFormProps) {
   const [stepIndex, setStepIndex] = useState(0);
   const [stepErrors, setStepErrors] = useState<Set<string>>(new Set());
+  const [submittedValue, setSubmittedValue] = useState<Record<string, string>>();
 
   const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
     const form = e.currentTarget;
@@ -41,11 +42,13 @@ export default function MultistepForm({
 
     if (isNotEmpty(errors)) {
       const firstErrorKey = errors[0];
-      const firstErrorIndex = questions.findIndex((question) => question.key === firstErrorKey);
+      const firstErrorIndex = questions.findIndex((question) => question.formKey === firstErrorKey);
       setStepIndex(firstErrorIndex);
       setStepErrors(new Set(errors));
       return;
     }
+
+    setSubmittedValue(formData as Record<string, string>);
 
     if (onSubmit) {
       onSubmit(formData as Record<string, string>);
@@ -59,7 +62,7 @@ export default function MultistepForm({
   const handleInvalidForm = (e: FormEvent<HTMLFormElement>) => {
     const problemInput = e.target;
     const problemInputKey = (problemInput as HTMLInputElement).name;
-    const problemIndex = questions.findIndex((question) => question.key === problemInputKey);
+    const problemIndex = questions.findIndex((question) => question.formKey === problemInputKey);
     setStepErrors((errors) => new Set([...errors, problemInputKey]));
     setStepIndex(problemIndex);
   };
@@ -76,25 +79,38 @@ export default function MultistepForm({
 
   const isLastQuestion = stepIndex === questions.length - 1;
 
+  if (submittedValue) {
+    return (
+      <div className={styles.submittedValue}>
+        {questions.map((question) => (
+          <div key={question.formKey}>
+            <p className={styles.legend}>{question.question}</p>
+            <p className={styles.value}>{submittedValue[question.formKey]}</p>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
   return (
     <form className={styles.form} onSubmit={handleSubmit} onInvalid={handleInvalidForm}>
       <div className={styles.questions}>
         {questions.map((question, index) => {
           const isCurrentQuestion = index === stepIndex;
-          const errorId = `${question.key}-error`;
-          const hasError = stepErrors.has(question.key);
+          const errorId = `${question.formKey}-error`;
+          const hasError = stepErrors.has(question.formKey);
           return (
             <div
               className={classNames(styles.question, {
                 [styles.questionHidden]: !isCurrentQuestion,
               })}
-              key={question.key}
+              key={question.formKey}
             >
               <TextInput
                 required
                 type={question.inputType}
                 label={question.question}
-                name={question.key}
+                name={question.formKey}
                 aria-describedby={hasError ? errorId : undefined}
               />
               {hasError && (
