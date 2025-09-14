@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+
+import { Link, useParams, useNavigate } from 'react-router-dom';
 
 import styles from './Experience.module.scss';
 

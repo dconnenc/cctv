@@ -12,6 +12,15 @@
   width: 100%;
 }
 
+.value {
+  position: relative;
+  z-index: 3;
+  font-size: 28px;
+  width: 100%;
+  color: var(--yellow);
+  padding: 12px 0;
+}
+
 .submit {
   position: relative;
   z-index: 3;

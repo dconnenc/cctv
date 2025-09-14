@@ -1,0 +1,22 @@
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: center;
+  justify-content: center;
+}
+
+.legend,
+.value {
+  position: relative;
+  z-index: 3;
+  font-size: 28px;
+  width: 100%;
+  color: var(--yellow);
+  padding-top: 12px;
+}
+
+.legend {
+  font-size: 32px;
+  color: white;
+}
