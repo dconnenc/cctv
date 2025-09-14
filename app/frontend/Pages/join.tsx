@@ -1,4 +1,4 @@
-import { FormEvent, useId } from 'react';
+import { FormEvent, useId, useEffect } from 'react';
 
 import { TextInput } from '@cctv/core';
 import { usePost } from '@cctv/hooks';
@@ -8,6 +8,8 @@ import { useSearchParams } from 'react-router-dom'
 import { qaLogger } from '@cctv/utils'
 
 export default function Join() {
+  const [searchParams] = useSearchParams()
+
   // Check for prefilled code from QR code or URL params
   useEffect(() => {
     const prefilledCode = searchParams.get('code')
@@ -38,26 +40,23 @@ export default function Join() {
       }),
     );
 
-    if (response.ok) {
-      if (data.status === 'registered') {
+    if (response.error === undefined) {
+      if (response.status === 'registered') {
         // User is already registered - store JWT and redirect to experience
-        qaLogger(`User already registrated, redirecting to: ${data.url}`)
+        qaLogger(`User already registrated, redirecting to: ${response.url}`)
 
-        localStorage.setItem('experience_jwt', data.jwt)
-        window.location.href = data.url
-      } else if (data.status === 'needs_registration') {
+        localStorage.setItem('experience_jwt', response.jwt)
+        window.location.href = response.url
+      } else if (response.status === 'needs_registration') {
         // User needs to register - redirect to registration page
-        qaLogger(`User needs registration, redirecting to: ${data.url}`)
+        qaLogger(`User needs registration, redirecting to: ${response.url}`)
 
         console.log("User needs registration")
-        window.location.href = data.url
+        window.location.href = response.url
       }
     } else {
-      setError(data.error || 'Failed to join experience')
+      setError(response.error || 'Failed to join experience')
     }
-  } catch (err) {
-    setError('Connection error. Please try again.')
-    console.error('Join experience error:', err)
   }
 
   const handleInputChange = (e) => {
