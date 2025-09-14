@@ -10,13 +10,15 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2025_09_08_185043) do
+ActiveRecord::Schema[7.2].define(version: 2025_09_12_171844) do
   # These are extensions that must be enabled in order to support this database
+  enable_extension "citext"
   enable_extension "plpgsql"
 
   # Custom types defined in this database.
   # Note that some types may not work with other database engines. Be careful if changing database.
   create_enum "participant_status", ["registered", "active"]
+  create_enum "user_roles", ["user", "admin", "superadmin"]
 
   create_table "experience_participants", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.uuid "user_id", null: false
@@ -38,14 +40,36 @@ ActiveRecord::Schema[7.2].define(version: 2025_09_08_185043) do
     t.string "code", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.uuid "creator_id", null: false
+    t.index ["creator_id"], name: "index_experiences_on_creator_id"
+  end
+
+  create_table "passwordless_sessions", force: :cascade do |t|
+    t.string "authenticatable_type"
+    t.uuid "authenticatable_id"
+    t.datetime "timeout_at", precision: nil, null: false
+    t.datetime "expires_at", precision: nil, null: false
+    t.datetime "claimed_at", precision: nil
+    t.string "token_digest", null: false
+    t.string "identifier", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["authenticatable_type", "authenticatable_id"], name: "authenticatable"
+    t.index ["identifier"], name: "index_passwordless_sessions_on_identifier", unique: true
   end
 
   create_table "users", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.string "name", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.citext "email", null: false
+    t.enum "role", default: "user", null: false, enum_type: "user_roles"
+    t.virtual "admin", type: :boolean, as: "\nCASE\n    WHEN (role = 'admin'::user_roles) THEN true\n    ELSE false\nEND", stored: true
+    t.virtual "super_admin", type: :boolean, as: "\nCASE\n    WHEN (role = 'superadmin'::user_roles) THEN true\n    ELSE false\nEND", stored: true
+    t.index ["email"], name: "index_users_on_email", unique: true
   end
 
   add_foreign_key "experience_participants", "experiences", on_delete: :cascade
   add_foreign_key "experience_participants", "users", on_delete: :cascade
+  add_foreign_key "experiences", "users", column: "creator_id", on_delete: :cascade
 end

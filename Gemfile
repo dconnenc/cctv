@@ -12,6 +12,12 @@ gem "bootsnap", require: false
 
 gem "vite_rails"
 
+gem "passwordless"
+
+gem "jwt"
+
+gem "action_policy"
+
 group :development do
   # Use console on exceptions pages [https://github.com/rails/web-console]
   gem "web-console"

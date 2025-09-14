@@ -1,20 +1,31 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react'
+import { useSearchParams } from 'react-router-dom'
+import qaLogger from '@cctv/utils/qaLogger'
 
 export default function Join() {
-  const [code, setCode] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [code, setCode] = useState('')
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState('')
+  const [searchParams] = useSearchParams()
+
+  // Check for prefilled code from QR code or URL params
+  useEffect(() => {
+    const prefilledCode = searchParams.get('code')
+    if (prefilledCode) {
+      setCode(prefilledCode.toUpperCase())
+    }
+  }, [searchParams])
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
+    e.preventDefault()
 
     if (!code.trim()) {
-      setError('Please enter a code');
-      return;
+      setError('Please enter a code')
+      return
     }
 
-    setIsLoading(true);
-    setError('');
+    setIsLoading(true)
+    setError('')
 
     try {
       const response = await fetch('/api/experiences/join', {
@@ -23,39 +34,50 @@ export default function Join() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          code: code.trim().toUpperCase(),
+          code: code.trim()
         }),
-      });
+      })
 
-      const data = await response.json();
+      const data = await response.json()
 
-      if (data.success) {
-        // Redirect to the lobby URL
-        window.location.href = data.lobby_url;
+      if (response.ok) {
+        if (data.status === 'registered') {
+          // User is already registered - store JWT and redirect to experience
+          qaLogger(`User already registrated, redirecting to: ${data.url}`)
+
+          localStorage.setItem('experience_jwt', data.jwt)
+          window.location.href = data.url
+        } else if (data.status === 'needs_registration') {
+          // User needs to register - redirect to registration page
+          qaLogger(`User needs registration, redirecting to: ${data.url}`)
+
+          console.log("User needs registration")
+          window.location.href = data.url
+        }
       } else {
-        setError(data.error || 'Failed to join experiences');
+        setError(data.error || 'Failed to join experience')
       }
     } catch (err) {
-      setError('Connection error. Please try again.');
-      console.error('Join experiences error:', err);
+      setError('Connection error. Please try again.')
+      console.error('Join experience error:', err)
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
 
   const handleInputChange = (e) => {
-    setCode(e.target.value);
+    setCode(e.target.value)
     // Clear error when user starts typing
     if (error) {
-      setError('');
+      setError('')
     }
-  };
+  }
 
   const handleKeyPress = (e) => {
     if (e.key === 'Enter') {
-      handleSubmit(e);
+      handleSubmit(e)
     }
-  };
+  }
 
   return (
     <section className="page flex-centered">
@@ -84,5 +106,5 @@ export default function Join() {
         </button>
       </form>
     </section>
-  );
+  )
 }

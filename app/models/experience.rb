@@ -2,10 +2,10 @@ class Experience < ApplicationRecord
   has_many :experience_participants, dependent: :destroy
   has_many :users, through: :experience_participants
 
-  validates :name, presence: true, length: { minimum: 1, maximum: 255 }
+  belongs_to :creator, class_name: 'User'
+
   validates :code, presence: true, uniqueness: true, length: { minimum: 1, maximum: 255 }
 
-  # Convenience method to find experience by code
   def self.find_by_code(code)
     find_by(code: code)
   end
@@ -20,14 +20,32 @@ class Experience < ApplicationRecord
     users.include?(user)
   end
 
-  # Add a user to this experience with fingerprint
-  def add_user(user, fingerprint)
-    return if has_user?(user)
-    experience_participants.create!(user: user, fingerprint: fingerprint)
+  def user_registered?(user)
+    has_user?(user)
   end
 
-  # Find participant by fingerprint
-  def find_participant_by_fingerprint(fingerprint)
-    experience_participants.includes(:user).find_by(fingerprint: fingerprint)
+  def register_user(user)
+    users << user
+  end
+
+  # Add a user to this experience with fingerprint
+  def add_user(user)
+    return if has_user?(user)
+
+    experience_participants.create!(user: user)
+  end
+
+  def jwt_token_for(user)
+    ExperienceAuthService.jwt_token_for(self, user)
+  end
+
+  def validate_code(code)
+    return [false, "Nil code"] if code.nil?
+
+    if Experience.exists?(code: code)
+      [false, "Experience already exists with code: #{code}"]
+    else
+      [true, "Valid code"]
+    end
   end
 end

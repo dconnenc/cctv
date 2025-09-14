@@ -1,8 +1,7 @@
 import { Route } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-
 import { TopNav, BackgroundStatic, RouteWink } from '@cctv/components';
-import { Home, About, Join, Lobby, Experience, Stylesheet, Create } from '@cctv/pages';
+import { Home, About, Join, Lobby, Experience, Stylesheet, Create, Register } from '@cctv/pages';
 
 import styles from './App.module.scss';
 
@@ -23,8 +22,8 @@ function App() {
           <Route path="/about" element={<About />} />
           <Route path="/join" element={<Join />} />
           <Route path="/create" element={<Create />} />
-          <Route path="/lobby/:code" element={<Lobby />} />
-          <Route path="/experience/:code" element={<Experience />} />
+          <Route path="/experiences/:code" element={<Experience />} />
+          <Route path="/experiences/:code/register" element={<Register />} />
           <Route path="/stylesheet" element={<Stylesheet />} />
         </RouteWink>
       </div>
