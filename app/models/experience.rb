@@ -2,7 +2,18 @@ class Experience < ApplicationRecord
   has_many :experience_participants, dependent: :destroy
   has_many :users, through: :experience_participants
 
+  has_many :experience_blocks, dependent: :destroy
+
   belongs_to :creator, class_name: 'User'
+
+  enum status: {
+    draft: "draft",
+    lobby: "lobby",
+    live: "live",
+    paused: "paused",
+    finished: "finished",
+    archived: "archived"
+  }
 
   validates :code, presence: true, uniqueness: true, length: { minimum: 1, maximum: 255 }
 
