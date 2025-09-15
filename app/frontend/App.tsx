@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { Route } from 'react-router-dom';
 
 import { BackgroundStatic, RouteWink, TopNav } from '@cctv/components';
-import { Home, About, Join, Lobby, Experience, Stylesheet, Create, Register } from '@cctv/pages';
+import { Home, About, Join, Experience, Stylesheet, Create, Register } from '@cctv/pages';
 
 import styles from './App.module.scss';
 
