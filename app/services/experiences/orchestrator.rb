@@ -1,5 +1,51 @@
 module Experiences
   class Orchestrator < BaseService
+    def add_block(
+      kind:,
+      payload: {},
+      visible_to_roles: [],
+      visible_to_segments: [],
+      target_user_ids: [],
+      status: :hidden,
+      open_immediately: false
+    )
+      actor_action do
+        authorize! experience, to: :manage_blocks?, with: ExperiencePolicy
+
+        transaction do
+          block = experience.experience_blocks.create!(
+            kind: kind,
+            status: state,
+            payload: payload,
+            visible_to_roles: visible_to_roles,
+            visible_to_segments: visible_to_segments,
+            target_user_ids: target_user_ids
+          )
+          block.update!(state: :open) if open_immediately
+        end
+      end
+    end
+
+    def close_block(block_id)
+      actor_action do
+        authorize! experience, to: :manage_blocks?, with: ExperiencePolicy
+
+        block = experience.experience_blocks.find(block_id)
+
+        block.update(status: :close)
+      end
+    end
+
+    def open_block(block_id)
+      actor_action do
+        authorize! experience, to: :manage_blocks?, with: ExperiencePolicy
+
+        block = experience.experience_blocks.find(block_id)
+
+        block.update(status: :open)
+      end
+    end
+
     def open_lobby!
       actor_action do
         authorize! experience, to: :open_lobby?, with: ExperiencePolicy

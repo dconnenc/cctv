@@ -1,6 +1,9 @@
 class Api::ExperiencesController < Api::BaseController
   skip_before_action :verify_authenticity_token
 
+  before_action :set_actor_and_experience, only: [:start]
+
+
   # POST /api/experiences
   def create
     authorize! Experience, to: :create?
@@ -36,35 +39,17 @@ class Api::ExperiencesController < Api::BaseController
     end
   end
 
+  # POST /api/experiences/start
   def start
-    actor = nil
-    experience = nil
-
-    if current_user.admin? || current_user.superadmin?
-      # no need to auth, all admins can interact with experiences
-      actor = current_user
-
-      if params[:id]
-        # admin is making a direct experience request
-        experience = experience.find_by(code: params[:id])
-      else jwt_token.present?
-        payload = Experiences::AuthService.decode(jwt_token)
-        experience = Experience.find_by(id: payload[:experience_id])
-      end
-    elsif jwt_token.present?
-      actor, experience = Experiences::AuthService.authorize(jwt_token)
-    end
-
-    if actor.nil? || experience.nil?
-      raise
-    end
-
     begin
-      Experiences::Orchestrator.new(experience: experience, actor: user).start!
+      Experiences::Orchestrator.new(
+        experience: @experience, actor: @user
+      ).start!
 
       render json: {
         success: true,
         message: "Experience started",
+        data: Experiences::Visibility.new(@experiences, @user).payload
       }, status: :success
     rescue Experiences::ForbiddenError => e
       render json: {
@@ -193,5 +178,32 @@ class Api::ExperiencesController < Api::BaseController
 
   def generate_experience_path(code)
     "/experiences/#{code}"
+  end
+
+  def jwt_token
+    # Remove "Bearer " prefix
+    (request.headers["HTTP_AUTHORIZATION"] || [])[7..]
+  end
+
+  def set_actor_and_experience
+    @actor = nil
+    @experience = nil
+
+    if current_user&.admin? || current_user&.superadmin?
+      # no need to auth, all admins can interact with experiences
+      @actor = current_user
+
+      if params[:id]
+        # admin is making a direct experience request
+        @experience = experience.find_by(code: params[:id])
+      end
+    elsif jwt_token.present?
+      # A participant is making a request
+      @actor, @experience = Experiences::AuthService.authorize(jwt_token)
+    end
+
+    if @actor.nil? || @experience.nil?
+      raise
+    end
   end
 end

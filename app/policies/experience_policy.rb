@@ -27,6 +27,10 @@ class ExperiencePolicy < ApplicationPolicy
     admin? || host_participant?
   end
 
+  def manage_blocks?
+    admin? || host_participant?
+  end
+
   private
 
   def admin?

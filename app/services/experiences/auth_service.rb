@@ -22,8 +22,12 @@ module Experiences
       )
     end
 
-    def authorize(token)
-      payload = JWT.decode(token)
+    def self.decode(token)
+      JWT.decode(token, JWT_SECRET)
+    end
+
+    def self.authorize(token)
+      payload = decode(token)
 
       # TODO: Implement expiry check
 
