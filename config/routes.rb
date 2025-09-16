@@ -14,6 +14,7 @@ Rails.application.routes.draw do
       collection do
         post :join
         post :register
+        post :start
       end
     end
   end

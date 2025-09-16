@@ -36,6 +36,51 @@ class Api::ExperiencesController < Api::BaseController
     end
   end
 
+  def start
+    actor = nil
+    experience = nil
+
+    if current_user.admin? || current_user.superadmin?
+      # no need to auth, all admins can interact with experiences
+      actor = current_user
+
+      if params[:id]
+        # admin is making a direct experience request
+        experience = experience.find_by(code: params[:id])
+      else jwt_token.present?
+        payload = Experiences::AuthService.decode(jwt_token)
+        experience = Experience.find_by(id: payload[:experience_id])
+      end
+    elsif jwt_token.present?
+      actor, experience = Experiences::AuthService.authorize(jwt_token)
+    end
+
+    if actor.nil? || experience.nil?
+      raise
+    end
+
+    begin
+      Experiences::Orchestrator.new(experience: experience, actor: user).start!
+
+      render json: {
+        success: true,
+        message: "Experience started",
+      }, status: :success
+    rescue Experiences::ForbiddenError => e
+      render json: {
+        success: false,
+        message: "forbidden",
+        error: e.message,
+      }, status: :forbidden
+    rescue Experiences::InvalidTransitionError => e
+      render json: {
+        success: false,
+        message: "Invalid state transition",
+        error: e.message,
+      }, status: :unprocessable_entity
+    end
+  end
+
   # GET /api/experiences/:id
   def show
     experience = Experience.find_by(code: params[:id])
