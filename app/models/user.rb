@@ -4,7 +4,7 @@ class User < ApplicationRecord
   has_many :created_experiences, class_name: "Experience", foreign_key: :creator_id, dependent: :destroy
 
   enum role: {
-    member: "member",
+    user: "user",
     admin: "admin",
     superadmin: "superadmin"
   }
