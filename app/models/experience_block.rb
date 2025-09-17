@@ -9,7 +9,7 @@ class ExperienceBlock < ApplicationRecord
     hidden: "hidden",
     open: "open",
     closed: "closed"
-  }, _prefix: :status
+  }
 
   validates :kind, presence: true, inclusion: { in: KINDS }
   validate :visibility_roles
