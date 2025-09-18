@@ -11,10 +11,28 @@ Rails.application.routes.draw do
 
   namespace :api do
     resources :experiences, only: [:create, :show] do
-      collection do
+      member do
         post :join
         post :register
+        post :open_lobby
         post :start
+        post :pause
+        post :resume
+      end
+
+      resources(
+        :blocks,
+        controller: "experience_blocks",
+        only: [:create]
+      ) do
+        member do
+          post :open
+          post :close
+        end
+
+        # collection do
+        #   post :batch_open
+        # end
       end
     end
   end

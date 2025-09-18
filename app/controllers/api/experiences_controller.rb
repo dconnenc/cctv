@@ -1,8 +1,7 @@
 class Api::ExperiencesController < Api::BaseController
-  skip_before_action :verify_authenticity_token
-
-  before_action :set_actor_and_experience, only: [:start]
-
+  authorize :user, through: :current_user
+  before_action :authorize_and_set_user_and_experience,
+    only: [:open_lobby, :start, :pause, :resume]
 
   # POST /api/experiences
   def create
@@ -39,30 +38,59 @@ class Api::ExperiencesController < Api::BaseController
     end
   end
 
+  # POST /api/experiences/open_lobby
+  def open_lobby
+    with_experience_orchestration do
+      Experiences::Orchestrator.new(
+        experience: @experience, actor: @user
+      ).open_lobby!
+
+      render json: {
+        success: true,
+        data: @experience,
+      }, status: :success
+    end
+  end
+
   # POST /api/experiences/start
   def start
-    begin
+    with_experience_orchestration do
       Experiences::Orchestrator.new(
         experience: @experience, actor: @user
       ).start!
 
       render json: {
         success: true,
-        message: "Experience started",
-        data: Experiences::Visibility.new(@experiences, @user).payload
+        data: @experience,
       }, status: :success
-    rescue Experiences::ForbiddenError => e
+    end
+  end
+
+  # POST /api/experiences/pause
+  def pause
+    with_experience_orchestration do
+      Experiences::Orchestrator.new(
+        experience: @experience, actor: @user
+      ).pause!
+
       render json: {
-        success: false,
-        message: "forbidden",
-        error: e.message,
-      }, status: :forbidden
-    rescue Experiences::InvalidTransitionError => e
+        success: true,
+        data: @experience,
+      }, status: :success
+    end
+  end
+
+  # POST /api/experiences/resume
+  def resume
+    with_experience_orchestration do
+      Experiences::Orchestrator.new(
+        experience: @experience, actor: @user
+      ).resume!
+
       render json: {
-        success: false,
-        message: "Invalid state transition",
-        error: e.message,
-      }, status: :unprocessable_entity
+        success: true,
+        data: @experience,
+      }, status: :success
     end
   end
 
@@ -112,7 +140,7 @@ class Api::ExperiencesController < Api::BaseController
 
     if current_user && experience.user_registered?(current_user)
       render json: {
-        jwt: experience.jwt_token_for(current_user),
+        jwt: experience.jwt_token_for_participant(current_user),
         url: generate_experience_path(experience.code),
         status: "registered"
       }
@@ -160,7 +188,7 @@ class Api::ExperiencesController < Api::BaseController
     end
 
     render json: {
-      jwt: experience.jwt_token_for(user),
+      jwt: experience.jwt_token_for_participant(user),
       url: generate_experience_path(experience.code),
       status: "registered"
     }
@@ -180,30 +208,21 @@ class Api::ExperiencesController < Api::BaseController
     "/experiences/#{code}"
   end
 
-  def jwt_token
-    # Remove "Bearer " prefix
-    (request.headers["HTTP_AUTHORIZATION"] || [])[7..]
-  end
-
-  def set_actor_and_experience
-    @actor = nil
-    @experience = nil
-
-    if current_user&.admin? || current_user&.superadmin?
-      # no need to auth, all admins can interact with experiences
-      @actor = current_user
-
-      if params[:id]
-        # admin is making a direct experience request
-        @experience = experience.find_by(code: params[:id])
-      end
-    elsif jwt_token.present?
-      # A participant is making a request
-      @actor, @experience = Experiences::AuthService.authorize(jwt_token)
-    end
-
-    if @actor.nil? || @experience.nil?
-      raise
+  def with_experience_orchestration
+    begin
+      yield
+    rescue Experiences::ForbiddenError => e
+      render json: {
+        success: false,
+        message: "forbidden",
+        error: e.message,
+      }, status: :forbidden
+    rescue Experiences::InvalidTransitionError => e
+      render json: {
+        success: false,
+        message: "Invalid state transition",
+        error: e.message,
+      }, status: :unprocessable_entity
     end
   end
 end

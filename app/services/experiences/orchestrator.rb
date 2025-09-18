@@ -1,6 +1,6 @@
 module Experiences
   class Orchestrator < BaseService
-    def add_block(
+    def add_block!(
       kind:,
       payload: {},
       visible_to_roles: [],
@@ -22,11 +22,13 @@ module Experiences
             target_user_ids: target_user_ids
           )
           block.update!(state: :open) if open_immediately
+
+          block
         end
       end
     end
 
-    def close_block(block_id)
+    def close_block!(block_id)
       actor_action do
         authorize! experience, to: :manage_blocks?, with: ExperiencePolicy
 
@@ -36,7 +38,7 @@ module Experiences
       end
     end
 
-    def open_block(block_id)
+    def open_block!(block_id)
       actor_action do
         authorize! experience, to: :manage_blocks?, with: ExperiencePolicy
 
