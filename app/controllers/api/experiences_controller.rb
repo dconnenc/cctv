@@ -140,7 +140,6 @@ class Api::ExperiencesController < Api::BaseController
 
     if current_user && experience.user_registered?(current_user)
       render json: {
-        jwt: experience.jwt_token_for_participant(current_user),
         url: generate_experience_path(experience.code),
         status: "registered"
       }
@@ -188,7 +187,7 @@ class Api::ExperiencesController < Api::BaseController
     end
 
     render json: {
-      jwt: experience.jwt_token_for_participant(user),
+      jwt: experience.jwt_for_participant(user),
       url: generate_experience_path(experience.code),
       status: "registered"
     }

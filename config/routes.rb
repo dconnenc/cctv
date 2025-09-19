@@ -11,8 +11,11 @@ Rails.application.routes.draw do
 
   namespace :api do
     resources :experiences, only: [:create, :show] do
-      member do
+      collection do
         post :join
+      end
+
+      member do
         post :register
         post :open_lobby
         post :start

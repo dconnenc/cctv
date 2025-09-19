@@ -46,8 +46,8 @@ class Experience < ApplicationRecord
     experience_participants.create!(user: user)
   end
 
-  def jwt_token_for_participant(user)
-    Experiences::AuthService.jwt_token_for_participant(experience: self, user: user)
+  def jwt_for_participant(user)
+    Experiences::AuthService.jwt_for_participant(experience: self, user: user)
   end
 
   def validate_code(code)
