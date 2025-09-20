@@ -1,4 +1,6 @@
-import { usePost } from './usePost';
+import { usePost } from '@cctv/hooks/usePost';
+import { useExperience } from '@cctv/contexts/ExperienceContext';
+import { qaLogger } from '@cctv/utils';
 
 interface ExperienceRegisterResponse {
   jwt: string;
@@ -11,9 +13,10 @@ interface RegisterExperienceParams {
   name?: string;
 }
 
-export function useRegisterExperience(id: string) {
+export function useRegisterExperience() {
+  const { code, setJWT } = useExperience();
   const { post, isLoading, error, setError } = usePost<ExperienceRegisterResponse>({
-    url: `/api/experiences/${id}/register`,
+    url: `/api/experiences/${code}/register`,
   });
 
   const registerExperience = async ({ email, name }: RegisterExperienceParams) => {
@@ -23,17 +26,20 @@ export function useRegisterExperience(id: string) {
       return;
     }
 
-    if (!id?.trim()) {
+    if (!code?.trim()) {
       setError('Missing experience code');
       return;
     }
 
-    // Make the API request
+    qaLogger(
+      `Attempting to regsiter participant: ${name}:${email} to ${code}`
+    )
+
     const response = await post(
       JSON.stringify({
         email: email.trim(),
         name: name?.trim() || '',
-        code: id,
+        code: code,
       }),
     );
 
@@ -48,7 +54,10 @@ export function useRegisterExperience(id: string) {
     }
 
     // Success - store JWT and redirect to experience
-    localStorage.setItem('experience_jwt', response.jwt);
+    qaLogger(
+      `Successfully regsitered participant. Storing JWT and redirecting to experience`
+    )
+    setJWT(response.jwt);
     window.location.href = response.url;
   };
 

@@ -10,6 +10,9 @@ Rails.application.routes.draw do
   get "manifest" => "rails/pwa#manifest", as: :pwa_manifest
 
   namespace :api do
+    resources :users, only: [] do
+      get "me", on: :collection
+    end
     resources :experiences, only: [:create, :show] do
       collection do
         post :join

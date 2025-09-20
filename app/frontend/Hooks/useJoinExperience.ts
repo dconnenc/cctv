@@ -42,11 +42,10 @@ export function useJoinExperience() {
       case 'needs_registration':
         // User needs to register - redirect to registration page
         qaLogger(`User needs registration, redirecting to: ${response.url}`);
-        console.log('User needs registration');
         window.location.href = response.url;
         break;
       default:
-        console.log(`Unknown response status encountered: ${response}`);
+        console.error(`Unknown response status encountered: ${response}`);
         break;
     }
   };
