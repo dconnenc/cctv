@@ -38,6 +38,10 @@ export default defineConfig({
         fileURLToPath(new URL('.', import.meta.url)),
         'app/frontend/types',
       ),
+      '@cctv/contexts': path.resolve(
+        fileURLToPath(new URL('.', import.meta.url)),
+        'app/frontend/Contexts',
+      ),
     },
   },
 });

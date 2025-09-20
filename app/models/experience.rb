@@ -2,7 +2,18 @@ class Experience < ApplicationRecord
   has_many :experience_participants, dependent: :destroy
   has_many :users, through: :experience_participants
 
+  has_many :experience_blocks, dependent: :destroy
+
   belongs_to :creator, class_name: 'User'
+
+  enum status: {
+    draft: "draft",
+    lobby: "lobby",
+    live: "live",
+    paused: "paused",
+    finished: "finished",
+    archived: "archived"
+  }
 
   validates :code, presence: true, uniqueness: true, length: { minimum: 1, maximum: 255 }
 
@@ -35,8 +46,8 @@ class Experience < ApplicationRecord
     experience_participants.create!(user: user)
   end
 
-  def jwt_token_for(user)
-    ExperienceAuthService.jwt_token_for(self, user)
+  def jwt_for_participant(user)
+    Experiences::AuthService.jwt_for_participant(experience: self, user: user)
   end
 
   def validate_code(code)

@@ -10,15 +10,36 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2025_09_12_171844) do
+ActiveRecord::Schema[7.2].define(version: 2025_09_15_134013) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "citext"
   enable_extension "plpgsql"
 
   # Custom types defined in this database.
   # Note that some types may not work with other database engines. Be careful if changing database.
+  create_enum "experience_block_statuses", ["hidden", "open", "closed"]
+  create_enum "experience_participant_roles", ["audience", "player", "moderator", "host"]
+  create_enum "experience_statuses", ["draft", "lobby", "live", "paused", "finished", "archived"]
   create_enum "participant_status", ["registered", "active"]
   create_enum "user_roles", ["user", "admin", "superadmin"]
+
+  create_table "experience_blocks", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "experience_id", null: false
+    t.string "kind", null: false
+    t.enum "status", default: "hidden", null: false, enum_type: "experience_block_statuses"
+    t.jsonb "payload", default: {}, null: false
+    t.string "visible_to_roles", default: [], array: true
+    t.string "visible_to_segments", default: [], array: true
+    t.uuid "target_user_ids", default: [], null: false, array: true
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["experience_id", "status"], name: "index_experience_blocks_on_experience_id_and_status"
+    t.index ["experience_id"], name: "index_experience_blocks_on_experience_id"
+    t.index ["kind"], name: "index_experience_blocks_on_kind"
+    t.index ["target_user_ids"], name: "index_experience_blocks_on_target_user_ids", using: :gin
+    t.index ["visible_to_roles"], name: "index_experience_blocks_on_visible_to_roles", using: :gin
+    t.index ["visible_to_segments"], name: "index_experience_blocks_on_visible_to_segments", using: :gin
+  end
 
   create_table "experience_participants", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.uuid "user_id", null: false
@@ -28,9 +49,13 @@ ActiveRecord::Schema[7.2].define(version: 2025_09_12_171844) do
     t.string "fingerprint"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.enum "role", default: "audience", null: false, enum_type: "experience_participant_roles"
+    t.string "segments", default: [], null: false, array: true
     t.index ["experience_id", "status"], name: "index_experience_participants_on_experience_id_and_status"
     t.index ["experience_id"], name: "index_experience_participants_on_experience_id"
     t.index ["fingerprint"], name: "index_experience_participants_on_fingerprint"
+    t.index ["role"], name: "index_experience_participants_on_role"
+    t.index ["segments"], name: "index_experience_participants_on_segments", using: :gin
     t.index ["user_id", "experience_id"], name: "index_experience_participants_on_user_id_and_experience_id", unique: true
     t.index ["user_id"], name: "index_experience_participants_on_user_id"
   end
@@ -41,7 +66,12 @@ ActiveRecord::Schema[7.2].define(version: 2025_09_12_171844) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.uuid "creator_id", null: false
+    t.enum "status", default: "draft", null: false, enum_type: "experience_statuses"
+    t.boolean "join_open", default: false, null: false
+    t.datetime "started_at"
+    t.datetime "ended_at"
     t.index ["creator_id"], name: "index_experiences_on_creator_id"
+    t.index ["status"], name: "index_experiences_on_status"
   end
 
   create_table "passwordless_sessions", force: :cascade do |t|
@@ -69,6 +99,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_09_12_171844) do
     t.index ["email"], name: "index_users_on_email", unique: true
   end
 
+  add_foreign_key "experience_blocks", "experiences", on_delete: :cascade
   add_foreign_key "experience_participants", "experiences", on_delete: :cascade
   add_foreign_key "experience_participants", "users", on_delete: :cascade
   add_foreign_key "experiences", "users", column: "creator_id", on_delete: :cascade
