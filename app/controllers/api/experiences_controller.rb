@@ -7,10 +7,13 @@ class Api::ExperiencesController < Api::BaseController
   def create
     authorize! Experience, to: :create?
 
-    valid, message = Experience.validate_code(experience_params[:code])
+    valid, message = Experience.validate_code(params[:experience][:code])
 
     if valid
-      experience = current_user.created_experiences.build(experience_params)
+      experience = current_user.created_experiences.build(
+        name: params[:experience][:name],
+        code: params[:experience][:code]
+      )
 
       if experience.save
         render json: {
@@ -111,11 +114,20 @@ class Api::ExperiencesController < Api::BaseController
         id: experience.id,
         code: experience.code,
         status: 'lobby',
-        participants: experience.users.map do |user|
+        hosts: experience.hosts do |participants|
           {
-            id: user.id,
-            name: user.name,
-            email: user.email
+            id: participant.user.id,
+            name: participant.user.name,
+            email: participant.user.email,
+            role: participant.role
+          }
+        end,
+        participants: experience.experience_participants.map do |participant|
+          {
+            id: participant.user.id,
+            name: participant.user.name,
+            email: participant.user.email,
+            role: participant.role
           }
         end
       },

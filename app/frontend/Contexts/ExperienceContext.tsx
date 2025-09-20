@@ -1,17 +1,31 @@
-import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from 'react';
-import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { qaLogger } from '@cctv/utils';
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  ReactNode,
+  useCallback,
+} from "react";
+import { useParams } from "react-router-dom";
+import { qaLogger } from "@cctv/utils";
 
 interface Experience {
   id: string;
   name: string;
   code: string;
-  status: 'active' | 'paused' | 'finished' | 'archived';
+  status: "active" | "paused" | "finished" | "archived";
   blocks: any;
-  participants?: Array<{
-    id: string;
+  hosts?: Array<{
+    id?: string;
     name?: string;
-    email: string;
+    email?: string;
+    role?: string;
+  }>;
+  participants?: Array<{
+    id?: string;
+    name?: string;
+    email?: string;
+    role?: string;
   }>;
 }
 
@@ -30,7 +44,7 @@ interface ExperienceContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   isPolling: boolean;
-  experienceStatus: 'lobby' | 'active';
+  experienceStatus: "lobby" | "active";
   error: string | null;
 
   setJWT: (token: string) => void;
@@ -38,14 +52,18 @@ interface ExperienceContextType {
   experienceFetch: (url: string, options?: RequestInit) => Promise<Response>;
 }
 
-const ExperienceContext = createContext<ExperienceContextType | undefined>(undefined);
+const ExperienceContext = createContext<ExperienceContextType | undefined>(
+  undefined
+);
 
 // Helper functions for authenticating users with experiences
 // TODO: use id, not code here
 const getJWTKey = (code: string) => `experience_jwt_${code}`;
 const getStoredJWT = (code: string) => localStorage.getItem(getJWTKey(code));
-const setStoredJWT = (code: string, jwt: string) => localStorage.setItem(getJWTKey(code), jwt);
-const removeStoredJWT = (code: string) => localStorage.removeItem(getJWTKey(code));
+const setStoredJWT = (code: string, jwt: string) =>
+  localStorage.setItem(getJWTKey(code), jwt);
+const removeStoredJWT = (code: string) =>
+  localStorage.removeItem(getJWTKey(code));
 
 interface ExperienceProviderProps {
   children: ReactNode;
@@ -53,8 +71,6 @@ interface ExperienceProviderProps {
 
 export function ExperienceProvider({ children }: ExperienceProviderProps) {
   const { code } = useParams<{ code: string }>();
-  const navigate = useNavigate();
-  const location = useLocation();
 
   const [experience, setExperience] = useState<Experience | null>(null);
   const [user, setUser] = useState<ExperienceUser | null>(null);
@@ -63,143 +79,127 @@ export function ExperienceProvider({ children }: ExperienceProviderProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [isPolling, setIsPolling] = useState(false);
 
-  const [experienceStatus, setExperienceStatus] = useState<'lobby' | 'active' | null>(null);
+  const [experienceStatus, setExperienceStatus] = useState<"lobby" | "active">(
+    "lobby"
+  );
   const [error, setError] = useState<string | null>(null);
 
-  const currentCode = code || '';
+  const currentCode = code || "";
 
-  const isRegisterRoute = location.pathname.includes('/register');
+  // Helper to make requests with the required credentials
+  const experienceFetch = useCallback(
+    async (url: string, options: RequestInit = {}) => {
+      if (!currentCode) throw new Error("No experience code available");
+      let headers = {
+        ...options.headers
+      }
 
-  // Helper function to make authenticated requests to experience APIs
-  const experienceFetch = useCallback(async (url: string, options: RequestInit = {}, providedJwt?: string) => {
-    const jwtToUse = providedJwt || jwt;
-    if (!jwtToUse) {
-      throw new Error('No JWT token available');
-    }
+      if (jwt) {
+        // If a jwt is available, set credentials
+        headers = {
+          Authorization: `Bearer ${jwt}`,
+          "Content-Type": "application/json",
+          ...options.headers,
+        };
+      }
 
-    if (!currentCode) {
-      throw new Error('No experience code available');
-    }
+      const response = await fetch(url, { ...options, headers });
 
-    const headers = {
-      'Authorization': `Bearer ${jwtToUse}`,
-      'Content-Type': 'application/json',
-      ...options.headers,
-    };
+      if (response.status === 401) {
+        qaLogger("401 invalid response; clearing experience JWT");
+        if (jwt) {
+          // If we get a 401 from a jwt request, it is likely invalid/expired
+          clearJWT();
+        }
+        const err = new Error("Authentication expired");
+        (err as any).code = 401;
+        throw err;
+      }
 
-    const response = await fetch(url, {
-      ...options,
-      headers,
-    });
+      if (!response.ok) {
+        qaLogger(`Failed experienceFetch: ${response.status}`);
+        throw new Error(`Failed to load experience (status ${response.status})`);
+      }
 
-    // If we get a 401, the JWT is likely expired
-    if (response.status === 401) {
-      qaLogger(`401 invalid response, clearing current auth navigating to join`)
-      clearJWT();
-      navigate(`/join?code=${currentCode}`);
-      throw new Error('Authentication expired');
-    }
+      return response;
+    },
+    [jwt, currentCode]
+  );
 
-    if (!response.ok) {
-      qaLogger(`Failed to load experience: ${response}`)
-      throw new Error('Failed to load experience');
-    }
+  const loadExperienceData = useCallback(async () => {
+    if (!currentCode) return;
 
-    return response;
-  }, [jwt, currentCode, navigate]);
-
-  const loadExperienceData = useCallback(async (providedJwt?: string) => {
-    const jwtToUse = providedJwt || jwt;
-    if (!jwtToUse) return;
-
+    setIsLoading(true);
     try {
-      qaLogger(`Fetching experience data`)
-      const response = await experienceFetch(`/api/experiences/${encodeURIComponent(currentCode)}`, {}, providedJwt);
+      qaLogger("Fetching experience data");
+      const response = await experienceFetch(
+        `/api/experiences/${encodeURIComponent(currentCode)}`
+      );
       const data = await response.json();
 
-      if (data.success) {
-        qaLogger(`Successfully fetched experience, setting context data`)
-        setUser(data.user);
-        setExperience(data.experience);
-        setExperienceStatus(data.experience.status || data.experience.state);
+      if (data?.success) {
+        qaLogger("Experience fetched; updating context");
+        setUser(data.user || null);
+        setExperience(data.experience || null);
+
+        // Normalize lobby/active for the context’s simpler status
+        const incomingStatus: string | undefined = data.experience?.status
+        setExperienceStatus(incomingStatus === "active" ? "active" : "lobby");
+
         setError(null);
       } else {
-        setError(data.error || 'Failed to load experience');
+        setError(data?.error || "Failed to load experience");
       }
     } catch (err) {
-      // experienceFetch already handles the 401 and clearing JWT
-      console.error('Error loading experience:', err);
-      setError(err instanceof Error ? err.message : 'Network error');
+      console.error("Error loading experience:", err);
+      setError(err instanceof Error ? err.message : "Network error");
     } finally {
       setIsLoading(false);
       setIsPolling(false);
     }
   }, [jwt, currentCode, experienceFetch]);
 
+  // When the code in the url changes, reset state and hydrate JWT from storage
   useEffect(() => {
     if (!currentCode) return;
 
-    qaLogger(`Experience code changed to ${currentCode} - resetting context`);
-
-    // Reset state when switching experiences
+    qaLogger(`Experience code changed to ${currentCode} — resetting context`);
     setExperience(null);
     setUser(null);
     setError(null);
 
-    const storedJWT = getStoredJWT(currentCode);
-
-    if (storedJWT) {
-      qaLogger(`User has previously stored jwt, setting it in context`);
-      setJWT(storedJWT);
-
-      // Load experience data immediately if not on register route
-      if (!isRegisterRoute) {
-        // Use storedJWT directly since state hasn't updated yet
-        // This prevents fetching an experience with an invalid token and
-        // getting kicked out of the experience.
-        //
-        // Eg.
-        // * visit and register for experience/a -> get token
-        // * visit and register for experience/b -> get token
-        // * you are no on page experience/b
-        // * navgiate to experience/a
-        // * this hook picks up the route change via setting a new code and finds
-        //   credentials for a. It updates with a setState call. This state
-        //   won't reflected in react until the next cycle, so on this current
-        //   cycle, a's token will still be used.
-        //
-        // This isn't a common user flow, but will be a pain for testing the app
-        // and sets things up so if it is a flow in the future it is handled
-        loadExperienceData(storedJWT);
-      }
+    const stored = getStoredJWT(currentCode);
+    if (stored) {
+      qaLogger("Found stored JWT; setting in context");
+      setJWT(stored);
     } else {
-      // No stored JWT
-      if (isRegisterRoute) {
-        qaLogger("User is on register route, keeping them in the /experience");
-        return;
-      }
-
-      qaLogger(
-        "User has no jwt token and is attempting to access an experience, navigating to join"
-      );
-      navigate(`/join?code=${currentCode}`);
+      qaLogger("No stored JWT for this experience");
+      setJWT(null);
     }
-  }, [currentCode, navigate, isRegisterRoute, loadExperienceData]);
-
-  const setJWTHandler = useCallback((token: string) => {
-    if (!currentCode) {
-      console.warn('Cannot set JWT without an experience code');
-      return;
-    }
-
-    setStoredJWT(currentCode, token);
-    setJWT(token);
   }, [currentCode]);
 
-  const clearJWT = useCallback(() => {
+  // Whenever we gain a jwt for this code, load fresh experience data
+  useEffect(() => {
+    // jwt is in the dependency array
     if (currentCode) {
-      removeStoredJWT(currentCode);
+      loadExperienceData();
     }
+  }, [jwt, currentCode, loadExperienceData]);
+
+  const setJWTHandler = useCallback(
+    (token: string) => {
+      if (!currentCode) {
+        console.warn("Cannot set JWT without an experience code");
+        return;
+      }
+      setStoredJWT(currentCode, token);
+      setJWT(token);
+    },
+    [currentCode]
+  );
+
+  const clearJWT = useCallback(() => {
+    if (currentCode) removeStoredJWT(currentCode);
     setJWT(null);
     setExperience(null);
     setUser(null);
@@ -211,23 +211,29 @@ export function ExperienceProvider({ children }: ExperienceProviderProps) {
     user,
     code: currentCode,
     jwt,
-    isAuthenticated: jwt !== null && currentCode !== '',
+
+    isAuthenticated: jwt !== null && currentCode !== "",
     isLoading,
     isPolling,
     experienceStatus,
     error,
+
     setJWT: setJWTHandler,
     clearJWT,
     experienceFetch,
   };
 
-  return <ExperienceContext.Provider value={value}>{children}</ExperienceContext.Provider>;
+  return (
+    <ExperienceContext.Provider value={value}>
+      {children}
+    </ExperienceContext.Provider>
+  );
 }
 
 export function useExperience() {
   const context = useContext(ExperienceContext);
   if (context === undefined) {
-    throw new Error('useExperience must be used within an ExperienceProvider');
+    throw new Error("useExperience must be used within an ExperienceProvider");
   }
   return context;
 }
