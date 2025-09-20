@@ -5,3 +5,4 @@ export { default as Home } from './home';
 export { default as Join } from './join';
 export { default as Register } from './Register';
 export { default as Stylesheet } from './stylesheet';
+export { default as Manage } from './Manage/Manage';

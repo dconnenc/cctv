@@ -26,7 +26,7 @@ export function UserProvider({ children }: UserProviderProps) {
   const [isLoading, setIsLoading] = useState(true);
 
   const isAuthenticated = user !== null;
-  const isAdmin = user?.role === 'admin';
+  const isAdmin = user?.role === 'admin' || user?.role === "superadmin";
 
   const refreshUser = async () => {
     setIsLoading(true);
@@ -37,7 +37,9 @@ export function UserProvider({ children }: UserProviderProps) {
 
       if (response.ok) {
         const userData = await response.json();
-        if (userData && userData.id) {
+        console.log("fetched userData: ", userData)
+        if (userData) {
+          console.log("setting userData: ", userData)
           setUser(userData);
         } else {
           setUser(null);
@@ -58,8 +60,6 @@ export function UserProvider({ children }: UserProviderProps) {
   useEffect(() => {
     refreshUser();
   }, []);
-
-  console.log(user)
 
   const value: UserContextType = {
     user,
