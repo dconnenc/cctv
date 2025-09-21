@@ -1,10 +1,9 @@
 import { useMemo } from 'react';
-import { useUser } from '@cctv/contexts/UserContext';
-import { useExperience } from '@cctv/contexts/ExperienceContext';
-import { Outlet, Navigate } from "react-router-dom"
 
-const getJWTKey = (code: string) => `experience_jwt_${code}`;
-const getStoredJWT = (code: string) => localStorage.getItem(getJWTKey(code));
+import { Navigate, Outlet } from 'react-router-dom';
+
+import { useExperience, useUser } from '@cctv/contexts';
+import { getStoredJWT } from '@cctv/utils';
 
 /**
  * Allow: Admins OR participants with a valid experience JWT for :code.
@@ -27,4 +26,4 @@ const RequireExperienceParticipantOrAdmin = () => {
   return <Outlet />;
 };
 
-export default RequireExperienceParticipantOrAdmin
+export default RequireExperienceParticipantOrAdmin;

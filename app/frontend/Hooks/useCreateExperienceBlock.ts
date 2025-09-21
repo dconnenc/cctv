@@ -1,8 +1,9 @@
-import { useCallback, useState } from "react";
-import { useExperience } from "@cctv/contexts/ExperienceContext";
-import { qaLogger } from "@cctv/utils";
+import { useCallback, useState } from 'react';
 
-type BlockStatus = "hidden" | "open" | "closed";
+import { useExperience } from '@cctv/contexts/ExperienceContext';
+import { qaLogger } from '@cctv/utils';
+
+type BlockStatus = 'hidden' | 'open' | 'closed';
 
 export interface CreateExperienceBlockParams {
   kind: string;
@@ -10,8 +11,8 @@ export interface CreateExperienceBlockParams {
   visible_to_roles?: string[];
   visible_to_segments?: string[];
   target_user_ids?: string[];
-  status?: BlockStatus;          // defaults to "hidden"
-  open_immediately?: boolean;    // defaults to false
+  status?: BlockStatus; // defaults to "hidden"
+  open_immediately?: boolean; // defaults to false
 }
 
 export interface CreateExperienceBlockResponse {
@@ -32,16 +33,16 @@ export function useCreateExperienceBlock() {
       visible_to_roles = [],
       visible_to_segments = [],
       target_user_ids = [],
-      status = "hidden",
+      status = 'hidden',
       open_immediately = false,
     }: CreateExperienceBlockParams): Promise<CreateExperienceBlockResponse | null> => {
       if (!code) {
-        setError("Missing experience code");
+        setError('Missing experience code');
         return null;
       }
 
       if (!kind?.trim()) {
-        setError("Please enter a block kind");
+        setError('Please enter a block kind');
         return null;
       }
 
@@ -50,7 +51,7 @@ export function useCreateExperienceBlock() {
 
       qaLogger(
         `Creating experience block for ${code} with kind=${kind}, ` +
-          `open_immediately=${open_immediately}, status=${status}`
+          `open_immediately=${open_immediately}, status=${status}`,
       );
 
       const submitPayload = {
@@ -61,40 +62,37 @@ export function useCreateExperienceBlock() {
         target_user_ids,
         status,
         open_immediately,
-      }
+      };
 
-      console.log("payload: ", submitPayload)
+      console.log('payload: ', submitPayload);
       try {
-        const res = await experienceFetch(
-          `/api/experiences/${encodeURIComponent(code)}/blocks`,
-          {
-            method: "POST",
-            body: JSON.stringify({ experience: submitPayload }),
-          }
-        );
+        const res = await experienceFetch(`/api/experiences/${encodeURIComponent(code)}/blocks`, {
+          method: 'POST',
+          body: JSON.stringify({ experience: submitPayload }),
+        });
 
         const data: CreateExperienceBlockResponse = await res.json();
 
         if (!data?.success) {
-          const msg = data?.error || "Block create failed";
+          const msg = data?.error || 'Block create failed';
           setError(msg);
           return { success: false, error: msg };
         }
 
-        qaLogger("Successfully created block");
+        qaLogger('Successfully created block');
         return data;
       } catch (e: any) {
         const msg =
-          e?.message === "Authentication expired"
-            ? "Authentication expired"
-            : "Connection error. Please try again.";
+          e?.message === 'Authentication expired'
+            ? 'Authentication expired'
+            : 'Connection error. Please try again.';
         setError(msg);
         return null;
       } finally {
         setIsLoading(false);
       }
     },
-    [code, experienceFetch]
+    [code, experienceFetch],
   );
 
   return {
@@ -104,4 +102,3 @@ export function useCreateExperienceBlock() {
     setError,
   };
 }
-

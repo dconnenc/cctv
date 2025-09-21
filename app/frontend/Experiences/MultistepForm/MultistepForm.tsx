@@ -3,7 +3,7 @@ import { FormEvent, useState } from 'react';
 import classNames from 'classnames';
 
 import { Button, TextInput } from '@cctv/core';
-import { MultistepFormExperience, Participant } from '@cctv/types';
+import { MultistepFormExperience, ParticipantWithRole } from '@cctv/types';
 import { getFormData, isNotEmpty } from '@cctv/utils';
 
 import styles from './MultistepForm.module.scss';
@@ -13,7 +13,7 @@ interface MultistepFormProps extends MultistepFormExperience {
   onSubmit?: (formData: Record<string, string>) => void;
 
   /** The user who is filling out the form. */
-  user: Participant;
+  user: ParticipantWithRole;
 
   /** A function that validates the form data. Returns an array of errored question keys. */
   validation?: (formData: Partial<Record<string, string>>) => string[];

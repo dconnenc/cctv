@@ -17,14 +17,17 @@ export function isNotEmpty<T>(value: T): value is NonNullable<T> {
   return value !== '';
 }
 
-export function qaLogger(output) {
+export function qaLogger(output: string) {
   try {
     // ENV check in the future for non prod envs
     // if (process.env.QA_LOGGING !== "true") return null
     if (true) {
-      console.log(`[QA] - ${output}`)
+      console.log(`[QA] - ${output}`);
     }
   } catch (error) {
-    console.error("[QA Logger Error]:", error)
+    console.error('[QA Logger Error]:', error);
   }
 }
+
+export const getJWTKey = (code: string) => `experience_jwt_${code}`;
+export const getStoredJWT = (code: string) => localStorage.getItem(getJWTKey(code));

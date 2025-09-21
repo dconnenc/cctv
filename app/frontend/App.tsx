@@ -1,21 +1,19 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState } from 'react';
 
 import { Route } from 'react-router-dom';
+import { Outlet } from 'react-router-dom';
 
 import { BackgroundStatic, RouteWink, TopNav } from '@cctv/components';
-import { Home, About, Join, Experience, Stylesheet, Create, Register, Manage } from '@cctv/pages';
-import { UserProvider } from '@cctv/contexts/UserContext';
-import { ExperienceProvider } from '@cctv/contexts/ExperienceContext';
+import { ExperienceProvider, UserProvider } from '@cctv/contexts';
+import { About, Create, Experience, Home, Join, Manage, Register, Stylesheet } from '@cctv/pages';
+
+import styles from './App.module.scss';
 import {
   AllowRegisterRoute,
   RequireAdmin,
+  RequireExperienceHostOrAdmin,
   RequireExperienceParticipantOrAdmin,
-  RequireExperienceHostOrAdmin
-} from '@cctv/RouteRules';
-
-import { Outlet } from "react-router-dom"
-
-import styles from './App.module.scss';
+} from './RouteRules';
 
 function App() {
   const [booting, setBooting] = useState(true);
@@ -35,7 +33,6 @@ function App() {
             <Route path="/about" element={<About />} />
             <Route path="/join" element={<Join />} />
             <Route path="/stylesheet" element={<Stylesheet />} />
-
 
             {/* Admin-only */}
             <Route element={<RequireAdmin />}>

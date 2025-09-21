@@ -17,6 +17,7 @@ class Api::ExperiencesController < Api::BaseController
 
       if experience.save
         render json: {
+          type: 'success',
           success: true,
           experience: {
             id: experience.id,
@@ -27,6 +28,7 @@ class Api::ExperiencesController < Api::BaseController
         }, status: :created
       else
         render json: {
+          type: 'error',
           success: false,
           message: "Failed to create experience",
           error: experience.errors.full_messages.to_sentence
@@ -34,6 +36,7 @@ class Api::ExperiencesController < Api::BaseController
       end
     else
       render json: {
+        type: 'error',
         success: false,
         message: "Invalid experience code",
         error: message
@@ -102,13 +105,14 @@ class Api::ExperiencesController < Api::BaseController
     experience = Experience.find_by(code: params[:id])
 
     if experience.nil?
-      render json: { error: "Invalid experience code" }, status: :not_found
+      render json: { type: 'error', error: "Invalid experience code" }, status: :not_found
       return
     end
 
     authorize! experience, to: :show?
 
     render json: {
+      type: 'success',
       success: true,
       experience: {
         id: experience.id,
@@ -146,17 +150,19 @@ class Api::ExperiencesController < Api::BaseController
     experience = Experience.find_by(code: code)
 
     if experience.nil?
-      render json: { error: "Invalid experience code" }, status: :not_found
+      render json: { type: 'error', error: "Invalid experience code" }, status: :not_found
       return
     end
 
     if current_user && experience.user_registered?(current_user)
       render json: {
+        type: 'success',
         url: generate_experience_path(experience.code),
         status: "registered"
       }
     else
       render json: {
+        type: 'needs_registration',
         experience_code: code,
         status: "needs_registration",
         url: "/experiences/#{experience.code}/register"
@@ -170,7 +176,7 @@ class Api::ExperiencesController < Api::BaseController
     experience = Experience.find_by(code: register_params[:code])
 
     if experience.nil?
-      render json: { error: "Invalid experience code" }, status: :not_found
+      render json: { type: 'error', error: "Invalid experience code" }, status: :not_found
       return
     end
 
@@ -190,7 +196,7 @@ class Api::ExperiencesController < Api::BaseController
     end
 
     if user.nil?
-      render json: { error: "Failed to create user account" }, status: :internal_server_error
+      render json: { type: 'error', error: "Failed to create user account" }, status: :internal_server_error
       return
     end
 
@@ -199,6 +205,7 @@ class Api::ExperiencesController < Api::BaseController
     end
 
     render json: {
+      type: 'success',
       jwt: experience.jwt_for_participant(user),
       url: generate_experience_path(experience.code),
       status: "registered"

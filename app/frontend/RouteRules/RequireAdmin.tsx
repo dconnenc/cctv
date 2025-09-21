@@ -1,5 +1,6 @@
-import { useUser } from '@cctv/contexts/UserContext';
-import { Outlet, useNavigate } from "react-router-dom"
+import { Navigate, Outlet } from 'react-router-dom';
+
+import { useUser } from '@cctv/contexts';
 
 /**
  * Allow: Application Admins
@@ -14,4 +15,4 @@ const RequireAdmin = () => {
   return <Outlet />;
 };
 
-export default RequireAdmin
+export default RequireAdmin;

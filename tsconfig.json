@@ -21,6 +21,8 @@
         "@cctv/core/*": ["./app/frontend/Core/*"],
         "@cctv/components": ["./app/frontend/Components"],
         "@cctv/components/*": ["./app/frontend/Components/*"],
+        "@cctv/contexts": ["./app/frontend/Contexts"],
+        "@cctv/contexts/*": ["./app/frontend/Contexts/*"],
         "@cctv/experiences": ["./app/frontend/Experiences"],
         "@cctv/experiences/*": ["./app/frontend/Experiences/*"],
         "@cctv/hooks": ["./app/frontend/Hooks"],

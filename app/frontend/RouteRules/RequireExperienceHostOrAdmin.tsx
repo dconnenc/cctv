@@ -1,10 +1,9 @@
 import { useMemo } from 'react';
-import { useUser } from '@cctv/contexts/UserContext';
-import { useExperience } from '@cctv/contexts/ExperienceContext';
-import { Outlet, useNavigate } from "react-router-dom"
 
-const getJWTKey = (code: string) => `experience_jwt_${code}`;
-const getStoredJWT = (code: string) => localStorage.getItem(getJWTKey(code));
+import { Navigate, Outlet } from 'react-router-dom';
+
+import { useExperience, useUser } from '@cctv/contexts';
+import { getStoredJWT } from '@cctv/utils';
 
 /**
  * Allow: Host-only (composed after participant/admin guard).
@@ -22,13 +21,13 @@ const RequireExperienceHostOrAdmin = () => {
   if (user && isAdmin) return <Outlet />;
 
   // If not admin, they need to actually be in the experience
-  if (!code || !jwt) return <Navigate to={`/join?code=${encodeURIComponent(code || "")}`} replace />;
+  if (!code || !jwt)
+    return <Navigate to={`/join?code=${encodeURIComponent(code || '')}`} replace />;
 
   // Determine host via experience.hosts
   const isHost = !!experience?.hosts?.some(
     (h: { id?: string; email?: string }) =>
-      (expUser?.id && h.id === expUser.id) ||
-        (expUser?.email && h.email === expUser.email)
+      (expUser?.id && h.id === expUser.id) || (expUser?.email && h.email === expUser.email),
   );
 
   // If not a host, redirect back the experience main page
@@ -37,4 +36,4 @@ const RequireExperienceHostOrAdmin = () => {
   return <Outlet />;
 };
 
-export default RequireExperienceHostOrAdmin
+export default RequireExperienceHostOrAdmin;

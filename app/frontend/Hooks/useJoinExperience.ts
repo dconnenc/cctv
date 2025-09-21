@@ -1,9 +1,10 @@
-import { usePost } from './usePost';
-import { ExperienceJoinResponse } from '@cctv/types';
+import { JoinExperienceApiResponse } from '@cctv/types';
 import { qaLogger } from '@cctv/utils';
 
+import { usePost } from './usePost';
+
 export function useJoinExperience() {
-  const { post, isLoading, error, setError } = usePost<ExperienceJoinResponse>({
+  const { post, isLoading, error, setError } = usePost<JoinExperienceApiResponse>({
     url: '/api/experiences/join',
   });
 
@@ -26,17 +27,11 @@ export function useJoinExperience() {
       return;
     }
 
-    if (response.error != null) {
-      setError(response.error || 'Failed to join experience');
-      return;
-    }
-
-    // Handle different response statuses
-    switch (response.status) {
-      case 'registered':
-        // User is already registered - store JWT and redirect to experience
+    // Handle different response types
+    switch (response.type) {
+      case 'success':
+        // User is already registered - redirect to experience
         qaLogger(`User already registrated, redirecting to: ${response.url}`);
-        localStorage.setItem('experience_jwt', response.jwt);
         window.location.href = response.url;
         break;
       case 'needs_registration':
@@ -44,8 +39,11 @@ export function useJoinExperience() {
         qaLogger(`User needs registration, redirecting to: ${response.url}`);
         window.location.href = response.url;
         break;
+      case 'error':
+        setError(response.error || 'Failed to join experience');
+        break;
       default:
-        console.error(`Unknown response status encountered: ${response}`);
+        console.error(`Unknown response type encountered: ${response}`);
         break;
     }
   };

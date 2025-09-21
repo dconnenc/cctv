@@ -1,12 +1,7 @@
+import { useExperience } from '@cctv/contexts';
 import { usePost } from '@cctv/hooks/usePost';
-import { useExperience } from '@cctv/contexts/ExperienceContext';
+import { RegisterExperienceApiResponse } from '@cctv/types';
 import { qaLogger } from '@cctv/utils';
-
-interface ExperienceRegisterResponse {
-  jwt: string;
-  url: string;
-  error?: string;
-}
 
 interface RegisterExperienceParams {
   email: string;
@@ -15,7 +10,7 @@ interface RegisterExperienceParams {
 
 export function useRegisterExperience() {
   const { code, setJWT } = useExperience();
-  const { post, isLoading, error, setError } = usePost<ExperienceRegisterResponse>({
+  const { post, isLoading, error, setError } = usePost<RegisterExperienceApiResponse>({
     url: `/api/experiences/${code}/register`,
   });
 
@@ -31,9 +26,7 @@ export function useRegisterExperience() {
       return;
     }
 
-    qaLogger(
-      `Attempting to regsiter participant: ${name}:${email} to ${code}`
-    )
+    qaLogger(`Attempting to regsiter participant: ${name}:${email} to ${code}`);
 
     const response = await post(
       JSON.stringify({
@@ -48,17 +41,17 @@ export function useRegisterExperience() {
       return;
     }
 
-    if (response.error) {
+    if (response.type === 'error') {
       setError(response.error || 'Registration failed');
       return;
     }
 
-    // Success - store JWT and redirect to experience
-    qaLogger(
-      `Successfully regsitered participant. Storing JWT and redirecting to experience`
-    )
-    setJWT(response.jwt);
-    window.location.href = response.url;
+    if (response.type === 'success') {
+      // Success - store JWT and redirect to experience
+      qaLogger(`Successfully regsitered participant. Storing JWT and redirecting to experience`);
+      setJWT(response.jwt);
+      window.location.href = response.url;
+    }
   };
 
   return {

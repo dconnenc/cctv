@@ -1,7 +1,7 @@
-import { Participant } from '@cctv/types';
+import { ParticipantWithRole } from '@cctv/types';
 
 export const startGlitchCycle = (
-  participants: Participant[],
+  participants: ParticipantWithRole[],
   setGlitchingElement: (element?: string) => void,
 ) => {
   const nextGlitchTime = Math.random() * 40000 + 20000;
