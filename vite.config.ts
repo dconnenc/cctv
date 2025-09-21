@@ -42,6 +42,10 @@ export default defineConfig({
         fileURLToPath(new URL('.', import.meta.url)),
         'app/frontend/Contexts',
       ),
+      '@cctv/RouteRules': path.resolve(
+        fileURLToPath(new URL('.', import.meta.url)),
+        'app/frontend/RouteRules',
+      ),
     },
   },
 });
