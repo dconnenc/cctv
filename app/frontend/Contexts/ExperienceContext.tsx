@@ -91,6 +91,7 @@ export function ExperienceProvider({ children }: ExperienceProviderProps) {
     async (url: string, options: RequestInit = {}) => {
       if (!currentCode) throw new Error("No experience code available");
       let headers = {
+        "Content-Type": "application/json",
         ...options.headers
       }
 

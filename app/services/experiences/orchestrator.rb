@@ -15,13 +15,13 @@ module Experiences
         transaction do
           block = experience.experience_blocks.create!(
             kind: kind,
-            status: state,
+            status: status,
             payload: payload,
             visible_to_roles: visible_to_roles,
             visible_to_segments: visible_to_segments,
             target_user_ids: target_user_ids
           )
-          block.update!(state: :open) if open_immediately
+          block.update!(status: :open) if open_immediately
 
           block
         end

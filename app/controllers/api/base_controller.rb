@@ -44,12 +44,6 @@ class Api::BaseController < ApplicationController
     end
   end
 
-  def set_as_session_admin(claims)
-    @auth_source = :jwt_admin
-    @user        = Experiences::AuthService.admin_from_claims!(claims)
-    @experience  = find_experience_by_code!(requested_experience_code!)
-  end
-
   def bearer_token
     @bearer_token ||= begin
       auth_header
@@ -77,5 +71,23 @@ class Api::BaseController < ApplicationController
     ::Experience.find_by!(code: code)
   rescue ActiveRecord::RecordNotFound
     raise NotFoundError, "experience not found"
+  end
+
+  def with_experience_orchestration
+    begin
+      yield
+    rescue Experiences::ForbiddenError => e
+      render json: {
+        success: false,
+        message: "forbidden",
+        error: e.message,
+      }, status: :forbidden
+    rescue Experiences::InvalidTransitionError => e
+      render json: {
+        success: false,
+        message: "Invalid state transition",
+        error: e.message,
+      }, status: :unprocessable_entity
+    end
   end
 end

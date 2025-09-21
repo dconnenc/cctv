@@ -218,22 +218,4 @@ class Api::ExperiencesController < Api::BaseController
   def generate_experience_path(code)
     "/experiences/#{code}"
   end
-
-  def with_experience_orchestration
-    begin
-      yield
-    rescue Experiences::ForbiddenError => e
-      render json: {
-        success: false,
-        message: "forbidden",
-        error: e.message,
-      }, status: :forbidden
-    rescue Experiences::InvalidTransitionError => e
-      render json: {
-        success: false,
-        message: "Invalid state transition",
-        error: e.message,
-      }, status: :unprocessable_entity
-    end
-  end
 end
