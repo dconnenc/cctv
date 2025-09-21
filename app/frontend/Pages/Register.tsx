@@ -1,13 +1,15 @@
-import { useState, FormEvent, ChangeEvent, KeyboardEvent } from 'react';
+import { ChangeEvent, FormEvent, KeyboardEvent, useState } from 'react';
+
 import { useParams } from 'react-router-dom';
-import { useRegisterExperience } from '@cctv/hooks/useRegisterExperience';
+
+import { useRegisterExperience } from '@cctv/hooks';
 
 export default function Register() {
   const [email, setEmail] = useState('');
   const [name, setName] = useState('');
   const { code } = useParams<{ code: string }>();
 
-  const { registerExperience, isLoading, error, setError } = useRegisterExperience(code || '');
+  const { registerExperience, isLoading, error, setError } = useRegisterExperience();
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -67,11 +69,7 @@ export default function Register() {
             {error}
           </p>
         )}
-        <button
-          className="join-submit"
-          type="submit"
-          disabled={isLoading || !email.trim()}
-        >
+        <button className="join-submit" type="submit" disabled={isLoading || !email.trim()}>
           {isLoading ? 'Registering...' : 'Register'}
         </button>
       </form>

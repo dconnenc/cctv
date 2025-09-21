@@ -1,13 +1,13 @@
 import { FormEvent, useState } from 'react';
 
 import { Button, Option } from '@cctv/core';
-import { Participant, PollExperience } from '@cctv/types';
+import { ParticipantWithRole, PollExperience } from '@cctv/types';
 import { getFormData } from '@cctv/utils';
 
 import styles from './Poll.module.scss';
 
 interface PollProps extends PollExperience {
-  user: Participant;
+  user: ParticipantWithRole;
 }
 
 export default function Poll({ user, question, options, pollType }: PollProps) {

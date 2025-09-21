@@ -1,9 +1,9 @@
-import { useExperience } from '@cctv/contexts/ExperienceContext';
 import { useMemo } from 'react';
-import { Outlet, useNavigate } from "react-router-dom"
 
-const getJWTKey = (code: string) => `experience_jwt_${code}`;
-const getStoredJWT = (code: string) => localStorage.getItem(getJWTKey(code));
+import { Navigate, Outlet } from 'react-router-dom';
+
+import { useExperience } from '@cctv/contexts';
+import { getStoredJWT } from '@cctv/utils';
 
 /**
  * Allow: anyone
@@ -17,4 +17,4 @@ const AllowRegisterRoute = () => {
   return <Outlet />;
 };
 
-export default AllowRegisterRoute
+export default AllowRegisterRoute;

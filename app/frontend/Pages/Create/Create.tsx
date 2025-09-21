@@ -2,7 +2,7 @@ import { FormEvent, useMemo, useRef, useState } from 'react';
 
 import { Button, TextInput } from '@cctv/core';
 import { usePost } from '@cctv/hooks';
-import { ExperienceCreateResponse } from '@cctv/types';
+import { CreateExperienceApiResponse } from '@cctv/types';
 import { getFormData } from '@cctv/utils';
 
 import styles from './Create.module.scss';
@@ -10,10 +10,9 @@ import styles from './Create.module.scss';
 /** Form page for creating a new experience */
 export default function Create() {
   const [experienceUrl, setExperienceUrl] = useState<string>();
-  const [experienceCodeActual, setExperienceCodeActual] = useState<string>();
   const nameRef = useRef<HTMLInputElement>(null);
 
-  const { post, isLoading, error, setError } = usePost<ExperienceCreateResponse>({
+  const { post, isLoading, error, setError } = usePost<CreateExperienceApiResponse>({
     url: '/api/experiences',
   });
 
@@ -35,13 +34,18 @@ export default function Create() {
 
     const response = await post(
       JSON.stringify({
-        code: code.trim().toUpperCase(),
-        name: name.trim(),
+        experience: {
+          code: code.trim().toUpperCase(),
+          name: name.trim(),
+        },
       }),
     );
 
-    setExperienceUrl(response?.experience?.url);
-    setExperienceCodeActual(response?.experience?.code);
+    if (response && response.type === 'success') {
+      setExperienceUrl(response.experience.url);
+    } else if (response && response.type === 'error') {
+      setError(response.error || 'Failed to create experience');
+    }
   };
 
   const qrCode = useMemo(() => {

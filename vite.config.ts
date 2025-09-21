@@ -1,8 +1,8 @@
-import { defineConfig } from 'vite';
 import ReactPlugin from '@vitejs/plugin-react';
-import RubyPlugin from 'vite-plugin-ruby';
+import { URL, fileURLToPath } from 'node:url';
 import path from 'path';
-import { fileURLToPath, URL } from 'node:url';
+import { defineConfig } from 'vite';
+import RubyPlugin from 'vite-plugin-ruby';
 
 export default defineConfig({
   plugins: [

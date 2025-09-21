@@ -1,4 +1,4 @@
-import { Experience, Participant } from '@cctv/types';
+import { Experience, ParticipantWithRole } from '@cctv/types';
 
 import MultistepForm from '../MultistepForm/MultistepForm';
 import Poll from '../Poll/Poll';
@@ -9,7 +9,7 @@ export default function ExperienceContainer({
   user,
 }: {
   experience: Experience;
-  user: Participant;
+  user: ParticipantWithRole;
 }) {
   switch (experience.type) {
     case 'poll':
