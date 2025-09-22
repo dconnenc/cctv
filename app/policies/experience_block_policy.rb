@@ -7,6 +7,22 @@ class ExperienceBlockPolicy < ApplicationPolicy
     true
   end
 
+  def submit_question_response?
+    return false unless user
+    return false unless participant?
+    return false unless block_visible_to_user?
+    
+    true
+  end
+
+  def submit_multistep_form_response?
+    return false unless user
+    return false unless participant?
+    return false unless block_visible_to_user?
+    
+    true
+  end
+
   private
 
   def participant?

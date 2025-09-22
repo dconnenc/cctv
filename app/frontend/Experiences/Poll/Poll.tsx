@@ -2,12 +2,12 @@ import { FormEvent, useState } from 'react';
 
 import { Button, Option } from '@cctv/core';
 import { useSubmitPollResponse } from '@cctv/hooks/useSubmitPollResponse';
-import { ParticipantSummary, PollExperience } from '@cctv/types';
+import { ParticipantSummary, PollBlock } from '@cctv/types';
 import { getFormData } from '@cctv/utils';
 
 import styles from './Poll.module.scss';
 
-interface PollProps extends PollExperience {
+interface PollProps extends PollBlock {
   participant: ParticipantSummary;
   blockId?: string;
   responses?: {

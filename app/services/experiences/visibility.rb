@@ -83,29 +83,52 @@ module Experiences
     end
 
     def response_data_for(block, role)
-      return {} unless block.kind == "poll"
+      case block.kind
+      when "poll"
+        submissions = block.experience_poll_submissions
+        total = submissions.count
+        user_responded = user ? submissions.exists?(user_id: user.id) : false
 
-      submissions = block.experience_poll_submissions
-      total = submissions.count
-      user_responded = user ? submissions.exists?(user_id: user.id) : false
-
-      aggregate = {}
-      if mod_or_host?(role) && total > 0
-        # For poll blocks, aggregate the selected options
-        submissions.each do |submission|
-          selected_options = submission.answer["selectedOptions"] || []
-          selected_options.each do |option|
-            aggregate[option] ||= 0
-            aggregate[option] += 1
+        aggregate = {}
+        if mod_or_host?(role) && total > 0
+          # For poll blocks, aggregate the selected options
+          submissions.each do |submission|
+            selected_options = submission.answer["selectedOptions"] || []
+            selected_options.each do |option|
+              aggregate[option] ||= 0
+              aggregate[option] += 1
+            end
           end
         end
-      end
 
-      {
-        total: total,
-        user_responded: user_responded,
-        aggregate: mod_or_host?(role) ? aggregate : nil
-      }
+        {
+          total: total,
+          user_responded: user_responded,
+          aggregate: mod_or_host?(role) ? aggregate : nil
+        }
+      when "question"
+        submissions = block.experience_question_submissions
+        total = submissions.count
+        user_responded = user ? submissions.exists?(user_id: user.id) : false
+
+        {
+          total: total,
+          user_responded: user_responded
+        }
+      when "multistep_form"
+        submissions = block.experience_multistep_form_submissions
+        total = submissions.count
+        user_responded = user ? submissions.exists?(user_id: user.id) : false
+
+        {
+          total: total,
+          user_responded: user_responded
+        }
+      when "announcement"
+        {} # Announcements don't have responses
+      else
+        {}
+      end
     end
 
     def visibility_payload(block, role)

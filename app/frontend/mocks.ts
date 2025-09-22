@@ -1,19 +1,19 @@
-import { MultistepFormExperience, PollExperience, QuestionExperience } from './types';
+import { MultistepFormBlock, PollBlock, QuestionBlock } from './types';
 
-export const MOCK_POLL_EXPERIENCE: PollExperience = {
+export const MOCK_POLL_BLOCK: PollBlock = {
   type: 'poll',
   question: 'What is your favorite color?',
   options: ['Red', 'Blue', 'Green', 'Yellow', 'Purple'],
   pollType: 'single',
 };
 
-export const MOCK_QUESTION_EXPERIENCE: QuestionExperience = {
+export const MOCK_QUESTION_BLOCK: QuestionBlock = {
   type: 'question',
   question: 'What is your favorite color?',
   formKey: 'favorite_color',
 };
 
-export const MOCK_MULTISTEP_FORM_EXPERIENCE: MultistepFormExperience = {
+export const MOCK_MULTISTEP_FORM_BLOCK: MultistepFormBlock = {
   type: 'multistep_form',
   questions: [
     { type: 'question', question: 'What is your favorite color?', formKey: 'favorite_color' },

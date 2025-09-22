@@ -31,12 +31,6 @@ class ExperiencePolicy < ApplicationPolicy
     admin? || host_participant?
   end
 
-  def submit_poll_response?
-    # Anyone who is a participant can submit a poll
-    # This is a weak auth for now as it doesn't account for roles and visibility
-    record.has_user?(user)
-  end
-
   private
 
   def admin?

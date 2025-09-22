@@ -127,7 +127,9 @@
 }
 
 .mono {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-family:
+    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New',
+    monospace;
   font-size: 0.85em;
 }
 
@@ -158,7 +160,9 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  transition: background 0.15s ease, border-color 0.15s ease;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease;
 }
 
 .menuButton::-webkit-details-marker {
@@ -172,7 +176,7 @@
 
 /* Kebab icon */
 .menuButton::after {
-  content: "⋮";
+  content: '⋮';
   font-size: 16px;
   line-height: 1;
   color: var(--btn-fg, #374151);
@@ -250,7 +254,9 @@
   color: black;
   border-radius: 10px;
   padding: 0.5rem 0.625rem;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
 }
 
 .input:focus,
@@ -273,3 +279,170 @@
   margin-top: 0.5rem;
 }
 
+.optionRow {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.optionRow .input {
+  flex: 1;
+}
+
+.helpText {
+  font-size: 0.875rem;
+  color: var(--muted-fg, #6b7280);
+  margin-top: 0.25rem;
+}
+
+.helpText code {
+  background: var(--code-bg, #f3f4f6);
+  padding: 0.125rem 0.25rem;
+  border-radius: 4px;
+  font-family:
+    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New',
+    monospace;
+  font-size: 0.8125rem;
+}
+
+.questionGroup {
+  margin-bottom: 1.5rem;
+  padding: 1.5rem;
+  border: 1px solid var(--input-border, #e5e7eb);
+  border-radius: 8px;
+  background: var(--card-bg, #fafafa);
+}
+
+.questionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--input-border, #e5e7eb);
+}
+
+.questionHeader h4 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary, #333);
+}
+
+.questionFields {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+}
+
+.fieldLabel {
+  font-weight: 500;
+  font-size: 0.875rem;
+  color: var(--text-primary, #333);
+  margin-bottom: 0.25rem;
+}
+
+.fieldHelpText {
+  font-size: 0.75rem;
+  color: var(--muted-fg, #6b7280);
+  margin-top: 0.25rem;
+  font-style: italic;
+}
+
+.removeButton {
+  background-color: var(--error-bg, #fef2f2);
+  color: var(--error-fg, #991b1b);
+  border: 1px solid var(--error-border, #fecaca);
+  padding: 0.25rem 0.75rem;
+  font-size: 0.75rem;
+}
+
+.removeButton:hover {
+  background-color: var(--error-fg, #991b1b);
+  color: white;
+}
+
+.addButton {
+  margin-top: 1rem;
+  background-color: var(--success-bg, #f0f9ff);
+  color: var(--primary, #2563eb);
+  border: 1px solid var(--primary, #2563eb);
+}
+
+.addButton:hover {
+  background-color: var(--primary, #2563eb);
+  color: white;
+}
+
+.responseCount {
+  font-size: 0.875rem;
+  color: var(--muted-fg, #6b7280);
+  font-style: italic;
+}
+
+.submittedAnswer {
+  margin-bottom: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--card-border, #e5e7eb);
+}
+
+.submittedAnswer:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+.submittedValue {
+  background: var(--card-bg, #f8f9fa);
+  border: 2px solid var(--card-border, #e9ecef);
+  border-radius: 8px;
+  padding: 24px;
+  margin: 0 auto;
+  max-width: 600px;
+}
+
+.submittedValue .legend {
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.submittedValue .value {
+  color: var(--muted-fg, #6b7280);
+  margin: 0;
+}
+
+.exampleBox {
+  background: var(--info-bg, #eff6ff);
+  border: 1px solid var(--info-border, #bfdbfe);
+  border-radius: 6px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+.exampleBox h5 {
+  margin: 0 0 0.5rem 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--info-fg, #1e40af);
+}
+
+.exampleBox ul {
+  margin: 0;
+  padding-left: 1rem;
+  font-size: 0.875rem;
+  color: var(--text-secondary, #4b5563);
+}
+
+.exampleBox li {
+  margin-bottom: 0.25rem;
+}
+
+.exampleBox strong {
+  color: var(--text-primary, #333);
+}

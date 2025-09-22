@@ -5,3 +5,5 @@ export { useJoinExperience } from './useJoinExperience';
 export { useRegisterExperience } from './useRegisterExperience';
 export { useCreateExperienceBlock } from './useCreateExperienceBlock';
 export { useSubmitPollResponse } from './useSubmitPollResponse';
+export { useSubmitQuestionResponse } from './useSubmitQuestionResponse';
+export { useSubmitMultistepFormResponse } from './useSubmitMultistepFormResponse';

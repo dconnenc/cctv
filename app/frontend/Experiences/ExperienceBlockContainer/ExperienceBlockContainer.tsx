@@ -1,10 +1,12 @@
 import {
+  AnnouncementBlock,
   Block,
-  MultistepFormExperience,
+  MultistepFormBlock,
   ParticipantSummary,
-  QuestionExperience,
+  QuestionBlock,
 } from '@cctv/types';
 
+import Announcement from '../Announcement/Announcement';
 import MultistepForm from '../MultistepForm/MultistepForm';
 import Poll from '../Poll/Poll';
 import Question from '../Question/Question';
@@ -46,11 +48,25 @@ export default function ExperienceBlockContainer({
         />
       );
     case 'question':
-      return <Question participant={participant} {...(block.payload as QuestionExperience)} />;
+      return (
+        <Question
+          participant={participant}
+          blockId={block.id}
+          responses={block.responses}
+          {...(block.payload as QuestionBlock)}
+        />
+      );
     case 'multistep_form':
       return (
-        <MultistepForm participant={participant} {...(block.payload as MultistepFormExperience)} />
+        <MultistepForm
+          participant={participant}
+          blockId={block.id}
+          responses={block.responses}
+          {...(block.payload as MultistepFormBlock)}
+        />
       );
+    case 'announcement':
+      return <Announcement participant={participant} {...(block.payload as AnnouncementBlock)} />;
     default:
       return (
         <div>

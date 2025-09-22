@@ -1,0 +1,34 @@
+.announcement {
+  width: 100%;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.content {
+  background: #f8f9fa;
+  border: 2px solid #e9ecef;
+  border-radius: 8px;
+  padding: 24px;
+  text-align: center;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.message {
+  font-size: 1.1rem;
+  line-height: 1.5;
+  color: #333;
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+// Responsive design
+@media (max-width: 768px) {
+  .content {
+    padding: 16px;
+    margin: 0 16px;
+  }
+
+  .message {
+    font-size: 1rem;
+  }
+}

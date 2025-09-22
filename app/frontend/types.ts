@@ -94,26 +94,31 @@ export interface ExperienceWithDetails extends ExperienceSummary {
 
 // ===== FRONTEND-SPECIFIC EXPERIENCE TYPES =====
 
-export interface PollExperience {
+export interface PollBlock {
   type: 'poll';
   question: string;
   options: string[];
   pollType: 'single' | 'multiple';
 }
 
-export interface QuestionExperience {
+export interface QuestionBlock {
   type: 'question';
   question: string;
   formKey: string;
   inputType?: 'text' | 'number' | 'email' | 'password' | 'tel';
 }
 
-export interface MultistepFormExperience {
+export interface MultistepFormBlock {
   type: 'multistep_form';
-  questions: QuestionExperience[];
+  questions: QuestionBlock[];
 }
 
-export type ExperienceType = PollExperience | QuestionExperience | MultistepFormExperience;
+export interface AnnouncementBlock {
+  type: 'announcement';
+  message: string;
+}
+
+export type BlockType = PollBlock | QuestionBlock | MultistepFormBlock | AnnouncementBlock;
 
 // ===== API REQUEST TYPES =====
 
