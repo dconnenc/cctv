@@ -1,13 +1,13 @@
 import { FormEvent, useState } from 'react';
 
 import { Button, TextInput } from '@cctv/core';
-import { ParticipantWithRole, QuestionExperience } from '@cctv/types';
+import { UserWithRole, QuestionExperience } from '@cctv/types';
 import { getFormData } from '@cctv/utils';
 
 import styles from './Question.module.scss';
 
 interface QuestionProps extends QuestionExperience {
-  user?: ParticipantWithRole;
+  user?: UserWithRole;
   buttonText?: string;
 }
 

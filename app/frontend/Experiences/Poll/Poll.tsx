@@ -1,14 +1,14 @@
 import { FormEvent, useState } from 'react';
 
 import { Button, Option } from '@cctv/core';
-import { ParticipantWithRole, PollExperience } from '@cctv/types';
+import { UserWithRole, PollExperience } from '@cctv/types';
 import { getFormData } from '@cctv/utils';
 import { useSubmitPollResponse } from '@cctv/hooks/useSubmitPollResponse';
 
 import styles from './Poll.module.scss';
 
 interface PollProps extends PollExperience {
-  user: ParticipantWithRole;
+  user: UserWithRole;
   blockId?: string;
   responses?: {
     total: number;

@@ -2,57 +2,18 @@ import { ReactNode, createContext, useCallback, useContext, useEffect, useState 
 
 import { useParams } from 'react-router-dom';
 
-import { qaLogger } from '@cctv/utils';
-
-interface Experience {
-  id: string;
-  name: string;
-  code: string;
-  status: 'active' | 'paused' | 'finished' | 'archived';
-  blocks: any;
-  hosts?: Array<{
-    id?: string;
-    name?: string;
-    email?: string;
-    role?: string;
-  }>;
-  participants?: Array<{
-    id?: string;
-    name?: string;
-    email?: string;
-    role?: string;
-  }>;
-}
-
-interface ExperienceUser {
-  id: string;
-  name?: string;
-  email: string;
-}
-
-interface ExperienceContextType {
-  experience: Experience | null;
-  user: ExperienceUser | null;
-  code: string;
-  jwt: string | null;
-
-  isAuthenticated: boolean;
-  isLoading: boolean;
-  isPolling: boolean;
-  experienceStatus: 'lobby' | 'live';
-  error: string | null;
-
-  setJWT: (token: string) => void;
-  clearJWT: () => void;
-  experienceFetch: (url: string, options?: RequestInit) => Promise<Response>;
-}
+import { qaLogger, getStoredJWT } from '@cctv/utils';
+import { 
+  ExperienceContextType, 
+  ExperienceWithDetails, 
+  UserWithRole 
+} from '@cctv/types';
 
 const ExperienceContext = createContext<ExperienceContextType | undefined>(undefined);
 
 // Helper functions for authenticating users with experiences
 // TODO: use id, not code here
 const getJWTKey = (code: string) => `experience_jwt_${code}`;
-const getStoredJWT = (code: string) => localStorage.getItem(getJWTKey(code));
 const setStoredJWT = (code: string, jwt: string) => localStorage.setItem(getJWTKey(code), jwt);
 const removeStoredJWT = (code: string) => localStorage.removeItem(getJWTKey(code));
 
@@ -63,8 +24,8 @@ interface ExperienceProviderProps {
 export function ExperienceProvider({ children }: ExperienceProviderProps) {
   const { code } = useParams<{ code: string }>();
 
-  const [experience, setExperience] = useState<Experience | null>(null);
-  const [user, setUser] = useState<ExperienceUser | null>(null);
+  const [experience, setExperience] = useState<ExperienceWithDetails | null>(null);
+  const [user, setUser] = useState<UserWithRole | null>(null);
   const [jwt, setJWT] = useState<string | null>(null);
 
   const [isLoading, setIsLoading] = useState(false);

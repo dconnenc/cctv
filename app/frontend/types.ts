@@ -1,43 +1,16 @@
-// ===== FRONTEND-SPECIFIC TYPES =====
+// ===== CORE DOMAIN TYPES =====
 
-export interface PollExperience {
-  type: 'poll';
-  question: string;
-  options: string[];
-  pollType: 'single' | 'multiple';
-}
-
-export interface QuestionExperience {
-  type: 'question';
-  question: string;
-  formKey: string;
-  inputType?: 'text' | 'number' | 'email' | 'password' | 'tel';
-}
-
-export interface MultistepFormExperience {
-  type: 'multistep_form';
-  questions: QuestionExperience[];
-}
-
-export type Experience = PollExperience | QuestionExperience | MultistepFormExperience;
-
-// ===== GENERATED CODE =====
-
-// ===== CORE TYPES =====
-
-// User Role Types
 export type UserRole = 'user' | 'admin' | 'superadmin';
 
-// Experience Status Types
 export type ExperienceStatus = 'draft' | 'lobby' | 'live' | 'paused' | 'finished' | 'archived';
 
-// Participant Role Types
 export type ParticipantRole = 'audience' | 'player' | 'moderator' | 'host';
 
-// Participant Status Types
 export type ParticipantStatus = 'registered' | 'active';
 
-// ===== USER TYPES =====
+export type BlockStatus = "hidden" | "open" | "closed";
+
+// ===== COMPLETE ENTITY TYPES =====
 
 export interface User {
   id: string;
@@ -48,16 +21,7 @@ export interface User {
   updated_at: string;
 }
 
-export interface ParticipantWithRole {
-  id: string;
-  name: string;
-  email: string;
-  role: ParticipantRole;
-}
-
-// ===== EXPERIENCE TYPES =====
-
-export interface ExperienceModel {
+export interface Experience {
   id: string;
   name: string;
   code: string;
@@ -79,15 +43,6 @@ export interface ExperienceParticipant {
   updated_at: string;
 }
 
-export interface ExperienceWithParticipants {
-  id: string;
-  code: string;
-  status: ExperienceStatus;
-  hosts: ParticipantWithRole[];
-  participants: ParticipantWithRole[];
-}
-
-export type BlockStatus = "hidden" | "open" | "closed";
 export interface Block {
   id: string;
   kind: string;
@@ -104,6 +59,54 @@ export interface Block {
     aggregate?: Record<string, number>;
   };
 }
+
+// ===== TYPE FRAGMENTS (UTILITY TYPES) =====
+
+export type UserSummary = Pick<User, 'id' | 'name' | 'email'>;
+
+export interface UserWithRole extends UserSummary {
+  role: ParticipantRole;
+}
+
+export type ExperienceSummary = Pick<Experience, 'id' | 'name' | 'code' | 'status'>;
+
+export interface ExperienceWithParticipants extends ExperienceSummary {
+  hosts: UserWithRole[];
+  participants: UserWithRole[];
+}
+
+export interface ExperienceWithBlocks extends ExperienceSummary {
+  blocks: Block[];
+}
+
+export interface ExperienceWithDetails extends ExperienceSummary {
+  hosts: UserWithRole[];
+  participants: UserWithRole[];
+  blocks: Block[];
+}
+
+// ===== FRONTEND-SPECIFIC EXPERIENCE TYPES =====
+
+export interface PollExperience {
+  type: 'poll';
+  question: string;
+  options: string[];
+  pollType: 'single' | 'multiple';
+}
+
+export interface QuestionExperience {
+  type: 'question';
+  question: string;
+  formKey: string;
+  inputType?: 'text' | 'number' | 'email' | 'password' | 'tel';
+}
+
+export interface MultistepFormExperience {
+  type: 'multistep_form';
+  questions: QuestionExperience[];
+}
+
+export type ExperienceType = PollExperience | QuestionExperience | MultistepFormExperience;
 
 // ===== API REQUEST TYPES =====
 
@@ -142,7 +145,13 @@ export interface CreateExperienceBlockRequest {
 
 // ===== API RESPONSE TYPES =====
 
-// POST /api/experiences - Create Experience
+export interface ApiResponse<T = unknown> {
+  success: boolean;
+  data?: T;
+  error?: string;
+  message?: string;
+}
+
 export interface CreateExperienceSuccessResponse {
   type: 'success';
   success: true;
@@ -165,12 +174,11 @@ export type CreateExperienceApiResponse =
   | CreateExperienceSuccessResponse
   | CreateExperienceErrorResponse;
 
-// GET /api/experiences/:id - Get Experience
 export interface GetExperienceSuccessResponse {
   type: 'success';
   success: true;
-  experience: ExperienceWithParticipants;
-  user: ParticipantWithRole | null;
+  experience: ExperienceWithDetails;
+  user: UserWithRole | null;
 }
 
 export interface GetExperienceErrorResponse {
@@ -180,7 +188,6 @@ export interface GetExperienceErrorResponse {
 
 export type GetExperienceApiResponse = GetExperienceSuccessResponse | GetExperienceErrorResponse;
 
-// POST /api/experiences/join - Join Experience
 export interface JoinExperienceRegisteredResponse {
   type: 'success';
   url: string;
@@ -204,7 +211,6 @@ export type JoinExperienceApiResponse =
   | JoinExperienceNeedsRegistrationResponse
   | JoinExperienceErrorResponse;
 
-// POST /api/experiences/:id/register - Register for Experience
 export interface RegisterExperienceSuccessResponse {
   type: 'success';
   jwt: string;
@@ -221,82 +227,18 @@ export type RegisterExperienceApiResponse =
   | RegisterExperienceSuccessResponse
   | RegisterExperienceErrorResponse;
 
-// POST /api/experiences/open_lobby - Open Lobby
-export interface OpenLobbySuccessResponse {
-  success: true;
-  data: ExperienceModel;
-}
+export type ExperienceOrchestrationResponse = ApiResponse<Experience>;
 
-export type OpenLobbyResponse = OpenLobbySuccessResponse;
-
-// POST /api/experiences/start - Start Experience
-export interface StartExperienceSuccessResponse {
-  success: true;
-  data: ExperienceModel;
-}
-
-export type StartExperienceResponse = StartExperienceSuccessResponse;
-
-// POST /api/experiences/pause - Pause Experience
-export interface PauseExperienceSuccessResponse {
-  success: true;
-  data: ExperienceModel;
-}
-
-export type PauseExperienceResponse = PauseExperienceSuccessResponse;
-
-// POST /api/experiences/resume - Resume Experience
-export interface ResumeExperienceSuccessResponse {
-  success: true;
-  data: ExperienceModel;
-}
-
-export type ResumeExperienceResponse = ResumeExperienceSuccessResponse;
-
-// POST /api/experiences/:experience_id/blocks - Create Experience Block
-export interface CreateExperienceBlockSuccessResponse {
-  success: true;
-  data: any; // Block data structure would need to be defined based on the orchestrator
-}
-
-export type CreateExperienceBlockResponse = CreateExperienceBlockSuccessResponse;
-
-// POST /api/experiences/:experience_id/blocks/:id/open - Open Block
-export interface OpenBlockSuccessResponse {
-  success: true;
-  data: any; // Block data structure would need to be defined based on the orchestrator
-}
-
-export type OpenBlockResponse = OpenBlockSuccessResponse;
-
-// POST /api/experiences/:experience_id/blocks/:id/close - Close Block
-export interface CloseBlockSuccessResponse {
-  success: true;
-  data: any; // Block data structure would need to be defined based on the orchestrator
-}
-
-export type CloseBlockResponse = CloseBlockSuccessResponse;
-
-// GET /api/users/me - Get Current User
-export interface GetCurrentUserResponse {
-  id: string;
-  name: string;
-  email: string;
-  role: UserRole;
-  created_at: string;
-  updated_at: string;
-}
+export type GetCurrentUserResponse = User;
 
 // ===== AUTHENTICATION TYPES =====
 
-// POST /users/sign_in - Request magic link
 export interface PasswordlessSignInRequest {
   passwordless: {
     email: string;
   };
 }
 
-// Authentication Response Types
 export interface PasswordlessSignInResponse {
   // Typically returns HTML page or redirect
   // Success is indicated by redirect to intended page
@@ -307,7 +249,6 @@ export interface AuthenticationErrorResponse {
   message?: string;
 }
 
-// JWT Token Payload
 export interface ExperienceJwtPayload {
   user_id: string;
   experience_id: string;
@@ -323,10 +264,22 @@ export interface ApiErrorResponse {
   details?: Record<string, any>;
 }
 
-// ===== ORCHESTRATION TYPES =====
+// ===== CONTEXT TYPES =====
 
-export interface ExperienceOrchestrationResponse {
-  success: boolean;
-  data: ExperienceModel;
-  error?: string;
+export interface ExperienceContextType {
+  experience: ExperienceWithDetails | null;
+  user: UserWithRole | null;
+  code: string;
+  jwt: string | null;
+
+  isAuthenticated: boolean;
+  isLoading: boolean;
+  isPolling: boolean;
+  experienceStatus: 'lobby' | 'live';
+  error: string | null;
+
+  setJWT: (token: string) => void;
+  clearJWT: () => void;
+  experienceFetch: (url: string, options?: RequestInit) => Promise<Response>;
 }
+

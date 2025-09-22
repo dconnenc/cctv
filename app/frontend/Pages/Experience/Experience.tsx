@@ -1,6 +1,5 @@
 import { Link } from 'react-router-dom';
 import { useExperience } from '@cctv/contexts/ExperienceContext';
-import { Block, ParticipantWithRole } from '@cctv/types';
 import ExperienceBlockContainer from '@cctv/experiences/ExperienceBlockContainer/ExperienceBlockContainer';
 
 import styles from './Experience.module.scss';
@@ -108,7 +107,7 @@ export default function Experience() {
         <div className={styles.activeExperience}>
           <h1 className={styles.title}>{experience?.name || code}</h1>
           <div className={styles.experienceContent}>
-            {openBlock ? (
+            {openBlock && user ? (
               <div className={styles.activeBlock}>
                 <ExperienceBlockContainer block={openBlock} user={user} />
               </div>

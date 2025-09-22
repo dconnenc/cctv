@@ -6,7 +6,7 @@ import { Button } from "@cctv/core";
 
 import styles from "./Manage.module.scss";
 
-import { ParticipantWithRole, ExperienceWithParticipants, Block } from "@cctv/types"
+import { UserWithRole, ExperienceWithParticipants, Block, BlockStatus, ParticipantRole } from "@cctv/types"
 
 const fmtDate = (s?: string | null) => (s ? new Date(s).toLocaleString() : "—");
 
@@ -23,7 +23,7 @@ function SectionHeader({ title, children }: { title: string; children?: React.Re
   );
 }
 
-function ParticipantsTable({ rows }: { rows: ParticipantWithRole[] }) {
+function ParticipantsTable({ rows }: { rows: UserWithRole[] }) {
   if (!rows?.length) return <div className={styles.emptyState}>No participants yet.</div>;
   return (
     <div className={styles.tableWrap}>
@@ -85,7 +85,7 @@ function BlocksTable({ blocks, onChange, busyId, participants }: {
   blocks: Block[]; 
   onChange: (b: Block, s: BlockStatus) => void; 
   busyId?: string | null;
-  participants?: ParticipantWithRole[];
+  participants?: UserWithRole[];
 }) {
   if (!blocks?.length) return <div className={styles.emptyState}>No blocks yet.</div>;
   
@@ -124,9 +124,9 @@ function BlocksTable({ blocks, onChange, busyId, participants }: {
                       <details className={styles.pollDetails}>
                         <summary>View breakdown</summary>
                         <ul className={styles.pollBreakdown}>
-                          {Object.entries(b.responses.aggregate).map(([option, count]) => (
+                          {Object.entries(b.responses?.aggregate || {}).map(([option, count]) => (
                             <li key={option}>
-                              {option}: {count} ({Math.round((count / b.responses.total) * 100)}%)
+                              {option}: {count} ({Math.round((count / (b.responses?.total || 1)) * 100)}%)
                             </li>
                           ))}
                         </ul>
@@ -184,7 +184,7 @@ function useChangeBlockStatus() {
         const res = await experienceFetch(path, { method, body });
         const data = await res.json();
         if (!res.ok || data?.success === false) {
-          const msg = data?.error || `Failed to set status to ${next}`;
+          const msg = data?.error || `Failed to set status to ${status}`;
           setError(msg);
 
           return { success: false, error: msg };
@@ -226,8 +226,7 @@ export default function Manage() {
   const {
     startExperience,
     isLoading: starting,
-    error: startError,
-    setError: setStartError
+    error: startError
   } = useExperienceStart();
 
   const [model, setModel] = useState(experience)
@@ -250,7 +249,7 @@ export default function Manage() {
 
   const topError = useMemo(() => createError || experienceError, [createError, experienceError]);
 
-  const participantsCombined: ParticipantWithRole[] = [
+  const participantsCombined: UserWithRole[] = [
     ...(model?.hosts || []),
     ...(model?.participants || []),
   ];
@@ -339,16 +338,15 @@ export default function Manage() {
     <section className="page">
       <div className={styles.headerRow}>
         <h1 className={styles.title}>{code}</h1>
-        { experience.status === "lobby" && (
+        { experience?.status === "lobby" && (
           <Button
-            variant="primary"
             onClick={() => startExperience()}
             disabled={starting}
           >
             {starting ? "Starting..." : "Start!"}
           </Button>
         )}
-        { experience.status === "live" && (
+        { experience?.status === "live" && (
           <div>Back to Lobby!</div>
         )}
         <div className={styles.meta}>
@@ -376,7 +374,7 @@ export default function Manage() {
       {/* Blocks */}
       <div className={styles.card}>
         <SectionHeader title="Experience Blocks">
-          <Button variant="primary" size="sm" onClick={() => setShowCreate((v) => !v)} aria-expanded={showCreate}>
+          <Button onClick={() => setShowCreate(!showCreate)} aria-expanded={showCreate}>
             {showCreate ? "Close form" : "Add new"}
           </Button>
         </SectionHeader>
