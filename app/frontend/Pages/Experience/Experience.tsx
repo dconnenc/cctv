@@ -1,49 +1,9 @@
 import { Link } from 'react-router-dom';
 import { useExperience } from '@cctv/contexts/ExperienceContext';
 import { Block, ParticipantWithRole } from '@cctv/types';
-import Poll from '@cctv/experiences/Poll/Poll';
+import ExperienceBlockContainer from '@cctv/experiences/ExperienceBlockContainer/ExperienceBlockContainer';
 
 import styles from './Experience.module.scss';
-
-
-// Function to render the appropriate block based on its kind
-function renderBlock(block: Block, user: ParticipantWithRole | null) {
-  if (!user) {
-    return <p>User information is missing.</p>;
-  }
-
-  if (!block.payload) {
-    return <p>Block configuration is missing.</p>;
-  }
-
-  switch (block.kind) {
-    case 'poll':
-      const { question, options, pollType = 'single' } = block.payload;
-
-      if (!question || !options || !Array.isArray(options)) {
-        return <p>This poll is incorrectly configured.</p>;
-      }
-
-      return (
-        <Poll
-          type="poll"
-          question={question}
-          options={options}
-          pollType={pollType}
-          user={user}
-          blockId={block.id}
-          responses={block.responses}
-        />
-      );
-    default:
-      return (
-        <div className={styles.unknownBlock}>
-          <p>Unknown block type: {block.kind}</p>
-          <pre>{JSON.stringify(block.payload, null, 2)}</pre>
-        </div>
-      );
-  }
-}
 
 export default function Experience() {
   const {
@@ -150,7 +110,7 @@ export default function Experience() {
           <div className={styles.experienceContent}>
             {openBlock ? (
               <div className={styles.activeBlock}>
-                {renderBlock(openBlock, user)}
+                <ExperienceBlockContainer block={openBlock} user={user} />
               </div>
             ) : (
               <div className={styles.waitingForBlock}>
