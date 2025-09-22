@@ -87,6 +87,19 @@ export interface ExperienceWithParticipants {
   participants: ParticipantWithRole[];
 }
 
+export type BlockStatus = "hidden" | "open" | "closed";
+export interface Block {
+  id: string;
+  kind: string;
+  status: BlockStatus;
+  payload?: Record<string, any>;
+  visible_to_roles?: ParticipantRole[];
+  visible_to_segments?: string[];
+  target_user_ids?: string[];
+  created_at?: string;
+  updated_at?: string;
+}
+
 // ===== API REQUEST TYPES =====
 
 // POST /api/experiences - Create Experience

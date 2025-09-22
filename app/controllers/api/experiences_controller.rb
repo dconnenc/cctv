@@ -1,6 +1,6 @@
 class Api::ExperiencesController < Api::BaseController
   authorize :user, through: :current_user
-  before_action :authorize_and_set_user_and_experience,
+  before_action :authenticate_and_set_user_and_experience,
     only: [:open_lobby, :start, :pause, :resume]
 
   # POST /api/experiences
@@ -54,7 +54,7 @@ class Api::ExperiencesController < Api::BaseController
       render json: {
         success: true,
         data: @experience,
-      }, status: :success
+      }, status: :ok
     end
   end
 
@@ -68,7 +68,7 @@ class Api::ExperiencesController < Api::BaseController
       render json: {
         success: true,
         data: @experience,
-      }, status: :success
+      }, status: :ok
     end
   end
 
@@ -82,7 +82,7 @@ class Api::ExperiencesController < Api::BaseController
       render json: {
         success: true,
         data: @experience,
-      }, status: :success
+      }, status: :ok
     end
   end
 
@@ -96,7 +96,7 @@ class Api::ExperiencesController < Api::BaseController
       render json: {
         success: true,
         data: @experience,
-      }, status: :success
+      }, status: :ok
     end
   end
 
@@ -117,7 +117,18 @@ class Api::ExperiencesController < Api::BaseController
       experience: {
         id: experience.id,
         code: experience.code,
-        status: 'lobby',
+        status: experience.status,
+        blocks: experience.experience_blocks.map do |block|
+          {
+            id: block.id,
+            kind: block.kind,
+            status: block.status,
+            payload: block.payload,
+            visible_to_roles: block.visible_to_roles,
+            visible_to_segments: block.visible_to_segments,
+            target_user_ids: block.target_user_ids,
+          }
+        end,
         hosts: experience.hosts do |participants|
           {
             id: participant.user.id,
@@ -213,6 +224,15 @@ class Api::ExperiencesController < Api::BaseController
   end
 
   private
+
+  def experience_code
+    %w[experience_id id code]
+      .map { |k| params[k] }
+      .compact
+      .first
+      &.to_s
+      &.strip
+  end
 
   def join_params
     params.require(:code)

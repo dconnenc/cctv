@@ -1,8 +1,265 @@
 .title {
   margin-bottom: 0.5rem;
+  font-weight: 600;
+  line-height: 1.1;
 }
 
-// Subtitle and general text styles
 .subtitle {
   opacity: 0.85;
 }
+
+.headerRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.meta {
+  font-size: 0.875rem;
+  opacity: 0.9;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.headerActions {
+  display: inline-flex;
+  gap: 0.5rem;
+}
+
+.card {
+  background: var(--card-bg, black);
+  border: 1px solid var(--card-border, #e5e7eb);
+  border-radius: 12px;
+  padding: 1rem;
+  margin: 1rem 0;
+  box-shadow: var(--card-shadow, 0 1px 2px rgba(0, 0, 0, 0.04));
+}
+
+.cardTitle {
+  margin: 0 0 0.75rem 0;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.errorBanner {
+  background: var(--error-bg, #fef2f2);
+  border: 1px solid var(--error-border, #fecaca);
+  color: var(--error-fg, #991b1b);
+  padding: 0.75rem 1rem;
+  border-radius: 10px;
+  margin: 0.75rem 0 1rem;
+}
+
+.emptyState {
+  padding: 0.75rem 1rem;
+  color: var(--muted-fg, #6b7280);
+}
+
+.subtle {
+  color: var(--muted-fg, #6b7280);
+}
+
+/*********
+ * Pills *
+ *********/
+.pill {
+  display: inline-block;
+  font-size: 0.75rem;
+  line-height: 1;
+  padding: 0.35rem 0.5rem;
+  border-radius: 9999px;
+  background: var(--pill-bg, #f3f4f6);
+  color: var(--pill-fg, #374151);
+  border: 1px solid var(--pill-border, #e5e7eb);
+  margin-right: 0.25rem;
+}
+
+/***********
+ * Tables  *
+ ***********/
+.tableWrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.95rem;
+}
+
+.table thead th {
+  text-align: left;
+  font-weight: 600;
+  font-size: 0.825rem;
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid var(--card-border, #e5e7eb);
+  white-space: nowrap;
+}
+
+.table tbody td {
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid var(--row-border, #f1f5f9);
+  vertical-align: top;
+}
+
+.table tbody tr:hover {
+  background: var(--row-hover, #fafafa);
+  color: black;
+}
+
+.table tbody tr td {
+  text-align: left;
+}
+
+.mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 0.85em;
+}
+
+.rowMenuCell {
+  width: 1%;
+  white-space: nowrap;
+  text-align: left;
+  color: white;
+  background: black;
+}
+
+/****************
+ * Row Menu (<details>)
+ ****************/
+.menu {
+  position: relative;
+  display: inline-block;
+}
+
+.menuButton {
+  list-style: none;
+  cursor: pointer;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  border: 1px solid var(--btn-border, #e5e7eb);
+  background: var(--btn-bg, #fff);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.menuButton::-webkit-details-marker {
+  display: none;
+}
+
+.menuButton:focus-visible {
+  outline: 2px solid var(--focus, #2563eb);
+  outline-offset: 2px;
+}
+
+/* Kebab icon */
+.menuButton::after {
+  content: "⋮";
+  font-size: 16px;
+  line-height: 1;
+  color: var(--btn-fg, #374151);
+}
+
+.menu[open] .menuButton {
+  background: var(--btn-hover, #f9fafb);
+}
+
+.menuList {
+  position: absolute;
+  color: black;
+  top: calc(100% + 6px);
+  right: 0;
+  min-width: 160px;
+  border: 1px solid var(--menu-border, #e5e7eb);
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  padding: 6px;
+  z-index: 20;
+}
+
+.menuItem {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.menuItem:hover:not(:disabled) {
+  background: var(--row-hover, #f3f4f6);
+}
+
+.menuItem:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/********
+ * Forms *
+ ********/
+.form {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.grid2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+@media (max-width: 720px) {
+  .grid2 {
+    grid-template-columns: 1fr;
+  }
+}
+
+.label {
+  display: block;
+  font-weight: 500;
+  margin-bottom: 0.25rem;
+}
+
+.input,
+.textarea {
+  width: 100%;
+  border: 1px solid var(--input-border, #e5e7eb);
+  background: var(--input-bg, #fff);
+  color: black;
+  border-radius: 10px;
+  padding: 0.5rem 0.625rem;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.input:focus,
+.textarea:focus {
+  outline: none;
+  border-color: var(--focus, #2563eb);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+
+.checkboxRow {
+  display: inline-flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+

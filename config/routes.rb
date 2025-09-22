@@ -33,7 +33,7 @@ Rails.application.routes.draw do
       resources(
         :blocks,
         controller: "experience_blocks",
-        only: [:create]
+        only: [:create, :update]
       ) do
         member do
           post :open

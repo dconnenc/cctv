@@ -23,12 +23,20 @@ class Api::ExperienceBlocksController < Api::BaseController
     end
   end
 
+  # PATCH /api/experiences/:experience_id/blocks/:id
+  def update
+    render json: {
+      success: true,
+      data: block,
+    }, status: 200
+  end
+
   # POST /api/experiences/:experience_id/blocks/:id/open
   def open
     with_experience_orchestration do
       block = Experiences::Orchestrator.new(
         experience: @experience, actor: @user
-      ).open_block!
+      ).open_block!(params[:id])
 
       render json: {
         success: true,
@@ -42,12 +50,23 @@ class Api::ExperienceBlocksController < Api::BaseController
     with_experience_orchestration do
       block = Experiences::Orchestrator.new(
         experience: @experience, actor: @user
-      ).close_block!
+      ).close_block!(params[:id])
 
       render json: {
         success: true,
         data: block,
       }, status: 200
     end
+  end
+
+  private
+
+  def experience_code
+    %w[experience_id code]
+      .map { |k| params[k] }
+      .compact
+      .first
+      &.to_s
+      &.strip
   end
 end

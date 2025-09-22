@@ -34,7 +34,7 @@ module Experiences
 
         block = experience.experience_blocks.find(block_id)
 
-        block.update(status: :close)
+        block.update(status: :closed)
       end
     end
 

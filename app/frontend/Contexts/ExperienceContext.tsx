@@ -39,7 +39,7 @@ interface ExperienceContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   isPolling: boolean;
-  experienceStatus: 'lobby' | 'active';
+  experienceStatus: 'lobby' | 'live';
   error: string | null;
 
   setJWT: (token: string) => void;
@@ -70,7 +70,7 @@ export function ExperienceProvider({ children }: ExperienceProviderProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [isPolling, setIsPolling] = useState(false);
 
-  const [experienceStatus, setExperienceStatus] = useState<'lobby' | 'active'>('lobby');
+  const [experienceStatus, setExperienceStatus] = useState<'lobby' | 'live'>('lobby');
   const [error, setError] = useState<string | null>(null);
 
   const currentCode = code || '';
@@ -130,9 +130,8 @@ export function ExperienceProvider({ children }: ExperienceProviderProps) {
         setUser(data.user || null);
         setExperience(data.experience || null);
 
-        // Normalize lobby/active for the context's simpler status
         const incomingStatus: string | undefined = data.experience?.status;
-        setExperienceStatus(incomingStatus === 'active' ? 'active' : 'lobby');
+        setExperienceStatus(incomingStatus === 'live' ? 'live' : 'lobby');
 
         setError(null);
       } else if (data?.type === 'error') {
