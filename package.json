@@ -3,7 +3,13 @@
   "type": "module",
   "scripts": {
     "format": "prettier --write \"{app,config,lib,public}/**/*.{js,jsx,ts,tsx,css,scss,md,json,yml,yaml}\"",
-    "format:check": "prettier --check \"{app,config,lib,public}/**/*.{js,jsx,ts,tsx,css,scss,md,json,yml,yaml}\""
+    "format:check": "prettier --check \"{app,config,lib,public}/**/*.{js,jsx,ts,tsx,css,scss,md,json,yml,yaml}\"",
+    "prepare": "husky"
+  },
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx,css,scss,md,json,yml,yaml}": [
+      "prettier --write"
+    ]
   },
   "dependencies": {
     "classnames": "^2.5.1",
@@ -19,6 +25,8 @@
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
     "@vitejs/plugin-react": "^4.0.2",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.2.0",
     "prettier": "^3.3.3",
     "sass": "^1.92.1",
     "vite": "^5.4.19",
