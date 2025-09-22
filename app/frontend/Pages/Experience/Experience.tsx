@@ -1,7 +1,49 @@
 import { Link } from 'react-router-dom';
 import { useExperience } from '@cctv/contexts/ExperienceContext';
+import { Block, ParticipantWithRole } from '@cctv/types';
+import Poll from '@cctv/experiences/Poll/Poll';
 
 import styles from './Experience.module.scss';
+
+
+// Function to render the appropriate block based on its kind
+function renderBlock(block: Block, user: ParticipantWithRole | null) {
+  if (!user) {
+    return <p>User information is missing.</p>;
+  }
+
+  if (!block.payload) {
+    return <p>Block configuration is missing.</p>;
+  }
+
+  switch (block.kind) {
+    case 'poll':
+      const { question, options, pollType = 'single' } = block.payload;
+
+      if (!question || !options || !Array.isArray(options)) {
+        return <p>This poll is incorrectly configured.</p>;
+      }
+
+      return (
+        <Poll
+          type="poll"
+          question={question}
+          options={options}
+          pollType={pollType}
+          user={user}
+          blockId={block.id}
+          responses={block.responses}
+        />
+      );
+    default:
+      return (
+        <div className={styles.unknownBlock}>
+          <p>Unknown block type: {block.kind}</p>
+          <pre>{JSON.stringify(block.payload, null, 2)}</pre>
+        </div>
+      );
+  }
+}
 
 export default function Experience() {
   const {
@@ -97,19 +139,22 @@ export default function Experience() {
   }
 
   // Active experience state (for when the experience is actually running)
-  if (experienceStatus === 'active') {
+  if (experienceStatus === 'live') {
+    // Find the first open block to display
+    const openBlock = experience?.blocks?.find(block => block.status === 'open');
+
     return (
       <section className="page">
         <div className={styles.activeExperience}>
           <h1 className={styles.title}>{experience?.name || code}</h1>
           <div className={styles.experienceContent}>
-            {/* This is where the actual experience content would render */}
-            {/* Based on experience.blocks or similar structure */}
-            <p>Experience is now active!</p>
-            {experience?.blocks && (
-              <div className={styles.blocks}>
-                {/* Render experience blocks here */}
-                <pre>{JSON.stringify(experience.blocks, null, 2)}</pre>
+            {openBlock ? (
+              <div className={styles.activeBlock}>
+                {renderBlock(openBlock, user)}
+              </div>
+            ) : (
+              <div className={styles.waitingForBlock}>
+                <p>Waiting for the next activity...</p>
               </div>
             )}
           </div>

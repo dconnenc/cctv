@@ -98,6 +98,11 @@ export interface Block {
   target_user_ids?: string[];
   created_at?: string;
   updated_at?: string;
+  responses?: {
+    total: number;
+    user_responded: boolean;
+    aggregate?: Record<string, number>;
+  };
 }
 
 // ===== API REQUEST TYPES =====

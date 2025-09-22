@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2025_09_15_134013) do
+ActiveRecord::Schema[7.2].define(version: 2025_09_22_143715) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "citext"
   enable_extension "plpgsql"
@@ -60,6 +60,16 @@ ActiveRecord::Schema[7.2].define(version: 2025_09_15_134013) do
     t.index ["user_id"], name: "index_experience_participants_on_user_id"
   end
 
+  create_table "experience_poll_submissions", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "experience_block_id", null: false
+    t.uuid "user_id", null: false
+    t.jsonb "answer", default: {}, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["experience_block_id"], name: "index_experience_poll_submissions_on_experience_block_id"
+    t.index ["user_id"], name: "index_experience_poll_submissions_on_user_id"
+  end
+
   create_table "experiences", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.string "name", null: false
     t.string "code", null: false
@@ -102,5 +112,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_09_15_134013) do
   add_foreign_key "experience_blocks", "experiences", on_delete: :cascade
   add_foreign_key "experience_participants", "experiences", on_delete: :cascade
   add_foreign_key "experience_participants", "users", on_delete: :cascade
+  add_foreign_key "experience_poll_submissions", "experience_blocks", on_delete: :cascade
+  add_foreign_key "experience_poll_submissions", "users", on_delete: :cascade
   add_foreign_key "experiences", "users", column: "creator_id", on_delete: :cascade
 end

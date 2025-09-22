@@ -101,6 +101,41 @@ module Experiences
       end
     end
 
+    def submit_poll_response!(block_id:, answer:)
+      actor_action do
+        # TODO: This needs to check visibility rules. May make sense to have
+        # a dedicated Blocks policy, for now this is a weak authorize call
+        authorize! experience, to: :submit_poll_response?, with: ExperiencePolicy
+
+        block = experience.experience_blocks.find(block_id)
+
+        if block.status != "open"
+          raise(
+            Experiences::ForbiddenError,
+            "Block is not open for submissions"
+          )
+        end
+
+        if block.kind != "poll"
+          raise(
+            Experiences::ForbiddenError,
+            "Block is not a poll"
+          )
+        end
+
+        # Create or update the submission. Assumes single response for now
+        submission = ExperiencePollSubmission.find_or_initialize_by(
+          experience_block_id: block.id,
+          user_id: actor.id
+        )
+
+        submission.answer = answer
+        submission.save!
+
+        submission
+      end
+    end
+
     private
 
     def guard_state!(allowed)

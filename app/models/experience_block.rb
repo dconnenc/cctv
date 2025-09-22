@@ -5,6 +5,8 @@ class ExperienceBlock < ApplicationRecord
 
   belongs_to :experience
 
+  has_many :experience_poll_submissions, dependent: :destroy
+
   enum status: {
     hidden: "hidden",
     open: "open",

@@ -111,6 +111,9 @@ class Api::ExperiencesController < Api::BaseController
 
     authorize! experience, to: :show?
 
+    visibility = Experiences::Visibility.new(experience: experience, user: current_user)
+    experience_payload = visibility.payload[:experience]
+
     render json: {
       type: 'success',
       success: true,
@@ -118,18 +121,8 @@ class Api::ExperiencesController < Api::BaseController
         id: experience.id,
         code: experience.code,
         status: experience.status,
-        blocks: experience.experience_blocks.map do |block|
-          {
-            id: block.id,
-            kind: block.kind,
-            status: block.status,
-            payload: block.payload,
-            visible_to_roles: block.visible_to_roles,
-            visible_to_segments: block.visible_to_segments,
-            target_user_ids: block.target_user_ids,
-          }
-        end,
-        hosts: experience.hosts do |participants|
+        blocks: experience_payload[:blocks],
+        hosts: experience.experience_participants.host.map do |participant|
           {
             id: participant.user.id,
             name: participant.user.name,

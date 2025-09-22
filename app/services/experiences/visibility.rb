@@ -42,7 +42,7 @@ module Experiences
     def visible_blocks_for(role, segments)
       experience
         .experience_blocks # need ordering here
-        .select { |block| block.open? || mod_or_host?(role) }
+        .select { |block| block.open? || mod_or_host?(role) || admin? }
         .select do |block|
           targeting_rules_exist = block.visible_to_roles.present? ||
             block.visible_to_segments.present? ||
@@ -68,8 +68,35 @@ module Experiences
         id: block.id,
         kind: block.kind,
         status: block.status,
-        payload: block.payload
+        payload: block.payload,
+        responses: response_data_for(block, role)
       }.merge(visibility_payload(block, role))
+    end
+
+    def response_data_for(block, role)
+      return {} unless block.kind == "poll"
+
+      submissions = block.experience_poll_submissions
+      total = submissions.count
+      user_responded = user ? submissions.exists?(user_id: user.id) : false
+
+      aggregate = {}
+      if mod_or_host?(role) && total > 0
+        # For poll blocks, aggregate the selected options
+        submissions.each do |submission|
+          selected_options = submission.answer["selectedOptions"] || []
+          selected_options.each do |option|
+            aggregate[option] ||= 0
+            aggregate[option] += 1
+          end
+        end
+      end
+
+      {
+        total: total,
+        user_responded: user_responded,
+        aggregate: mod_or_host?(role) ? aggregate : nil
+      }
     end
 
     def visibility_payload(block, role)
@@ -83,6 +110,10 @@ module Experiences
 
     def mod_or_host?(role)
       ["moderator", "host"].include?(role.to_s)
+    end
+
+    def admin?
+      user&.admin? || user&.superadmin?
     end
   end
 end

@@ -81,8 +81,16 @@ function BlockRowMenu({
   );
 }
 
-function BlocksTable({ blocks, onChange, busyId }: { blocks: Block[]; onChange: (b: Block, s: BlockStatus) => void; busyId?: string | null }) {
+function BlocksTable({ blocks, onChange, busyId, participants }: { 
+  blocks: Block[]; 
+  onChange: (b: Block, s: BlockStatus) => void; 
+  busyId?: string | null;
+  participants?: ParticipantWithRole[];
+}) {
   if (!blocks?.length) return <div className={styles.emptyState}>No blocks yet.</div>;
+  
+  const totalParticipants = participants?.length || 0;
+  
   return (
     <div className={styles.tableWrap}>
       <table className={styles.table}>
@@ -91,6 +99,7 @@ function BlocksTable({ blocks, onChange, busyId }: { blocks: Block[]; onChange: 
             <th>Block ID</th>
             <th>Kind</th>
             <th>Status</th>
+            <th>Responses</th>
             <th>Visible roles</th>
             <th>Segments</th>
             <th>Targets</th>
@@ -106,6 +115,27 @@ function BlocksTable({ blocks, onChange, busyId }: { blocks: Block[]; onChange: 
               <td>
                 <KVPill label={b.status} />
                 {busyId === b.id && <span className={styles.subtle}> • updating…</span>}
+              </td>
+              <td>
+                {b.kind === 'poll' && b.responses ? (
+                  <div>
+                    <div>{b.responses.total} / {totalParticipants}</div>
+                    {b.responses.aggregate && Object.keys(b.responses.aggregate).length > 0 && (
+                      <details className={styles.pollDetails}>
+                        <summary>View breakdown</summary>
+                        <ul className={styles.pollBreakdown}>
+                          {Object.entries(b.responses.aggregate).map(([option, count]) => (
+                            <li key={option}>
+                              {option}: {count} ({Math.round((count / b.responses.total) * 100)}%)
+                            </li>
+                          ))}
+                        </ul>
+                      </details>
+                    )}
+                  </div>
+                ) : (
+                  "—"
+                )}
               </td>
               <td>{b.visible_to_roles?.length ? b.visible_to_roles.map((r) => <KVPill key={r} label={r} />) : "—"}</td>
               <td>{b.visible_to_segments?.length ? b.visible_to_segments.map((s) => <KVPill key={s} label={s} />) : "—"}</td>
@@ -351,7 +381,12 @@ export default function Manage() {
           </Button>
         </SectionHeader>
 
-        <BlocksTable blocks={blocks} onChange={onChangeBlockStatus} busyId={busyBlockId} />
+        <BlocksTable 
+          blocks={blocks} 
+          onChange={onChangeBlockStatus} 
+          busyId={busyBlockId} 
+          participants={participantsCombined}
+        />
       </div>
 
       {/* Create Block (collapsible) */}
