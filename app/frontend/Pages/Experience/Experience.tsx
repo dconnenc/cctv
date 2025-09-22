@@ -1,19 +1,13 @@
 import { Link } from 'react-router-dom';
+
 import { useExperience } from '@cctv/contexts/ExperienceContext';
 import ExperienceBlockContainer from '@cctv/experiences/ExperienceBlockContainer/ExperienceBlockContainer';
 
 import styles from './Experience.module.scss';
 
 export default function Experience() {
-  const {
-    experience,
-    user,
-    code,
-    isLoading,
-    isPolling,
-    experienceStatus,
-    error,
-  } = useExperience();
+  const { experience, participant, code, isLoading, isPolling, experienceStatus, error } =
+    useExperience();
 
   if (isLoading) {
     return (
@@ -60,39 +54,30 @@ export default function Experience() {
 
         {/* Participants List */}
         <div className={styles.participantsContainer}>
-          <h4 className={styles.participantsTitle}>
-            Players in Lobby:
-          </h4>
+          <h4 className={styles.participantsTitle}>Players in Lobby:</h4>
           {participants.length > 0 ? (
             <ul className={styles.participantsList}>
-              {participants.map((participant) => (
-                <li
-                  key={participant.id}
-                  className={styles.participantItem}
-                >
+              {participants.map((p) => (
+                <li key={p.id} className={styles.participantItem}>
                   <span
                     className={`${styles.participantName} ${
-                      participant.id === user?.id ? styles.currentUser : ''
+                      p.user_id === participant?.user_id ? styles.currentUser : ''
                     }`}
                   >
-                    {participant.name || participant.email}
+                    {p.name || p.email}
                   </span>
-                  {participant.id === user?.id && (
+                  {p.user_id === participant?.user_id && (
                     <span className={styles.youIndicator}>(You)</span>
                   )}
                 </li>
               ))}
             </ul>
           ) : (
-            <p className={styles.loadingParticipants}>
-              Loading participants...
-            </p>
+            <p className={styles.loadingParticipants}>Loading participants...</p>
           )}
         </div>
 
-        <p className={styles.waitingMessage}>
-          Waiting for the experience to start...
-        </p>
+        <p className={styles.waitingMessage}>Waiting for the experience to start...</p>
       </section>
     );
   }
@@ -100,16 +85,16 @@ export default function Experience() {
   // Active experience state (for when the experience is actually running)
   if (experienceStatus === 'live') {
     // Find the first open block to display
-    const openBlock = experience?.blocks?.find(block => block.status === 'open');
+    const openBlock = experience?.blocks?.find((block) => block.status === 'open');
 
     return (
       <section className="page">
         <div className={styles.activeExperience}>
           <h1 className={styles.title}>{experience?.name || code}</h1>
           <div className={styles.experienceContent}>
-            {openBlock && user ? (
+            {openBlock && participant ? (
               <div className={styles.activeBlock}>
-                <ExperienceBlockContainer block={openBlock} user={user} />
+                <ExperienceBlockContainer block={openBlock} participant={participant} />
               </div>
             ) : (
               <div className={styles.waitingForBlock}>

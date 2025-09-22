@@ -1,14 +1,14 @@
 import { FormEvent, useState } from 'react';
 
 import { Button, Option } from '@cctv/core';
-import { UserWithRole, PollExperience } from '@cctv/types';
-import { getFormData } from '@cctv/utils';
 import { useSubmitPollResponse } from '@cctv/hooks/useSubmitPollResponse';
+import { ParticipantSummary, PollExperience } from '@cctv/types';
+import { getFormData } from '@cctv/utils';
 
 import styles from './Poll.module.scss';
 
 interface PollProps extends PollExperience {
-  user: UserWithRole;
+  participant: ParticipantSummary;
   blockId?: string;
   responses?: {
     total: number;
@@ -17,7 +17,14 @@ interface PollProps extends PollExperience {
   };
 }
 
-export default function Poll({ user, question, options, pollType, blockId, responses }: PollProps) {
+export default function Poll({
+  participant,
+  question,
+  options,
+  pollType,
+  blockId,
+  responses,
+}: PollProps) {
   const [submittedValue, setSubmittedValue] = useState<string[]>([]);
   const { submitPollResponse, isLoading, error } = useSubmitPollResponse();
   const userAlreadyResponded = responses?.user_responded || false;
@@ -28,10 +35,10 @@ export default function Poll({ user, question, options, pollType, blockId, respo
     const selectedOptions = formData.selectedOptions;
 
     const value = Array.isArray(selectedOptions) ? selectedOptions : [selectedOptions ?? ''];
-    
+
     // Get the block ID from props or URL query params
     const actualBlockId = blockId || new URLSearchParams(window.location.search).get('blockId');
-    
+
     if (!actualBlockId) {
       console.error('No block ID found');
       return;
@@ -41,8 +48,8 @@ export default function Poll({ user, question, options, pollType, blockId, respo
       blockId: actualBlockId,
       answer: {
         selectedOptions: value,
-        submittedAt: new Date().toISOString()
-      }
+        submittedAt: new Date().toISOString(),
+      },
     });
 
     if (response?.success) {

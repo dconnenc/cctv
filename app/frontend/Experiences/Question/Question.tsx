@@ -1,18 +1,18 @@
 import { FormEvent, useState } from 'react';
 
 import { Button, TextInput } from '@cctv/core';
-import { UserWithRole, QuestionExperience } from '@cctv/types';
+import { ParticipantSummary, QuestionExperience } from '@cctv/types';
 import { getFormData } from '@cctv/utils';
 
 import styles from './Question.module.scss';
 
 interface QuestionProps extends QuestionExperience {
-  user?: UserWithRole;
+  participant?: ParticipantSummary;
   buttonText?: string;
 }
 
 export default function Question({
-  user,
+  participant,
   question,
   formKey,
   buttonText = 'Submit',
@@ -27,7 +27,7 @@ export default function Question({
     if (!answer) return;
 
     // TODO: Submit question via API
-    console.log(answer, user);
+    console.log(answer, participant);
     setSubmittedValue(answer);
   };
 

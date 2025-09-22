@@ -3,7 +3,7 @@ import { FormEvent, useState } from 'react';
 import classNames from 'classnames';
 
 import { Button, TextInput } from '@cctv/core';
-import { MultistepFormExperience, UserWithRole } from '@cctv/types';
+import { MultistepFormExperience, ParticipantSummary } from '@cctv/types';
 import { getFormData, isNotEmpty } from '@cctv/utils';
 
 import styles from './MultistepForm.module.scss';
@@ -12,8 +12,8 @@ interface MultistepFormProps extends MultistepFormExperience {
   /** Optional callback for when form is submitted successfully. */
   onSubmit?: (formData: Record<string, string>) => void;
 
-  /** The user who is filling out the form. */
-  user: UserWithRole;
+  /** The participant who is filling out the form. */
+  participant: ParticipantSummary;
 
   /** A function that validates the form data. Returns an array of errored question keys. */
   validation?: (formData: Partial<Record<string, string>>) => string[];
@@ -22,7 +22,7 @@ interface MultistepFormProps extends MultistepFormExperience {
 /** A multistep form experience. Transitions between questions so user only sees one at a time. */
 export default function MultistepForm({
   onSubmit,
-  user,
+  participant,
   questions,
   validation,
 }: MultistepFormProps) {
@@ -56,7 +56,7 @@ export default function MultistepForm({
     }
 
     // TODO: Submit question via API
-    console.log('Submitting form data:', formData, user);
+    console.log('Submitting form data:', formData, participant);
   };
 
   const handleInvalidForm = (e: FormEvent<HTMLFormElement>) => {

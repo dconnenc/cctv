@@ -1,19 +1,25 @@
-import { Block, UserWithRole, QuestionExperience, MultistepFormExperience } from '@cctv/types';
+import {
+  Block,
+  MultistepFormExperience,
+  ParticipantSummary,
+  QuestionExperience,
+} from '@cctv/types';
+
+import MultistepForm from '../MultistepForm/MultistepForm';
 import Poll from '../Poll/Poll';
 import Question from '../Question/Question';
-import MultistepForm from '../MultistepForm/MultistepForm';
 
 interface ExperienceBlockContainerProps {
   block: Block;
-  user: UserWithRole;
+  participant: ParticipantSummary;
 }
 
 export default function ExperienceBlockContainer({
   block,
-  user,
+  participant,
 }: ExperienceBlockContainerProps) {
-  if (!user) {
-    return <p>User information is missing.</p>;
+  if (!participant) {
+    return <p>Participant information is missing.</p>;
   }
 
   if (!block.payload) {
@@ -34,15 +40,17 @@ export default function ExperienceBlockContainer({
           question={question}
           options={options}
           pollType={pollType}
-          user={user}
+          participant={participant}
           blockId={block.id}
           responses={block.responses}
         />
       );
     case 'question':
-      return <Question user={user} {...(block.payload as QuestionExperience)} />;
+      return <Question participant={participant} {...(block.payload as QuestionExperience)} />;
     case 'multistep_form':
-      return <MultistepForm user={user} {...(block.payload as MultistepFormExperience)} />;
+      return (
+        <MultistepForm participant={participant} {...(block.payload as MultistepFormExperience)} />
+      );
     default:
       return (
         <div>

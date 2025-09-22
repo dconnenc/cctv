@@ -2,12 +2,8 @@ import { ReactNode, createContext, useCallback, useContext, useEffect, useState 
 
 import { useParams } from 'react-router-dom';
 
-import { qaLogger, getStoredJWT } from '@cctv/utils';
-import { 
-  ExperienceContextType, 
-  ExperienceWithDetails, 
-  UserWithRole 
-} from '@cctv/types';
+import { ExperienceContextType, ExperienceWithDetails, ParticipantSummary } from '@cctv/types';
+import { getStoredJWT, qaLogger } from '@cctv/utils';
 
 const ExperienceContext = createContext<ExperienceContextType | undefined>(undefined);
 
@@ -25,7 +21,7 @@ export function ExperienceProvider({ children }: ExperienceProviderProps) {
   const { code } = useParams<{ code: string }>();
 
   const [experience, setExperience] = useState<ExperienceWithDetails | null>(null);
-  const [user, setUser] = useState<UserWithRole | null>(null);
+  const [participant, setParticipant] = useState<ParticipantSummary | null>(null);
   const [jwt, setJWT] = useState<string | null>(null);
 
   const [isLoading, setIsLoading] = useState(false);
@@ -88,7 +84,7 @@ export function ExperienceProvider({ children }: ExperienceProviderProps) {
 
       if (data?.type === 'success') {
         qaLogger('Experience fetched; updating context');
-        setUser(data.user || null);
+        setParticipant(data.participant || null);
         setExperience(data.experience || null);
 
         const incomingStatus: string | undefined = data.experience?.status;
@@ -113,7 +109,7 @@ export function ExperienceProvider({ children }: ExperienceProviderProps) {
 
     qaLogger(`Experience code changed to ${currentCode} — resetting context`);
     setExperience(null);
-    setUser(null);
+    setParticipant(null);
     setError(null);
 
     const stored = getStoredJWT(currentCode);
@@ -150,13 +146,13 @@ export function ExperienceProvider({ children }: ExperienceProviderProps) {
     if (currentCode) removeStoredJWT(currentCode);
     setJWT(null);
     setExperience(null);
-    setUser(null);
+    setParticipant(null);
     setError(null);
   }, [currentCode]);
 
   const value: ExperienceContextType = {
     experience,
-    user,
+    participant,
     code: currentCode,
     jwt,
 

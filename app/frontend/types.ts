@@ -8,7 +8,7 @@ export type ParticipantRole = 'audience' | 'player' | 'moderator' | 'host';
 
 export type ParticipantStatus = 'registered' | 'active';
 
-export type BlockStatus = "hidden" | "open" | "closed";
+export type BlockStatus = 'hidden' | 'open' | 'closed';
 
 // ===== COMPLETE ENTITY TYPES =====
 
@@ -64,15 +64,22 @@ export interface Block {
 
 export type UserSummary = Pick<User, 'id' | 'name' | 'email'>;
 
-export interface UserWithRole extends UserSummary {
+export interface Participant {
+  id: string;
+  user_id: string;
+  name: string;
+  email: string;
   role: ParticipantRole;
+  status: ParticipantStatus;
 }
+
+export type ParticipantSummary = Pick<Participant, 'id' | 'user_id' | 'name' | 'email' | 'role'>;
 
 export type ExperienceSummary = Pick<Experience, 'id' | 'name' | 'code' | 'status'>;
 
 export interface ExperienceWithParticipants extends ExperienceSummary {
-  hosts: UserWithRole[];
-  participants: UserWithRole[];
+  hosts: ParticipantSummary[];
+  participants: ParticipantSummary[];
 }
 
 export interface ExperienceWithBlocks extends ExperienceSummary {
@@ -80,8 +87,8 @@ export interface ExperienceWithBlocks extends ExperienceSummary {
 }
 
 export interface ExperienceWithDetails extends ExperienceSummary {
-  hosts: UserWithRole[];
-  participants: UserWithRole[];
+  hosts: ParticipantSummary[];
+  participants: ParticipantSummary[];
   blocks: Block[];
 }
 
@@ -178,7 +185,7 @@ export interface GetExperienceSuccessResponse {
   type: 'success';
   success: true;
   experience: ExperienceWithDetails;
-  user: UserWithRole | null;
+  participant: ParticipantSummary | null;
 }
 
 export interface GetExperienceErrorResponse {
@@ -268,7 +275,7 @@ export interface ApiErrorResponse {
 
 export interface ExperienceContextType {
   experience: ExperienceWithDetails | null;
-  user: UserWithRole | null;
+  participant: ParticipantSummary | null;
   code: string;
   jwt: string | null;
 
@@ -282,4 +289,3 @@ export interface ExperienceContextType {
   clearJWT: () => void;
   experienceFetch: (url: string, options?: RequestInit) => Promise<Response>;
 }
-
