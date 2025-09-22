@@ -39,7 +39,8 @@ RSpec.describe Experiences::Visibility do
             id: global_block.id,
             kind: global_block.kind,
             status: global_block.status,
-            payload: global_block.payload
+            payload: global_block.payload,
+            responses: { aggregate: nil, total: 0, user_responded: false }
           }])
         end
       end
@@ -66,7 +67,8 @@ RSpec.describe Experiences::Visibility do
             id: matching_experience_block.id,
             kind: matching_experience_block.kind,
             status: matching_experience_block.status,
-            payload: matching_experience_block.payload
+            payload: matching_experience_block.payload,
+            responses: { aggregate: nil, total: 0, user_responded: false }
           }])
         end
       end
@@ -97,7 +99,8 @@ RSpec.describe Experiences::Visibility do
             id: matching_experience_block.id,
             kind: matching_experience_block.kind,
             status: matching_experience_block.status,
-            payload: matching_experience_block.payload
+            payload: matching_experience_block.payload,
+            responses: { aggregate: nil, total: 0, user_responded: false }
           }])
         end
       end
@@ -122,13 +125,12 @@ RSpec.describe Experiences::Visibility do
         end
 
         it "returns a payload that includes only the targeted block" do
-          blocks = subject[:experience][:blocks]
-
           expect(subject[:experience][:blocks]).to eql([{
             id: targeted_experience_block.id,
             kind: targeted_experience_block.kind,
             status: targeted_experience_block.status,
-            payload: targeted_experience_block.payload
+            payload: targeted_experience_block.payload,
+            responses: { aggregate: nil, total: 0, user_responded: false }
           }])
         end
       end
@@ -233,7 +235,8 @@ RSpec.describe Experiences::Visibility do
             id: open_block.id,
             kind: open_block.kind,
             status: open_block.status,
-            payload: open_block.payload
+            payload: open_block.payload,
+            responses: { aggregate: nil, total: 0, user_responded: false }
           })
         end
 
@@ -245,4 +248,43 @@ RSpec.describe Experiences::Visibility do
       end
     end
   end
+
+  describe "non-participant access" do
+    let(:non_participant_user) { create(:user, :user) }
+    let(:experience) { create(:experience, status: :live) }
+    
+    subject { described_class.new(user: non_participant_user, experience: experience).payload }
+
+    before do
+      # Create a participant (but not our test user)
+      other_user = create(:user, :user)
+      create(:experience_participant, user: other_user, experience: experience, role: :audience)
+      
+      # Create an open block with no targeting rules
+      create(:experience_block, experience: experience, kind: "poll", status: "open")
+    end
+
+    it "returns no blocks for non-participants" do
+      expect(subject[:experience][:blocks]).to be_empty
+    end
+  end
+
+  describe "admin access" do
+    let(:admin_user) { create(:user, :admin) }
+    let(:experience) { create(:experience, status: :live) }
+    
+    subject { described_class.new(user: admin_user, experience: experience).payload }
+
+    before do
+      # Admin is NOT a participant
+      # Create an open block
+      create(:experience_block, experience: experience, kind: "poll", status: "open")
+    end
+
+    it "allows admin to see blocks even without being a participant" do
+      expect(subject[:experience][:blocks]).not_to be_empty
+    end
+  end
+
+
 end

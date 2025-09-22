@@ -22,6 +22,12 @@ module Experiences
       }
     end
 
+    def block_visible_to_user?(block)
+      role, segments = participant_role_and_segments
+      visible_blocks = visible_blocks_for(role, segments)
+      visible_blocks.include?(block)
+    end
+
     private
 
     def participant_role_and_segments
@@ -40,6 +46,9 @@ module Experiences
     end
 
     def visible_blocks_for(role, segments)
+      # Only show blocks to participants (those with a role) unless they are admin
+      return [] if role.nil? && !admin?
+
       experience
         .experience_blocks # need ordering here
         .select { |block| block.open? || mod_or_host?(role) || admin? }
@@ -57,7 +66,7 @@ module Experiences
               allowed_from_segments ||
               allowed_from_user_target
           else
-            # Default to global visibility
+            # Default to participant visibility (since we already checked role.nil? above)
             true
           end
         end
