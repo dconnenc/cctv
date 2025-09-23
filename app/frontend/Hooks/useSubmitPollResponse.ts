@@ -25,7 +25,7 @@ export function useSubmitPollResponse() {
   const submitPollResponse = useCallback(
     async ({
       blockId,
-      answer
+      answer,
     }: SubmitPollResponseParams): Promise<SubmitPollResponseResponse | null> => {
       if (!code) {
         setError('Missing experience code');
@@ -40,15 +40,16 @@ export function useSubmitPollResponse() {
       setIsLoading(true);
       setError(null);
 
-      qaLogger(
-        `Submitting poll response for block ${blockId} in experience ${code}`
-      );
+      qaLogger(`Submitting poll response for block ${blockId} in experience ${code}`);
 
       try {
-        const res = await experienceFetch(`/api/experiences/${encodeURIComponent(code)}/blocks/${encodeURIComponent(blockId)}/submit_poll_response`, {
-          method: 'POST',
-          body: JSON.stringify({ answer }),
-        });
+        const res = await experienceFetch(
+          `/api/experiences/${encodeURIComponent(code)}/blocks/${encodeURIComponent(blockId)}/submit_poll_response`,
+          {
+            method: 'POST',
+            body: JSON.stringify({ answer }),
+          },
+        );
 
         const data: SubmitPollResponseResponse = await res.json();
 
