@@ -1,18 +1,11 @@
 import { Link } from 'react-router-dom';
+
 import { useExperience } from '@cctv/contexts/ExperienceContext';
 
 import styles from './Experience.module.scss';
 
 export default function Experience() {
-  const {
-    experience,
-    user,
-    code,
-    isLoading,
-    isPolling,
-    experienceStatus,
-    error,
-  } = useExperience();
+  const { experience, user, code, isLoading, isPolling, experienceStatus, error } = useExperience();
 
   if (isLoading) {
     return (
@@ -59,16 +52,11 @@ export default function Experience() {
 
         {/* Participants List */}
         <div className={styles.participantsContainer}>
-          <h4 className={styles.participantsTitle}>
-            Players in Lobby:
-          </h4>
+          <h4 className={styles.participantsTitle}>Players in Lobby:</h4>
           {participants.length > 0 ? (
             <ul className={styles.participantsList}>
               {participants.map((participant) => (
-                <li
-                  key={participant.id}
-                  className={styles.participantItem}
-                >
+                <li key={participant.id} className={styles.participantItem}>
                   <span
                     className={`${styles.participantName} ${
                       participant.id === user?.id ? styles.currentUser : ''
@@ -83,15 +71,11 @@ export default function Experience() {
               ))}
             </ul>
           ) : (
-            <p className={styles.loadingParticipants}>
-              Loading participants...
-            </p>
+            <p className={styles.loadingParticipants}>Loading participants...</p>
           )}
         </div>
 
-        <p className={styles.waitingMessage}>
-          Waiting for the experience to start...
-        </p>
+        <p className={styles.waitingMessage}>Waiting for the experience to start...</p>
       </section>
     );
   }
