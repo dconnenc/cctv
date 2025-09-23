@@ -1,9 +1,16 @@
 class ExperienceBlock < ApplicationRecord
   KINDS = [
-    "poll"
+    "poll",
+    "question",
+    "multistep_form",
+    "announcement"
   ]
 
   belongs_to :experience
+
+  has_many :experience_poll_submissions, dependent: :destroy
+  has_many :experience_question_submissions, dependent: :destroy
+  has_many :experience_multistep_form_submissions, dependent: :destroy
 
   enum status: {
     hidden: "hidden",

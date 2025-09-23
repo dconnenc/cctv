@@ -72,11 +72,12 @@ export default function Create() {
     <section className="page flex-centered">
       <h1 className={styles.title}>Create experience</h1>
       <form className={styles.form} onSubmit={handleCreate}>
-        {isLoading && <p>Creating...</p>}
         <TextInput ref={nameRef} label="Name" name="name" type="text" />
         <TextInput label="Code" name="code" type="text" />
         {error && <p className={styles.error}>{error}</p>}
-        <Button type="submit">Create</Button>
+        <Button type="submit" loading={isLoading} loadingText="Creating...">
+          Create
+        </Button>
       </form>
     </section>
   );

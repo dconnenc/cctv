@@ -1,49 +1,87 @@
 import { FormEvent, useState } from 'react';
 
 import { Button, TextInput } from '@cctv/core';
-import { ParticipantWithRole, QuestionExperience } from '@cctv/types';
+import { useSubmitQuestionResponse } from '@cctv/hooks/useSubmitQuestionResponse';
+import { QuestionPayload } from '@cctv/types';
 import { getFormData } from '@cctv/utils';
 
 import styles from './Question.module.scss';
 
-interface QuestionProps extends QuestionExperience {
-  user?: ParticipantWithRole;
+interface QuestionProps extends QuestionPayload {
+  blockId?: string;
+  responses?: {
+    total: number;
+    user_responded: boolean;
+    user_response?: {
+      id: string;
+      answer: any;
+    } | null;
+  };
   buttonText?: string;
 }
 
 export default function Question({
-  user,
   question,
   formKey,
+  inputType = 'text',
+  blockId,
+  responses,
   buttonText = 'Submit',
 }: QuestionProps) {
   const [submittedValue, setSubmittedValue] = useState<string>('');
+  const { submitQuestionResponse, isLoading, error } = useSubmitQuestionResponse();
+  const userAlreadyResponded = responses?.user_responded || false;
 
-  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
+  const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const formData = getFormData<{ [key: string]: string }>(e.currentTarget);
-    const answer = formData[formKey];
-    console.log(answer, formData, formKey);
-    if (!answer) return;
+    const formData = getFormData<Record<string, string>>(e.currentTarget);
+    const value = formData[formKey] || '';
 
-    // TODO: Submit question via API
-    console.log(answer, user);
-    setSubmittedValue(answer);
+    // Get the block ID from props or URL query params
+    const actualBlockId = blockId || new URLSearchParams(window.location.search).get('blockId');
+
+    if (!actualBlockId) {
+      console.error('No block ID found');
+      return;
+    }
+
+    const response = await submitQuestionResponse({
+      blockId: actualBlockId,
+      answer: {
+        text: value,
+        submittedAt: new Date().toISOString(),
+      },
+    });
+
+    if (response?.success) {
+      setSubmittedValue(value);
+    }
   };
 
-  if (submittedValue) {
+  if (submittedValue || userAlreadyResponded) {
+    const displayValue =
+      submittedValue ||
+      responses?.user_response?.answer?.text ||
+      'You have already responded to this question.';
+
     return (
-      <div>
+      <div className={styles.submittedValue}>
         <p className={styles.legend}>{question}</p>
-        <p className={styles.value}>{submittedValue}</p>
+        <p className={styles.value}>{displayValue}</p>
       </div>
     );
   }
 
   return (
-    <form className={styles.form} onSubmit={handleSubmit}>
-      <TextInput label={question} name={formKey} />
-      <Button type="submit">{buttonText}</Button>
+    <form onSubmit={onSubmit}>
+      <fieldset className={styles.fieldset}>
+        <legend className={styles.legend}>{question}</legend>
+        {error && <p className={styles.error}>{error}</p>}
+        <TextInput name={formKey} type={inputType} required />
+        <Button type="submit" loading={isLoading} loadingText="Submitting...">
+          {buttonText}
+        </Button>
+      </fieldset>
     </form>
   );
 }

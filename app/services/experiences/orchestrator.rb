@@ -34,7 +34,7 @@ module Experiences
 
         block = experience.experience_blocks.find(block_id)
 
-        block.update(status: :close)
+        block.update(status: :closed)
       end
     end
 
@@ -98,6 +98,66 @@ module Experiences
             status: Experience.statuses[:live]
           )
         end
+      end
+    end
+
+    def submit_poll_response!(block_id:, answer:)
+      actor_action do
+        block = experience.experience_blocks.find(block_id)
+        
+        # Use dedicated ExperienceBlockPolicy to check visibility rules
+        authorize! block, to: :submit_poll_response?, with: ExperienceBlockPolicy
+
+        # Create or update the submission. Assumes single response for now
+        submission = ExperiencePollSubmission.find_or_initialize_by(
+          experience_block_id: block.id,
+          user_id: actor.id
+        )
+
+        submission.answer = answer
+        submission.save!
+
+        submission
+      end
+    end
+
+    def submit_question_response!(block_id:, answer:)
+      actor_action do
+        block = experience.experience_blocks.find(block_id)
+        
+        # Use dedicated ExperienceBlockPolicy to check visibility rules
+        authorize! block, to: :submit_question_response?, with: ExperienceBlockPolicy
+
+        # Create or update the submission. Assumes single response for now
+        submission = ExperienceQuestionSubmission.find_or_initialize_by(
+          experience_block_id: block.id,
+          user_id: actor.id
+        )
+
+        submission.answer = answer
+        submission.save!
+
+        submission
+      end
+    end
+
+    def submit_multistep_form_response!(block_id:, answer:)
+      actor_action do
+        block = experience.experience_blocks.find(block_id)
+        
+        # Use dedicated ExperienceBlockPolicy to check visibility rules
+        authorize! block, to: :submit_multistep_form_response?, with: ExperienceBlockPolicy
+
+        # Create or update the submission. Assumes single response for now
+        submission = ExperienceMultistepFormSubmission.find_or_initialize_by(
+          experience_block_id: block.id,
+          user_id: actor.id
+        )
+
+        submission.answer = answer
+        submission.save!
+
+        submission
       end
     end
 

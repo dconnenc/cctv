@@ -1,34 +1,69 @@
 import { FormEvent, useState } from 'react';
 
 import { Button, Option } from '@cctv/core';
-import { ParticipantWithRole, PollExperience } from '@cctv/types';
+import { useSubmitPollResponse } from '@cctv/hooks/useSubmitPollResponse';
+import { PollPayload } from '@cctv/types';
 import { getFormData } from '@cctv/utils';
 
 import styles from './Poll.module.scss';
 
-interface PollProps extends PollExperience {
-  user: ParticipantWithRole;
+interface PollProps extends PollPayload {
+  blockId?: string;
+  responses?: {
+    total: number;
+    user_responded: boolean;
+    user_response?: {
+      id: string;
+      answer: any;
+    } | null;
+    aggregate?: Record<string, number>;
+  };
 }
 
-export default function Poll({ user, question, options, pollType }: PollProps) {
+export default function Poll({ question, options, pollType, blockId, responses }: PollProps) {
   const [submittedValue, setSubmittedValue] = useState<string[]>([]);
+  const { submitPollResponse, isLoading, error } = useSubmitPollResponse();
+  const userAlreadyResponded = responses?.user_responded || false;
 
-  const onSubmit = (e: FormEvent<HTMLFormElement>) => {
+  const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = getFormData<{ selectedOptions: string[] }>(e.currentTarget);
     const selectedOptions = formData.selectedOptions;
 
-    // TODO: Submit poll via API
-    console.log(selectedOptions, user);
     const value = Array.isArray(selectedOptions) ? selectedOptions : [selectedOptions ?? ''];
-    setSubmittedValue(value);
+
+    // Get the block ID from props or URL query params
+    const actualBlockId = blockId || new URLSearchParams(window.location.search).get('blockId');
+
+    if (!actualBlockId) {
+      console.error('No block ID found');
+      return;
+    }
+
+    const response = await submitPollResponse({
+      blockId: actualBlockId,
+      answer: {
+        selectedOptions: value,
+        submittedAt: new Date().toISOString(),
+      },
+    });
+
+    if (response?.success) {
+      setSubmittedValue(value);
+    }
   };
 
-  if (submittedValue.length > 0) {
+  if (submittedValue.length > 0 || userAlreadyResponded) {
+    const displayValue =
+      submittedValue.length > 0
+        ? submittedValue.join(', ')
+        : responses?.user_response?.answer?.selectedOptions?.join(', ') ||
+          'You have already responded to this poll.';
+
     return (
       <div className={styles.submittedValue}>
         <p className={styles.legend}>{question}</p>
-        <p className={styles.value}>{submittedValue.join(', ')}</p>
+        <p className={styles.value}>{displayValue}</p>
       </div>
     );
   }
@@ -37,6 +72,7 @@ export default function Poll({ user, question, options, pollType }: PollProps) {
     <form onSubmit={onSubmit}>
       <fieldset className={styles.fieldset}>
         <legend className={styles.legend}>{question}</legend>
+        {error && <p className={styles.error}>{error}</p>}
         {options.map((option) => (
           <Option
             allowMultiple={pollType === 'multiple'}
@@ -45,7 +81,9 @@ export default function Poll({ user, question, options, pollType }: PollProps) {
             name="selectedOptions"
           />
         ))}
-        <Button type="submit">Submit</Button>
+        <Button type="submit" loading={isLoading} loadingText="Submitting...">
+          Submit
+        </Button>
       </fieldset>
     </form>
   );

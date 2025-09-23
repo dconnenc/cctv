@@ -33,11 +33,14 @@ Rails.application.routes.draw do
       resources(
         :blocks,
         controller: "experience_blocks",
-        only: [:create]
+        only: [:create, :update]
       ) do
         member do
           post :open
           post :close
+          post :submit_poll_response
+          post :submit_question_response
+          post :submit_multistep_form_response
         end
 
         # collection do

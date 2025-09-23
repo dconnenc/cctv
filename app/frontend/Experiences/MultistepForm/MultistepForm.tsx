@@ -3,34 +3,33 @@ import { FormEvent, useState } from 'react';
 import classNames from 'classnames';
 
 import { Button, TextInput } from '@cctv/core';
-import { MultistepFormExperience, ParticipantWithRole } from '@cctv/types';
+import { useSubmitMultistepFormResponse } from '@cctv/hooks/useSubmitMultistepFormResponse';
+import { MultistepFormPayload } from '@cctv/types';
 import { getFormData, isNotEmpty } from '@cctv/utils';
 
 import styles from './MultistepForm.module.scss';
 
-interface MultistepFormProps extends MultistepFormExperience {
-  /** Optional callback for when form is submitted successfully. */
-  onSubmit?: (formData: Record<string, string>) => void;
-
-  /** The user who is filling out the form. */
-  user: ParticipantWithRole;
-
-  /** A function that validates the form data. Returns an array of errored question keys. */
-  validation?: (formData: Partial<Record<string, string>>) => string[];
+interface MultistepFormProps extends MultistepFormPayload {
+  blockId?: string;
+  responses?: {
+    total: number;
+    user_responded: boolean;
+    user_response?: {
+      id: string;
+      answer: any;
+    } | null;
+  };
 }
 
 /** A multistep form experience. Transitions between questions so user only sees one at a time. */
-export default function MultistepForm({
-  onSubmit,
-  user,
-  questions,
-  validation,
-}: MultistepFormProps) {
+export default function MultistepForm({ questions, blockId, responses }: MultistepFormProps) {
   const [stepIndex, setStepIndex] = useState(0);
   const [stepErrors, setStepErrors] = useState<Set<string>>(new Set());
   const [submittedValue, setSubmittedValue] = useState<Record<string, string>>();
+  const { submitMultistepFormResponse, isLoading, error } = useSubmitMultistepFormResponse();
+  const userAlreadyResponded = responses?.user_responded || false;
 
-  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     const form = e.currentTarget;
 
     e.preventDefault();
@@ -38,7 +37,7 @@ export default function MultistepForm({
 
     const formData = getFormData<Record<string, string>>(form);
 
-    const errors = validation ? validation(formData) : defaultValidation(formData);
+    const errors = defaultValidation(formData);
 
     if (isNotEmpty(errors)) {
       const firstErrorKey = errors[0];
@@ -48,15 +47,25 @@ export default function MultistepForm({
       return;
     }
 
-    setSubmittedValue(formData as Record<string, string>);
+    // Get the block ID from props or URL query params
+    const actualBlockId = blockId || new URLSearchParams(window.location.search).get('blockId');
 
-    if (onSubmit) {
-      onSubmit(formData as Record<string, string>);
+    if (!actualBlockId) {
+      console.error('No block ID found');
       return;
     }
 
-    // TODO: Submit question via API
-    console.log('Submitting form data:', formData, user);
+    const response = await submitMultistepFormResponse({
+      blockId: actualBlockId,
+      answer: {
+        responses: formData as Record<string, string>,
+        submittedAt: new Date().toISOString(),
+      },
+    });
+
+    if (response?.success) {
+      setSubmittedValue(formData as Record<string, string>);
+    }
   };
 
   const handleInvalidForm = (e: FormEvent<HTMLFormElement>) => {
@@ -79,21 +88,28 @@ export default function MultistepForm({
 
   const isLastQuestion = stepIndex === questions.length - 1;
 
-  if (submittedValue) {
+  if (submittedValue || userAlreadyResponded) {
+    const responseData = submittedValue || responses?.user_response?.answer?.responses;
+
     return (
       <div className={styles.submittedValue}>
-        {questions.map((question) => (
-          <div key={question.formKey}>
-            <p className={styles.legend}>{question.question}</p>
-            <p className={styles.value}>{submittedValue[question.formKey]}</p>
-          </div>
-        ))}
+        {responseData ? (
+          questions.map((question) => (
+            <div key={question.formKey} className={styles.submittedAnswer}>
+              <p className={styles.legend}>{question.question}</p>
+              <p className={styles.value}>{responseData[question.formKey]}</p>
+            </div>
+          ))
+        ) : (
+          <p className={styles.value}>You have already responded to this form.</p>
+        )}
       </div>
     );
   }
 
   return (
     <form className={styles.form} onSubmit={handleSubmit} onInvalid={handleInvalidForm}>
+      {error && <p className={styles.error}>{error}</p>}
       <div className={styles.questions}>
         {questions.map((question, index) => {
           const isCurrentQuestion = index === stepIndex;
@@ -108,7 +124,7 @@ export default function MultistepForm({
             >
               <TextInput
                 required
-                type={question.inputType}
+                type={question.inputType || 'text'}
                 label={question.question}
                 name={question.formKey}
                 aria-describedby={hasError ? errorId : undefined}
@@ -123,9 +139,21 @@ export default function MultistepForm({
         })}
       </div>
       <div className={styles.buttons}>
-        {stepIndex > 0 && <Button onClick={goBack}>Back</Button>}
-        {stepIndex < questions.length - 1 && <Button onClick={goForward}>Next</Button>}
-        {isLastQuestion && <Button type="submit">Submit</Button>}
+        {stepIndex > 0 && (
+          <Button onClick={goBack} loading={isLoading} loadingText="Loading...">
+            Back
+          </Button>
+        )}
+        {stepIndex < questions.length - 1 && (
+          <Button onClick={goForward} loading={isLoading} loadingText="Loading...">
+            Next
+          </Button>
+        )}
+        {isLastQuestion && (
+          <Button type="submit" loading={isLoading} loadingText="Submitting...">
+            Submit
+          </Button>
+        )}
       </div>
     </form>
   );

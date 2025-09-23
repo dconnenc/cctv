@@ -23,12 +23,20 @@ class Api::ExperienceBlocksController < Api::BaseController
     end
   end
 
+  # PATCH /api/experiences/:experience_id/blocks/:id
+  def update
+    render json: {
+      success: true,
+      data: block,
+    }, status: 200
+  end
+
   # POST /api/experiences/:experience_id/blocks/:id/open
   def open
     with_experience_orchestration do
       block = Experiences::Orchestrator.new(
         experience: @experience, actor: @user
-      ).open_block!
+      ).open_block!(params[:id])
 
       render json: {
         success: true,
@@ -42,12 +50,104 @@ class Api::ExperienceBlocksController < Api::BaseController
     with_experience_orchestration do
       block = Experiences::Orchestrator.new(
         experience: @experience, actor: @user
-      ).close_block!
+      ).close_block!(params[:id])
 
       render json: {
         success: true,
         data: block,
       }, status: 200
     end
+  end
+
+  # POST /api/experiences/:experience_id/blocks/:id/submit_poll_response
+  def submit_poll_response
+    with_experience_orchestration do
+      block = @experience.experience_blocks.find(params[:id])
+
+      submission = Experiences::Orchestrator.new(
+        experience: @experience, actor: @user
+      ).submit_poll_response!(
+        block_id: params[:id],
+        answer: params[:answer]
+      )
+
+      # Get updated block with response data
+      visibility = Experiences::Visibility.new(experience: @experience, user: @user)
+      role, segments = visibility.send(:participant_role_and_segments)
+      updated_block = visibility.send(:serialize_block, block, role)
+
+      render json: {
+        success: true,
+        data: {
+          submission: submission,
+          block: updated_block
+        },
+      }, status: 200
+    end
+  end
+
+  # POST /api/experiences/:experience_id/blocks/:id/submit_question_response
+  def submit_question_response
+    with_experience_orchestration do
+      block = @experience.experience_blocks.find(params[:id])
+
+      submission = Experiences::Orchestrator.new(
+        experience: @experience, actor: @user
+      ).submit_question_response!(
+        block_id: params[:id],
+        answer: params[:answer]
+      )
+
+      # Get updated block with response data
+      visibility = Experiences::Visibility.new(experience: @experience, user: @user)
+      role, segments = visibility.send(:participant_role_and_segments)
+      updated_block = visibility.send(:serialize_block, block, role)
+
+      render json: {
+        success: true,
+        data: {
+          submission: submission,
+          block: updated_block
+        },
+      }, status: 200
+    end
+  end
+
+  # POST /api/experiences/:experience_id/blocks/:id/submit_multistep_form_response
+  def submit_multistep_form_response
+    with_experience_orchestration do
+      block = @experience.experience_blocks.find(params[:id])
+
+      submission = Experiences::Orchestrator.new(
+        experience: @experience, actor: @user
+      ).submit_multistep_form_response!(
+        block_id: params[:id],
+        answer: params[:answer]
+      )
+
+      # Get updated block with response data
+      visibility = Experiences::Visibility.new(experience: @experience, user: @user)
+      role, segments = visibility.send(:participant_role_and_segments)
+      updated_block = visibility.send(:serialize_block, block, role)
+
+      render json: {
+        success: true,
+        data: {
+          submission: submission,
+          block: updated_block
+        },
+      }, status: 200
+    end
+  end
+
+  private
+
+  def experience_code
+    %w[experience_id code]
+      .map { |k| params[k] }
+      .compact
+      .first
+      &.to_s
+      &.strip
   end
 end

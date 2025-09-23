@@ -2,6 +2,7 @@ import { ChangeEvent, FormEvent, KeyboardEvent, useState } from 'react';
 
 import { useParams } from 'react-router-dom';
 
+import { Button } from '@cctv/core';
 import { useRegisterExperience } from '@cctv/hooks';
 
 export default function Register() {
@@ -69,9 +70,15 @@ export default function Register() {
             {error}
           </p>
         )}
-        <button className="join-submit" type="submit" disabled={isLoading || !email.trim()}>
-          {isLoading ? 'Registering...' : 'Register'}
-        </button>
+        <Button
+          className="join-submit"
+          type="submit"
+          loading={isLoading}
+          loadingText="Registering..."
+          disabled={!email.trim()}
+        >
+          Register
+        </Button>
       </form>
     </section>
   );

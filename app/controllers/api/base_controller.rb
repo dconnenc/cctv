@@ -58,15 +58,6 @@ class Api::BaseController < ApplicationController
     request.headers["Authorization"] || request.headers["HTTP_AUTHORIZATION"]
   end
 
-  def experience_code
-    %w[id experience_id code]
-      .map { |k| params[k] }
-      .compact
-      .first
-      &.to_s
-      &.strip
-  end
-
   def find_experience_by_code!(code)
     ::Experience.find_by!(code: code)
   rescue ActiveRecord::RecordNotFound

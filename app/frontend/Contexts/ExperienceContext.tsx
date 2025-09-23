@@ -2,57 +2,14 @@ import { ReactNode, createContext, useCallback, useContext, useEffect, useState 
 
 import { useParams } from 'react-router-dom';
 
-import { qaLogger } from '@cctv/utils';
-
-interface Experience {
-  id: string;
-  name: string;
-  code: string;
-  status: 'active' | 'paused' | 'finished' | 'archived';
-  blocks: any;
-  hosts?: Array<{
-    id?: string;
-    name?: string;
-    email?: string;
-    role?: string;
-  }>;
-  participants?: Array<{
-    id?: string;
-    name?: string;
-    email?: string;
-    role?: string;
-  }>;
-}
-
-interface ExperienceUser {
-  id: string;
-  name?: string;
-  email: string;
-}
-
-interface ExperienceContextType {
-  experience: Experience | null;
-  user: ExperienceUser | null;
-  code: string;
-  jwt: string | null;
-
-  isAuthenticated: boolean;
-  isLoading: boolean;
-  isPolling: boolean;
-  experienceStatus: 'lobby' | 'active';
-  error: string | null;
-
-  setJWT: (token: string) => void;
-  clearJWT: () => void;
-  experienceFetch: (url: string, options?: RequestInit) => Promise<Response>;
-}
+import { Experience, ExperienceContextType, ParticipantSummary } from '@cctv/types';
+import { getStoredJWT, qaLogger } from '@cctv/utils';
 
 const ExperienceContext = createContext<ExperienceContextType | undefined>(undefined);
 
 // Helper functions for authenticating users with experiences
 // TODO: use id, not code here
 const getJWTKey = (code: string) => `experience_jwt_${code}`;
-const getStoredJWT = (code: string) => localStorage.getItem(getJWTKey(code));
 const setStoredJWT = (code: string, jwt: string) => localStorage.setItem(getJWTKey(code), jwt);
 const removeStoredJWT = (code: string) => localStorage.removeItem(getJWTKey(code));
 
@@ -64,13 +21,13 @@ export function ExperienceProvider({ children }: ExperienceProviderProps) {
   const { code } = useParams<{ code: string }>();
 
   const [experience, setExperience] = useState<Experience | null>(null);
-  const [user, setUser] = useState<ExperienceUser | null>(null);
+  const [participant, setParticipant] = useState<ParticipantSummary | null>(null);
   const [jwt, setJWT] = useState<string | null>(null);
 
   const [isLoading, setIsLoading] = useState(false);
   const [isPolling, setIsPolling] = useState(false);
 
-  const [experienceStatus, setExperienceStatus] = useState<'lobby' | 'active'>('lobby');
+  const [experienceStatus, setExperienceStatus] = useState<'lobby' | 'live'>('lobby');
   const [error, setError] = useState<string | null>(null);
 
   const currentCode = code || '';
@@ -127,12 +84,11 @@ export function ExperienceProvider({ children }: ExperienceProviderProps) {
 
       if (data?.type === 'success') {
         qaLogger('Experience fetched; updating context');
-        setUser(data.user || null);
+        setParticipant(data.participant || null);
         setExperience(data.experience || null);
 
-        // Normalize lobby/active for the context's simpler status
         const incomingStatus: string | undefined = data.experience?.status;
-        setExperienceStatus(incomingStatus === 'active' ? 'active' : 'lobby');
+        setExperienceStatus(incomingStatus === 'live' ? 'live' : 'lobby');
 
         setError(null);
       } else if (data?.type === 'error') {
@@ -153,7 +109,7 @@ export function ExperienceProvider({ children }: ExperienceProviderProps) {
 
     qaLogger(`Experience code changed to ${currentCode} — resetting context`);
     setExperience(null);
-    setUser(null);
+    setParticipant(null);
     setError(null);
 
     const stored = getStoredJWT(currentCode);
@@ -190,13 +146,13 @@ export function ExperienceProvider({ children }: ExperienceProviderProps) {
     if (currentCode) removeStoredJWT(currentCode);
     setJWT(null);
     setExperience(null);
-    setUser(null);
+    setParticipant(null);
     setError(null);
   }, [currentCode]);
 
   const value: ExperienceContextType = {
     experience,
-    user,
+    participant,
     code: currentCode,
     jwt,
 

@@ -1,8 +1,10 @@
 import { FormEvent, useId, useMemo } from 'react';
+
 import { useSearchParams } from 'react-router-dom';
-import { TextInput } from '@cctv/core';
-import { getFormData } from '@cctv/utils';
+
+import { Button, TextInput } from '@cctv/core';
 import { useJoinExperience } from '@cctv/hooks/useJoinExperience';
+import { getFormData } from '@cctv/utils';
 
 export default function Join() {
   const [searchParams] = useSearchParams();
@@ -32,21 +34,15 @@ export default function Join() {
         Enter the secret code:
       </label>
       <form onSubmit={handleSubmit}>
-        <TextInput
-          defaultValue={code}
-          id={id}
-          name="code"
-          disabled={isLoading}
-          maxLength={50}
-        />
+        <TextInput defaultValue={code} id={id} name="code" disabled={isLoading} maxLength={50} />
         {error && (
           <p className="error-message" style={{ color: 'red', marginTop: '8px' }}>
             {error}
           </p>
         )}
-        <button className="join-submit" type="submit" disabled={isLoading}>
-          {isLoading ? 'Joining...' : 'Submit'}
-        </button>
+        <Button className="join-submit" type="submit" loading={isLoading} loadingText="Joining...">
+          Submit
+        </Button>
       </form>
     </section>
   );
