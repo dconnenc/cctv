@@ -16,47 +16,44 @@ export function useExperienceStart() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const startExperience = useCallback(
-    async () => {
-      if (!code) {
-        setError('Missing experience code');
-        return null;
-      }
+  const startExperience = useCallback(async () => {
+    if (!code) {
+      setError('Missing experience code');
+      return null;
+    }
 
-      setIsLoading(true);
-      setError(null);
+    setIsLoading(true);
+    setError(null);
 
-      qaLogger(`Starting experience: ${code}`);
+    qaLogger(`Starting experience: ${code}`);
 
-      try {
-        const res = await experienceFetch(`/api/experiences/${encodeURIComponent(code)}/start`, {
-          method: 'POST',
-          body: JSON.stringify({ experience: { code: code } }),
-        });
+    try {
+      const res = await experienceFetch(`/api/experiences/${encodeURIComponent(code)}/start`, {
+        method: 'POST',
+        body: JSON.stringify({ experience: { code: code } }),
+      });
 
-        const data = await res.json();
+      const data = await res.json();
 
-        if (!data?.success) {
-          const msg = data?.error || 'Failed to start experience';
-          setError(msg);
-          return { success: false, error: msg };
-        }
-
-        qaLogger('Successfully started experience');
-        return data;
-      } catch (e: any) {
-        const msg =
-          e?.message === 'Authentication expired'
-            ? 'Authentication expired'
-            : 'Connection error. Please try again.';
+      if (!data?.success) {
+        const msg = data?.error || 'Failed to start experience';
         setError(msg);
-        return null;
-      } finally {
-        setIsLoading(false);
+        return { success: false, error: msg };
       }
-    },
-    [code, experienceFetch],
-  );
+
+      qaLogger('Successfully started experience');
+      return data;
+    } catch (e: any) {
+      const msg =
+        e?.message === 'Authentication expired'
+          ? 'Authentication expired'
+          : 'Connection error. Please try again.';
+      setError(msg);
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
+  }, [code, experienceFetch]);
 
   return {
     startExperience,

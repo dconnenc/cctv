@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { ReactNode, createContext, useContext, useEffect, useState } from 'react';
 
 interface User {
   id: string;
@@ -26,7 +26,7 @@ export function UserProvider({ children }: UserProviderProps) {
   const [isLoading, setIsLoading] = useState(true);
 
   const isAuthenticated = user !== null;
-  const isAdmin = user?.role === 'admin' || user?.role === "superadmin";
+  const isAdmin = user?.role === 'admin' || user?.role === 'superadmin';
 
   const refreshUser = async () => {
     setIsLoading(true);
