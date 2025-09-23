@@ -1,8 +1,8 @@
-import { AnnouncementBlock, ParticipantSummary } from '@cctv/types';
+import { AnnouncementPayload, ParticipantSummary } from '@cctv/types';
 
 import styles from './Announcement.module.scss';
 
-interface AnnouncementProps extends AnnouncementBlock {
+interface AnnouncementProps extends AnnouncementPayload {
   participant: ParticipantSummary;
 }
 

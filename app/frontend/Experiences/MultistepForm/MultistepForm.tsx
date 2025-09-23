@@ -4,13 +4,12 @@ import classNames from 'classnames';
 
 import { Button, TextInput } from '@cctv/core';
 import { useSubmitMultistepFormResponse } from '@cctv/hooks/useSubmitMultistepFormResponse';
-import { MultistepFormBlock, ParticipantSummary } from '@cctv/types';
+import { MultistepFormPayload } from '@cctv/types';
 import { getFormData, isNotEmpty } from '@cctv/utils';
 
 import styles from './MultistepForm.module.scss';
 
-interface MultistepFormProps extends MultistepFormBlock {
-  participant: ParticipantSummary;
+interface MultistepFormProps extends MultistepFormPayload {
   blockId?: string;
   responses?: {
     total: number;
@@ -19,12 +18,7 @@ interface MultistepFormProps extends MultistepFormBlock {
 }
 
 /** A multistep form experience. Transitions between questions so user only sees one at a time. */
-export default function MultistepForm({
-  participant,
-  questions,
-  blockId,
-  responses,
-}: MultistepFormProps) {
+export default function MultistepForm({ questions, blockId, responses }: MultistepFormProps) {
   const [stepIndex, setStepIndex] = useState(0);
   const [stepErrors, setStepErrors] = useState<Set<string>>(new Set());
   const [submittedValue, setSubmittedValue] = useState<Record<string, string>>();

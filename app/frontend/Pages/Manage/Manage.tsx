@@ -4,13 +4,7 @@ import { useExperience } from '@cctv/contexts/ExperienceContext';
 import { Button } from '@cctv/core';
 import { useCreateExperienceBlock } from '@cctv/hooks/useCreateExperienceBlock';
 import { useExperienceStart } from '@cctv/hooks/useExperienceStart';
-import {
-  Block,
-  BlockStatus,
-  ExperienceWithParticipants,
-  ParticipantRole,
-  ParticipantSummary,
-} from '@cctv/types';
+import { Block, BlockStatus, Experience, ParticipantRole, ParticipantSummary } from '@cctv/types';
 
 import styles from './Manage.module.scss';
 
@@ -414,7 +408,7 @@ export default function Manage() {
           });
           const data = (await res.json()) as {
             success?: boolean;
-            experience?: ExperienceWithParticipants & { blocks?: Block[] };
+            experience?: Experience;
           };
           if ((res.ok && data?.experience) || data?.success)
             setModel((data as any).experience || (data as any));
@@ -460,7 +454,7 @@ export default function Manage() {
           });
           const data = (await res.json()) as {
             success?: boolean;
-            experience?: ExperienceWithParticipants & { blocks?: Block[] };
+            experience?: Experience;
           };
           if ((res.ok && data?.experience) || data?.success)
             setModel((data as any).experience || (data as any));

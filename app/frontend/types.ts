@@ -1,16 +1,35 @@
 // ===== CORE DOMAIN TYPES =====
 
 export type UserRole = 'user' | 'admin' | 'superadmin';
-
 export type ExperienceStatus = 'draft' | 'lobby' | 'live' | 'paused' | 'finished' | 'archived';
-
 export type ParticipantRole = 'audience' | 'player' | 'moderator' | 'host';
-
 export type ParticipantStatus = 'registered' | 'active';
-
 export type BlockStatus = 'hidden' | 'open' | 'closed';
+export type BlockKind = 'poll' | 'question' | 'multistep_form' | 'announcement';
 
-// ===== COMPLETE ENTITY TYPES =====
+// ===== BLOCK PAYLOAD TYPES =====
+
+export interface PollPayload {
+  question: string;
+  options: string[];
+  pollType?: 'single' | 'multiple';
+}
+
+export interface QuestionPayload {
+  question: string;
+  formKey: string;
+  inputType?: 'text' | 'number' | 'email' | 'password' | 'tel';
+}
+
+export interface MultistepFormPayload {
+  questions: QuestionPayload[];
+}
+
+export interface AnnouncementPayload {
+  message: string;
+}
+
+// ===== ENTITY TYPES =====
 
 export interface User {
   id: string;
@@ -21,20 +40,12 @@ export interface User {
   updated_at: string;
 }
 
-export interface Experience {
-  id: string;
-  name: string;
-  code: string;
-  status: ExperienceStatus;
-  creator_id: string;
-  created_at: string;
-  updated_at: string;
-}
-
 export interface ExperienceParticipant {
   id: string;
   user_id: string;
   experience_id: string;
+  name: string;
+  email: string;
   status: ParticipantStatus;
   role: ParticipantRole;
   joined_at: string | null;
@@ -43,11 +54,10 @@ export interface ExperienceParticipant {
   updated_at: string;
 }
 
-export interface Block {
+// Discriminated union for blocks
+interface BaseBlock {
   id: string;
-  kind: string;
   status: BlockStatus;
-  payload?: Record<string, any>;
   visible_to_roles?: ParticipantRole[];
   visible_to_segments?: string[];
   target_user_ids?: string[];
@@ -60,69 +70,52 @@ export interface Block {
   };
 }
 
-// ===== TYPE FRAGMENTS (UTILITY TYPES) =====
+export interface PollBlock extends BaseBlock {
+  kind: 'poll';
+  payload: PollPayload;
+}
+
+export interface QuestionBlock extends BaseBlock {
+  kind: 'question';
+  payload: QuestionPayload;
+}
+
+export interface MultistepFormBlock extends BaseBlock {
+  kind: 'multistep_form';
+  payload: MultistepFormPayload;
+}
+
+export interface AnnouncementBlock extends BaseBlock {
+  kind: 'announcement';
+  payload: AnnouncementPayload;
+}
+
+export type Block = PollBlock | QuestionBlock | MultistepFormBlock | AnnouncementBlock;
+
+export interface Experience {
+  id: string;
+  name: string;
+  code: string;
+  status: ExperienceStatus;
+  creator_id: string;
+  hosts: ExperienceParticipant[];
+  participants: ExperienceParticipant[];
+  blocks: Block[];
+  created_at: string;
+  updated_at: string;
+}
+
+// ===== TYPE FRAGMENTS (using Pick/Omit from complete types) =====
 
 export type UserSummary = Pick<User, 'id' | 'name' | 'email'>;
 
-export interface Participant {
-  id: string;
-  user_id: string;
-  name: string;
-  email: string;
-  role: ParticipantRole;
-  status: ParticipantStatus;
-}
-
-export type ParticipantSummary = Pick<Participant, 'id' | 'user_id' | 'name' | 'email' | 'role'>;
-
-export type ExperienceSummary = Pick<Experience, 'id' | 'name' | 'code' | 'status'>;
-
-export interface ExperienceWithParticipants extends ExperienceSummary {
-  hosts: ParticipantSummary[];
-  participants: ParticipantSummary[];
-}
-
-export interface ExperienceWithBlocks extends ExperienceSummary {
-  blocks: Block[];
-}
-
-export interface ExperienceWithDetails extends ExperienceSummary {
-  hosts: ParticipantSummary[];
-  participants: ParticipantSummary[];
-  blocks: Block[];
-}
-
-// ===== FRONTEND-SPECIFIC EXPERIENCE TYPES =====
-
-export interface PollBlock {
-  type: 'poll';
-  question: string;
-  options: string[];
-  pollType: 'single' | 'multiple';
-}
-
-export interface QuestionBlock {
-  type: 'question';
-  question: string;
-  formKey: string;
-  inputType?: 'text' | 'number' | 'email' | 'password' | 'tel';
-}
-
-export interface MultistepFormBlock {
-  type: 'multistep_form';
-  questions: QuestionBlock[];
-}
-
-export interface AnnouncementBlock {
-  type: 'announcement';
-  message: string;
-}
-
-export type BlockType = PollBlock | QuestionBlock | MultistepFormBlock | AnnouncementBlock;
+export type ParticipantSummary = Pick<
+  ExperienceParticipant,
+  'id' | 'user_id' | 'name' | 'email' | 'role'
+>;
 
 // ===== API REQUEST TYPES =====
 
-// POST /api/experiences - Create Experience
 export interface CreateExperienceRequest {
   experience: {
     name: string;
@@ -130,27 +123,24 @@ export interface CreateExperienceRequest {
   };
 }
 
-// POST /api/experiences/join - Join Experience
 export interface JoinExperienceRequest {
   code: string;
 }
 
-// POST /api/experiences/:id/register - Register for Experience
 export interface RegisterExperienceRequest {
   code: string;
   email: string;
   name?: string;
 }
 
-// POST /api/experiences/:experience_id/blocks - Create Experience Block
 export interface CreateExperienceBlockRequest {
   experience: {
-    kind: string;
-    payload?: Record<string, any>;
+    kind: BlockKind;
+    payload?: PollPayload | QuestionPayload | MultistepFormPayload | AnnouncementPayload;
     visible_to_roles?: ParticipantRole[];
     visible_to_segments?: string[];
     target_user_ids?: string[];
-    status?: 'hidden' | 'visible';
+    status?: BlockStatus;
     open_immediately?: boolean;
   };
 }
@@ -189,7 +179,7 @@ export type CreateExperienceApiResponse =
 export interface GetExperienceSuccessResponse {
   type: 'success';
   success: true;
-  experience: ExperienceWithDetails;
+  experience: Experience;
   participant: ParticipantSummary | null;
 }
 
@@ -279,7 +269,7 @@ export interface ApiErrorResponse {
 // ===== CONTEXT TYPES =====
 
 export interface ExperienceContextType {
-  experience: ExperienceWithDetails | null;
+  experience: Experience | null;
   participant: ParticipantSummary | null;
   code: string;
   jwt: string | null;

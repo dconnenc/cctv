@@ -2,7 +2,7 @@ import { ReactNode, createContext, useCallback, useContext, useEffect, useState 
 
 import { useParams } from 'react-router-dom';
 
-import { ExperienceContextType, ExperienceWithDetails, ParticipantSummary } from '@cctv/types';
+import { Experience, ExperienceContextType, ParticipantSummary } from '@cctv/types';
 import { getStoredJWT, qaLogger } from '@cctv/utils';
 
 const ExperienceContext = createContext<ExperienceContextType | undefined>(undefined);
@@ -20,7 +20,7 @@ interface ExperienceProviderProps {
 export function ExperienceProvider({ children }: ExperienceProviderProps) {
   const { code } = useParams<{ code: string }>();
 
-  const [experience, setExperience] = useState<ExperienceWithDetails | null>(null);
+  const [experience, setExperience] = useState<Experience | null>(null);
   const [participant, setParticipant] = useState<ParticipantSummary | null>(null);
   const [jwt, setJWT] = useState<string | null>(null);
 

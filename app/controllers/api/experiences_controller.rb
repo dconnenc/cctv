@@ -118,25 +118,41 @@ class Api::ExperiencesController < Api::BaseController
       success: true,
       experience: {
         id: experience.id,
+        name: experience.name,
         code: experience.code,
         status: experience.status,
+        creator_id: experience.creator_id,
+        created_at: experience.created_at,
+        updated_at: experience.updated_at,
         blocks: experience_payload[:blocks],
         hosts: experience.experience_participants.host.map do |participant|
           {
             id: participant.id,
             user_id: participant.user.id,
+            experience_id: participant.experience_id,
             name: participant.user.name,
             email: participant.user.email,
-            role: participant.role
+            status: participant.status,
+            role: participant.role,
+            joined_at: participant.joined_at,
+            fingerprint: participant.fingerprint,
+            created_at: participant.created_at,
+            updated_at: participant.updated_at
           }
         end,
         participants: experience.experience_participants.map do |participant|
           {
             id: participant.id,
             user_id: participant.user.id,
+            experience_id: participant.experience_id,
             name: participant.user.name,
             email: participant.user.email,
-            role: participant.role
+            status: participant.status,
+            role: participant.role,
+            joined_at: participant.joined_at,
+            fingerprint: participant.fingerprint,
+            created_at: participant.created_at,
+            updated_at: participant.updated_at
           }
         end
       },

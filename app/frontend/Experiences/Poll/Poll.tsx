@@ -2,13 +2,12 @@ import { FormEvent, useState } from 'react';
 
 import { Button, Option } from '@cctv/core';
 import { useSubmitPollResponse } from '@cctv/hooks/useSubmitPollResponse';
-import { ParticipantSummary, PollBlock } from '@cctv/types';
+import { PollPayload } from '@cctv/types';
 import { getFormData } from '@cctv/utils';
 
 import styles from './Poll.module.scss';
 
-interface PollProps extends PollBlock {
-  participant: ParticipantSummary;
+interface PollProps extends PollPayload {
   blockId?: string;
   responses?: {
     total: number;
@@ -17,14 +16,7 @@ interface PollProps extends PollBlock {
   };
 }
 
-export default function Poll({
-  participant,
-  question,
-  options,
-  pollType,
-  blockId,
-  responses,
-}: PollProps) {
+export default function Poll({ question, options, pollType, blockId, responses }: PollProps) {
   const [submittedValue, setSubmittedValue] = useState<string[]>([]);
   const { submitPollResponse, isLoading, error } = useSubmitPollResponse();
   const userAlreadyResponded = responses?.user_responded || false;

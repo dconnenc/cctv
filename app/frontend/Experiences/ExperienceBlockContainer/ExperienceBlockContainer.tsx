@@ -1,10 +1,4 @@
-import {
-  AnnouncementBlock,
-  Block,
-  MultistepFormBlock,
-  ParticipantSummary,
-  QuestionBlock,
-} from '@cctv/types';
+import { Block, ParticipantSummary } from '@cctv/types';
 
 import Announcement from '../Announcement/Announcement';
 import MultistepForm from '../MultistepForm/MultistepForm';
@@ -38,40 +32,25 @@ export default function ExperienceBlockContainer({
 
       return (
         <Poll
-          type="poll"
           question={question}
           options={options}
           pollType={pollType}
-          participant={participant}
           blockId={block.id}
           responses={block.responses}
         />
       );
     case 'question':
-      return (
-        <Question
-          participant={participant}
-          blockId={block.id}
-          responses={block.responses}
-          {...(block.payload as QuestionBlock)}
-        />
-      );
+      return <Question blockId={block.id} responses={block.responses} {...block.payload} />;
     case 'multistep_form':
-      return (
-        <MultistepForm
-          participant={participant}
-          blockId={block.id}
-          responses={block.responses}
-          {...(block.payload as MultistepFormBlock)}
-        />
-      );
+      return <MultistepForm blockId={block.id} responses={block.responses} {...block.payload} />;
     case 'announcement':
-      return <Announcement participant={participant} {...(block.payload as AnnouncementBlock)} />;
+      return <Announcement participant={participant} {...block.payload} />;
     default:
+      const exhaustiveCheck: never = block;
       return (
         <div>
-          <p>Unknown block type: {block.kind}</p>
-          <pre>{JSON.stringify(block.payload, null, 2)}</pre>
+          <p>Unknown block type</p>
+          <pre>{JSON.stringify(exhaustiveCheck, null, 2)}</pre>
         </div>
       );
   }

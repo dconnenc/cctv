@@ -2,13 +2,12 @@ import { FormEvent, useState } from 'react';
 
 import { Button, TextInput } from '@cctv/core';
 import { useSubmitQuestionResponse } from '@cctv/hooks/useSubmitQuestionResponse';
-import { ParticipantSummary, QuestionBlock } from '@cctv/types';
+import { QuestionPayload } from '@cctv/types';
 import { getFormData } from '@cctv/utils';
 
 import styles from './Question.module.scss';
 
-interface QuestionProps extends QuestionBlock {
-  participant: ParticipantSummary;
+interface QuestionProps extends QuestionPayload {
   blockId?: string;
   responses?: {
     total: number;
@@ -18,7 +17,6 @@ interface QuestionProps extends QuestionBlock {
 }
 
 export default function Question({
-  participant,
   question,
   formKey,
   inputType = 'text',
