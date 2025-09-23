@@ -21,11 +21,11 @@ export default function ExperienceBlockContainer({
   participant,
 }: ExperienceBlockContainerProps) {
   if (!participant) {
-    return <p>Participant information is missing.</p>;
+    return <p>Do you even go here? You're not part of this!</p>;
   }
 
   if (!block.payload) {
-    return <p>Block configuration is missing.</p>;
+    return <p>Party's over, everyone go home. Experience not found.</p>;
   }
 
   switch (block.kind) {
