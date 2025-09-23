@@ -87,7 +87,8 @@ module Experiences
       when "poll"
         submissions = block.experience_poll_submissions
         total = submissions.count
-        user_responded = user ? submissions.exists?(user_id: user.id) : false
+        user_response = submissions.find_by(user_id: user.id)
+        user_response_payload = user_response ? { id: user_response.id, answer: user_response.answer } : nil
 
         aggregate = {}
         if mod_or_host?(role) && total > 0
@@ -103,25 +104,32 @@ module Experiences
 
         {
           total: total,
-          user_responded: user_responded,
+          user_response: user_response_payload,
+          user_responded: user_response.present?,
           aggregate: mod_or_host?(role) ? aggregate : nil
         }
       when "question"
         submissions = block.experience_question_submissions
         total = submissions.count
-        user_responded = user ? submissions.exists?(user_id: user.id) : false
+        user_response = submissions.find_by(user_id: user.id)
+        user_response_payload = user_response ? { id: user_response.id, answer: user_response.answer } : nil
+        user_responded = user_response.present?
 
         {
           total: total,
+          user_response: user_response_payload,
           user_responded: user_responded
         }
       when "multistep_form"
         submissions = block.experience_multistep_form_submissions
         total = submissions.count
-        user_responded = user ? submissions.exists?(user_id: user.id) : false
+        user_response = submissions.find_by(user_id: user.id)
+        user_response_payload = user_response ? { id: user_response.id, answer: user_response.answer } : nil
+        user_responded = user_response.present?
 
         {
           total: total,
+          user_response: user_response_payload,
           user_responded: user_responded
         }
       when "announcement"

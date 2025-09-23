@@ -12,6 +12,10 @@ interface QuestionProps extends QuestionPayload {
   responses?: {
     total: number;
     user_responded: boolean;
+    user_response?: {
+      id: string;
+      answer: any;
+    } | null;
   };
   buttonText?: string;
 }
@@ -55,14 +59,15 @@ export default function Question({
   };
 
   if (submittedValue || userAlreadyResponded) {
+    const displayValue =
+      submittedValue ||
+      responses?.user_response?.answer?.text ||
+      'You have already responded to this question.';
+
     return (
       <div className={styles.submittedValue}>
         <p className={styles.legend}>{question}</p>
-        {submittedValue ? (
-          <p className={styles.value}>{submittedValue}</p>
-        ) : (
-          <p className={styles.value}>You have already responded to this question.</p>
-        )}
+        <p className={styles.value}>{displayValue}</p>
       </div>
     );
   }

@@ -14,6 +14,10 @@ interface MultistepFormProps extends MultistepFormPayload {
   responses?: {
     total: number;
     user_responded: boolean;
+    user_response?: {
+      id: string;
+      answer: any;
+    } | null;
   };
 }
 
@@ -85,13 +89,15 @@ export default function MultistepForm({ questions, blockId, responses }: Multist
   const isLastQuestion = stepIndex === questions.length - 1;
 
   if (submittedValue || userAlreadyResponded) {
+    const responseData = submittedValue || responses?.user_response?.answer?.responses;
+
     return (
       <div className={styles.submittedValue}>
-        {submittedValue ? (
+        {responseData ? (
           questions.map((question) => (
             <div key={question.formKey} className={styles.submittedAnswer}>
               <p className={styles.legend}>{question.question}</p>
-              <p className={styles.value}>{submittedValue[question.formKey]}</p>
+              <p className={styles.value}>{responseData[question.formKey]}</p>
             </div>
           ))
         ) : (

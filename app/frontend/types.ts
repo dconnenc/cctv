@@ -66,6 +66,10 @@ interface BaseBlock {
   responses?: {
     total: number;
     user_responded: boolean;
+    user_response?: {
+      id: string;
+      answer: any;
+    } | null;
     aggregate?: Record<string, number>;
   };
 }

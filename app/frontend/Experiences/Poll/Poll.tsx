@@ -12,6 +12,10 @@ interface PollProps extends PollPayload {
   responses?: {
     total: number;
     user_responded: boolean;
+    user_response?: {
+      id: string;
+      answer: any;
+    } | null;
     aggregate?: Record<string, number>;
   };
 }
@@ -50,14 +54,16 @@ export default function Poll({ question, options, pollType, blockId, responses }
   };
 
   if (submittedValue.length > 0 || userAlreadyResponded) {
+    const displayValue =
+      submittedValue.length > 0
+        ? submittedValue.join(', ')
+        : responses?.user_response?.answer?.selectedOptions?.join(', ') ||
+          'You have already responded to this poll.';
+
     return (
       <div className={styles.submittedValue}>
         <p className={styles.legend}>{question}</p>
-        {submittedValue.length > 0 ? (
-          <p className={styles.value}>{submittedValue.join(', ')}</p>
-        ) : (
-          <p className={styles.value}>You have already responded to this poll.</p>
-        )}
+        <p className={styles.value}>{displayValue}</p>
       </div>
     );
   }

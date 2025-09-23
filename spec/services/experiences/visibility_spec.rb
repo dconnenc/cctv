@@ -40,7 +40,7 @@ RSpec.describe Experiences::Visibility do
             kind: global_block.kind,
             status: global_block.status,
             payload: global_block.payload,
-            responses: { aggregate: nil, total: 0, user_responded: false }
+            responses: { aggregate: nil, total: 0, user_responded: false, user_response: nil }
           }])
         end
       end
@@ -68,7 +68,7 @@ RSpec.describe Experiences::Visibility do
             kind: matching_experience_block.kind,
             status: matching_experience_block.status,
             payload: matching_experience_block.payload,
-            responses: { aggregate: nil, total: 0, user_responded: false }
+            responses: { aggregate: nil, total: 0, user_responded: false, user_response: nil }
           }])
         end
       end
@@ -100,7 +100,7 @@ RSpec.describe Experiences::Visibility do
             kind: matching_experience_block.kind,
             status: matching_experience_block.status,
             payload: matching_experience_block.payload,
-            responses: { aggregate: nil, total: 0, user_responded: false }
+            responses: { aggregate: nil, total: 0, user_responded: false, user_response: nil }
           }])
         end
       end
@@ -130,7 +130,7 @@ RSpec.describe Experiences::Visibility do
             kind: targeted_experience_block.kind,
             status: targeted_experience_block.status,
             payload: targeted_experience_block.payload,
-            responses: { aggregate: nil, total: 0, user_responded: false }
+            responses: { aggregate: nil, total: 0, user_responded: false, user_response: nil }
           }])
         end
       end
@@ -236,7 +236,7 @@ RSpec.describe Experiences::Visibility do
             kind: open_block.kind,
             status: open_block.status,
             payload: open_block.payload,
-            responses: { aggregate: nil, total: 0, user_responded: false }
+            responses: { aggregate: nil, total: 0, user_responded: false, user_response: nil }
           })
         end
 
