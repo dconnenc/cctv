@@ -484,8 +484,8 @@ export default function Manage() {
       <div className={styles.headerRow}>
         <h1 className={styles.title}>{code}</h1>
         {experience?.status === 'lobby' && (
-          <Button onClick={() => startExperience()} disabled={starting}>
-            {starting ? 'Starting...' : 'Start!'}
+          <Button onClick={() => startExperience()} loading={starting} loadingText="Starting...">
+            Start!
           </Button>
         )}
         {experience?.status === 'live' && <div>Back to Lobby!</div>}
@@ -870,8 +870,8 @@ export default function Manage() {
             </label>
 
             <div className={styles.actions}>
-              <Button type="submit" disabled={creating}>
-                {creating ? 'Creating…' : 'Create Block'}
+              <Button type="submit" loading={creating} loadingText="Creating...">
+                Create Block
               </Button>
             </div>
           </form>

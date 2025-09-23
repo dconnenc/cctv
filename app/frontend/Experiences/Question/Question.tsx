@@ -78,8 +78,8 @@ export default function Question({
         <legend className={styles.legend}>{question}</legend>
         {error && <p className={styles.error}>{error}</p>}
         <TextInput name={formKey} type={inputType} required />
-        <Button type="submit" disabled={isLoading}>
-          {isLoading ? 'Submitting...' : buttonText}
+        <Button type="submit" loading={isLoading} loadingText="Submitting...">
+          {buttonText}
         </Button>
       </fieldset>
     </form>

@@ -140,18 +140,18 @@ export default function MultistepForm({ questions, blockId, responses }: Multist
       </div>
       <div className={styles.buttons}>
         {stepIndex > 0 && (
-          <Button onClick={goBack} disabled={isLoading}>
+          <Button onClick={goBack} loading={isLoading} loadingText="Loading...">
             Back
           </Button>
         )}
         {stepIndex < questions.length - 1 && (
-          <Button onClick={goForward} disabled={isLoading}>
+          <Button onClick={goForward} loading={isLoading} loadingText="Loading...">
             Next
           </Button>
         )}
         {isLastQuestion && (
-          <Button type="submit" disabled={isLoading}>
-            {isLoading ? 'Submitting...' : 'Submit'}
+          <Button type="submit" loading={isLoading} loadingText="Submitting...">
+            Submit
           </Button>
         )}
       </div>

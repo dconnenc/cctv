@@ -81,8 +81,8 @@ export default function Poll({ question, options, pollType, blockId, responses }
             name="selectedOptions"
           />
         ))}
-        <Button type="submit" disabled={isLoading}>
-          {isLoading ? 'Submitting...' : 'Submit'}
+        <Button type="submit" loading={isLoading} loadingText="Submitting...">
+          Submit
         </Button>
       </fieldset>
     </form>
