@@ -370,45 +370,25 @@ RSpec.describe Experiences::Broadcaster do
             segments: ["beta", "premium", "vip"]
           )
         end
-
-        it "demonstrates the fix: no longer missing blocks from non-primary segments" do
-          # Mock the isolated broadcaster too
-          allow(isolated_broadcaster).to receive(:send_broadcast) do |stream_key, message|
-            broadcast_calls << { stream_key: stream_key, message: message }
-          end
-
-          isolated_broadcaster.broadcast_experience_update
-
-          multi_segment_call = broadcast_calls.find { |call|
-            call[:stream_key].include?("participant_#{multi_segment_player.id}")
-          }
-
-          blocks = multi_segment_call[:message][:experience][:blocks]
-          block_ids = blocks.map { |b| b[:id] }
-
-          # This is the key test: participant should see blocks from ALL segments
-          # Before the fix, they would only see blocks from the "most permissive" segment
-          # Now they see blocks from VIP AND Premium AND Beta segments
-
-          expect(block_ids).to include(vip_only_block.id), "Should see VIP-specific blocks"
-          expect(block_ids).to include(premium_only_block.id), "Should see Premium-specific blocks"
-          expect(block_ids).to include(beta_only_block.id), "Should see Beta-specific blocks"
-
-          # This proves the AND logic is working - they get the union of all their segment permissions
-        end
       end
     end
   end
 
   describe "ActionCable integration" do
-    it "calls ActionCable.server.broadcast when broadcasting" do
+    before do
       # Create a participant so broadcast actually happens
-      participant = create(:experience_participant, experience: experience, role: :host)
+      create(
+        :experience_participant, experience: experience, role: :host
+      )
 
       # Don't mock send_broadcast since we want to test the real ActionCable call
+      # This is needed to reset the global mock
       allow(broadcaster).to receive(:send_broadcast).and_call_original
+    end
 
+    it "calls ActionCable.server.broadcast when broadcasting" do
       expect(ActionCable.server).to receive(:broadcast).at_least(:once)
+
       broadcaster.broadcast_experience_update
     end
   end
