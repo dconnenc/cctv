@@ -164,7 +164,10 @@ export function ExperienceProvider({ children }: ExperienceProviderProps) {
   const connectToSubscription = useCallback(() => {
     if (wsRef.current?.readyState === WebSocket.OPEN) return;
 
-    const wsUrl = `wss://${window.location.host}/cable`;
+    // TODO: Eventually we should only allow secure WebSocket connections (wss://) in production
+    // For now, we support both HTTP and HTTPS for development convenience
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const wsUrl = `${protocol}//${window.location.host}/cable`;
 
     qaLogger(`Connecting to WebSocket subscription: ${wsUrl}`);
     wsRef.current = new WebSocket(wsUrl);
@@ -188,7 +191,6 @@ export function ExperienceProvider({ children }: ExperienceProviderProps) {
     };
 
     wsRef.current.onmessage = (event) => {
-      qaLogger('WebSocket message received');
       const message = JSON.parse(event.data);
       handleSubscriptionMessage(message);
     };
@@ -236,15 +238,47 @@ export function ExperienceProvider({ children }: ExperienceProviderProps) {
 
   const handleSubscriptionMessage = useCallback(
     (message: any) => {
-      qaLogger('Processing WebSocket message');
+      // Handle ActionCable internal messages first
+      if (message.type === 'welcome') {
+        qaLogger('WebSocket connected and welcomed');
+        return;
+      }
+
+      if (message.type === 'ping') {
+        // Silent - these are frequent keep-alive messages
+        return;
+      }
+
+      if (message.type === 'confirm_subscription') {
+        qaLogger('WebSocket subscription confirmed');
+        return;
+      }
+
+      if (message.type === 'disconnect') {
+        qaLogger('WebSocket disconnected by server');
+        setWsError('Disconnected by server');
+        return;
+      }
+
+      // Log for all other message types
+      qaLogger('WebSocket message received');
 
       // Parse the message - ActionCable wraps messages in a message property for broadcasts
       const wsMessage: WebSocketMessage = message.message || message;
+
+      // If there's no type after parsing, this might be an unhandled ActionCable message
+      if (!wsMessage || typeof wsMessage !== 'object') {
+        return;
+      }
+
       const messageType: WebSocketMessageType = wsMessage.type;
 
-      qaLogger(`Processing message type: ${messageType}`);
+      // If we still don't have a message type, skip silently (likely ActionCable internal message)
+      if (!messageType) {
+        return;
+      }
 
-      // Handle ActionCable built-in messages
+      // Handle our application-specific messages
       if (messageType === WebSocketMessageTypes.CONFIRM_SUBSCRIPTION) {
         qaLogger('WebSocket subscription confirmed');
         return;
@@ -256,7 +290,7 @@ export function ExperienceProvider({ children }: ExperienceProviderProps) {
 
       // Handle resubscription requests
       if (messageType === WebSocketMessageTypes.RESUBSCRIBE_REQUIRED) {
-        qaLogger('Resubscription required, triggering resubscribe');
+        qaLogger('Resubscription required, reconnecting');
         triggerResubscribe();
         return;
       }
@@ -267,7 +301,7 @@ export function ExperienceProvider({ children }: ExperienceProviderProps) {
         messageType === WebSocketMessageTypes.EXPERIENCE_UPDATED ||
         messageType === WebSocketMessageTypes.STREAM_CHANGED
       ) {
-        qaLogger(`Updating experience state from WebSocket (${messageType})`);
+        qaLogger(`Experience updated via WebSocket: ${messageType}`);
 
         // These messages should have experience data
         const experienceMessage = wsMessage as any;
@@ -277,13 +311,6 @@ export function ExperienceProvider({ children }: ExperienceProviderProps) {
           setExperience(updatedExperience);
           setExperienceStatus(updatedExperience.status === 'live' ? 'live' : 'lobby');
           setError(null);
-          qaLogger('Experience state updated successfully');
-
-          if (messageType === WebSocketMessageTypes.STREAM_CHANGED) {
-            qaLogger('Stream changed - participant moved to different visibility group');
-          }
-        } else {
-          qaLogger('No experience data in message');
         }
       } else {
         qaLogger(`Unknown message type: ${messageType}`);
