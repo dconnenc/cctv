@@ -51,6 +51,8 @@ class Api::ExperiencesController < Api::BaseController
         experience: @experience, actor: @user
       ).open_lobby!
 
+      Experiences::Broadcaster.new(@experience).broadcast_experience_update
+
       render json: {
         success: true,
         data: @experience,
@@ -64,6 +66,8 @@ class Api::ExperiencesController < Api::BaseController
       Experiences::Orchestrator.new(
         experience: @experience, actor: @user
       ).start!
+
+      Experiences::Broadcaster.new(@experience).broadcast_experience_update
 
       render json: {
         success: true,
@@ -79,6 +83,8 @@ class Api::ExperiencesController < Api::BaseController
         experience: @experience, actor: @user
       ).pause!
 
+      Experiences::Broadcaster.new(@experience).broadcast_experience_update
+
       render json: {
         success: true,
         data: @experience,
@@ -92,6 +98,8 @@ class Api::ExperiencesController < Api::BaseController
       Experiences::Orchestrator.new(
         experience: @experience, actor: @user
       ).resume!
+
+      Experiences::Broadcaster.new(@experience).broadcast_experience_update
 
       render json: {
         success: true,
@@ -108,62 +116,16 @@ class Api::ExperiencesController < Api::BaseController
     authorize! experience, to: :show?
 
     visibility = Experiences::Visibility.new(experience: experience, user: authenticated_user)
-    experience_payload = visibility.payload[:experience]
+    visibility_payload = visibility.payload
 
     # Find current user's participant record for this experience
     current_participant = authenticated_user ? experience.experience_participants.find_by(user: authenticated_user) : nil
 
-    render json: {
-      type: 'success',
-      success: true,
-      experience: {
-        id: experience.id,
-        name: experience.name,
-        code: experience.code,
-        status: experience.status,
-        creator_id: experience.creator_id,
-        created_at: experience.created_at,
-        updated_at: experience.updated_at,
-        blocks: experience_payload[:blocks],
-        hosts: experience.experience_participants.host.map do |participant|
-          {
-            id: participant.id,
-            user_id: participant.user.id,
-            experience_id: participant.experience_id,
-            name: participant.user.name,
-            email: participant.user.email,
-            status: participant.status,
-            role: participant.role,
-            joined_at: participant.joined_at,
-            fingerprint: participant.fingerprint,
-            created_at: participant.created_at,
-            updated_at: participant.updated_at
-          }
-        end,
-        participants: experience.experience_participants.map do |participant|
-          {
-            id: participant.id,
-            user_id: participant.user.id,
-            experience_id: participant.experience_id,
-            name: participant.user.name,
-            email: participant.user.email,
-            status: participant.status,
-            role: participant.role,
-            joined_at: participant.joined_at,
-            fingerprint: participant.fingerprint,
-            created_at: participant.created_at,
-            updated_at: participant.updated_at
-          }
-        end
-      },
-      participant: current_participant ? {
-        id: current_participant.id,
-        user_id: current_participant.user.id,
-        name: current_participant.user.name,
-        email: current_participant.user.email,
-        role: current_participant.role
-      } : nil
-    }
+    render json: ExperienceSerializer.serialize_for_api_response(
+      experience,
+      visibility_payload: visibility_payload,
+      current_participant: current_participant
+    )
   end
 
   # POST /api/experiences/join
@@ -270,7 +232,7 @@ class Api::ExperiencesController < Api::BaseController
 
   def authenticate_with_jwt_for_show
     claims = Experiences::AuthService.decode!(bearer_token)
-    
+
     case claims[:scope]
     when Experiences::AuthService::PARTICIPANT
       authorize_participant_for_show(claims)
@@ -290,20 +252,20 @@ class Api::ExperiencesController < Api::BaseController
 
   def authorize_participant_for_show(claims)
     user, experience = Experiences::AuthService.authorize_participant!(claims)
-    
+
     # Verify experience code matches URL parameter
     if params[:id] != experience.code
       render json: { type: 'error', error: "Experience mismatch" }, status: :unauthorized
       return nil
     end
-    
+
     [user, experience]
   end
 
   def authorize_admin_for_show(claims)
     user = Experiences::AuthService.admin_from_claims!(claims)
     experience = find_experience_by_code_or_render_error(params[:id])
-    
+
     return nil unless experience
     [user, experience]
   end
@@ -311,18 +273,18 @@ class Api::ExperiencesController < Api::BaseController
   def authenticate_with_session_for_show
     experience = find_experience_by_code_or_render_error(params[:id])
     return nil unless experience
-    
+
     [current_user, experience]
   end
 
   def find_experience_by_code_or_render_error(code)
     experience = Experience.find_by(code: code)
-    
+
     if experience.nil?
       render json: { type: 'error', error: "Invalid experience code" }, status: :not_found
       return nil
     end
-    
+
     experience
   end
 end

@@ -1,8 +1,23 @@
-import { ReactNode, createContext, useCallback, useContext, useEffect, useState } from 'react';
+import {
+  ReactNode,
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 
 import { useParams } from 'react-router-dom';
 
-import { Experience, ExperienceContextType, ParticipantSummary } from '@cctv/types';
+import {
+  Experience,
+  ExperienceContextType,
+  ParticipantSummary,
+  WebSocketMessage,
+  WebSocketMessageType,
+  WebSocketMessageTypes,
+} from '@cctv/types';
 import { getStoredJWT, qaLogger } from '@cctv/utils';
 
 const ExperienceContext = createContext<ExperienceContextType | undefined>(undefined);
@@ -29,6 +44,11 @@ export function ExperienceProvider({ children }: ExperienceProviderProps) {
 
   const [experienceStatus, setExperienceStatus] = useState<'lobby' | 'live'>('lobby');
   const [error, setError] = useState<string | null>(null);
+
+  // WebSocket state
+  const [wsConnected, setWsConnected] = useState(false);
+  const [wsError, setWsError] = useState<string | null>(null);
+  const wsRef = useRef<WebSocket | null>(null);
 
   const currentCode = code || '';
 
@@ -130,6 +150,148 @@ export function ExperienceProvider({ children }: ExperienceProviderProps) {
     }
   }, [jwt, currentCode, loadExperienceData]);
 
+  // WebSocket connection management
+  useEffect(() => {
+    if (jwt && currentCode) {
+      connectToSubscription();
+    } else {
+      disconnectFromSubscription();
+    }
+
+    return () => disconnectFromSubscription();
+  }, [jwt, currentCode]);
+
+  const connectToSubscription = useCallback(() => {
+    if (wsRef.current?.readyState === WebSocket.OPEN) return;
+
+    const wsUrl = `wss://${window.location.host}/cable`;
+
+    qaLogger(`Connecting to WebSocket subscription: ${wsUrl}`);
+    wsRef.current = new WebSocket(wsUrl);
+
+    wsRef.current.onopen = () => {
+      qaLogger('WebSocket connected, subscribing to experience updates');
+      setWsConnected(true);
+      setWsError(null);
+
+      const subscription = {
+        command: 'subscribe',
+        identifier: JSON.stringify({
+          channel: 'ExperienceSubscriptionChannel',
+          code: currentCode,
+          token: jwt,
+        }),
+      };
+
+      qaLogger('Sending subscription');
+      wsRef.current?.send(JSON.stringify(subscription));
+    };
+
+    wsRef.current.onmessage = (event) => {
+      qaLogger('WebSocket message received');
+      const message = JSON.parse(event.data);
+      handleSubscriptionMessage(message);
+    };
+
+    wsRef.current.onerror = () => {
+      qaLogger('WebSocket error');
+      setWsError('Connection error');
+      setWsConnected(false);
+    };
+
+    wsRef.current.onclose = () => {
+      qaLogger('WebSocket connection closed');
+      setWsConnected(false);
+    };
+  }, [jwt, currentCode]);
+
+  const disconnectFromSubscription = useCallback(() => {
+    if (wsRef.current) {
+      qaLogger('Disconnecting from WebSocket');
+      wsRef.current.close();
+      wsRef.current = null;
+      setWsConnected(false);
+      setWsError(null);
+    }
+  }, []);
+
+  const triggerResubscribe = useCallback(() => {
+    if (wsRef.current?.readyState === WebSocket.OPEN) {
+      qaLogger('Sending resubscribe command to ActionCable');
+      wsRef.current.send(
+        JSON.stringify({
+          command: 'message',
+          identifier: JSON.stringify({
+            channel: 'ExperienceSubscriptionChannel',
+            code: currentCode,
+            token: jwt,
+          }),
+          data: JSON.stringify({ action: 'resubscribe' }),
+        }),
+      );
+    } else {
+      qaLogger('WebSocket not open, cannot resubscribe');
+    }
+  }, [jwt, currentCode]);
+
+  const handleSubscriptionMessage = useCallback(
+    (message: any) => {
+      qaLogger('Processing WebSocket message');
+
+      // Parse the message - ActionCable wraps messages in a message property for broadcasts
+      const wsMessage: WebSocketMessage = message.message || message;
+      const messageType: WebSocketMessageType = wsMessage.type;
+
+      qaLogger(`Processing message type: ${messageType}`);
+
+      // Handle ActionCable built-in messages
+      if (messageType === WebSocketMessageTypes.CONFIRM_SUBSCRIPTION) {
+        qaLogger('WebSocket subscription confirmed');
+        return;
+      }
+
+      if (messageType === WebSocketMessageTypes.PING) {
+        return;
+      }
+
+      // Handle resubscription requests
+      if (messageType === WebSocketMessageTypes.RESUBSCRIBE_REQUIRED) {
+        qaLogger('Resubscription required, triggering resubscribe');
+        triggerResubscribe();
+        return;
+      }
+
+      // Handle experience-related messages
+      if (
+        messageType === WebSocketMessageTypes.EXPERIENCE_STATE ||
+        messageType === WebSocketMessageTypes.EXPERIENCE_UPDATED ||
+        messageType === WebSocketMessageTypes.STREAM_CHANGED
+      ) {
+        qaLogger(`Updating experience state from WebSocket (${messageType})`);
+
+        // These messages should have experience data
+        const experienceMessage = wsMessage as any;
+        const updatedExperience = experienceMessage.experience;
+
+        if (updatedExperience) {
+          setExperience(updatedExperience);
+          setExperienceStatus(updatedExperience.status === 'live' ? 'live' : 'lobby');
+          setError(null);
+          qaLogger('Experience state updated successfully');
+
+          if (messageType === WebSocketMessageTypes.STREAM_CHANGED) {
+            qaLogger('Stream changed - participant moved to different visibility group');
+          }
+        } else {
+          qaLogger('No experience data in message');
+        }
+      } else {
+        qaLogger(`Unknown message type: ${messageType}`);
+      }
+    },
+    [triggerResubscribe],
+  );
+
   const setJWTHandler = useCallback(
     (token: string) => {
       if (!currentCode) {
@@ -165,6 +327,10 @@ export function ExperienceProvider({ children }: ExperienceProviderProps) {
     setJWT: setJWTHandler,
     clearJWT,
     experienceFetch,
+
+    // WebSocket properties
+    wsConnected,
+    wsError,
   };
 
   return <ExperienceContext.Provider value={value}>{children}</ExperienceContext.Provider>;

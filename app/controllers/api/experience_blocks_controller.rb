@@ -16,6 +16,8 @@ class Api::ExperienceBlocksController < Api::BaseController
         open_immediately:  params[:experience][:open_immediately] || false
       )
 
+      Experiences::Broadcaster.new(@experience).broadcast_experience_update
+
       render json: {
         success: true,
         data: block,
@@ -38,6 +40,8 @@ class Api::ExperienceBlocksController < Api::BaseController
         experience: @experience, actor: @user
       ).open_block!(params[:id])
 
+      Experiences::Broadcaster.new(@experience).broadcast_experience_update
+
       render json: {
         success: true,
         data: block,
@@ -51,6 +55,8 @@ class Api::ExperienceBlocksController < Api::BaseController
       block = Experiences::Orchestrator.new(
         experience: @experience, actor: @user
       ).close_block!(params[:id])
+
+      Experiences::Broadcaster.new(@experience).broadcast_experience_update
 
       render json: {
         success: true,
@@ -75,6 +81,8 @@ class Api::ExperienceBlocksController < Api::BaseController
       visibility = Experiences::Visibility.new(experience: @experience, user: @user)
       role, segments = visibility.send(:participant_role_and_segments)
       updated_block = visibility.send(:serialize_block, block, role)
+
+      Experiences::Broadcaster.new(@experience).broadcast_experience_update
 
       render json: {
         success: true,
@@ -102,6 +110,8 @@ class Api::ExperienceBlocksController < Api::BaseController
       visibility = Experiences::Visibility.new(experience: @experience, user: @user)
       role, segments = visibility.send(:participant_role_and_segments)
       updated_block = visibility.send(:serialize_block, block, role)
+
+      Experiences::Broadcaster.new(@experience).broadcast_experience_update
 
       render json: {
         success: true,

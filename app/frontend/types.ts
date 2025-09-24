@@ -272,6 +272,96 @@ export interface ApiErrorResponse {
 
 // ===== CONTEXT TYPES =====
 
+// ===== WEBSOCKET MESSAGE TYPES =====
+
+export const WebSocketMessageTypes = {
+  EXPERIENCE_STATE: 'experience_state',
+  EXPERIENCE_UPDATED: 'experience_updated',
+  STREAM_CHANGED: 'stream_changed',
+  RESUBSCRIBE_REQUIRED: 'resubscribe_required',
+  CONFIRM_SUBSCRIPTION: 'confirm_subscription',
+  PING: 'ping',
+} as const;
+
+export type WebSocketMessageType =
+  (typeof WebSocketMessageTypes)[keyof typeof WebSocketMessageTypes];
+
+export type StreamType = 'role' | 'role_segments' | 'targeted';
+
+export interface WebSocketMessageMetadata {
+  participant_id: string;
+  timestamp: number;
+}
+
+export interface ExperienceStateMessageMetadata extends WebSocketMessageMetadata {
+  logical_stream: string;
+}
+
+export interface ExperienceUpdatedMessageMetadata extends WebSocketMessageMetadata {
+  stream_key: string;
+  stream_type: StreamType;
+  role: ParticipantRole;
+  segments: string[];
+}
+
+export interface StreamChangedMessageMetadata extends WebSocketMessageMetadata {
+  old_stream: string;
+  new_stream: string;
+}
+
+export interface ResubscribeRequiredMessageMetadata {
+  participant_id: string;
+  timestamp: number;
+  reason: string;
+}
+
+// Base WebSocket message structure
+export interface BaseWebSocketMessage<
+  T extends WebSocketMessageType,
+  M = WebSocketMessageMetadata,
+> {
+  type: T;
+  metadata?: M;
+}
+
+// Experience-related messages that include experience data
+export interface ExperienceWebSocketMessage<
+  T extends WebSocketMessageType,
+  M = WebSocketMessageMetadata,
+> extends BaseWebSocketMessage<T, M> {
+  experience: Experience;
+}
+
+// Specific message types
+export interface ExperienceStateMessage
+  extends ExperienceWebSocketMessage<'experience_state', ExperienceStateMessageMetadata> {}
+
+export interface ExperienceUpdatedMessage
+  extends ExperienceWebSocketMessage<'experience_updated', ExperienceUpdatedMessageMetadata> {}
+
+export interface StreamChangedMessage
+  extends ExperienceWebSocketMessage<'stream_changed', StreamChangedMessageMetadata> {}
+
+export interface ResubscribeRequiredMessage
+  extends BaseWebSocketMessage<'resubscribe_required', ResubscribeRequiredMessageMetadata> {
+  reason: string;
+}
+
+export interface ConfirmSubscriptionMessage extends BaseWebSocketMessage<'confirm_subscription'> {}
+
+export interface PingMessage extends BaseWebSocketMessage<'ping'> {}
+
+// Union type for all possible WebSocket messages
+export type WebSocketMessage =
+  | ExperienceStateMessage
+  | ExperienceUpdatedMessage
+  | StreamChangedMessage
+  | ResubscribeRequiredMessage
+  | ConfirmSubscriptionMessage
+  | PingMessage;
+
+// ===== CONTEXT TYPES =====
+
 export interface ExperienceContextType {
   experience: Experience | null;
   participant: ParticipantSummary | null;
@@ -287,4 +377,8 @@ export interface ExperienceContextType {
   setJWT: (token: string) => void;
   clearJWT: () => void;
   experienceFetch: (url: string, options?: RequestInit) => Promise<Response>;
+
+  // WebSocket properties
+  wsConnected: boolean;
+  wsError: string | null;
 }

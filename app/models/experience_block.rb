@@ -1,9 +1,9 @@
 class ExperienceBlock < ApplicationRecord
   KINDS = [
-    "poll",
-    "question",
-    "multistep_form",
-    "announcement"
+    POLL = "poll",
+    QUESTION = "question",
+    MULTISTEP_FORM = "multistep_form",
+    ANNOUNCEMENT = "announcement"
   ]
 
   belongs_to :experience

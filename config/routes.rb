@@ -3,6 +3,9 @@ Rails.application.routes.draw do
     mount LetterOpenerWeb::Engine, at: "/letter_opener"
   end
 
+  # Mount Action Cable for WebSocket connections
+  mount ActionCable.server => '/cable'
+
   passwordless_for :users
 
   # Reveal health status on /up that returns 200 if the app boots with no exceptions, otherwise 500.
