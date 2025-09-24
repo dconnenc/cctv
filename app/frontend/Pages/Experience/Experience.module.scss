@@ -93,3 +93,21 @@
   opacity: 0.75;
   font-size: 0.9rem;
 }
+
+// WebSocket connection status
+.connectionStatus {
+  margin-bottom: 1rem;
+  padding: 0.5rem;
+  border-radius: 4px;
+  background-color: rgba(255, 255, 255, 0.1);
+  text-align: center;
+  font-size: 0.9rem;
+}
+
+.connected {
+  color: var(--green);
+}
+
+.disconnected {
+  color: var(--yellow);
+}

@@ -6,8 +6,17 @@ import ExperienceBlockContainer from '@cctv/experiences/ExperienceBlockContainer
 import styles from './Experience.module.scss';
 
 export default function Experience() {
-  const { experience, participant, code, isLoading, isPolling, experienceStatus, error } =
-    useExperience();
+  const {
+    experience,
+    participant,
+    code,
+    isLoading,
+    isPolling,
+    experienceStatus,
+    error,
+    wsConnected,
+    wsError,
+  } = useExperience();
 
   if (isLoading) {
     return (
@@ -51,6 +60,17 @@ export default function Experience() {
           Participants: {participants.length}
           {isPolling && <span className={styles.loadingSpinner}>🔄</span>}
         </p>
+
+        {/* WebSocket Connection Status */}
+        <div className={styles.connectionStatus}>
+          {wsConnected ? (
+            <span className={styles.connected}>🟢 Real-time connected</span>
+          ) : (
+            <span className={styles.disconnected}>
+              🔴 {wsError || 'Not connected to real-time updates'}
+            </span>
+          )}
+        </div>
 
         {/* Participants List */}
         <div className={styles.participantsContainer}>
