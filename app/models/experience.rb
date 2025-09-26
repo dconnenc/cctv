@@ -11,12 +11,12 @@ class Experience < ApplicationRecord
   belongs_to :creator, class_name: 'User'
 
   enum status: {
-    draft: "draft",
-    lobby: "lobby",
-    live: "live",
-    paused: "paused",
-    finished: "finished",
-    archived: "archived"
+    draft: DRAFT = "draft",
+    lobby: LOBBY = "lobby",
+    live: LIVE = "live",
+    paused: PAUSED = "paused",
+    finished: FINISHED = "finished",
+    archived: ARCHIVED = "archived"
   }
 
   validates :code, presence: true, uniqueness: true, length: { minimum: 1, maximum: 255 }

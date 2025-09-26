@@ -1,40 +1,34 @@
 class ExperienceBlockPolicy < ApplicationPolicy
   def submit_poll_response?
-    return false unless user
-    return false unless participant?
-    return false unless block_visible_to_user?
-    
-    true
+    user_allowed_to_interact_with_block?
   end
 
   def submit_question_response?
-    return false unless user
-    return false unless participant?
-    return false unless block_visible_to_user?
-    
-    true
+    user_allowed_to_interact_with_block?
   end
 
   def submit_multistep_form_response?
-    return false unless user
-    return false unless participant?
-    return false unless block_visible_to_user?
-    
-    true
+    user_allowed_to_interact_with_block?
   end
 
   private
+
+  def user_allowed_to_interact_with_block?
+    return false unless user
+    return false unless participant?
+    return false unless block_visible_to_user?
+
+    true
+  end
 
   def participant?
     record.experience.has_user?(user)
   end
 
   def block_visible_to_user?
-    visibility_service = Experiences::Visibility.new(
-      experience: record.experience,
+    Experiences::Visibility.block_visible_to_user?(
+      block: record,
       user: user
     )
-    
-    visibility_service.block_visible_to_user?(record)
   end
 end

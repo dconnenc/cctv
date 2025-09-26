@@ -84,13 +84,12 @@ class Experiences::Broadcaster
 
   def broadcast_to_stream(stream_key, stream_data, participants)
     begin
-      visibility = Experiences::StreamVisibility.new(
+      visibility_payload = Experiences::Visibility.payload_for_stream(
         experience: @experience,
         role: stream_data[:role],
         segments: stream_data[:segments] || [],
         target_user_ids: stream_data[:target_user_ids] || []
       )
-      visibility_payload = visibility.payload
     rescue => e
       # Log error but don't fail the entire broadcast
       Rails.logger.error(
