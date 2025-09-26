@@ -1,8 +1,6 @@
 require "rails_helper"
 
 RSpec.describe Experiences::Visibility do
-  subject { described_class.new(user: user, experience: experience).payload }
-
   let(:experience) { create(:experience, status: experience_status) }
   let(:user) { create(:user, :user) }
   let(:participant_role) { ExperienceParticipant.roles[:audience] }
@@ -22,6 +20,16 @@ RSpec.describe Experiences::Visibility do
   end
 
   describe "#payload" do
+    subject do
+      described_class.new(
+        experience: experience,
+        user_role: user.role,
+        participant_role: participant_role,
+        segments: [user_segment],
+        target_user_ids: [user.id]
+      ).payload
+    end
+
     describe "segment visibility" do
       context "when a blocks exists that has no targetting rules" do
         let!(:global_block) do
@@ -249,18 +257,94 @@ RSpec.describe Experiences::Visibility do
     end
   end
 
+  describe ".payload_for_user" do
+    subject { described_class.payload_for_user(experience: experience, user: user) }
+
+    let!(:open_block) do
+      create(
+        :experience_block,
+        experience: experience,
+        status: :open
+      )
+    end
+
+    it "returns payload for user" do
+      expect(subject[:experience][:blocks].size).to eq(1)
+      expect(subject[:experience][:blocks].first[:id]).to eq(open_block.id)
+    end
+  end
+
+  describe ".payload_for_stream" do
+    subject { described_class.payload_for_stream(experience: experience, role: :player, segments: ["vip"]) }
+
+    let!(:vip_block) do
+      create(
+        :experience_block,
+        experience: experience,
+        visible_to_segments: ["vip"]
+      )
+    end
+
+    let!(:premium_block) do
+      create(
+        :experience_block,
+        experience: experience,
+        visible_to_segments: ["premium"]
+      )
+    end
+
+    it "returns payload for stream" do
+      expect(subject[:experience][:blocks].size).to eq(1)
+      expect(subject[:experience][:blocks].first[:id]).to eq(vip_block.id)
+    end
+  end
+
+  describe ".block_visible_to_user?" do
+    let!(:open_block) do
+      create(
+        :experience_block,
+        experience: experience,
+        status: :open
+      )
+    end
+
+    let!(:closed_block) do
+      create(
+        :experience_block,
+        experience: experience,
+        status: :closed
+      )
+    end
+
+    context "for regular user" do
+      it "returns true for open blocks" do
+        expect(described_class.block_visible_to_user?(block: open_block, user: user)).to be true
+      end
+
+      it "returns false for closed blocks" do
+        expect(described_class.block_visible_to_user?(block: closed_block, user: user)).to be false
+      end
+    end
+
+    context "for admin user" do
+      let(:admin_user) { create(:user, :admin) }
+
+      it "returns true for all blocks" do
+        expect(described_class.block_visible_to_user?(block: open_block, user: admin_user)).to be true
+        expect(described_class.block_visible_to_user?(block: closed_block, user: admin_user)).to be true
+      end
+    end
+  end
+
   describe "non-participant access" do
     let(:non_participant_user) { create(:user, :user) }
     let(:experience) { create(:experience, status: :live) }
-    
-    subject { described_class.new(user: non_participant_user, experience: experience).payload }
+
+    subject { described_class.payload_for_user(experience: experience, user: non_participant_user) }
 
     before do
-      # Create a participant (but not our test user)
       other_user = create(:user, :user)
       create(:experience_participant, user: other_user, experience: experience, role: :audience)
-      
-      # Create an open block with no targeting rules
       create(:experience_block, experience: experience, kind: "poll", status: "open")
     end
 
@@ -272,12 +356,10 @@ RSpec.describe Experiences::Visibility do
   describe "admin access" do
     let(:admin_user) { create(:user, :admin) }
     let(:experience) { create(:experience, status: :live) }
-    
-    subject { described_class.new(user: admin_user, experience: experience).payload }
+
+    subject { described_class.payload_for_user(experience: experience, user: admin_user) }
 
     before do
-      # Admin is NOT a participant
-      # Create an open block
       create(:experience_block, experience: experience, kind: "poll", status: "open")
     end
 
@@ -286,5 +368,198 @@ RSpec.describe Experiences::Visibility do
     end
   end
 
+  describe "#block_visible?" do
+    let(:visibility) { described_class.new(experience: experience, participant_role: :player, segments: ["vip"]) }
 
+    let!(:vip_block) do
+      create(:experience_block, experience: experience, status: :open, visible_to_segments: ["vip"])
+    end
+    let!(:premium_block) do
+      create(:experience_block, experience: experience, status: :open, visible_to_segments: ["premium"])
+    end
+
+    it "returns true for visible blocks" do
+      expect(visibility.block_visible?(vip_block)).to be true
+    end
+
+    it "returns false for non-visible blocks" do
+      expect(visibility.block_visible?(premium_block)).to be false
+    end
+  end
+
+  describe "stream-like usage patterns" do
+    describe "with role-only stream" do
+      let(:visibility) { described_class.new(experience: experience, participant_role: :audience) }
+
+      let!(:open_block) do
+        create(:experience_block, experience: experience, status: :open)
+      end
+      let!(:closed_block) do
+        create(:experience_block, experience: experience, status: :closed)
+      end
+
+      it "returns blocks appropriate for the role" do
+        payload = visibility.payload
+
+        expect(payload[:experience][:blocks].size).to eq(1)
+        expect(payload[:experience][:blocks].first[:id]).to eq(open_block.id)
+      end
+
+      it "includes experience metadata" do
+        payload = visibility.payload
+
+        expect(payload[:experience]).to include(
+          id: experience.id,
+          code: experience.code,
+          status: experience.status
+        )
+      end
+    end
+
+    describe "with host role" do
+      let(:visibility) { described_class.new(experience: experience, participant_role: :host) }
+
+      let!(:open_block) do
+        create(:experience_block, experience: experience, status: :open)
+      end
+      let!(:closed_block) do
+        create(:experience_block, experience: experience, status: :closed)
+      end
+
+      it "shows closed blocks to hosts" do
+        payload = visibility.payload
+
+        expect(payload[:experience][:blocks].size).to eq(2)
+        block_ids = payload[:experience][:blocks].map { |b| b[:id] }
+        expect(block_ids).to include(open_block.id, closed_block.id)
+      end
+
+      it "includes visibility metadata for hosts" do
+        payload = visibility.payload
+
+        block = payload[:experience][:blocks].first
+        expect(block).to have_key(:visible_to_roles)
+        expect(block).to have_key(:visible_to_segments)
+      end
+    end
+
+    describe "with segment-based stream" do
+      let(:visibility) { described_class.new(experience: experience, participant_role: :player, segments: ["vip"]) }
+
+      let!(:global_block) do
+        create(:experience_block, experience: experience, status: :open)
+      end
+      let!(:vip_block) do
+        create(:experience_block, experience: experience, status: :open, visible_to_segments: ["vip"])
+      end
+      let!(:premium_block) do
+        create(:experience_block, experience: experience, status: :open, visible_to_segments: ["premium"])
+      end
+
+      it "shows global and segment-specific blocks" do
+        payload = visibility.payload
+
+        expect(payload[:experience][:blocks].size).to eq(2)
+        block_ids = payload[:experience][:blocks].map { |b| b[:id] }
+        expect(block_ids).to include(global_block.id, vip_block.id)
+        expect(block_ids).not_to include(premium_block.id)
+      end
+    end
+
+    describe "with multi-segment stream" do
+      let(:visibility) { described_class.new(experience: experience, participant_role: :player, segments: ["vip", "premium"]) }
+
+      let!(:global_block) do
+        create(:experience_block, experience: experience, status: :open)
+      end
+      let!(:vip_block) do
+        create(:experience_block, experience: experience, status: :open, visible_to_segments: ["vip"])
+      end
+      let!(:premium_block) do
+        create(:experience_block, experience: experience, status: :open, visible_to_segments: ["premium"])
+      end
+      let!(:beta_block) do
+        create(:experience_block, experience: experience, status: :open, visible_to_segments: ["beta"])
+      end
+      let!(:vip_premium_block) do
+        create(:experience_block, experience: experience, status: :open, visible_to_segments: ["vip", "premium"])
+      end
+
+      it "shows blocks from ALL segments (AND logic)" do
+        payload = visibility.payload
+
+        expect(payload[:experience][:blocks].size).to eq(4)
+        block_ids = payload[:experience][:blocks].map { |b| b[:id] }
+
+        expect(block_ids).to include(global_block.id)
+        expect(block_ids).to include(vip_block.id)
+        expect(block_ids).to include(premium_block.id)
+        expect(block_ids).to include(vip_premium_block.id)
+
+        expect(block_ids).not_to include(beta_block.id)
+      end
+    end
+
+    describe "with user-targeted stream" do
+      let(:target_user) { create(:user) }
+      let(:other_user) { create(:user) }
+      let(:visibility) { described_class.new(experience: experience, participant_role: :player, target_user_ids: [target_user.id]) }
+
+      let!(:global_block) do
+        create(:experience_block, experience: experience, status: :open)
+      end
+      let!(:targeted_block) do
+        create(:experience_block, experience: experience, status: :open, target_user_ids: [target_user.id])
+      end
+      let!(:other_targeted_block) do
+        create(:experience_block, experience: experience, status: :open, target_user_ids: [other_user.id])
+      end
+
+      it "shows global and user-targeted blocks" do
+        payload = visibility.payload
+
+        expect(payload[:experience][:blocks].size).to eq(2)
+        block_ids = payload[:experience][:blocks].map { |b| b[:id] }
+        expect(block_ids).to include(global_block.id, targeted_block.id)
+        expect(block_ids).not_to include(other_targeted_block.id)
+      end
+    end
+
+    describe "with role targeting" do
+      let(:visibility) { described_class.new(experience: experience, participant_role: :player) }
+
+      let!(:global_block) do
+        create(:experience_block, experience: experience, status: :open)
+      end
+      let!(:player_block) do
+        create(:experience_block, experience: experience, status: :open, visible_to_roles: ["player"])
+      end
+      let!(:host_block) do
+        create(:experience_block, experience: experience, status: :open, visible_to_roles: ["host"])
+      end
+
+      it "shows global and role-specific blocks" do
+        payload = visibility.payload
+
+        expect(payload[:experience][:blocks].size).to eq(2)
+        block_ids = payload[:experience][:blocks].map { |b| b[:id] }
+        expect(block_ids).to include(global_block.id, player_block.id)
+        expect(block_ids).not_to include(host_block.id)
+      end
+    end
+
+    describe "with no role (nil)" do
+      let(:visibility) { described_class.new(experience: experience, participant_role: nil) }
+
+      let!(:open_block) do
+        create(:experience_block, experience: experience, status: :open)
+      end
+
+      it "shows no blocks for non-participants" do
+        payload = visibility.payload
+
+        expect(payload[:experience][:blocks]).to be_empty
+      end
+    end
+  end
 end

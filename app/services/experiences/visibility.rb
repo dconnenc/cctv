@@ -1,80 +1,201 @@
 module Experiences
-  # PURPOSE:
-  # Calculates what experience blocks a specific User should see, taking into account:
-  # - The user's participant role and segments within the experience
-  # - Individual user targeting rules on blocks
-  # - User-specific response data (their own poll answers, etc.)
-  #
-  # USE CASES:
-  # - API controllers serving individual user requests
-  # - ActionCable initial state when user first subscribes
-  # - Individual block visibility checks (e.g., can this user submit to this block?)
-  #
-  # INPUTS:
-  # - experience: The Experience object
-  # - user: A specific User object
-  #
-  # BLOCK VISIBILITY LOGIC:
-  # - Closed blocks: Only visible to moderators/hosts/admins
-  # - Blocks with targeting rules: Must match role OR segments OR individual user targeting
-  # - Blocks without targeting rules: Visible to all participants
-  # - Non-participants: See nothing (unless admin/superadmin)
-  #
-  # INDIVIDUAL USER TARGETING:
-  # Uses actual user.id to check if blocks specifically target this user
-  class Visibility < VisibilityBase
-    attr_reader :user, :experience
-    def initialize(experience:, user:)
-      @experience = experience
-      @user = user
-    end
+  class Visibility
+    attr_reader(
+      :experience, :user_role, :participant_role, :segments, :target_user_ids
+    )
 
-    def payload
-      role, segments = participant_role_and_segments
-      blocks = visible_blocks_for(role, segments)
-
-      base_experience_payload(blocks.map { |block| serialize_block(block, role) })
-    end
-
-    def block_visible_to_user?(block)
-      role, segments = participant_role_and_segments
-      visible_blocks = visible_blocks_for(role, segments)
-      visible_blocks.include?(block)
-    end
-
-    def participant_role_and_segments
-      return [nil, []] if user.nil?
-
+    def self.payload_for_user(experience:, user:)
       participant_record = experience
         .experience_participants
         .find_by(user_id: user.id)
 
-      return [nil, []] if participant_record.nil?
+      # Admin users can see everything even without being participants
+      if user.admin? || user.superadmin?
+        return new(
+          experience: experience,
+          user_role: user.role,
+          participant_role: participant_record&.role,
+          segments: participant_record&.segments || [],
+          target_user_ids: [user.id]
+        ).payload_for_user(user)
+      end
 
-      [
-        (participant_record.role.to_sym),
-        (participant_record.segments || [])
-      ]
+      if participant_record.blank?
+        return { experience: experience_structure(experience, []) }
+      end
+
+      new(
+        experience: experience,
+        user_role: user.role,
+        participant_role: participant_record.role,
+        segments: participant_record.segments,
+        target_user_ids: [user.id]
+      ).payload_for_user(user)
+    end
+
+    def self.payload_for_stream(
+      experience:, role:, segments: [], target_user_ids: []
+    )
+      new(
+        experience: experience,
+        participant_role: role,
+        segments: segments,
+        target_user_ids: target_user_ids
+      ).payload
+    end
+
+    def self.block_visible_to_user?(block:, user:)
+      return true if user.admin? || user.superadmin?
+
+      participant_record = block
+        .experience
+        .experience_participants
+        .find_by(user_id: user.id)
+
+      return false if participant_record.blank?
+
+      new(
+        experience: block.experience,
+        user_role: user.role,
+        participant_role: participant_record.role,
+        segments: participant_record.segments,
+        target_user_ids: [user.id]
+      ).block_visible?(block)
+    end
+
+    def self.serialize_block_for_user(experience:, user:, block:)
+      participant_record = experience
+        .experience_participants
+        .find_by(user_id: user.id)
+
+      # Treat admin's as host-level permissions when they are not participants
+      if user.admin? || user.superadmin?
+        effective_participant_role = participant_record&.role || "host"
+
+        return BlockSerializer.serialize_for_user(
+          block, participant_role: effective_participant_role, user: user
+        )
+      end
+
+      return nil if participant_record.blank?
+
+      BlockSerializer.serialize_for_user(
+        block, participant_role: participant_record.role, user: user
+      )
+    end
+
+    def initialize(
+      experience:,
+      user_role: nil,
+      participant_role: nil,
+      segments: [],
+      target_user_ids: []
+    )
+      @experience = experience
+      @user_role = user_role
+      @participant_role = participant_role
+      @segments = segments || []
+      @target_user_ids = target_user_ids || []
+    end
+
+    def payload_for_user(user)
+      {
+        experience: self.class.experience_structure(
+          experience,
+          visible_blocks.map { |block| serialize_block_for_user(block, user) }
+        )
+      }
+    end
+
+    def payload
+      {
+        experience: self.class.experience_structure(
+          experience,
+          visible_blocks.map { |block| serialize_block_for_stream(block) }
+        )
+      }
+    end
+
+    def block_visible?(block)
+      visible_blocks.include?(block)
+    end
+
+    def block_visible_to_user?(block)
+      block_visible?(block)
+    end
+
+    def block_visible_to_stream?(block)
+      block_visible?(block)
+    end
+
+    def visible_blocks
+      @visible_blocks ||= begin
+        blocks = experience.experience_blocks
+
+        return blocks if user_admin?
+        return [] if participant_role.nil?
+
+        blocks
+          .select { |block| moderator_or_host? || block.open? }
+          .select { |block| rules_allow_block?(block) }
+      end
     end
 
     private
 
-    def visible_blocks_for(role, segments)
-      target_user_ids = user ? [user.id] : []
-      super(role, segments, target_user_ids, admin?)
+    def user_admin?
+      user_role == "admin" || user_role == "superadmin"
     end
 
-    def serialize_block(block, role)
-      serialize_block_for_user(block, role, user)
+    def moderator_or_host?
+      ["moderator", "host"].include?(participant_role.to_s)
     end
 
+    def rules_allow_block?(block)
+      targeting_rules_exist = block.visible_to_roles.present? ||
+        block.visible_to_segments.present? ||
+        block.target_user_ids.present?
 
+      return true unless targeting_rules_exist
 
-    def admin?
-      user&.admin? || user&.superadmin?
+      allowed_from_roles?(block) ||
+        allowed_from_segments?(block) ||
+        allowed_from_user_target?(block)
     end
 
-    # Required by VisibilityBase
-    attr_reader :experience
+    def allowed_from_roles?(block)
+      block.visible_to_roles.include?(participant_role.to_s)
+    end
+
+    def allowed_from_segments?(block)
+      (block.visible_to_segments & segments).any?
+    end
+
+    def allowed_from_user_target?(block)
+      (block.target_user_ids.map(&:to_s) & target_user_ids.map(&:to_s)).any?
+    end
+
+    def serialize_block_for_user(block, user)
+      BlockSerializer.serialize_for_user(
+        block, participant_role: participant_role, user: user
+      )
+    end
+
+    def serialize_block_for_stream(block)
+      BlockSerializer.serialize_for_stream(
+        block, participant_role: participant_role
+      )
+    end
+
+    def self.experience_structure(experience, blocks)
+      {
+        id: experience.id,
+        code: experience.code,
+        status: experience.status,
+        started_at: experience.started_at,
+        ended_at: experience.ended_at,
+        blocks: blocks
+      }
+    end
   end
 end

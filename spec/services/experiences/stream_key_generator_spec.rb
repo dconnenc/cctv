@@ -394,12 +394,12 @@ RSpec.describe Experiences::StreamKeyGenerator do
       # This test demonstrates that the Visibility service correctly handles multi-segment participants
       # when they get a composite stream key
 
-      visibility = Experiences::Visibility.new(
+      visibility = Experiences::Visibility.payload_for_user(
         experience: experience,
         user: multi_segment_participant.user
       )
 
-      visible_blocks = visibility.payload[:experience][:blocks]
+      visible_blocks = visibility[:experience][:blocks]
       visible_block_ids = visible_blocks.map { |b| b[:id] }
 
       # Should see blocks from ALL their segments

@@ -1,10 +1,8 @@
 class BlockSerializer
-  # Core block serialization with response data and visibility metadata
-  #
-  # PURPOSE:
-  # Handles serialization of ExperienceBlock objects with different response data
-  # based on context (user-specific vs stream-based) and role permissions.
-  def self.serialize_block(block, role:, context: :user, user: nil, target_user_ids: [])
+  def self.serialize_block(
+    block, participant_role:, context: :user, user: nil, target_user_ids: []
+  )
+
     base_structure = {
       id: block.id,
       kind: block.kind,
@@ -14,27 +12,27 @@ class BlockSerializer
 
     response_data = case context
     when :user
-      serialize_user_response_data(block, role, user)
+      serialize_user_response_data(block, participant_role, user)
     when :stream
-      serialize_stream_response_data(block, role)
+      serialize_stream_response_data(block, participant_role)
     else
       raise ArgumentError, "Invalid context: #{context}. Must be :user or :stream"
     end
 
-    visibility_data = serialize_visibility_metadata(block, role)
+    visibility_data = serialize_visibility_metadata(block, participant_role)
 
     base_structure.merge(responses: response_data).merge(visibility_data)
   end
 
-  def self.serialize_for_user(block, role:, user:)
-    serialize_block(block, role: role, context: :user, user: user)
+  def self.serialize_for_user(block, participant_role:, user:)
+    serialize_block(block, participant_role: participant_role, context: :user, user: user)
   end
 
-  def self.serialize_for_stream(block, role:)
-    serialize_block(block, role: role, context: :stream)
+  def self.serialize_for_stream(block, participant_role:)
+    serialize_block(block, participant_role: participant_role, context: :stream)
   end
 
-  def self.serialize_user_response_data(block, role, user)
+  def self.serialize_user_response_data(block, participant_role, user)
     case block.kind
     when ExperienceBlock::POLL
       submissions = block.experience_poll_submissions
@@ -49,10 +47,10 @@ class BlockSerializer
       }
 
       # Add aggregate data for moderators/hosts
-      if mod_or_host?(role) && total > 0
+      if mod_or_host?(participant_role) && total > 0
         response[:aggregate] = calculate_poll_aggregate(submissions)
       else
-        response[:aggregate] = mod_or_host?(role) ? {} : nil
+        response[:aggregate] = mod_or_host?(participant_role) ? {} : nil
       end
 
       response
@@ -87,7 +85,7 @@ class BlockSerializer
     end
   end
 
-  def self.serialize_stream_response_data(block, role)
+  def self.serialize_stream_response_data(block, participant_role)
     case block.kind
     when ExperienceBlock::POLL
       submissions = block.experience_poll_submissions
@@ -100,10 +98,10 @@ class BlockSerializer
       }
 
       # Add aggregate data for moderators/hosts
-      if mod_or_host?(role) && total > 0
+      if mod_or_host?(participant_role) && total > 0
         response[:aggregate] = calculate_poll_aggregate(submissions)
       else
-        response[:aggregate] = mod_or_host?(role) ? {} : nil
+        response[:aggregate] = mod_or_host?(participant_role) ? {} : nil
       end
 
       response
@@ -136,8 +134,8 @@ class BlockSerializer
     end
   end
 
-  def self.serialize_visibility_metadata(block, role)
-    return {} unless mod_or_host?(role)
+  def self.serialize_visibility_metadata(block, participant_role)
+    return {} unless mod_or_host?(participant_role)
 
     {
       visible_to_roles: block.visible_to_roles,
@@ -162,7 +160,7 @@ class BlockSerializer
     { id: user_response.id, answer: user_response.answer }
   end
 
-  def self.mod_or_host?(role)
-    ["moderator", "host"].include?(role.to_s)
+  def self.mod_or_host?(participant_role)
+    ["moderator", "host"].include?(participant_role.to_s)
   end
 end
