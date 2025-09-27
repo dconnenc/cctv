@@ -1,9 +1,8 @@
 import { Link, NavLink } from 'react-router-dom';
 
 import { useUser } from '@cctv/contexts';
-import { useExperience } from '@cctv/contexts/ExperienceContext';
-import { Button } from '@cctv/core';
-import ExperienceBlockContainer from '@cctv/experiences/ExperienceBlockContainer/ExperienceBlockContainer';
+import { useExperience } from '@cctv/contexts';
+import { ExperienceBlockContainer } from '@cctv/experiences';
 
 import styles from './Experience.module.scss';
 
