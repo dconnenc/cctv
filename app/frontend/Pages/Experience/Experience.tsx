@@ -1,7 +1,7 @@
 import { Link, NavLink } from 'react-router-dom';
 
+import { useUser } from '@cctv/contexts';
 import { useExperience } from '@cctv/contexts/ExperienceContext';
-import { useUser } from '@cctv/contexts/UserContext';
 import { Button } from '@cctv/core';
 import ExperienceBlockContainer from '@cctv/experiences/ExperienceBlockContainer/ExperienceBlockContainer';
 
@@ -19,7 +19,6 @@ export default function Experience() {
     wsConnected,
     wsError,
   } = useExperience();
-
   const { isAdmin } = useUser();
 
   if (isLoading) {
@@ -57,6 +56,23 @@ export default function Experience() {
           <div className={styles.experienceInfo}>
             <h2 className={styles.experienceName}>{experience.name}</h2>
             <p className={styles.experienceStatus}>Status: {experience.status}</p>
+          </div>
+        )}
+
+        {/* Admin viewing notification */}
+        {isAdmin && !participant && (
+          <div className={styles.adminNotification}>
+            <p className={styles.adminMessage}>
+              You're viewing this experience as an admin but aren't registered as a participant.
+            </p>
+            <div className={styles.adminActions}>
+              <Link to={`/experiences/${code}/register`} className={styles.adminActionButton}>
+                Register to Participate
+              </Link>
+              <Link to={`/experiences/${code}/manage`} className={styles.adminActionButton}>
+                Manage Experience
+              </Link>
+            </div>
           </div>
         )}
 
@@ -123,6 +139,24 @@ export default function Experience() {
       <section className="page">
         <div className={styles.activeExperience}>
           <h1 className={styles.title}>{experience?.name || code}</h1>
+
+          {/* Admin viewing notification */}
+          {isAdmin && !participant && (
+            <div className={styles.adminNotification}>
+              <p className={styles.adminMessage}>
+                You're viewing this experience as an admin but aren't registered as a participant.
+              </p>
+              <div className={styles.adminActions}>
+                <Link to={`/experiences/${code}/register`} className={styles.adminActionButton}>
+                  Register to Participate
+                </Link>
+                <Link to={`/experiences/${code}/manage`} className={styles.adminActionButton}>
+                  Manage Experience
+                </Link>
+              </div>
+            </div>
+          )}
+
           <div className={styles.experienceContent}>
             {openBlock && participant ? (
               <div className={styles.activeBlock}>

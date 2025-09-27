@@ -6,7 +6,11 @@ interface User {
   id: string;
   email: string;
   name: string;
+  created_at: string;
+  updated_at: string;
   role: UserRole;
+  admin: boolean;
+  super_admin: boolean;
 }
 
 interface UserContextType {
@@ -28,7 +32,7 @@ export function UserProvider({ children }: UserProviderProps) {
   const [isLoading, setIsLoading] = useState(true);
 
   const isAuthenticated = user !== null;
-  const isAdmin = user?.role === 'admin' || user?.role === 'superadmin';
+  const isAdmin = user?.super_admin === true || user?.admin === true;
 
   const refreshUser = async () => {
     setIsLoading(true);

@@ -147,7 +147,7 @@ class ExperienceSubscriptionChannel < ApplicationCable::Channel
   end
 
   def payload_for_participant(user)
-    Experiences::Visibility.new(experience: @experience, user: user).payload
+    Experiences::Visibility.payload_for_user(experience: @experience, user: user)
   end
 
   def log_stream_subscription

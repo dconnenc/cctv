@@ -115,8 +115,7 @@ class Api::ExperiencesController < Api::BaseController
 
     authorize! experience, to: :show?
 
-    visibility = Experiences::Visibility.new(experience: experience, user: authenticated_user)
-    visibility_payload = visibility.payload
+    visibility_payload = Experiences::Visibility.payload_for_user(experience: experience, user: authenticated_user)
 
     # Find current user's participant record for this experience
     current_participant = authenticated_user ? experience.experience_participants.find_by(user: authenticated_user) : nil

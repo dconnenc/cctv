@@ -78,9 +78,11 @@ class Api::ExperienceBlocksController < Api::BaseController
       )
 
       # Get updated block with response data
-      visibility = Experiences::Visibility.new(experience: @experience, user: @user)
-      role, segments = visibility.send(:participant_role_and_segments)
-      updated_block = visibility.send(:serialize_block, block, role)
+      updated_block = Experiences::Visibility.serialize_block_for_user(
+        experience: @experience,
+        user: @user,
+        block: block
+      )
 
       Experiences::Broadcaster.new(@experience).broadcast_experience_update
 
@@ -107,9 +109,11 @@ class Api::ExperienceBlocksController < Api::BaseController
       )
 
       # Get updated block with response data
-      visibility = Experiences::Visibility.new(experience: @experience, user: @user)
-      role, segments = visibility.send(:participant_role_and_segments)
-      updated_block = visibility.send(:serialize_block, block, role)
+      updated_block = Experiences::Visibility.serialize_block_for_user(
+        experience: @experience,
+        user: @user,
+        block: block
+      )
 
       Experiences::Broadcaster.new(@experience).broadcast_experience_update
 
@@ -136,9 +140,11 @@ class Api::ExperienceBlocksController < Api::BaseController
       )
 
       # Get updated block with response data
-      visibility = Experiences::Visibility.new(experience: @experience, user: @user)
-      role, segments = visibility.send(:participant_role_and_segments)
-      updated_block = visibility.send(:serialize_block, block, role)
+      updated_block = Experiences::Visibility.serialize_block_for_user(
+        experience: @experience,
+        user: @user,
+        block: block
+      )
 
       render json: {
         success: true,
