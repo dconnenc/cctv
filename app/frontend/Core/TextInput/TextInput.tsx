@@ -8,7 +8,7 @@ interface TextInputProps extends InputHTMLAttributes<HTMLInputElement> {
 
 /** Reusable text input component */
 export const TextInput = forwardRef<HTMLInputElement, TextInputProps>(
-  ({ label, name, type = 'text', placeholder, disabled, id }, ref) => {
+  ({ label, name, type = 'text', placeholder, disabled, id, ...rest }, ref) => {
     const generatedId = useId();
     const inputId = id || generatedId;
 
@@ -26,6 +26,7 @@ export const TextInput = forwardRef<HTMLInputElement, TextInputProps>(
           type={type}
           placeholder={placeholder}
           disabled={disabled}
+          {...rest}
         />
       </div>
     );

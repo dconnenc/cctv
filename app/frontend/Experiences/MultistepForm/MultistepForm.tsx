@@ -19,10 +19,16 @@ interface MultistepFormProps extends MultistepFormPayload {
       answer: any;
     } | null;
   };
+  disabled?: boolean;
 }
 
 /** A multistep form experience. Transitions between questions so user only sees one at a time. */
-export default function MultistepForm({ questions, blockId, responses }: MultistepFormProps) {
+export default function MultistepForm({
+  questions,
+  blockId,
+  responses,
+  disabled = false,
+}: MultistepFormProps) {
   const [stepIndex, setStepIndex] = useState(0);
   const [stepErrors, setStepErrors] = useState<Set<string>>(new Set());
   const [submittedValue, setSubmittedValue] = useState<Record<string, string>>();
@@ -128,6 +134,7 @@ export default function MultistepForm({ questions, blockId, responses }: Multist
                 label={question.question}
                 name={question.formKey}
                 aria-describedby={hasError ? errorId : undefined}
+                disabled={disabled}
               />
               {hasError && (
                 <p id={errorId} role="alert" className={styles.error}>
@@ -138,6 +145,7 @@ export default function MultistepForm({ questions, blockId, responses }: Multist
           );
         })}
       </div>
+
       <div className={styles.buttons}>
         {stepIndex > 0 && (
           <Button onClick={goBack} loading={isLoading} loadingText="Loading...">
@@ -150,7 +158,7 @@ export default function MultistepForm({ questions, blockId, responses }: Multist
           </Button>
         )}
         {isLastQuestion && (
-          <Button type="submit" loading={isLoading} loadingText="Submitting...">
+          <Button disabled={disabled} type="submit" loading={isLoading} loadingText="Submitting...">
             Submit
           </Button>
         )}

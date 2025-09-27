@@ -35,20 +35,20 @@ interface ExperienceProviderProps {
 export function ExperienceProvider({ children }: ExperienceProviderProps) {
   const { code } = useParams<{ code: string }>();
 
-  const [experience, setExperience] = useState<Experience | null>(null);
-  const [participant, setParticipant] = useState<ParticipantSummary | null>(null);
-  const [jwt, setJWT] = useState<string | null>(null);
+  const [experience, setExperience] = useState<Experience>();
+  const [participant, setParticipant] = useState<ParticipantSummary>();
+  const [jwt, setJWT] = useState<string>();
 
   const [isLoading, setIsLoading] = useState(false);
   const [isPolling, setIsPolling] = useState(false);
 
   const [experienceStatus, setExperienceStatus] = useState<'lobby' | 'live'>('lobby');
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string>();
 
   // WebSocket state
   const [wsConnected, setWsConnected] = useState(false);
-  const [wsError, setWsError] = useState<string | null>(null);
-  const wsRef = useRef<WebSocket | null>(null);
+  const [wsError, setWsError] = useState<string>();
+  const wsRef = useRef<WebSocket>();
 
   const currentCode = code || '';
 
@@ -104,13 +104,13 @@ export function ExperienceProvider({ children }: ExperienceProviderProps) {
 
       if (data?.type === 'success') {
         qaLogger('Experience fetched; updating context');
-        setParticipant(data.participant || null);
-        setExperience(data.experience || null);
+        setParticipant(data.participant);
+        setExperience(data.experience);
 
         const incomingStatus: string | undefined = data.experience?.status;
         setExperienceStatus(incomingStatus === 'live' ? 'live' : 'lobby');
 
-        setError(null);
+        setError(undefined);
       } else if (data?.type === 'error') {
         setError(data.error || 'Failed to load experience');
       }
@@ -128,9 +128,9 @@ export function ExperienceProvider({ children }: ExperienceProviderProps) {
     if (!currentCode) return;
 
     qaLogger(`Experience code changed to ${currentCode} — resetting context`);
-    setExperience(null);
-    setParticipant(null);
-    setError(null);
+    setExperience(undefined);
+    setParticipant(undefined);
+    setError(undefined);
 
     const stored = getStoredJWT(currentCode);
     if (stored) {
@@ -138,7 +138,7 @@ export function ExperienceProvider({ children }: ExperienceProviderProps) {
       setJWT(stored);
     } else {
       qaLogger('No stored JWT for this experience');
-      setJWT(null);
+      setJWT(undefined);
     }
   }, [currentCode]);
 
@@ -175,7 +175,7 @@ export function ExperienceProvider({ children }: ExperienceProviderProps) {
     wsRef.current.onopen = () => {
       qaLogger('WebSocket connected, subscribing to experience updates');
       setWsConnected(true);
-      setWsError(null);
+      setWsError(undefined);
 
       const subscription = {
         command: 'subscribe',
@@ -211,9 +211,9 @@ export function ExperienceProvider({ children }: ExperienceProviderProps) {
     if (wsRef.current) {
       qaLogger('Disconnecting from WebSocket');
       wsRef.current.close();
-      wsRef.current = null;
+      wsRef.current = undefined;
       setWsConnected(false);
-      setWsError(null);
+      setWsError(undefined);
     }
   }, []);
 
@@ -310,7 +310,7 @@ export function ExperienceProvider({ children }: ExperienceProviderProps) {
         if (updatedExperience) {
           setExperience(updatedExperience);
           setExperienceStatus(updatedExperience.status === 'live' ? 'live' : 'lobby');
-          setError(null);
+          setError(undefined);
         }
       } else {
         qaLogger(`Unknown message type: ${messageType}`);
@@ -333,10 +333,10 @@ export function ExperienceProvider({ children }: ExperienceProviderProps) {
 
   const clearJWT = useCallback(() => {
     if (currentCode) removeStoredJWT(currentCode);
-    setJWT(null);
-    setExperience(null);
-    setParticipant(null);
-    setError(null);
+    setJWT(undefined);
+    setExperience(undefined);
+    setParticipant(undefined);
+    setError(undefined);
   }, [currentCode]);
 
   const value: ExperienceContextType = {
@@ -345,7 +345,7 @@ export function ExperienceProvider({ children }: ExperienceProviderProps) {
     code: currentCode,
     jwt,
 
-    isAuthenticated: jwt !== null && currentCode !== '',
+    isAuthenticated: jwt !== undefined && currentCode !== '',
     isLoading,
     isPolling,
     experienceStatus,

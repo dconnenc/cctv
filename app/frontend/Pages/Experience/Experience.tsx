@@ -1,6 +1,8 @@
-import { Link } from 'react-router-dom';
+import { Link, NavLink } from 'react-router-dom';
 
 import { useExperience } from '@cctv/contexts/ExperienceContext';
+import { useUser } from '@cctv/contexts/UserContext';
+import { Button } from '@cctv/core';
 import ExperienceBlockContainer from '@cctv/experiences/ExperienceBlockContainer/ExperienceBlockContainer';
 
 import styles from './Experience.module.scss';
@@ -17,6 +19,8 @@ export default function Experience() {
     wsConnected,
     wsError,
   } = useExperience();
+
+  const { isAdmin } = useUser();
 
   if (isLoading) {
     return (
@@ -96,6 +100,14 @@ export default function Experience() {
             <p className={styles.loadingParticipants}>Loading participants...</p>
           )}
         </div>
+
+        {isAdmin && (
+          <div className={styles.adminActions}>
+            <NavLink to={`/experiences/${code}/manage`} className={styles.adminButton}>
+              Manage
+            </NavLink>
+          </div>
+        )}
 
         <p className={styles.waitingMessage}>Waiting for the experience to start...</p>
       </section>

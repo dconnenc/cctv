@@ -1,0 +1,38 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.questions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 300px;
+  position: relative;
+}
+
+.question {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  opacity: 1;
+  pointer-events: auto;
+  transition: opacity 0.3s ease-in-out;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1;
+}
+
+.questionHidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}

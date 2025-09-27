@@ -8,11 +8,13 @@ import Question from '../Question/Question';
 interface ExperienceBlockContainerProps {
   block: Block;
   participant: ParticipantSummary;
+  disabled?: boolean;
 }
 
 export default function ExperienceBlockContainer({
   block,
   participant,
+  disabled = false,
 }: ExperienceBlockContainerProps) {
   if (!participant) {
     return <p>Do you even go here? You're not part of this!</p>;
@@ -37,12 +39,27 @@ export default function ExperienceBlockContainer({
           pollType={pollType}
           blockId={block.id}
           responses={block.responses}
+          disabled={disabled}
         />
       );
     case 'question':
-      return <Question blockId={block.id} responses={block.responses} {...block.payload} />;
+      return (
+        <Question
+          blockId={block.id}
+          responses={block.responses}
+          {...block.payload}
+          disabled={disabled}
+        />
+      );
     case 'multistep_form':
-      return <MultistepForm blockId={block.id} responses={block.responses} {...block.payload} />;
+      return (
+        <MultistepForm
+          blockId={block.id}
+          responses={block.responses}
+          {...block.payload}
+          disabled={disabled}
+        />
+      );
     case 'announcement':
       return <Announcement participant={participant} {...block.payload} />;
     default:

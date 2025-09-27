@@ -1,10 +1,12 @@
 import { ReactNode, createContext, useContext, useEffect, useState } from 'react';
 
+import { UserRole } from '@cctv/types';
+
 interface User {
   id: string;
   email: string;
   name: string;
-  role: 'admin' | 'user' | 'superuser';
+  role: UserRole;
 }
 
 interface UserContextType {

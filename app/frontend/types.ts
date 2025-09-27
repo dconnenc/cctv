@@ -363,16 +363,16 @@ export type WebSocketMessage =
 // ===== CONTEXT TYPES =====
 
 export interface ExperienceContextType {
-  experience: Experience | null;
-  participant: ParticipantSummary | null;
+  experience?: Experience;
+  participant?: ParticipantSummary;
   code: string;
-  jwt: string | null;
+  jwt?: string;
 
   isAuthenticated: boolean;
   isLoading: boolean;
   isPolling: boolean;
   experienceStatus: 'lobby' | 'live';
-  error: string | null;
+  error?: string;
 
   setJWT: (token: string) => void;
   clearJWT: () => void;
@@ -380,5 +380,5 @@ export interface ExperienceContextType {
 
   // WebSocket properties
   wsConnected: boolean;
-  wsError: string | null;
+  wsError?: string;
 }

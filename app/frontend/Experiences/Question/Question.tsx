@@ -1,7 +1,7 @@
 import { FormEvent, useState } from 'react';
 
 import { Button, TextInput } from '@cctv/core';
-import { useSubmitQuestionResponse } from '@cctv/hooks/useSubmitQuestionResponse';
+import { useSubmitQuestionResponse } from '@cctv/hooks';
 import { QuestionPayload } from '@cctv/types';
 import { getFormData } from '@cctv/utils';
 
@@ -18,6 +18,7 @@ interface QuestionProps extends QuestionPayload {
     } | null;
   };
   buttonText?: string;
+  disabled?: boolean;
 }
 
 export default function Question({
@@ -27,6 +28,7 @@ export default function Question({
   blockId,
   responses,
   buttonText = 'Submit',
+  disabled = false,
 }: QuestionProps) {
   const [submittedValue, setSubmittedValue] = useState<string>('');
   const { submitQuestionResponse, isLoading, error } = useSubmitQuestionResponse();
@@ -77,8 +79,8 @@ export default function Question({
       <fieldset className={styles.fieldset}>
         <legend className={styles.legend}>{question}</legend>
         {error && <p className={styles.error}>{error}</p>}
-        <TextInput name={formKey} type={inputType} required />
-        <Button type="submit" loading={isLoading} loadingText="Submitting...">
+        <TextInput name={formKey} type={inputType} required disabled={disabled} />
+        <Button type="submit" loading={isLoading} loadingText="Submitting..." disabled={disabled}>
           {buttonText}
         </Button>
       </fieldset>

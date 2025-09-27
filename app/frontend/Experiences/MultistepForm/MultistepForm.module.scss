@@ -1,81 +1,66 @@
-.form {
-  background: var(--card-bg, #f8f9fa);
-  border: 2px solid var(--card-border, #e9ecef);
-  border-radius: 8px;
-  padding: 24px;
-  margin: 0 auto;
-  max-width: 600px;
-  width: 100%;
-}
-
-.questions {
-  position: relative;
-  min-height: 200px;
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 1.5rem;
-}
-
 .question {
   position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
   width: 100%;
+  max-width: 400px;
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 12px;
   opacity: 1;
   transition: opacity 0.3s ease-in-out;
   pointer-events: auto;
+  z-index: 3;
 }
-
 .questionHidden {
   opacity: 0;
   pointer-events: none;
 }
-
+.error {
+  text-shadow: none;
+  color: var(--yellow);
+  padding-top: 12px;
+  font-size: 16px;
+  position: relative;
+  z-index: 3;
+}
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: center;
+  justify-content: center;
+}
+.questions {
+  position: relative;
+  height: 400px;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 .buttons {
   display: flex;
-  justify-content: space-between;
-  gap: 1rem;
+  gap: 12px;
 }
-
-.error {
-  color: var(--error-fg, #991b1b);
-  font-size: 0.875rem;
-  margin-bottom: 1rem;
-}
-
-.submittedValue {
-  background: var(--card-bg, #f8f9fa);
-  border: 2px solid var(--card-border, #e9ecef);
-  border-radius: 8px;
-  padding: 24px;
-  margin: 0 auto;
-  max-width: 600px;
-}
-
-.submittedAnswer {
-  margin-bottom: 1rem;
-  padding-bottom: 1rem;
-  border-bottom: 1px solid var(--card-border, #e5e7eb);
-}
-
-.submittedAnswer:last-child {
-  border-bottom: none;
-  margin-bottom: 0;
-  padding-bottom: 0;
-}
-
-.legend {
-  font-size: 1.1rem;
-  font-weight: 600;
-  color: var(--text-primary, #333);
-  margin-bottom: 0.5rem;
-}
-
+.legend,
 .value {
-  color: var(--muted-fg, #6b7280);
-  margin: 0;
-  font-size: 1rem;
+  position: relative;
+  z-index: 3;
+  font-size: 28px;
+  width: 100%;
+  color: var(--yellow);
+}
+.legend {
+  font-size: 32px;
+  color: white;
+}
+.value {
+  padding: 12px 0;
+}
+.submittedValue {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }

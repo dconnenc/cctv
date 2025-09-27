@@ -12,6 +12,9 @@ interface OptionProps {
 
   /** The option text */
   option: string;
+
+  /** Whether the option is disabled */
+  disabled?: boolean;
 }
 
 /**
@@ -19,7 +22,7 @@ interface OptionProps {
  *
  * @remarks see {@link Poll} for an example of how to use this component.
  * */
-export const Option = ({ allowMultiple, name, option }: OptionProps) => {
+export const Option = ({ allowMultiple, name, option, disabled }: OptionProps) => {
   return (
     <label htmlFor={option} className={styles.option}>
       <input
@@ -28,6 +31,7 @@ export const Option = ({ allowMultiple, name, option }: OptionProps) => {
         type={allowMultiple ? 'checkbox' : 'radio'}
         name={name}
         value={option}
+        disabled={disabled}
       />
       {option}
     </label>

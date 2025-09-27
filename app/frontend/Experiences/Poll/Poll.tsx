@@ -1,7 +1,7 @@
 import { FormEvent, useState } from 'react';
 
 import { Button, Option } from '@cctv/core';
-import { useSubmitPollResponse } from '@cctv/hooks/useSubmitPollResponse';
+import { useSubmitPollResponse } from '@cctv/hooks';
 import { PollPayload } from '@cctv/types';
 import { getFormData } from '@cctv/utils';
 
@@ -18,9 +18,17 @@ interface PollProps extends PollPayload {
     } | null;
     aggregate?: Record<string, number>;
   };
+  disabled?: boolean;
 }
 
-export default function Poll({ question, options, pollType, blockId, responses }: PollProps) {
+export default function Poll({
+  question,
+  options,
+  pollType,
+  blockId,
+  responses,
+  disabled = false,
+}: PollProps) {
   const [submittedValue, setSubmittedValue] = useState<string[]>([]);
   const { submitPollResponse, isLoading, error } = useSubmitPollResponse();
   const userAlreadyResponded = responses?.user_responded || false;
@@ -30,8 +38,6 @@ export default function Poll({ question, options, pollType, blockId, responses }
     const formData = getFormData<{ selectedOptions: string[] }>(e.currentTarget);
     const selectedOptions = formData.selectedOptions;
 
-    const value = Array.isArray(selectedOptions) ? selectedOptions : [selectedOptions ?? ''];
-
     // Get the block ID from props or URL query params
     const actualBlockId = blockId || new URLSearchParams(window.location.search).get('blockId');
 
@@ -40,16 +46,21 @@ export default function Poll({ question, options, pollType, blockId, responses }
       return;
     }
 
+    if (!selectedOptions) {
+      console.error('No selected options found');
+      return;
+    }
+
     const response = await submitPollResponse({
       blockId: actualBlockId,
       answer: {
-        selectedOptions: value,
+        selectedOptions: selectedOptions,
         submittedAt: new Date().toISOString(),
       },
     });
 
     if (response?.success) {
-      setSubmittedValue(value);
+      setSubmittedValue(selectedOptions);
     }
   };
 
@@ -70,7 +81,7 @@ export default function Poll({ question, options, pollType, blockId, responses }
 
   return (
     <form onSubmit={onSubmit}>
-      <fieldset className={styles.fieldset}>
+      <fieldset disabled={disabled} className={styles.fieldset}>
         <legend className={styles.legend}>{question}</legend>
         {error && <p className={styles.error}>{error}</p>}
         {options.map((option) => (
@@ -79,6 +90,7 @@ export default function Poll({ question, options, pollType, blockId, responses }
             key={option}
             option={option}
             name="selectedOptions"
+            disabled={disabled}
           />
         ))}
         <Button type="submit" loading={isLoading} loadingText="Submitting...">
