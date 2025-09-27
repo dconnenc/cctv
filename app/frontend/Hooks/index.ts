@@ -7,3 +7,5 @@ export { useCreateExperienceBlock } from './useCreateExperienceBlock';
 export { useSubmitPollResponse } from './useSubmitPollResponse';
 export { useSubmitQuestionResponse } from './useSubmitQuestionResponse';
 export { useSubmitMultistepFormResponse } from './useSubmitMultistepFormResponse';
+export { useChangeBlockStatus } from './useChangeBlockStatus';
+export { useExperienceStart } from './useExperienceStart';

@@ -31,3 +31,5 @@ export function qaLogger(output: string) {
 
 export const getJWTKey = (code: string) => `experience_jwt_${code}`;
 export const getStoredJWT = (code: string) => localStorage.getItem(getJWTKey(code));
+
+export const fmtDate = (s?: string | null) => (s ? new Date(s).toLocaleString() : '—');
