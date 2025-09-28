@@ -15,16 +15,8 @@ class ExperienceSubscriptionChannel < ApplicationCable::Channel
 
     log_resubscription_request
     reload_participant_data
-
-    new_streams = calculate_new_streams
-
-    if stream_change_required?(new_streams)
-      perform_stream_change(new_streams)
-      send_stream_changed_notification(new_streams)
-      log_successful_resubscription(new_streams)
-    else
-      log_no_stream_change_needed
-    end
+    send_updated_experience_state
+    log_successful_resubscription
   end
 
   private
@@ -36,17 +28,17 @@ class ExperienceSubscriptionChannel < ApplicationCable::Channel
   end
 
   def setup_stream_subscription
-    @current_streams = calculate_current_streams
-    stream_from @current_streams[:action_cable]
+    @current_stream = stream_key_for_participant(@participant_record)
+    stream_from @current_stream
     log_stream_subscription
   end
 
   def send_initial_experience_state
     transmit(
-        WebsocketMessageService.experience_state(
+      WebsocketMessageService.experience_state(
         @experience,
         visibility_payload: payload_for_participant(@participant),
-        logical_stream: @current_streams[:logical],
+        logical_stream: "participant_#{@participant_record.id}",
         participant_id: @participant_record.id
       )
     )
@@ -60,32 +52,12 @@ class ExperienceSubscriptionChannel < ApplicationCable::Channel
     @participant_record.reload
   end
 
-  def calculate_new_streams
-    stream_generator = Experiences::StreamKeyGenerator.new(@experience)
-    {
-      logical: stream_generator.stream_key_for_participant(@participant_record),
-      action_cable: stream_generator.action_cable_stream_key_for_participant(@participant_record)
-    }
-  end
-
-  def stream_change_required?(new_streams)
-    new_streams[:logical] != @current_streams[:logical]
-  end
-
-  def perform_stream_change(new_streams)
-    stop_stream_from @current_streams[:action_cable]
-    stream_from new_streams[:action_cable]
-
-    @current_streams = new_streams
-  end
-
-  def send_stream_changed_notification(new_streams)
+  def send_updated_experience_state
     transmit(
-      WebsocketMessageService.stream_changed(
+      WebsocketMessageService.experience_state(
         @experience,
         visibility_payload: payload_for_participant(@participant_record.user),
-        old_stream: @current_streams[:logical],
-        new_stream: new_streams[:logical],
+        logical_stream: "participant_#{@participant_record.id}",
         participant_id: @participant_record.id
       )
     )
@@ -138,12 +110,8 @@ class ExperienceSubscriptionChannel < ApplicationCable::Channel
     nil
   end
 
-  def calculate_current_streams
-    stream_generator = Experiences::StreamKeyGenerator.new(@experience)
-    {
-      logical: stream_generator.stream_key_for_participant(@participant_record),
-      action_cable: stream_generator.action_cable_stream_key_for_participant(@participant_record)
-    }
+  def stream_key_for_participant(participant)
+    "experience_#{participant.experience_id}_participant_#{participant.id}"
   end
 
   def payload_for_participant(user)
@@ -153,8 +121,7 @@ class ExperienceSubscriptionChannel < ApplicationCable::Channel
   def log_stream_subscription
     Rails.logger.info(
       "[ExperienceChannel] User #{@participant.id} subscribing to " \
-      "experience #{@experience.code} via stream " \
-      "#{@current_streams[:logical]} -> #{@current_streams[:action_cable]}"
+      "experience #{@experience.code} via stream #{@current_stream}"
     )
   end
 
@@ -183,20 +150,10 @@ class ExperienceSubscriptionChannel < ApplicationCable::Channel
     )
   end
 
-  def log_successful_resubscription(new_streams)
-    Rails.logger.info(
-      "[ExperienceChannel] Stream change detected: " \
-      "#{@current_streams[:logical]} -> #{new_streams[:logical]}"
-    )
+  def log_successful_resubscription
     Rails.logger.info(
       "[ExperienceChannel] Successfully resubscribed user " \
-      "#{@participant_record.user_id} to new stream #{new_streams[:logical]}"
-    )
-  end
-
-  def log_no_stream_change_needed
-    Rails.logger.debug(
-      "[ExperienceChannel] No stream change needed for user #{@participant_record.user_id}"
+      "#{@participant_record.user_id} with updated payload"
     )
   end
 end
