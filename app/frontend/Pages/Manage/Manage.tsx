@@ -3,7 +3,7 @@ import { useCallback, useMemo, useState } from 'react';
 import classNames from 'classnames';
 
 import { useExperience } from '@cctv/contexts';
-import { Button, Pill } from '@cctv/core';
+import { Button, Column, Pill, Table } from '@cctv/core';
 import { useChangeBlockStatus, useExperienceStart } from '@cctv/hooks';
 import { Block, BlockStatus, Experience, ParticipantSummary } from '@cctv/types';
 
@@ -15,36 +15,6 @@ import ViewExperienceDetails from './ViewExperienceDetails/ViewExperienceDetails
 import ViewTvSection from './ViewTvSection/ViewTvSection';
 
 import styles from './Manage.module.scss';
-
-function ParticipantsTable({ rows }: { rows: ParticipantSummary[] }) {
-  if (!rows?.length) return <div className={styles.emptyState}>No participants yet.</div>;
-  return (
-    <div className={styles.tableWrap}>
-      <table className={styles.table}>
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Name</th>
-            <th>Email</th>
-            <th>Role</th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((p) => (
-            <tr key={`${p.role}:${p.id}`}>
-              <td className={styles.mono}>{p.id}</td>
-              <td>{p.name || '—'}</td>
-              <td>{p.email || '—'}</td>
-              <td>
-                <Pill label={p.role} />
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-}
 
 export default function Manage() {
   const {
@@ -208,4 +178,17 @@ export default function Manage() {
       </div>
     </section>
   );
+}
+
+function ParticipantsTable({ rows }: { rows: ParticipantSummary[] }) {
+  const columns: Column<ParticipantSummary>[] = useMemo(() => {
+    return [
+      { key: 'id', label: 'ID', Cell: (p) => <span className={styles.mono}>{p.id}</span> },
+      { key: 'name', label: 'Name', Cell: (p) => <span>{p.name || '—'}</span> },
+      { key: 'email', label: 'Email', Cell: (p) => <span>{p.email || '—'}</span> },
+      { key: 'role', label: 'Role', Cell: (p) => <Pill label={p.role} /> },
+    ];
+  }, []);
+
+  return <Table columns={columns} data={rows} emptyState="No participants yet." />;
 }
