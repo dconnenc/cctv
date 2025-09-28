@@ -1,6 +1,7 @@
 import { useCallback, useState } from 'react';
 
 import { useExperience } from '@cctv/contexts/ExperienceContext';
+import { Block } from '@cctv/types';
 import { qaLogger } from '@cctv/utils';
 
 type BlockStatus = 'hidden' | 'open' | 'closed';
@@ -17,11 +18,15 @@ export interface CreateExperienceBlockParams {
 
 export interface CreateExperienceBlockResponse {
   success: boolean;
-  data?: any;
+  data?: Block;
   error?: string;
 }
 
-export function useCreateExperienceBlock() {
+export function useCreateExperienceBlock({
+  refetchExperience,
+}: {
+  refetchExperience: () => Promise<void>;
+}) {
   const { code, experienceFetch } = useExperience();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -80,6 +85,9 @@ export function useCreateExperienceBlock() {
         }
 
         qaLogger('Successfully created block');
+
+        await refetchExperience();
+
         return data;
       } catch (e: any) {
         const msg =

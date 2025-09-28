@@ -1,7 +1,6 @@
+import { Pill } from '@cctv/core';
 import { Block, BlockStatus, ParticipantSummary } from '@cctv/types';
 import { fmtDate } from '@cctv/utils';
-
-import { KVPill } from '../Manage';
 
 import styles from './BlocksTable.module.scss';
 
@@ -42,7 +41,7 @@ export function BlocksTable({
               <td className={styles.mono}>{b.id}</td>
               <td>{b.kind}</td>
               <td>
-                <KVPill label={b.status} />
+                <Pill label={b.status} />
                 {busyId === b.id && <span className={styles.subtle}> • updating…</span>}
               </td>
               <td>
@@ -78,12 +77,12 @@ export function BlocksTable({
               </td>
               <td>
                 {b.visible_to_roles?.length
-                  ? b.visible_to_roles.map((r) => <KVPill key={r} label={r} />)
+                  ? b.visible_to_roles.map((r) => <Pill key={r} label={r} />)
                   : '—'}
               </td>
               <td>
                 {b.visible_to_segments?.length
-                  ? b.visible_to_segments.map((s) => <KVPill key={s} label={s} />)
+                  ? b.visible_to_segments.map((s) => <Pill key={s} label={s} />)
                   : '—'}
               </td>
               <td>{b.target_user_ids?.length ?? 0}</td>

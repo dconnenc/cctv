@@ -7,7 +7,7 @@ import Question from '../Question/Question';
 
 interface ExperienceBlockContainerProps {
   block: Block;
-  participant: ParticipantSummary;
+  participant?: ParticipantSummary;
   disabled?: boolean;
 }
 

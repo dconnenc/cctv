@@ -1,0 +1,16 @@
+.headerRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.cardTitle {
+  margin: 0 0 0.75rem 0;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.headerActions {
+  display: inline-flex;
+  gap: 0.5rem;
+}

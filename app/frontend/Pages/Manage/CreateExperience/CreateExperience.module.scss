@@ -84,3 +84,10 @@
   justify-content: space-between;
   width: 100%;
 }
+
+.error {
+  text-shadow: none;
+  color: var(--yellow);
+  padding-top: 12px;
+  font-size: 16px;
+}

@@ -5,20 +5,17 @@ import { Dropdown } from '@cctv/core/Dropdown/Dropdown';
 import { useCreateExperienceBlock } from '@cctv/hooks';
 import { Block, BlockStatus, Experience, ParticipantRole, ParticipantSummary } from '@cctv/types';
 
-import styles from './CreateExperience.module.scss';
 import CreateMultistepForm from './CreateMultistepForm/CreateMultistepForm';
 
+import styles from './CreateExperience.module.scss';
+
 export default function CreateExperience({
-  code,
-  experienceFetch,
-  setModel,
+  refetchExperience,
   onClose,
   participants,
   onEndCurrentBlock,
 }: {
-  code: string;
-  experienceFetch: (url: string, options: RequestInit) => Promise<Response>;
-  setModel: (model: Experience) => void;
+  refetchExperience: () => Promise<void>;
   onClose: () => void;
   participants: ParticipantSummary[];
   onEndCurrentBlock: () => Promise<void>;
@@ -28,7 +25,7 @@ export default function CreateExperience({
     isLoading: creating,
     error: createError,
     setError: setCreateError,
-  } = useCreateExperienceBlock();
+  } = useCreateExperienceBlock({ refetchExperience });
 
   const [viewAdditionalDetails, setViewAdditionalDetails] = useState<boolean>(false);
   const [kind, setKind] = useState<Block['kind']>('poll');
@@ -156,36 +153,21 @@ export default function CreateExperience({
       open_immediately: openImmediately,
     };
 
-    const resp = await createExperienceBlock(submitPayload);
-    if (resp?.success) {
-      // Re-fetch the experience to show the newly created block
-      // TODO: This should be wired up with query caching
-      if (code) {
-        try {
-          const res = await experienceFetch(`/api/experiences/${encodeURIComponent(code)}`, {
-            method: 'GET',
-          });
-          const data = (await res.json()) as {
-            success?: boolean;
-            experience?: Experience;
-          };
-          if ((res.ok && data?.experience) || data?.success)
-            setModel((data as any).experience || (data as any));
-        } catch {}
-      }
-      onClose();
+    await createExperienceBlock(submitPayload);
 
-      if (status === 'open') {
-        await onEndCurrentBlock();
-      }
+    onClose();
 
-      // Reset form state
-      resetForm();
+    if (status === 'open') {
+      await onEndCurrentBlock();
     }
+
+    // Reset form state
+    resetForm();
   };
 
   return (
     <div className={styles.root}>
+      {createError && <div className={styles.error}>{createError}</div>}
       <Dropdown
         label="Kind"
         options={[

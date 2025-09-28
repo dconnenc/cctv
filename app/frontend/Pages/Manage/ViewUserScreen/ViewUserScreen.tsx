@@ -1,34 +1,26 @@
 import classNames from 'classnames';
 
 import { ExperienceBlockContainer } from '@cctv/experiences';
-import { Experience } from '@cctv/types';
+import { Block, ParticipantSummary } from '@cctv/types';
 
 import styles from './ViewUserScreen.module.scss';
 
 export default function ViewUserScreen({
   className,
-  experience,
+  block,
+  participant,
 }: {
   className?: string;
-  experience?: Experience;
+  block?: Block;
+  participant?: ParticipantSummary;
 }) {
-  if (!experience) {
-    return <div>No experience found</div>;
-  }
-
-  const firstOpenBlock = experience.blocks.findIndex((block) => block.status === 'open');
-
-  if (firstOpenBlock === -1) {
+  if (!block) {
     return <div>No open block found</div>;
   }
 
   return (
     <div className={classNames(styles.root, className)}>
-      <ExperienceBlockContainer
-        block={experience.blocks[firstOpenBlock]}
-        participant={experience.participants[0]}
-        disabled
-      />
+      <ExperienceBlockContainer block={block} participant={participant} disabled />
     </div>
   );
 }

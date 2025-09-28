@@ -88,12 +88,6 @@
   opacity: 0.85;
 }
 
-.headerRow {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
 .meta {
   display: flex;
   align-items: center;
@@ -108,11 +102,6 @@
   gap: 0.5rem;
 }
 
-.headerActions {
-  display: inline-flex;
-  gap: 0.5rem;
-}
-
 .card {
   background: var(--card-bg, black);
   border: 1px solid var(--card-border, #e5e7eb);
@@ -120,12 +109,6 @@
   padding: 1rem;
   margin: 1rem 0;
   box-shadow: var(--card-shadow, 0 1px 2px rgba(0, 0, 0, 0.04));
-}
-
-.cardTitle {
-  margin: 0 0 0.75rem 0;
-  font-size: 1rem;
-  font-weight: 600;
 }
 
 .errorBanner {
@@ -154,21 +137,6 @@
   margin: 0.5rem 0 0;
   padding-left: 1rem;
   font-size: 0.85rem;
-}
-
-/*********
- * Pills *
- *********/
-.pill {
-  display: inline-block;
-  font-size: 0.75rem;
-  line-height: 1;
-  padding: 0.35rem 0.5rem;
-  border-radius: 9999px;
-  background: var(--pill-bg, #f3f4f6);
-  color: var(--pill-fg, #374151);
-  border: 1px solid var(--pill-border, #e5e7eb);
-  margin-right: 0.25rem;
 }
 
 /***********

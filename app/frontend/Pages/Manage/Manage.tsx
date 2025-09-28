@@ -1,32 +1,20 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 
 import classNames from 'classnames';
 
 import { useExperience } from '@cctv/contexts';
-import { Button } from '@cctv/core';
+import { Button, Pill } from '@cctv/core';
 import { useChangeBlockStatus, useExperienceStart } from '@cctv/hooks';
 import { Block, BlockStatus, Experience, ParticipantSummary } from '@cctv/types';
 
 import { BlocksTable } from './BlocksTable/BlocksTable';
 import CreateExperience from './CreateExperience/CreateExperience';
-import ViewBlockDetails from './ViewBlockDetails/ViewBlockDetails';
+import SectionHeader from './SectionHeader/SectionHeader';
+import ViewAudienceSection from './ViewAudienceSection/ViewAudienceSection';
 import ViewExperienceDetails from './ViewExperienceDetails/ViewExperienceDetails';
-import ViewUserScreen from './ViewUserScreen/ViewUserScreen';
+import ViewTvSection from './ViewTvSection/ViewTvSection';
 
 import styles from './Manage.module.scss';
-
-export function KVPill({ label }: { label: string }) {
-  return <span className={styles.pill}>{label}</span>;
-}
-
-function SectionHeader({ title, children }: { title: string; children?: React.ReactNode }) {
-  return (
-    <div className={styles.headerRow}>
-      <h2 className={styles.cardTitle}>{title}</h2>
-      <div className={styles.headerActions}>{children}</div>
-    </div>
-  );
-}
 
 function ParticipantsTable({ rows }: { rows: ParticipantSummary[] }) {
   if (!rows?.length) return <div className={styles.emptyState}>No participants yet.</div>;
@@ -48,7 +36,7 @@ function ParticipantsTable({ rows }: { rows: ParticipantSummary[] }) {
               <td>{p.name || '—'}</td>
               <td>{p.email || '—'}</td>
               <td>
-                <KVPill label={p.role} />
+                <Pill label={p.role} />
               </td>
             </tr>
           ))}
@@ -61,41 +49,32 @@ function ParticipantsTable({ rows }: { rows: ParticipantSummary[] }) {
 export default function Manage() {
   const {
     experience,
-    participant,
     code,
     isLoading,
     isPolling,
     experienceStatus,
     error: experienceError,
     experienceFetch,
+    refetchExperience,
   } = useExperience();
 
   const { startExperience, isLoading: starting, error: startError } = useExperienceStart();
-
-  const [model, setModel] = useState(experience);
-
-  useEffect(() => {
-    setModel(experience);
-  }, [experience]);
+  const [selectedParticipantId, setSelectedParticipantId] = useState<string | undefined>(
+    experience?.participants[0].id,
+  );
+  const [view, setView] = useState<'audience' | 'tv'>('audience');
 
   const [showCreate, setShowCreate] = useState<boolean>(false);
   const [showBlocks, setShowBlocks] = useState<boolean>(false);
-  const [busyBlockId, setBusyBlockId] = useState<string | null>(null);
-
-  const topError = useMemo(() => experienceError, [experienceError]);
+  const [busyBlockId, setBusyBlockId] = useState<string>();
 
   const participantsCombined: ParticipantSummary[] = [
-    ...(model?.hosts || []),
-    ...(model?.participants || []),
+    ...(experience?.hosts || []),
+    ...(experience?.participants || []),
   ];
-
-  const blocks: Block[] = Array.isArray((model as any)?.blocks)
-    ? ((model as any)?.blocks as Block[])
-    : [];
 
   const {
     change: changeStatus,
-    isLoading: changingStatus,
     error: statusError,
     setError: setStatusError,
   } = useChangeBlockStatus();
@@ -116,12 +95,15 @@ export default function Manage() {
           const res = await experienceFetch(`/api/experiences/${encodeURIComponent(code)}`, {
             method: 'GET',
           });
-          const data = (await res.json()) as {
+
+          const data: {
             success?: boolean;
             experience?: Experience;
-          };
-          if ((res.ok && data?.experience) || data?.success)
-            setModel((data as any).experience || (data as any));
+          } = await res.json();
+
+          if (data?.success) {
+            await refetchExperience();
+          }
         } catch {}
       }
 
@@ -129,7 +111,7 @@ export default function Manage() {
         alert(result.error);
       }
 
-      setBusyBlockId(null);
+      setBusyBlockId(undefined);
     },
     [code, experienceFetch, changeStatus, setStatusError],
   );
@@ -152,7 +134,7 @@ export default function Manage() {
     return (
       <section className={classNames('page', styles.root)}>
         <BlocksTable
-          blocks={blocks}
+          blocks={experience?.blocks || []}
           onChange={onChangeBlockStatus}
           busyId={busyBlockId}
           participants={participantsCombined}
@@ -168,9 +150,7 @@ export default function Manage() {
     return (
       <section className={classNames('page', styles.root)}>
         <CreateExperience
-          code={code}
-          experienceFetch={experienceFetch}
-          setModel={setModel}
+          refetchExperience={refetchExperience}
           onClose={() => setShowCreate(false)}
           onEndCurrentBlock={() => onChangeBlockStatus(currentBlock, 'closed')}
           participants={participantsCombined}
@@ -179,26 +159,29 @@ export default function Manage() {
     );
   }
 
+  const ViewSection = view === 'audience' ? ViewAudienceSection : ViewTvSection;
+
+  const errorMessage = experienceError || startError || statusError;
+
   return (
     <section className={styles.root}>
-      <div className={styles.top}>
-        <div className={styles.viewUserScreen}>
-          <SectionHeader title="Audience's view" />
-          <ViewUserScreen className={styles.screen} experience={experience} />
-        </div>
-        <div className={styles.viewExperienceDetails}>
-          <SectionHeader title="Experience Details" />
-          <ViewBlockDetails currentBlock={currentBlock} />
-        </div>
-        <div className={styles.viewTvScreen}>
-          <SectionHeader title="TV screen" />
-          <div className={styles.screen}>TV here</div>
-        </div>
-      </div>
+      {errorMessage && <div className={styles.errorBanner}>{errorMessage}</div>}
+
+      <ViewSection
+        className={styles.top}
+        experience={experience}
+        participantId={selectedParticipantId}
+        setSelectedParticipantId={setSelectedParticipantId}
+      />
+
+      <Button onClick={() => setView(view === 'audience' ? 'tv' : 'audience')}>
+        Switch to {view === 'audience' ? 'TV' : 'Audience'}
+      </Button>
+
       <div className={styles.bottom}>
         <div className={styles.details}>
           <SectionHeader title="Details" />
-          <ViewExperienceDetails experience={experience} />
+          <ViewExperienceDetails isPolling={isPolling} experience={experience} />
         </div>
         <div className={styles.participants}>
           <SectionHeader title="Participants" />

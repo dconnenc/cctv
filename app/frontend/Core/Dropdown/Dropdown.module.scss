@@ -7,3 +7,19 @@
   font-weight: 600;
   color: var(--white);
 }
+
+.input {
+  z-index: 3;
+  position: relative;
+  font-size: 16px;
+  color: var(--white);
+  background: var(--black);
+  border: 2px solid var(--white);
+  padding: 4px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: border-color 0.2s ease;
+}
+.input:hover {
+  border-color: var(--yellow);
+}

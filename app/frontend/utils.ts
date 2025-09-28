@@ -33,3 +33,5 @@ export const getJWTKey = (code: string) => `experience_jwt_${code}`;
 export const getStoredJWT = (code: string) => localStorage.getItem(getJWTKey(code));
 
 export const fmtDate = (s?: string | null) => (s ? new Date(s).toLocaleString() : '—');
+
+export const capitalize = (s?: string | null) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : '');
