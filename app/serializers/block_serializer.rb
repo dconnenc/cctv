@@ -157,7 +157,12 @@ class BlockSerializer
 
   def self.format_user_response(user_response)
     return nil unless user_response
-    { id: user_response.id, answer: user_response.answer }
+    {
+      id: user_response.id,
+      answer: {
+        selectedOptions: Array(user_response.answer["selectedOptions"])
+      }
+    }
   end
 
   def self.mod_or_host?(participant_role)
