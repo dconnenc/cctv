@@ -3,7 +3,8 @@ class ExperienceBlock < ApplicationRecord
     POLL = "poll",
     QUESTION = "question",
     MULTISTEP_FORM = "multistep_form",
-    ANNOUNCEMENT = "announcement"
+    ANNOUNCEMENT = "announcement",
+    MAD_LIB = "mad_lib"
   ]
 
   belongs_to :experience
@@ -11,6 +12,7 @@ class ExperienceBlock < ApplicationRecord
   has_many :experience_poll_submissions, dependent: :destroy
   has_many :experience_question_submissions, dependent: :destroy
   has_many :experience_multistep_form_submissions, dependent: :destroy
+  has_many :experience_mad_lib_submissions, dependent: :destroy
 
   enum status: {
     hidden: "hidden",

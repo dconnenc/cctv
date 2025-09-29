@@ -11,6 +11,10 @@ class ExperienceBlockPolicy < ApplicationPolicy
     user_allowed_to_interact_with_block?
   end
 
+  def submit_mad_lib_response?
+    user_allowed_to_interact_with_block?
+  end
+
   private
 
   def user_allowed_to_interact_with_block?

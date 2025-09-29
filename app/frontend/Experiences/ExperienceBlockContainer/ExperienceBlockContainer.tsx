@@ -1,6 +1,7 @@
 import { Block, ParticipantSummary } from '@cctv/types';
 
 import Announcement from '../Announcement/Announcement';
+import MadLib from '../MadLib/MadLib';
 import MultistepForm from '../MultistepForm/MultistepForm';
 import Poll from '../Poll/Poll';
 import Question from '../Question/Question';
@@ -62,6 +63,15 @@ export default function ExperienceBlockContainer({
       );
     case 'announcement':
       return <Announcement participant={participant} {...block.payload} />;
+    case 'mad_lib':
+      return (
+        <MadLib
+          blockId={block.id}
+          responses={block.responses}
+          {...block.payload}
+          disabled={disabled}
+        />
+      );
     default:
       const exhaustiveCheck: never = block;
       return (

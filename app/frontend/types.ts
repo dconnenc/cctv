@@ -5,7 +5,7 @@ export type ExperienceStatus = 'draft' | 'lobby' | 'live' | 'paused' | 'finished
 export type ParticipantRole = 'audience' | 'player' | 'moderator' | 'host';
 export type ParticipantStatus = 'registered' | 'active';
 export type BlockStatus = 'hidden' | 'open' | 'closed';
-export type BlockKind = 'poll' | 'question' | 'multistep_form' | 'announcement';
+export type BlockKind = 'poll' | 'question' | 'multistep_form' | 'announcement' | 'mad_lib';
 
 // ===== BLOCK PAYLOAD TYPES =====
 
@@ -27,6 +27,15 @@ export interface MultistepFormPayload {
 
 export interface AnnouncementPayload {
   message: string;
+}
+
+export interface MadLibPayload {
+  template: string;
+  variables: Array<{
+    id: string;
+    name: string;
+    assigned_user_id?: string;
+  }>;
 }
 
 // ===== ENTITY TYPES =====
@@ -70,7 +79,8 @@ interface BaseBlock {
       id: string;
       answer: any;
     } | null;
-    aggregate?: Record<string, number>;
+    aggregate?: Record<string, any>;
+    all_responses?: Record<string, string>;
   };
 }
 
@@ -94,7 +104,17 @@ export interface AnnouncementBlock extends BaseBlock {
   payload: AnnouncementPayload;
 }
 
-export type Block = PollBlock | QuestionBlock | MultistepFormBlock | AnnouncementBlock;
+export interface MadLibBlock extends BaseBlock {
+  kind: 'mad_lib';
+  payload: MadLibPayload;
+}
+
+export type Block =
+  | PollBlock
+  | QuestionBlock
+  | MultistepFormBlock
+  | AnnouncementBlock
+  | MadLibBlock;
 
 export interface Experience {
   id: string;
@@ -140,7 +160,12 @@ export interface RegisterExperienceRequest {
 export interface CreateExperienceBlockRequest {
   experience: {
     kind: BlockKind;
-    payload?: PollPayload | QuestionPayload | MultistepFormPayload | AnnouncementPayload;
+    payload?:
+      | PollPayload
+      | QuestionPayload
+      | MultistepFormPayload
+      | AnnouncementPayload
+      | MadLibPayload;
     visible_to_roles?: ParticipantRole[];
     visible_to_segments?: string[];
     target_user_ids?: string[];

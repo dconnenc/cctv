@@ -54,6 +54,12 @@ export default function CreateExperience({
     Array<{ question: string; formKey: string; inputType: string }>
   >([{ question: '', formKey: '', inputType: 'text' }]);
 
+  // Mad Lib-specific state
+  const [madLibTemplate, setMadLibTemplate] = useState<string>('');
+  const [madLibVariables, setMadLibVariables] = useState<
+    Array<{ id: string; name: string; assigned_user_id?: string }>
+  >([{ id: '1', name: 'adjective', assigned_user_id: '' }]);
+
   const resetForm = () => {
     setPollQuestion('');
     setPollOptions(['', '']);
@@ -63,6 +69,8 @@ export default function CreateExperience({
     setQuestionFormKey('');
     setQuestionInputType('text');
     setMultistepQuestions([{ question: '', formKey: '', inputType: 'text' }]);
+    setMadLibTemplate('');
+    setMadLibVariables([{ id: '1', name: 'adjective', assigned_user_id: '' }]);
     setVisibleRoles([]);
     setVisibleSegmentsText('');
     setTargetUserIdsText('');
@@ -132,6 +140,21 @@ export default function CreateExperience({
           inputType: q.inputType as 'text' | 'number' | 'email' | 'password' | 'tel',
         })),
       };
+    } else if (kind === 'mad_lib') {
+      if (!madLibTemplate.trim()) {
+        setCreateError('Mad lib template is required');
+        return;
+      }
+      const validVariables = madLibVariables.filter((v) => v.name.trim() && v.id.trim());
+      if (validVariables.length === 0) {
+        setCreateError('At least one variable is required for mad lib');
+        return;
+      }
+      payload = {
+        type: 'mad_lib',
+        template: madLibTemplate.trim(),
+        variables: validVariables,
+      };
     }
 
     const visible_to_segments = visibleSegmentsText
@@ -175,6 +198,7 @@ export default function CreateExperience({
           { label: 'Question', value: 'question' },
           { label: 'Multistep Form', value: 'multistep_form' },
           { label: 'Announcement', value: 'announcement' },
+          { label: 'Mad Lib', value: 'mad_lib' },
         ]}
         value={kind}
         onChange={(value) => {
@@ -201,6 +225,11 @@ export default function CreateExperience({
         setMultistepQuestions={setMultistepQuestions}
         announcementMessage={announcementMessage}
         setAnnouncementMessage={setAnnouncementMessage}
+        madLibTemplate={madLibTemplate}
+        setMadLibTemplate={setMadLibTemplate}
+        madLibVariables={madLibVariables}
+        setMadLibVariables={setMadLibVariables}
+        participants={participants}
       />
 
       {viewAdditionalDetails && (
@@ -261,24 +290,7 @@ export default function CreateExperience({
   );
 }
 
-function ExperienceKindDetails({
-  kind,
-  pollQuestion,
-  setPollQuestion,
-  pollType,
-  setPollType,
-  pollOptions,
-  setPollOptions,
-  questionText,
-  setQuestionText,
-  setQuestionFormKey,
-  questionInputType,
-  setQuestionInputType,
-  multistepQuestions,
-  setMultistepQuestions,
-  announcementMessage,
-  setAnnouncementMessage,
-}: {
+function ExperienceKindDetails(props: {
   kind: Block['kind'];
   pollQuestion: string;
   setPollQuestion: (question: string) => void;
@@ -297,8 +309,15 @@ function ExperienceKindDetails({
   ) => void;
   announcementMessage: string;
   setAnnouncementMessage: (message: string) => void;
+  madLibTemplate: string;
+  setMadLibTemplate: (template: string) => void;
+  madLibVariables: Array<{ id: string; name: string; assigned_user_id?: string }>;
+  setMadLibVariables: (
+    variables: Array<{ id: string; name: string; assigned_user_id?: string }>,
+  ) => void;
+  participants: ParticipantSummary[];
 }) {
-  switch (kind) {
+  switch (props.kind) {
     case 'poll':
       return (
         <div className={styles.details}>
@@ -307,10 +326,10 @@ function ExperienceKindDetails({
               label="Poll Question"
               placeholder="What is your question?"
               required
-              value={pollQuestion}
+              value={props.pollQuestion}
               onChange={(e) => {
                 console.log('onChange', e.target.value);
-                setPollQuestion(e.target.value);
+                props.setPollQuestion(e.target.value);
               }}
             />
             <Dropdown
@@ -320,13 +339,13 @@ function ExperienceKindDetails({
                 { label: 'Multiple Choice', value: 'multiple' },
               ]}
               required
-              value={pollType}
-              onChange={setPollType}
+              value={props.pollType}
+              onChange={props.setPollType}
             />
           </div>
           <div className={styles.right}>
             <div className={styles.list}>
-              {pollOptions.map((option, index) => (
+              {props.pollOptions.map((option, index) => (
                 <div className={styles.item} key={index}>
                   <TextInput
                     key={index}
@@ -334,17 +353,17 @@ function ExperienceKindDetails({
                     placeholder={`Option ${index + 1}`}
                     value={option}
                     onChange={(e) => {
-                      const newOptions = [...pollOptions];
+                      const newOptions = [...props.pollOptions];
                       newOptions[index] = e.target.value;
-                      setPollOptions(newOptions);
+                      props.setPollOptions(newOptions);
                     }}
                   />
-                  {pollOptions.length > 2 && (
+                  {props.pollOptions.length > 2 && (
                     <Button
                       type="button"
                       onClick={() => {
-                        const newOptions = pollOptions.filter((_, i) => i !== index);
-                        setPollOptions(newOptions);
+                        const newOptions = props.pollOptions.filter((_, i) => i !== index);
+                        props.setPollOptions(newOptions);
                       }}
                     >
                       Remove
@@ -356,8 +375,8 @@ function ExperienceKindDetails({
             <Button
               type="button"
               onClick={() => {
-                const newOptions = [...pollOptions, ''];
-                setPollOptions(newOptions);
+                const newOptions = [...props.pollOptions, ''];
+                props.setPollOptions(newOptions);
               }}
             >
               Add Option
@@ -373,13 +392,13 @@ function ExperienceKindDetails({
               label="Question"
               placeholder="What is your question?"
               required
-              value={questionText}
+              value={props.questionText}
               onChange={(e) => {
                 const newQuestionText = e.target.value;
-                setQuestionText(newQuestionText);
+                props.setQuestionText(newQuestionText);
 
                 // Automatically set the form key to the question text
-                setQuestionFormKey(newQuestionText.split(' ').join('_').toLowerCase());
+                props.setQuestionFormKey(newQuestionText.split(' ').join('_').toLowerCase());
               }}
             />
             <Dropdown
@@ -392,8 +411,8 @@ function ExperienceKindDetails({
                 { label: 'Phone', value: 'tel' },
               ]}
               required
-              value={questionInputType}
-              onChange={setQuestionInputType}
+              value={props.questionInputType}
+              onChange={props.setQuestionInputType}
             />
           </div>
         </div>
@@ -402,8 +421,8 @@ function ExperienceKindDetails({
       return (
         <CreateMultistepForm
           className={styles.details}
-          multistepQuestions={multistepQuestions}
-          setMultistepQuestions={setMultistepQuestions}
+          multistepQuestions={props.multistepQuestions}
+          setMultistepQuestions={props.setMultistepQuestions}
         />
       );
     case 'announcement':
@@ -414,8 +433,8 @@ function ExperienceKindDetails({
               label="Announcement Message"
               placeholder="Dearest {{ participant_name }}, this is your announcement."
               required
-              value={announcementMessage}
-              onChange={(e) => setAnnouncementMessage(e.target.value)}
+              value={props.announcementMessage}
+              onChange={(e) => props.setAnnouncementMessage(e.target.value)}
             />
             <span className={styles.helpText}>
               {`Include the participant's name with {{ participant_name }}`}
@@ -423,7 +442,88 @@ function ExperienceKindDetails({
           </div>
         </div>
       );
+    case 'mad_lib':
+      return (
+        <div className={styles.details}>
+          <div className={styles.left}>
+            <TextInput
+              label="Mad Lib Template"
+              placeholder="The {{adjective}} {{noun}} jumped over the {{verb}}!"
+              required
+              value={props.madLibTemplate}
+              onChange={(e) => props.setMadLibTemplate(e.target.value)}
+            />
+            <span className={styles.helpText}>
+              Use {`{{variable_name}}`} to mark variables in your template
+            </span>
+          </div>
+          <div className={styles.right}>
+            <div className={styles.list}>
+              {props.madLibVariables.map(
+                (
+                  variable: { id: string; name: string; assigned_user_id?: string },
+                  index: number,
+                ) => (
+                  <div className={styles.item} key={index}>
+                    <TextInput
+                      label={`Variable ${index + 1} Name`}
+                      placeholder="adjective"
+                      value={variable.name}
+                      onChange={(e) => {
+                        const newVariables = [...props.madLibVariables];
+                        newVariables[index].name = e.target.value;
+                        props.setMadLibVariables(newVariables);
+                      }}
+                    />
+                    <Dropdown
+                      label="Assign to participant"
+                      options={[
+                        { label: 'Unassigned', value: '' },
+                        ...props.participants.map((p: { name: string; user_id: string }) => ({
+                          label: p.name,
+                          value: p.user_id,
+                        })),
+                      ]}
+                      value={variable.assigned_user_id || ''}
+                      onChange={(value) => {
+                        const newVariables = [...props.madLibVariables];
+                        newVariables[index].assigned_user_id = value || undefined;
+                        props.setMadLibVariables(newVariables);
+                      }}
+                    />
+                    {props.madLibVariables.length > 1 && (
+                      <Button
+                        type="button"
+                        onClick={() => {
+                          const newVariables = props.madLibVariables.filter(
+                            (_: any, i: number) => i !== index,
+                          );
+                          props.setMadLibVariables(newVariables);
+                        }}
+                      >
+                        Remove
+                      </Button>
+                    )}
+                  </div>
+                ),
+              )}
+            </div>
+            <Button
+              type="button"
+              onClick={() => {
+                const newId = (props.madLibVariables.length + 1).toString();
+                props.setMadLibVariables([
+                  ...props.madLibVariables,
+                  { id: newId, name: '', assigned_user_id: '' },
+                ]);
+              }}
+            >
+              Add Variable
+            </Button>
+          </div>
+        </div>
+      );
     default:
-      return <div className={styles.details}>Unknown: {kind}</div>;
+      return <div className={styles.details}>Unknown: {props.kind}</div>;
   }
 }
