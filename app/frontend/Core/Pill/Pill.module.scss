@@ -1,0 +1,11 @@
+.pill {
+  display: inline-block;
+  font-size: 0.75rem;
+  line-height: 1;
+  padding: 0.35rem 0.5rem;
+  border-radius: 9999px;
+  background: var(--pill-bg, #f3f4f6);
+  color: var(--pill-fg, #374151);
+  border: 1px solid var(--pill-border, #e5e7eb);
+  margin-right: 0.25rem;
+}

@@ -1,4 +1,5 @@
 import { Block } from '@cctv/types';
+import { capitalize } from '@cctv/utils';
 
 import styles from './ViewBlockDetails.module.scss';
 
@@ -9,9 +10,9 @@ export default function ViewBlockDetails({ currentBlock }: { currentBlock?: Bloc
 
   return (
     <div className={styles.viewBlockDetails}>
-      <div>Kind: {currentBlock?.kind}</div>
+      <div>Kind: {capitalize(currentBlock?.kind)}</div>
       <div>Responses: {currentBlock?.responses?.total}</div>
-      <div>Status: {currentBlock?.status}</div>
+      <div>Status: {capitalize(currentBlock?.status)}</div>
       {currentBlock?.visible_to_roles?.length && (
         <div>Visible to roles: {currentBlock?.visible_to_roles?.join(', ')}</div>
       )}

@@ -1,6 +1,7 @@
 import { useCallback, useState } from 'react';
 
 import { useExperience } from '@cctv/contexts/ExperienceContext';
+import { Block, CreateExperienceApiResponse } from '@cctv/types';
 import { qaLogger } from '@cctv/utils';
 
 type BlockStatus = 'hidden' | 'open' | 'closed';
@@ -15,13 +16,11 @@ export interface CreateExperienceBlockParams {
   open_immediately?: boolean; // defaults to false
 }
 
-export interface CreateExperienceBlockResponse {
-  success: boolean;
-  data?: any;
-  error?: string;
-}
-
-export function useCreateExperienceBlock() {
+export function useCreateExperienceBlock({
+  refetchExperience,
+}: {
+  refetchExperience: () => Promise<void>;
+}) {
   const { code, experienceFetch } = useExperience();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -35,7 +34,7 @@ export function useCreateExperienceBlock() {
       target_user_ids = [],
       status = 'hidden',
       open_immediately = false,
-    }: CreateExperienceBlockParams): Promise<CreateExperienceBlockResponse | null> => {
+    }: CreateExperienceBlockParams): Promise<CreateExperienceApiResponse | null> => {
       if (!code) {
         setError('Missing experience code');
         return null;
@@ -71,15 +70,18 @@ export function useCreateExperienceBlock() {
           body: JSON.stringify({ experience: submitPayload }),
         });
 
-        const data: CreateExperienceBlockResponse = await res.json();
+        const data: CreateExperienceApiResponse = await res.json();
 
         if (!data?.success) {
           const msg = data?.error || 'Block create failed';
           setError(msg);
-          return { success: false, error: msg };
+          return { type: 'error', success: false, error: msg, message: msg };
         }
 
         qaLogger('Successfully created block');
+
+        await refetchExperience();
+
         return data;
       } catch (e: any) {
         const msg =

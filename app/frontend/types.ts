@@ -377,6 +377,7 @@ export interface ExperienceContextType {
   setJWT: (token: string) => void;
   clearJWT: () => void;
   experienceFetch: (url: string, options?: RequestInit) => Promise<Response>;
+  refetchExperience: () => Promise<void>;
 
   // WebSocket properties
   wsConnected: boolean;

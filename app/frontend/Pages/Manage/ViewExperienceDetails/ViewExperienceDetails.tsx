@@ -1,9 +1,15 @@
 import { Experience } from '@cctv/types';
-import { fmtDate } from '@cctv/utils';
+import { capitalize, fmtDate } from '@cctv/utils';
 
 import styles from './ViewExperienceDetails.module.scss';
 
-export default function ViewExperienceDetails({ experience }: { experience?: Experience }) {
+export default function ViewExperienceDetails({
+  experience,
+  isPolling,
+}: {
+  experience?: Experience;
+  isPolling: boolean;
+}) {
   if (!experience) {
     return <div>No experience found</div>;
   }
@@ -11,7 +17,8 @@ export default function ViewExperienceDetails({ experience }: { experience?: Exp
   return (
     <div className={styles.viewExperienceDetails}>
       <div>Code: {experience.code}</div>
-      <div>Status: {experience.status}</div>
+      <div>Status: {capitalize(experience.status)}</div>
+      <div>Polling: {isPolling ? 'Yes' : 'No'}</div>
       <div>Created: {fmtDate(experience.created_at)}</div>
       <div>Updated: {fmtDate(experience.updated_at)}</div>
     </div>

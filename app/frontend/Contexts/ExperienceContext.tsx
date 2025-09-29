@@ -354,6 +354,7 @@ export function ExperienceProvider({ children }: ExperienceProviderProps) {
     setJWT: setJWTHandler,
     clearJWT,
     experienceFetch,
+    refetchExperience: loadExperienceData,
 
     // WebSocket properties
     wsConnected,

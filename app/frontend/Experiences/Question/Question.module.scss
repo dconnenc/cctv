@@ -7,41 +7,20 @@
 }
 
 .fieldset {
-  border: 2px solid var(--card-border, #e9ecef);
-  border-radius: 8px;
-  padding: 24px;
-  margin: 0 auto;
-  max-width: 600px;
+  border: none;
+}
+
+.legend,
+.value {
+  position: relative;
+  z-index: 3;
+  font-size: 28px;
   width: 100%;
-  background: var(--card-bg, #f8f9fa);
+  color: var(--yellow);
+  padding-top: 12px;
 }
 
 .legend {
-  font-size: 1.2rem;
-  font-weight: 600;
-  color: var(--text-primary, #333);
-  margin-bottom: 1rem;
-  padding: 0 0.5rem;
-}
-
-.value {
-  font-size: 1rem;
-  color: var(--muted-fg, #6b7280);
-  margin: 0;
-}
-
-.submittedValue {
-  background: var(--card-bg, #f8f9fa);
-  border: 2px solid var(--card-border, #e9ecef);
-  border-radius: 8px;
-  padding: 24px;
-  margin: 0 auto;
-  max-width: 600px;
-  text-align: center;
-}
-
-.error {
-  color: var(--error-fg, #991b1b);
-  font-size: 0.875rem;
-  margin-bottom: 1rem;
+  font-size: 32px;
+  color: white;
 }

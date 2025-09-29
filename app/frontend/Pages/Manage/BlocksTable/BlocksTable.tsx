@@ -1,7 +1,8 @@
+import { useMemo } from 'react';
+
+import { Column, Pill, Table } from '@cctv/core';
 import { Block, BlockStatus, ParticipantSummary } from '@cctv/types';
 import { fmtDate } from '@cctv/utils';
-
-import { KVPill } from '../Manage';
 
 import styles from './BlocksTable.module.scss';
 
@@ -16,87 +17,62 @@ export function BlocksTable({
   busyId?: string | null;
   participants?: ParticipantSummary[];
 }) {
-  if (!blocks?.length) return <div className={styles.emptyState}>No blocks yet.</div>;
-
   const totalParticipants = participants?.length || 0;
 
-  return (
-    <div className={styles.tableWrap}>
-      <table className={styles.table}>
-        <thead>
-          <tr>
-            <th>Block ID</th>
-            <th>Kind</th>
-            <th>Status</th>
-            <th>Responses</th>
-            <th>Visible roles</th>
-            <th>Segments</th>
-            <th>Targets</th>
-            <th>Created</th>
-            <th aria-label="Row actions" />
-          </tr>
-        </thead>
-        <tbody>
-          {blocks.map((b) => (
-            <tr key={b.id}>
-              <td className={styles.mono}>{b.id}</td>
-              <td>{b.kind}</td>
-              <td>
-                <KVPill label={b.status} />
-                {busyId === b.id && <span className={styles.subtle}> • updating…</span>}
-              </td>
-              <td>
-                {b.responses ? (
-                  <div>
-                    <div>
-                      {b.responses.total} / {totalParticipants}
-                    </div>
-                    {b.kind === 'poll' &&
-                      b.responses.aggregate &&
-                      Object.keys(b.responses.aggregate).length > 0 && (
-                        <details className={styles.pollDetails}>
-                          <summary>View breakdown</summary>
-                          <ul className={styles.pollBreakdown}>
-                            {Object.entries(b.responses?.aggregate || {}).map(([option, count]) => (
-                              <li key={option}>
-                                {option}: {count} (
-                                {Math.round((count / (b.responses?.total || 1)) * 100)}%)
-                              </li>
-                            ))}
-                          </ul>
-                        </details>
-                      )}
-                    {(b.kind === 'question' || b.kind === 'multistep_form') && (
-                      <div className={styles.responseCount}>
-                        {b.responses.total} response{b.responses.total !== 1 ? 's' : ''}
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  '—'
-                )}
-              </td>
-              <td>
-                {b.visible_to_roles?.length
-                  ? b.visible_to_roles.map((r) => <KVPill key={r} label={r} />)
-                  : '—'}
-              </td>
-              <td>
-                {b.visible_to_segments?.length
-                  ? b.visible_to_segments.map((s) => <KVPill key={s} label={s} />)
-                  : '—'}
-              </td>
-              <td>{b.target_user_ids?.length ?? 0}</td>
-              <td>{fmtDate(b.created_at)}</td>
-              <td className={styles.rowMenuCell}>
-                <BlockRowMenu block={b} onChange={(s) => onChange(b, s)} busy={busyId === b.id} />
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
+  const columns: Column<Block>[] = useMemo(() => {
+    return [
+      { key: 'id', label: 'Block ID', Cell: (b) => <span className={styles.mono}>{b.id}</span> },
+      { key: 'kind', label: 'Kind', Cell: (b) => <span>{b.kind}</span> },
+      { key: 'status', label: 'Status', Cell: (b) => <Pill label={b.status} /> },
+      {
+        key: 'responses',
+        label: 'Responses',
+        Cell: (b) => (
+          <span>
+            {b.responses?.total} / {totalParticipants}
+          </span>
+        ),
+      },
+      {
+        key: 'visible_to_roles',
+        label: 'Visible roles',
+        Cell: (b) => (
+          <span>
+            {b.visible_to_roles?.length
+              ? b.visible_to_roles.map((r) => <Pill key={r} label={r} />)
+              : '—'}
+          </span>
+        ),
+      },
+      {
+        key: 'visible_to_segments',
+        label: 'Segments',
+        Cell: (b) => (
+          <span>
+            {b.visible_to_segments?.length
+              ? b.visible_to_segments.map((s) => <Pill key={s} label={s} />)
+              : '—'}
+          </span>
+        ),
+      },
+      {
+        key: 'target_user_ids',
+        label: 'Targets',
+        Cell: (b) => <span>{b.target_user_ids?.length ?? 0}</span>,
+      },
+      { key: 'created_at', label: 'Created', Cell: (b) => <span>{fmtDate(b.created_at)}</span> },
+      {
+        key: 'actions',
+        label: 'Actions',
+        isHidden: true,
+        Cell: (b) => (
+          <BlockRowMenu block={b} onChange={(s) => onChange(b, s)} busy={busyId === b.id} />
+        ),
+      },
+    ];
+  }, []);
+
+  return <Table columns={columns} data={blocks} emptyState="No blocks yet." />;
 }
 
 function BlockRowMenu({
