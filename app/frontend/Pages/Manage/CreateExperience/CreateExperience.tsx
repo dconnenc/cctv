@@ -37,17 +37,9 @@ function CreateExperienceForm() {
   const {
     kind,
     setKind,
-    handler,
-    participants,
     submit,
     isSubmitting,
     error,
-    visibleRoles,
-    setVisibleRoles,
-    visibleSegmentsText,
-    setVisibleSegmentsText,
-    targetUserIdsText,
-    setTargetUserIdsText,
     viewAdditionalDetails,
     setViewAdditionalDetails,
   } = useCreateBlockContext();
@@ -70,35 +62,8 @@ function CreateExperienceForm() {
         required
       />
 
-      <BlockEditor kind={kind} handler={handler} participants={participants} />
-
-      {viewAdditionalDetails && (
-        <div className={styles.additionalDetails}>
-          <Dropdown
-            label="Visible to roles"
-            options={[
-              { label: 'Audience', value: 'audience' },
-              { label: 'Player', value: 'player' },
-              { label: 'Moderator', value: 'moderator' },
-              { label: 'Host', value: 'host' },
-            ]}
-            value={visibleRoles}
-            onChange={(value) => setVisibleRoles([value])}
-          />
-          <TextInput
-            label="Visible to segments (comma-separated)"
-            placeholder="segment-a, segment-b"
-            value={visibleSegmentsText}
-            onChange={(e) => setVisibleSegmentsText(e.target.value)}
-          />
-          <Dropdown
-            label="Target user IDs"
-            options={participants.map((p) => ({ label: p.name, value: p.id }))}
-            value={targetUserIdsText}
-            onChange={setTargetUserIdsText}
-          />
-        </div>
-      )}
+      <BlockEditor />
+      {viewAdditionalDetails && <AdditionalDetails />}
 
       <div className={styles.actions}>
         <Button onClick={() => window.history.back()}>Back</Button>
@@ -116,13 +81,8 @@ function CreateExperienceForm() {
   );
 }
 
-interface BlockEditorProps {
-  kind: Block['kind'];
-  handler: any;
-  participants: ParticipantSummary[];
-}
-
-function BlockEditor({ kind, handler, participants }: BlockEditorProps) {
+function BlockEditor() {
+  const { kind, handler, participants } = useCreateBlockContext();
   const data = handler.getData();
   const onChange = (updates: any) => handler.updateData(updates);
 
@@ -168,4 +128,43 @@ function BlockEditor({ kind, handler, participants }: BlockEditorProps) {
   }
 
   return <div className={styles.details}>Handler mismatch for {kind}</div>;
+}
+
+function AdditionalDetails() {
+  const {
+    participants,
+    visibleRoles,
+    setVisibleRoles,
+    visibleSegmentsText,
+    setVisibleSegmentsText,
+    targetUserIdsText,
+    setTargetUserIdsText,
+  } = useCreateBlockContext();
+  return (
+    <div className={styles.additionalDetails}>
+      <Dropdown
+        label="Visible to roles"
+        options={[
+          { label: 'Audience', value: 'audience' },
+          { label: 'Player', value: 'player' },
+          { label: 'Moderator', value: 'moderator' },
+          { label: 'Host', value: 'host' },
+        ]}
+        value={visibleRoles}
+        onChange={(value) => setVisibleRoles([value])}
+      />
+      <TextInput
+        label="Visible to segments (comma-separated)"
+        placeholder="segment-a, segment-b"
+        value={visibleSegmentsText}
+        onChange={(e) => setVisibleSegmentsText(e.target.value)}
+      />
+      <Dropdown
+        label="Target user IDs"
+        options={participants.map((p) => ({ label: p.name, value: p.id }))}
+        value={targetUserIdsText}
+        onChange={setTargetUserIdsText}
+      />
+    </div>
+  );
 }
