@@ -1,10 +1,44 @@
-import React, { ReactNode, createContext, useCallback, useContext, useState } from 'react';
+import { ReactNode, createContext, useCallback, useContext, useState } from 'react';
 
 import { useCreateExperienceBlock } from '@cctv/hooks';
 import { Block, BlockStatus, ParticipantSummary } from '@cctv/types';
 
-import { createBlockHandler } from './handlers/blockHandlerFactory';
-import { BlockTypeHandler, CreateBlockContextValue } from './types';
+import {
+  buildAnnouncementPayload,
+  canAnnouncementOpenImmediately,
+  getDefaultAnnouncementState,
+  processAnnouncementBeforeSubmit,
+  validateAnnouncement,
+} from './CreateAnnouncement/CreateAnnouncement';
+import {
+  buildMadLibPayload,
+  canMadLibOpenImmediately,
+  getDefaultMadLibState,
+  processMadLibBeforeSubmit,
+  validateMadLib,
+} from './CreateMadLib/CreateMadLib';
+import {
+  buildMultistepFormPayload,
+  canMultistepFormOpenImmediately,
+  getDefaultMultistepFormState,
+  processMultistepFormBeforeSubmit,
+  validateMultistepForm,
+} from './CreateMultistepForm/CreateMultistepForm';
+import {
+  buildPollPayload,
+  canPollOpenImmediately,
+  getDefaultPollState,
+  processPollBeforeSubmit,
+  validatePoll,
+} from './CreatePoll/CreatePoll';
+import {
+  buildQuestionPayload,
+  canQuestionOpenImmediately,
+  getDefaultQuestionState,
+  processQuestionBeforeSubmit,
+  validateQuestion,
+} from './CreateQuestion/CreateQuestion';
+import { BlockData, CreateBlockContextValue } from './types';
 
 const CreateBlockContext = createContext<CreateBlockContextValue | null>(null);
 
@@ -24,6 +58,9 @@ interface CreateBlockProviderProps {
   refetchExperience: () => Promise<void>;
 }
 
+// NOTE: There are N number of branches for each block type. This is a good
+// candidate for a factory style pattern, but for now it is all centralized here
+// so we can keep adding too it without the conditional expansion leaking
 export function CreateBlockProvider({
   children,
   participants,
@@ -32,11 +69,26 @@ export function CreateBlockProvider({
   refetchExperience,
 }: CreateBlockProviderProps) {
   const [kind, setKind] = useState<Block['kind']>('poll');
-  const [handler, setHandler] = useState<BlockTypeHandler>(() =>
-    createBlockHandler(kind, participants),
-  );
 
-  // Additional form state
+  const getDefaultState = useCallback((blockKind: Block['kind']): BlockData => {
+    switch (blockKind) {
+      case 'poll':
+        return getDefaultPollState();
+      case 'question':
+        return getDefaultQuestionState();
+      case 'multistep_form':
+        return getDefaultMultistepFormState();
+      case 'announcement':
+        return getDefaultAnnouncementState();
+      case 'mad_lib':
+        return getDefaultMadLibState();
+      default:
+        throw new Error(`Unknown block kind: ${blockKind}`);
+    }
+  }, []);
+
+  const [data, setData] = useState<BlockData>(() => getDefaultState(kind));
+
   const [visibleRoles, setVisibleRoles] = useState<string[]>([]);
   const [visibleSegmentsText, setVisibleSegmentsText] = useState<string>('');
   const [targetUserIdsText, setTargetUserIdsText] = useState<string>('');
@@ -52,31 +104,112 @@ export function CreateBlockProvider({
   const handleKindChange = useCallback(
     (newKind: Block['kind']) => {
       setKind(newKind);
-      setHandler(createBlockHandler(newKind, participants));
+      setData(getDefaultState(newKind));
     },
-    [participants],
+    [getDefaultState],
   );
 
   const submit = useCallback(
     async (status: BlockStatus) => {
       setCreateError(null);
 
-      const validationError = handler.validate();
+      let validationError: string | null = null;
+
+      switch (kind) {
+        case 'poll':
+          validationError = validatePoll(data as any);
+          break;
+        case 'question':
+          validationError = validateQuestion(data as any);
+          break;
+        case 'multistep_form':
+          validationError = validateMultistepForm(data as any);
+          break;
+        case 'announcement':
+          validationError = validateAnnouncement(data as any);
+          break;
+        case 'mad_lib':
+          validationError = validateMadLib(data as any);
+          break;
+        default:
+          validationError = `Unknown block kind: ${kind}`;
+      }
+
       if (validationError) {
         setCreateError(validationError);
         return;
       }
 
-      if (status === 'open' && !handler.canOpenImmediately(participants)) {
-        setCreateError('Cannot open this block immediately');
+      let canOpenImmediately = true;
+      switch (kind) {
+        case 'poll':
+          canOpenImmediately = canPollOpenImmediately(data as any, participants);
+          break;
+        case 'question':
+          canOpenImmediately = canQuestionOpenImmediately(data as any, participants);
+          break;
+        case 'multistep_form':
+          canOpenImmediately = canMultistepFormOpenImmediately(data as any, participants);
+          break;
+        case 'announcement':
+          canOpenImmediately = canAnnouncementOpenImmediately(data as any, participants);
+          break;
+        case 'mad_lib':
+          canOpenImmediately = canMadLibOpenImmediately(data as any, participants);
+          break;
+      }
 
+      if (status === 'open' && !canOpenImmediately) {
+        setCreateError('Cannot open this block immediately');
         return;
       }
 
-      handler.processBeforeSubmit(status, participants);
-      const payload = handler.buildPayload();
+      // Process data before submit
+      // For example, if a block needs to randomize assignments, this step can
+      // be used. We may be able to push this all server side with an actual
+      // implementation in the future
+      let processedData: BlockData;
+      switch (kind) {
+        case 'poll':
+          processedData = processPollBeforeSubmit(data as any, status, participants);
+          break;
+        case 'question':
+          processedData = processQuestionBeforeSubmit(data as any, status, participants);
+          break;
+        case 'multistep_form':
+          processedData = processMultistepFormBeforeSubmit(data as any, status, participants);
+          break;
+        case 'announcement':
+          processedData = processAnnouncementBeforeSubmit(data as any, status, participants);
+          break;
+        case 'mad_lib':
+          processedData = processMadLibBeforeSubmit(data as any, status, participants);
+          break;
+        default:
+          processedData = data;
+      }
 
-      // Process additional form data
+      let payload: Record<string, any>;
+      switch (kind) {
+        case 'poll':
+          payload = buildPollPayload(processedData as any);
+          break;
+        case 'question':
+          payload = buildQuestionPayload(processedData as any);
+          break;
+        case 'multistep_form':
+          payload = buildMultistepFormPayload(processedData as any);
+          break;
+        case 'announcement':
+          payload = buildAnnouncementPayload(processedData as any);
+          break;
+        case 'mad_lib':
+          payload = buildMadLibPayload(processedData as any);
+          break;
+        default:
+          throw new Error(`Unknown block kind: ${kind}`);
+      }
+
       const visible_to_segments = visibleSegmentsText
         .split(',')
         .map((s) => s.trim())
@@ -105,14 +238,14 @@ export function CreateBlockProvider({
       }
 
       // Reset all form state
-      handler.resetData();
+      setData(getDefaultState(kind));
       setVisibleRoles([]);
       setVisibleSegmentsText('');
       setTargetUserIdsText('');
       setViewAdditionalDetails(false);
     },
     [
-      handler,
+      data,
       participants,
       kind,
       visibleRoles,
@@ -128,7 +261,8 @@ export function CreateBlockProvider({
   const contextValue: CreateBlockContextValue = {
     kind,
     setKind: handleKindChange,
-    handler,
+    data,
+    setData,
     participants,
     submit,
     isSubmitting,

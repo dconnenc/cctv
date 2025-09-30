@@ -1,13 +1,83 @@
 import { Button, TextInput } from '@cctv/core';
 import { Dropdown } from '@cctv/core/Dropdown/Dropdown';
+import { BlockStatus, ParticipantSummary } from '@cctv/types';
 
 import { BlockComponentProps, PollData } from '../types';
 
 import styles from './CreatePoll.module.scss';
 
+// Pure functions for poll business logic
+export const getDefaultPollState = (): PollData => {
+  return {
+    question: '',
+    options: ['', ''],
+    pollType: 'single',
+  };
+};
+
+export const validatePoll = (data: PollData): string | null => {
+  const validOptions = data.options.filter((opt) => opt.trim() !== '');
+
+  if (!data.question.trim()) {
+    return 'Poll question is required';
+  }
+
+  if (validOptions.length < 2) {
+    return 'Poll must have at least 2 options';
+  }
+
+  return null;
+};
+
+export const buildPollPayload = (data: PollData): Record<string, any> => {
+  const validOptions = data.options.filter((opt) => opt.trim() !== '');
+
+  return {
+    type: 'poll',
+    question: data.question.trim(),
+    options: validOptions,
+    pollType: data.pollType,
+  };
+};
+
+export const canPollOpenImmediately = (
+  data: PollData,
+  participants: ParticipantSummary[],
+): boolean => {
+  return true;
+};
+
+export const processPollBeforeSubmit = (
+  data: PollData,
+  status: BlockStatus,
+  participants: ParticipantSummary[],
+): PollData => {
+  return data;
+};
+
 export default function CreatePoll({ data, onChange }: BlockComponentProps<PollData>) {
   const updateData = (updates: Partial<PollData>) => {
     onChange?.(updates);
+  };
+
+  const addOption = () => {
+    const newOptions = [...data.options, ''];
+    onChange?.({ options: newOptions });
+  };
+
+  const removeOption = (index: number) => {
+    if (data.options.length <= 2) {
+      return; // Don't remove if only 2 options left
+    }
+
+    const newOptions = data.options.filter((_, i) => i !== index);
+    onChange?.({ options: newOptions });
+  };
+
+  const updateOption = (index: number, value: string) => {
+    const newOptions = [...data.options];
+    newOptions[index] = value;
+    onChange?.({ options: newOptions });
   };
   return (
     <div className={styles.details}>
@@ -41,33 +111,17 @@ export default function CreatePoll({ data, onChange }: BlockComponentProps<PollD
                 label={`Option ${index + 1}`}
                 placeholder={`Option ${index + 1}`}
                 value={option}
-                onChange={(e) => {
-                  const newOptions = [...data.options];
-                  newOptions[index] = e.target.value;
-                  updateData({ options: newOptions });
-                }}
+                onChange={(e) => updateOption(index, e.target.value)}
               />
               {data.options.length > 2 && (
-                <Button
-                  type="button"
-                  onClick={() => {
-                    const newOptions = data.options.filter((_, i) => i !== index);
-                    updateData({ options: newOptions });
-                  }}
-                >
+                <Button type="button" onClick={() => removeOption(index)}>
                   Remove
                 </Button>
               )}
             </div>
           ))}
         </div>
-        <Button
-          type="button"
-          onClick={() => {
-            const newOptions = [...data.options, ''];
-            updateData({ options: newOptions });
-          }}
-        >
+        <Button type="button" onClick={addOption}>
           Add Option
         </Button>
       </div>

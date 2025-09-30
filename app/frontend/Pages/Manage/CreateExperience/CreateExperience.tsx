@@ -8,13 +8,6 @@ import CreateMadLib from './CreateMadLib/CreateMadLib';
 import CreateMultistepForm from './CreateMultistepForm/CreateMultistepForm';
 import CreatePoll from './CreatePoll/CreatePoll';
 import CreateQuestion from './CreateQuestion/CreateQuestion';
-import {
-  isAnnouncementHandler,
-  isMadLibHandler,
-  isMultistepFormHandler,
-  isPollHandler,
-  isQuestionHandler,
-} from './handlers/blockHandlerFactory';
 
 import styles from './CreateExperience.module.scss';
 
@@ -82,52 +75,37 @@ function CreateExperienceForm() {
 }
 
 function BlockEditor() {
-  const { kind, handler, participants } = useCreateBlockContext();
-  const data = handler.getData();
-  const onChange = (updates: any) => handler.updateData(updates);
+  const { kind, data, setData, participants } = useCreateBlockContext();
+
+  const onChange = (updates: any) => {
+    setData((prev) => ({ ...prev, ...updates }));
+  };
 
   switch (kind) {
     case 'poll':
-      if (isPollHandler(handler)) {
-        return <CreatePoll data={data} onChange={onChange} />;
-      }
-      break;
+      return <CreatePoll data={data as any} onChange={onChange} />;
 
     case 'question':
-      if (isQuestionHandler(handler)) {
-        return <CreateQuestion data={data} onChange={onChange} />;
-      }
-      break;
+      return <CreateQuestion data={data as any} onChange={onChange} />;
 
     case 'multistep_form':
-      if (isMultistepFormHandler(handler)) {
-        return (
-          <CreateMultistepForm
-            className={styles.details}
-            multistepQuestions={data.questions}
-            setMultistepQuestions={(questions) => onChange({ questions })}
-          />
-        );
-      }
-      break;
+      return (
+        <CreateMultistepForm
+          className={styles.details}
+          multistepQuestions={(data as any).questions}
+          setMultistepQuestions={(questions) => onChange({ questions })}
+        />
+      );
 
     case 'announcement':
-      if (isAnnouncementHandler(handler)) {
-        return <CreateAnnouncement data={data} onChange={onChange} />;
-      }
-      break;
+      return <CreateAnnouncement data={data as any} onChange={onChange} />;
 
     case 'mad_lib':
-      if (isMadLibHandler(handler)) {
-        return <CreateMadLib data={data} onChange={onChange} participants={participants} />;
-      }
-      break;
+      return <CreateMadLib data={data as any} onChange={onChange} participants={participants} />;
 
     default:
       return <div className={styles.details}>Unknown block type: {kind}</div>;
   }
-
-  return <div className={styles.details}>Handler mismatch for {kind}</div>;
 }
 
 function AdditionalDetails() {

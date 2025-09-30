@@ -1,24 +1,119 @@
 import { Button, TextInput } from '@cctv/core';
 import { Dropdown } from '@cctv/core/Dropdown/Dropdown';
+import { BlockStatus, ParticipantSummary } from '@cctv/types';
 
+import { useCreateBlockContext } from '../CreateBlockContext';
 import { BlockComponentProps, MadLibData } from '../types';
 
 import styles from './CreateMadLib.module.scss';
 
-export default function CreateMadLib({
-  data,
-  onChange,
-  participants = [],
-}: BlockComponentProps<MadLibData>) {
-  const updateData = (updates: Partial<MadLibData>) => {
-    onChange?.(updates);
+export const getDefaultMadLibState = (): MadLibData => {
+  return {
+    segments: [],
+    variables: [],
+  };
+};
+
+export const validateMadLib = (data: MadLibData): string | null => {
+  const validSegments = data.segments.filter((s) => s.content.trim());
+
+  if (validSegments.length === 0) {
+    return 'Mad lib must have at least one segment';
+  }
+
+  const validVariables = data.variables.filter((v) => v.name.trim() && v.question.trim());
+  const variableSegments = validSegments.filter((s) => s.type === 'variable');
+
+  if (variableSegments.length > 0 && validVariables.length === 0) {
+    return 'Variables must have both name and question configured';
+  }
+
+  return null;
+};
+
+export const canMadLibOpenImmediately = (
+  data: MadLibData,
+  participants: ParticipantSummary[],
+): boolean => {
+  const validVariables = data.variables.filter((v) => v.name.trim() && v.question.trim());
+  const unassignedVariables = validVariables.filter(
+    (v) => !v.assigned_user_id || v.assigned_user_id === 'random',
+  );
+
+  // Check if we have enough participants for random assignments
+  if (unassignedVariables.length > 0) {
+    const availableParticipants = participants.filter(
+      (p) => !validVariables.some((v) => v.assigned_user_id === p.user_id),
+    );
+
+    // Need enough participants for all unassigned variables
+    return availableParticipants.length >= unassignedVariables.length;
+  }
+
+  return true;
+};
+
+export const processMadLibBeforeSubmit = (
+  data: MadLibData,
+  status: BlockStatus,
+  participants: ParticipantSummary[],
+): MadLibData => {
+  const validVariables = [...data.variables.filter((v) => v.name.trim() && v.question.trim())];
+
+  const getAvailableParticipants = (excludeVariableIndex?: number): ParticipantSummary[] => {
+    return participants.filter((p) => {
+      const isAlreadyAssigned = validVariables.some(
+        (v, vIndex) => vIndex !== excludeVariableIndex && v.assigned_user_id === p.user_id,
+      );
+      return !isAlreadyAssigned;
+    });
+  };
+
+  const availableParticipants = getAvailableParticipants();
+
+  for (let i = 0; i < validVariables.length; i++) {
+    const variable = validVariables[i];
+
+    if (variable.assigned_user_id === 'random' && availableParticipants.length > 0) {
+      const randomIndex = Math.floor(Math.random() * availableParticipants.length);
+      const assignedParticipant = availableParticipants.splice(randomIndex, 1)[0];
+      validVariables[i] = {
+        ...variable,
+        assigned_user_id: assignedParticipant.user_id,
+      };
+    }
+  }
+
+  return {
+    ...data,
+    variables: validVariables,
+  };
+};
+
+export const buildMadLibPayload = (data: MadLibData): Record<string, any> => {
+  const validSegments = data.segments.filter((s) => s.content.trim());
+  const validVariables = data.variables.filter((v) => v.name.trim() && v.question.trim());
+
+  return {
+    type: 'mad_lib',
+    segments: validSegments,
+    variables: validVariables,
+  };
+};
+
+export default function CreateMadLib({ data, onChange }: BlockComponentProps<MadLibData>) {
+  const { participants } = useCreateBlockContext();
+
+  const updateSegment = (index: number, content: string) => {
+    const newSegments = [...data.segments];
+    newSegments[index] = { ...newSegments[index], content };
+    onChange?.({ segments: newSegments });
   };
 
   const addTextSegment = () => {
     const newId = Date.now().toString();
-    updateData({
-      segments: [...data.segments, { id: newId, type: 'text', content: ' ' }],
-    });
+    const newSegments = [...data.segments, { id: newId, type: 'text' as const, content: ' ' }];
+    onChange?.({ segments: newSegments });
   };
 
   const addVariableSegment = () => {
@@ -39,29 +134,61 @@ export default function CreateMadLib({
       content: newVariableId,
     };
 
-    updateData({
+    const newData = {
       variables: [...data.variables, newVariable],
       segments: [...data.segments, newSegment],
-    });
-  };
+    };
 
-  const updateSegment = (index: number, content: string) => {
-    const newSegments = [...data.segments];
-    newSegments[index] = { ...newSegments[index], content };
-    updateData({ segments: newSegments });
+    onChange?.(newData);
   };
 
   const removeSegment = (index: number) => {
     const segment = data.segments[index];
-    const newSegments = data.segments.filter((_, i) => i !== index);
+    let newSegments = data.segments.filter((_, i) => i !== index);
 
     let newVariables = data.variables;
     if (segment.type === 'variable') {
       newVariables = data.variables.filter((v) => v.id !== segment.content);
     }
 
-    updateData({
-      segments: newSegments,
+    // Combine consecutive text segments after removal
+    const combinedSegments = [];
+    for (let i = 0; i < newSegments.length; i++) {
+      const currentSegment = newSegments[i];
+
+      if (currentSegment.type === 'text') {
+        // Look ahead to see if the next segment is also text
+        let combinedContent = currentSegment.content;
+        let nextIndex = i + 1;
+
+        while (nextIndex < newSegments.length && newSegments[nextIndex].type === 'text') {
+          // Add space between segments if neither ends/starts with whitespace
+          const currentEndsWithSpace = combinedContent.endsWith(' ');
+          const nextStartsWithSpace = newSegments[nextIndex].content.startsWith(' ');
+
+          if (!currentEndsWithSpace && !nextStartsWithSpace) {
+            combinedContent += ' ';
+          }
+
+          combinedContent += newSegments[nextIndex].content;
+          nextIndex++;
+        }
+
+        // Add the combined segment
+        combinedSegments.push({
+          ...currentSegment,
+          content: combinedContent,
+        });
+
+        // Skip the segments we just combined
+        i = nextIndex - 1;
+      } else {
+        combinedSegments.push(currentSegment);
+      }
+    }
+
+    onChange?.({
+      segments: combinedSegments,
       variables: newVariables,
     });
   };
@@ -70,14 +197,30 @@ export default function CreateMadLib({
     const newVariables = data.variables.map((v) =>
       v.id === variableId ? { ...v, ...updates } : v,
     );
-    updateData({ variables: newVariables });
+
+    onChange?.({ variables: newVariables });
+  };
+
+  const getAvailableParticipants = (excludeVariableIndex?: number) => {
+    return participants.filter((p) => {
+      const isAlreadyAssigned = data.variables.some(
+        (v, vIndex) => vIndex !== excludeVariableIndex && v.assigned_user_id === p.user_id,
+      );
+      return !isAlreadyAssigned;
+    });
+  };
+
+  const canAddTextSegment = () => {
+    if (data.segments.length === 0) return true;
+    const lastSegment = data.segments[data.segments.length - 1];
+    return lastSegment.type !== 'text';
   };
 
   return (
     <div className={styles.details}>
       <div className={styles.madLibBuilder}>
         <div className={styles.builderSection}>
-          <h3>Mad Lib Builder</h3>
+          <div>Mad Lib Builder</div>
           <div className={styles.preview}>
             {data.segments.map((segment, index) => (
               <span key={segment.id} className={styles.segment}>
@@ -92,7 +235,7 @@ export default function CreateMadLib({
             ))}
           </div>
           <div className={styles.builderControls}>
-            <Button type="button" onClick={addTextSegment}>
+            <Button type="button" onClick={addTextSegment} disabled={!canAddTextSegment()}>
               Add Text
             </Button>
             <Button type="button" onClick={addVariableSegment}>
@@ -102,7 +245,7 @@ export default function CreateMadLib({
         </div>
 
         <div className={styles.segmentEditor}>
-          <h4>Mad Lib Segments</h4>
+          <div>Mad Lib Segments</div>
           {data.segments.map((segment, index) => (
             <div key={segment.id} className={styles.segmentItem}>
               <div className={styles.segmentNumber}>{index + 1}</div>
@@ -160,17 +303,12 @@ export default function CreateMadLib({
                           options={[
                             { label: 'Unassigned', value: '' },
                             { label: 'Random Assignment', value: 'random' },
-                            ...participants
-                              .filter((p) => {
-                                const isAlreadyAssigned = data.variables.some(
-                                  (v) => v.id !== variable.id && v.assigned_user_id === p.user_id,
-                                );
-                                return !isAlreadyAssigned;
-                              })
-                              .map((p) => ({
-                                label: p.name,
-                                value: p.user_id,
-                              })),
+                            ...getAvailableParticipants(
+                              data.variables.findIndex((v) => v.id === variable.id),
+                            ).map((p) => ({
+                              label: p.name,
+                              value: p.user_id,
+                            })),
                           ]}
                           value={variable.assigned_user_id || ''}
                           onChange={(value) =>

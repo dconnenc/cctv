@@ -131,14 +131,6 @@ export default function MadLib({
         </div>
       )}
 
-      {userVariable && hasResponded && (
-        <div className={styles.submitted}>
-          <p>
-            You've submitted your word: <strong>{userResponse?.value}</strong>
-          </p>
-        </div>
-      )}
-
       {submitError && (
         <div className={styles.error}>
           <p>Error: {submitError}</p>

@@ -4,8 +4,58 @@ import classNames from 'classnames';
 
 import { Button, TextInput } from '@cctv/core';
 import { Dropdown } from '@cctv/core/Dropdown/Dropdown';
+import { BlockStatus, ParticipantSummary } from '@cctv/types';
+
+import { useCreateBlockContext } from '../CreateBlockContext';
+import { MultistepFormData } from '../types';
 
 import styles from './CreateMultistepForm.module.scss';
+
+// Pure functions for multistep form business logic
+export const getDefaultMultistepFormState = (): MultistepFormData => {
+  return {
+    questions: [{ question: '', formKey: '', inputType: 'text' }],
+  };
+};
+
+export const validateMultistepForm = (data: MultistepFormData): string | null => {
+  const validQuestions = data.questions.filter((q) => q.question.trim() && q.formKey.trim());
+
+  if (validQuestions.length === 0) {
+    return 'At least one question is required for multistep form';
+  }
+
+  return null;
+};
+
+export const buildMultistepFormPayload = (data: MultistepFormData): Record<string, any> => {
+  const validQuestions = data.questions.filter((q) => q.question.trim() && q.formKey.trim());
+
+  return {
+    type: 'multistep_form',
+    questions: validQuestions.map((q) => ({
+      type: 'question' as const,
+      question: q.question.trim(),
+      formKey: q.formKey.trim(),
+      inputType: q.inputType as 'text' | 'number' | 'email' | 'password' | 'tel',
+    })),
+  };
+};
+
+export const canMultistepFormOpenImmediately = (
+  data: MultistepFormData,
+  participants: ParticipantSummary[],
+): boolean => {
+  return true;
+};
+
+export const processMultistepFormBeforeSubmit = (
+  data: MultistepFormData,
+  status: BlockStatus,
+  participants: ParticipantSummary[],
+): MultistepFormData => {
+  return data;
+};
 
 export default function CreateMultistepForm({
   className,
@@ -18,7 +68,24 @@ export default function CreateMultistepForm({
     questions: Array<{ question: string; formKey: string; inputType: string }>,
   ) => void;
 }) {
+  const { data, setData } = useCreateBlockContext();
   const [questionIndexToFocus, setQuestionIndexToFocus] = useState(0);
+
+  const formData = data as MultistepFormData;
+
+  const addQuestion = () => {
+    const newQuestions = [...multistepQuestions, { question: '', formKey: '', inputType: 'text' }];
+    setMultistepQuestions(newQuestions);
+  };
+
+  const updateQuestion = (
+    index: number,
+    updates: Partial<{ question: string; formKey: string; inputType: string }>,
+  ) => {
+    const newQuestions = [...multistepQuestions];
+    newQuestions[index] = { ...newQuestions[index], ...updates };
+    setMultistepQuestions(newQuestions);
+  };
   return (
     <div className={classNames(styles.root, className)}>
       <div className={styles.questions}>
@@ -33,20 +100,15 @@ export default function CreateMultistepForm({
               label={`Question ${index + 1}`}
               value={question.question}
               onChange={(e) => {
-                const newQuestions = [...multistepQuestions];
-                newQuestions[index].question = e.target.value;
-                newQuestions[index].formKey = e.target.value.split(' ').join('_').toLowerCase();
-                setMultistepQuestions(newQuestions);
+                const questionText = e.target.value;
+                const formKey = questionText.split(' ').join('_').toLowerCase();
+                updateQuestion(index, { question: questionText, formKey });
               }}
             />
             <Dropdown
               label="Input Type"
               value={question.inputType}
-              onChange={(value) => {
-                const newQuestions = [...multistepQuestions];
-                newQuestions[index].inputType = value;
-                setMultistepQuestions(newQuestions);
-              }}
+              onChange={(value) => updateQuestion(index, { inputType: value })}
               options={[
                 { label: 'Text', value: 'text' },
                 { label: 'Number', value: 'number' },
@@ -68,11 +130,7 @@ export default function CreateMultistepForm({
         {questionIndexToFocus === multistepQuestions.length - 1 && (
           <Button
             onClick={() => {
-              setMultistepQuestions([
-                ...multistepQuestions,
-                { question: '', formKey: '', inputType: 'text' },
-              ]);
-
+              addQuestion();
               setQuestionIndexToFocus(questionIndexToFocus + 1);
             }}
           >

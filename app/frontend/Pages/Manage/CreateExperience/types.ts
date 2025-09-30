@@ -29,31 +29,15 @@ export interface MadLibData {
 // Union type for all block data
 export type BlockData = PollData | QuestionData | MultistepFormData | AnnouncementData | MadLibData;
 
-// Base interface all block type handlers must implement
-export interface BlockTypeHandler<T = BlockData> {
-  // Data management
-  getDefaultState(): T;
-  getData(): T;
-  updateData(data: Partial<T>): void;
-  resetData(): void;
-
-  // Validation and payload
-  validate(): string | null;
-  buildPayload(): Record<string, any>;
-
-  // Block-specific logic
-  canOpenImmediately(participants: ParticipantSummary[]): boolean;
-  processBeforeSubmit(status: BlockStatus, participants: ParticipantSummary[]): void;
-}
-
 // Context interface
 export interface CreateBlockContextValue {
   // Block type
   kind: Block['kind'];
   setKind: (kind: Block['kind']) => void;
 
-  // Handler
-  handler: BlockTypeHandler;
+  // Block data
+  data: BlockData;
+  setData: (data: BlockData | ((prev: BlockData) => BlockData)) => void;
 
   // Participants
   participants: ParticipantSummary[];
