@@ -6,7 +6,6 @@ import { Button, TextInput } from '@cctv/core';
 import { Dropdown } from '@cctv/core/Dropdown/Dropdown';
 import { BlockStatus, ParticipantSummary } from '@cctv/types';
 
-import { useCreateBlockContext } from '../CreateBlockContext';
 import { MultistepFormData } from '../types';
 
 import styles from './CreateMultistepForm.module.scss';
@@ -43,16 +42,16 @@ export const buildMultistepFormPayload = (data: MultistepFormData): Record<strin
 };
 
 export const canMultistepFormOpenImmediately = (
-  data: MultistepFormData,
-  participants: ParticipantSummary[],
+  _data: MultistepFormData,
+  _participants: ParticipantSummary[],
 ): boolean => {
   return true;
 };
 
 export const processMultistepFormBeforeSubmit = (
   data: MultistepFormData,
-  status: BlockStatus,
-  participants: ParticipantSummary[],
+  _status: BlockStatus,
+  _participants: ParticipantSummary[],
 ): MultistepFormData => {
   return data;
 };
@@ -68,10 +67,7 @@ export default function CreateMultistepForm({
     questions: Array<{ question: string; formKey: string; inputType: string }>,
   ) => void;
 }) {
-  const { data, setData } = useCreateBlockContext();
   const [questionIndexToFocus, setQuestionIndexToFocus] = useState(0);
-
-  const formData = data as MultistepFormData;
 
   const addQuestion = () => {
     const newQuestions = [...multistepQuestions, { question: '', formKey: '', inputType: 'text' }];

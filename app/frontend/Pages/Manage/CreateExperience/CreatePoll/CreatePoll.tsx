@@ -41,16 +41,16 @@ export const buildPollPayload = (data: PollData): Record<string, any> => {
 };
 
 export const canPollOpenImmediately = (
-  data: PollData,
-  participants: ParticipantSummary[],
+  _data: PollData,
+  _participants: ParticipantSummary[],
 ): boolean => {
   return true;
 };
 
 export const processPollBeforeSubmit = (
   data: PollData,
-  status: BlockStatus,
-  participants: ParticipantSummary[],
+  _status: BlockStatus,
+  _participants: ParticipantSummary[],
 ): PollData => {
   return data;
 };

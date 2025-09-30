@@ -28,16 +28,16 @@ export const buildAnnouncementPayload = (data: AnnouncementData): Record<string,
 };
 
 export const canAnnouncementOpenImmediately = (
-  data: AnnouncementData,
-  participants: ParticipantSummary[],
+  _data: AnnouncementData,
+  _participants: ParticipantSummary[],
 ): boolean => {
   return true;
 };
 
 export const processAnnouncementBeforeSubmit = (
   data: AnnouncementData,
-  status: BlockStatus,
-  participants: ParticipantSummary[],
+  _status: BlockStatus,
+  _participants: ParticipantSummary[],
 ): AnnouncementData => {
   return data;
 };

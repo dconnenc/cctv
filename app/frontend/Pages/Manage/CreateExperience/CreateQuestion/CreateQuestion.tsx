@@ -37,16 +37,16 @@ export const buildQuestionPayload = (data: QuestionData): Record<string, any> =>
 };
 
 export const canQuestionOpenImmediately = (
-  data: QuestionData,
-  participants: ParticipantSummary[],
+  _data: QuestionData,
+  _participants: ParticipantSummary[],
 ): boolean => {
   return true;
 };
 
 export const processQuestionBeforeSubmit = (
   data: QuestionData,
-  status: BlockStatus,
-  participants: ParticipantSummary[],
+  _status: BlockStatus,
+  _participants: ParticipantSummary[],
 ): QuestionData => {
   return data;
 };

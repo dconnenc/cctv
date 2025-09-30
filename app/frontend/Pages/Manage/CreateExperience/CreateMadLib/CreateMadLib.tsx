@@ -55,7 +55,7 @@ export const canMadLibOpenImmediately = (
 
 export const processMadLibBeforeSubmit = (
   data: MadLibData,
-  status: BlockStatus,
+  _status: BlockStatus,
   participants: ParticipantSummary[],
 ): MadLibData => {
   const validVariables = [...data.variables.filter((v) => v.name.trim() && v.question.trim())];
@@ -222,7 +222,7 @@ export default function CreateMadLib({ data, onChange }: BlockComponentProps<Mad
         <div className={styles.builderSection}>
           <div>Mad Lib Builder</div>
           <div className={styles.preview}>
-            {data.segments.map((segment, index) => (
+            {data.segments.map((segment) => (
               <span key={segment.id} className={styles.segment}>
                 {segment.type === 'text' ? (
                   <span className={styles.textSegment}>{segment.content}</span>
