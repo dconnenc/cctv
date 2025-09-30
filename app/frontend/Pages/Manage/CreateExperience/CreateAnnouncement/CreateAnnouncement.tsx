@@ -5,7 +5,6 @@ import { AnnouncementData, BlockComponentProps } from '../types';
 
 import styles from './CreateAnnouncement.module.scss';
 
-// Pure functions for announcement business logic
 export const getDefaultAnnouncementState = (): AnnouncementData => {
   return {
     message: '',

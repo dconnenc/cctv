@@ -40,7 +40,6 @@ export const canMadLibOpenImmediately = (
     (v) => !v.assigned_user_id || v.assigned_user_id === 'random',
   );
 
-  // Check if we have enough participants for random assignments
   if (unassignedVariables.length > 0) {
     const availableParticipants = participants.filter(
       (p) => !validVariables.some((v) => v.assigned_user_id === p.user_id),
@@ -53,6 +52,8 @@ export const canMadLibOpenImmediately = (
   return true;
 };
 
+// This can be pushed to the server in the future to simplify when the backend
+// has a concrete implementation for the block types
 export const processMadLibBeforeSubmit = (
   data: MadLibData,
   _status: BlockStatus,

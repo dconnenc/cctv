@@ -10,7 +10,6 @@ import { MultistepFormData } from '../types';
 
 import styles from './CreateMultistepForm.module.scss';
 
-// Pure functions for multistep form business logic
 export const getDefaultMultistepFormState = (): MultistepFormData => {
   return {
     questions: [{ question: '', formKey: '', inputType: 'text' }],

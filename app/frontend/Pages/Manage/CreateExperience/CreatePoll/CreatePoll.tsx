@@ -6,7 +6,6 @@ import { BlockComponentProps, PollData } from '../types';
 
 import styles from './CreatePoll.module.scss';
 
-// Pure functions for poll business logic
 export const getDefaultPollState = (): PollData => {
   return {
     question: '',

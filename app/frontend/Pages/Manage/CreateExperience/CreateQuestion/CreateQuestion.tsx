@@ -6,7 +6,6 @@ import { BlockComponentProps, QuestionData } from '../types';
 
 import styles from './CreateQuestion.module.scss';
 
-// Pure functions for question business logic
 export const getDefaultQuestionState = (): QuestionData => {
   return {
     questionText: '',
