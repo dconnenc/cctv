@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 
 import { Column, Pill, Table } from '@cctv/core';
+import { useRefreshMadLibAssignments } from '@cctv/hooks';
 import { Block, BlockStatus, ParticipantSummary } from '@cctv/types';
 import { fmtDate } from '@cctv/utils';
 
@@ -11,11 +12,13 @@ export function BlocksTable({
   onChange,
   busyId,
   participants,
+  onRefreshMadLib,
 }: {
   blocks: Block[];
   onChange: (b: Block, s: BlockStatus) => void;
   busyId?: string | null;
   participants?: ParticipantSummary[];
+  onRefreshMadLib?: (block: Block) => Promise<void>;
 }) {
   const totalParticipants = participants?.length || 0;
 
@@ -66,7 +69,12 @@ export function BlocksTable({
         label: 'Actions',
         isHidden: true,
         Cell: (b) => (
-          <BlockRowMenu block={b} onChange={(s) => onChange(b, s)} busy={busyId === b.id} />
+          <BlockRowMenu
+            block={b}
+            onChange={(s) => onChange(b, s)}
+            busy={busyId === b.id}
+            onRefreshMadLib={onRefreshMadLib}
+          />
         ),
       },
     ];
@@ -79,10 +87,12 @@ function BlockRowMenu({
   block,
   onChange,
   busy,
+  onRefreshMadLib,
 }: {
   block: Block;
   onChange: (next: BlockStatus) => void;
   busy?: boolean;
+  onRefreshMadLib?: (block: Block) => Promise<void>;
 }) {
   const choose = (status: BlockStatus) => () => onChange(status);
   return (
@@ -110,6 +120,15 @@ function BlockRowMenu({
         >
           Set “hidden”
         </button>
+        {block.kind === 'mad_lib' && onRefreshMadLib && (
+          <button
+            className={styles.menuItem}
+            onClick={() => onRefreshMadLib(block)}
+            disabled={busy}
+          >
+            Refresh assignments
+          </button>
+        )}
       </div>
     </details>
   );

@@ -8,7 +8,6 @@
 }
 
 .template {
-  background: var(--card-bg, #f8f9fa);
   border: 2px solid var(--card-border, #e9ecef);
   border-radius: 12px;
   padding: 2rem;
@@ -19,7 +18,6 @@
 }
 
 .template strong {
-  background: var(--highlight-bg, #fff3cd);
   color: var(--highlight-fg, #856404);
   padding: 0.25rem 0.5rem;
   border-radius: 6px;
@@ -27,7 +25,6 @@
 }
 
 .template em {
-  background: var(--muted-bg, #f1f3f4);
   color: var(--muted-fg, #6b7280);
   padding: 0.25rem 0.5rem;
   border-radius: 6px;
@@ -36,7 +33,6 @@
 }
 
 .inputSection {
-  background: var(--input-section-bg, #ffffff);
   border: 1px solid var(--input-border, #e5e7eb);
   border-radius: 12px;
   padding: 1.5rem;
@@ -65,7 +61,6 @@
 }
 
 .submitted {
-  background: var(--success-bg, #f0f9ff);
   border: 1px solid var(--success-border, #bfdbfe);
   color: var(--success-fg, #1e40af);
   border-radius: 12px;
@@ -82,13 +77,11 @@
 }
 
 .submitted strong {
-  background: var(--success-highlight, #dbeafe);
   padding: 0.25rem 0.5rem;
   border-radius: 6px;
 }
 
 .waiting {
-  background: var(--info-bg, #eff6ff);
   border: 1px solid var(--info-border, #bfdbfe);
   color: var(--info-fg, #1e40af);
   border-radius: 12px;
@@ -106,7 +99,6 @@
 }
 
 .error {
-  background: var(--error-bg, #fef2f2);
   border: 1px solid var(--error-border, #fecaca);
   color: var(--error-fg, #991b1b);
   border-radius: 12px;
@@ -126,7 +118,6 @@
   gap: 0.5rem;
   margin-top: 1rem;
   padding: 0.75rem;
-  background: var(--progress-bg, #f9fafb);
   border-radius: 8px;
   border: 1px solid var(--border-light, #f1f3f4);
 }
@@ -135,12 +126,9 @@
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: var(--progress-empty, #e5e7eb);
-  transition: background-color 0.2s ease;
 }
 
 .progressIndicator .dot.filled {
-  background: var(--progress-filled, #10b981);
 }
 
 @media (max-width: 640px) {

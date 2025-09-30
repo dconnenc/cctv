@@ -4,7 +4,7 @@ import classNames from 'classnames';
 
 import { useExperience } from '@cctv/contexts';
 import { Button, Column, Pill, Table } from '@cctv/core';
-import { useChangeBlockStatus, useExperienceStart } from '@cctv/hooks';
+import { useChangeBlockStatus, useExperienceStart, useRefreshMadLibAssignments } from '@cctv/hooks';
 import { Block, BlockStatus, Experience, ParticipantSummary } from '@cctv/types';
 
 import { BlocksTable } from './BlocksTable/BlocksTable';
@@ -49,6 +49,12 @@ export default function Manage() {
     setError: setStatusError,
   } = useChangeBlockStatus();
 
+  const {
+    refresh: refreshMadLibAssignments,
+    error: refreshError,
+    setError: setRefreshError,
+  } = useRefreshMadLibAssignments();
+
   const onChangeBlockStatus = useCallback(
     async (block: Block | undefined, next: BlockStatus) => {
       console.log('onChangeBlockStatus', block, next, code);
@@ -86,6 +92,42 @@ export default function Manage() {
     [code, experienceFetch, changeStatus, setStatusError],
   );
 
+  const onRefreshMadLib = useCallback(
+    async (block: Block) => {
+      console.log('onRefreshMadLib', block, code);
+      if (!code) return;
+      setBusyBlockId(block.id);
+      setRefreshError(null);
+
+      const result = await refreshMadLibAssignments(block);
+
+      // Re-fetch experience when done
+      if (code) {
+        try {
+          const res = await experienceFetch(`/api/experiences/${encodeURIComponent(code)}`, {
+            method: 'GET',
+          });
+
+          const data: {
+            success?: boolean;
+            experience?: Experience;
+          } = await res.json();
+
+          if (data?.success) {
+            await refetchExperience();
+          }
+        } catch {}
+      }
+
+      if (!result?.success && result?.error) {
+        alert(result.error);
+      }
+
+      setBusyBlockId(undefined);
+    },
+    [code, experienceFetch, refreshMadLibAssignments, setRefreshError, refetchExperience],
+  );
+
   const currentBlock = useMemo(
     () => experience?.blocks.find((block) => block.status === 'open'),
     [experience],
@@ -108,6 +150,7 @@ export default function Manage() {
           onChange={onChangeBlockStatus}
           busyId={busyBlockId}
           participants={participantsCombined}
+          onRefreshMadLib={onRefreshMadLib}
         />
         <div>
           <Button onClick={() => setShowBlocks(false)}>Back</Button>
@@ -131,7 +174,7 @@ export default function Manage() {
 
   const ViewSection = view === 'audience' ? ViewAudienceSection : ViewTvSection;
 
-  const errorMessage = experienceError || startError || statusError;
+  const errorMessage = experienceError || startError || statusError || refreshError;
 
   return (
     <section className={styles.root}>

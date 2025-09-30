@@ -9,4 +9,5 @@ export { useSubmitQuestionResponse } from './useSubmitQuestionResponse';
 export { useSubmitMultistepFormResponse } from './useSubmitMultistepFormResponse';
 export { useSubmitMadLibResponse } from './useSubmitMadLibResponse';
 export { useChangeBlockStatus } from './useChangeBlockStatus';
+export { useRefreshMadLibAssignments } from './useRefreshMadLibAssignments';
 export { useExperienceStart } from './useExperienceStart';

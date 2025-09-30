@@ -29,13 +29,23 @@ export interface AnnouncementPayload {
   message: string;
 }
 
+export interface MadLibVariable {
+  id: string;
+  name: string;
+  question: string;
+  dataType: 'text' | 'number' | 'adjective' | 'noun' | 'verb' | 'adverb';
+  assigned_user_id?: string;
+}
+
+export interface MadLibSegment {
+  id: string;
+  type: 'text' | 'variable';
+  content: string; // For text segments, this is the actual text. For variables, this is the variable ID
+}
+
 export interface MadLibPayload {
-  template: string;
-  variables: Array<{
-    id: string;
-    name: string;
-    assigned_user_id?: string;
-  }>;
+  segments: MadLibSegment[];
+  variables: MadLibVariable[];
 }
 
 // ===== ENTITY TYPES =====

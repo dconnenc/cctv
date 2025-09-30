@@ -1,196 +1,61 @@
-import { useState } from 'react';
-
 import { Button, TextInput } from '@cctv/core';
 import { Dropdown } from '@cctv/core/Dropdown/Dropdown';
-import { useCreateExperienceBlock } from '@cctv/hooks';
-import { Block, BlockStatus, Experience, ParticipantRole, ParticipantSummary } from '@cctv/types';
+import { Block, ParticipantSummary } from '@cctv/types';
 
+import CreateAnnouncement from './CreateAnnouncement/CreateAnnouncement';
+import { CreateBlockProvider, useCreateBlockContext } from './CreateBlockContext';
+import CreateMadLib from './CreateMadLib/CreateMadLib';
 import CreateMultistepForm from './CreateMultistepForm/CreateMultistepForm';
+import CreatePoll from './CreatePoll/CreatePoll';
+import CreateQuestion from './CreateQuestion/CreateQuestion';
+import {
+  isAnnouncementHandler,
+  isMadLibHandler,
+  isMultistepFormHandler,
+  isPollHandler,
+  isQuestionHandler,
+} from './handlers/blockHandlerFactory';
 
 import styles from './CreateExperience.module.scss';
 
-export default function CreateExperience({
-  refetchExperience,
-  onClose,
-  participants,
-  onEndCurrentBlock,
-}: {
+interface CreateExperienceProps {
   refetchExperience: () => Promise<void>;
   onClose: () => void;
   participants: ParticipantSummary[];
   onEndCurrentBlock: () => Promise<void>;
-}) {
+}
+
+export default function CreateExperience(props: CreateExperienceProps) {
+  return (
+    <CreateBlockProvider {...props}>
+      <CreateExperienceForm />
+    </CreateBlockProvider>
+  );
+}
+
+function CreateExperienceForm() {
   const {
-    createExperienceBlock,
-    isLoading: creating,
-    error: createError,
-    setError: setCreateError,
-  } = useCreateExperienceBlock({ refetchExperience });
-
-  const [viewAdditionalDetails, setViewAdditionalDetails] = useState<boolean>(false);
-  const [kind, setKind] = useState<Block['kind']>('poll');
-  const [openImmediately, setOpenImmediately] = useState<boolean>(false);
-  const [visibleRoles, setVisibleRoles] = useState<ParticipantRole[]>([]);
-  const [visibleSegmentsText, setVisibleSegmentsText] = useState<string>('');
-  const [targetUserIdsText, setTargetUserIdsText] = useState<string>('');
-
-  // Poll-specific state
-  const [pollQuestion, setPollQuestion] = useState<string>('');
-  const [pollOptions, setPollOptions] = useState<string[]>(['', '']);
-  const [pollType, setPollType] = useState<'single' | 'multiple'>('single');
-
-  // Announcement-specific state
-  const [announcementMessage, setAnnouncementMessage] = useState<string>('');
-
-  // Question-specific state
-  const [questionText, setQuestionText] = useState<string>('');
-  const [questionFormKey, setQuestionFormKey] = useState<string>('');
-  const [questionInputType, setQuestionInputType] = useState<
-    'text' | 'number' | 'email' | 'password' | 'tel'
-  >('text');
-
-  // Multistep Form-specific state
-  const [multistepQuestions, setMultistepQuestions] = useState<
-    Array<{ question: string; formKey: string; inputType: string }>
-  >([{ question: '', formKey: '', inputType: 'text' }]);
-
-  // Mad Lib-specific state
-  const [madLibTemplate, setMadLibTemplate] = useState<string>('');
-  const [madLibVariables, setMadLibVariables] = useState<
-    Array<{ id: string; name: string; assigned_user_id?: string }>
-  >([{ id: '1', name: 'adjective', assigned_user_id: '' }]);
-
-  const resetForm = () => {
-    setPollQuestion('');
-    setPollOptions(['', '']);
-    setPollType('single');
-    setAnnouncementMessage('');
-    setQuestionText('');
-    setQuestionFormKey('');
-    setQuestionInputType('text');
-    setMultistepQuestions([{ question: '', formKey: '', inputType: 'text' }]);
-    setMadLibTemplate('');
-    setMadLibVariables([{ id: '1', name: 'adjective', assigned_user_id: '' }]);
-    setVisibleRoles([]);
-    setVisibleSegmentsText('');
-    setTargetUserIdsText('');
-  };
-
-  const onSubmit = async (status: BlockStatus) => {
-    console.log('onSubmit');
-    setCreateError(null);
-
-    let payload: Record<string, any> = {};
-
-    // Build payload based on kind
-    if (kind === 'poll') {
-      const validOptions = pollOptions.filter((opt) => opt.trim() !== '');
-      if (!pollQuestion.trim()) {
-        setCreateError('Poll question is required');
-        return;
-      }
-      if (validOptions.length < 2) {
-        setCreateError('Poll must have at least 2 options');
-        return;
-      }
-      payload = {
-        type: 'poll',
-        question: pollQuestion.trim(),
-        options: validOptions,
-        pollType: pollType,
-      };
-    } else if (kind === 'announcement') {
-      if (!announcementMessage.trim()) {
-        setCreateError('Announcement message is required');
-        return;
-      }
-      payload = {
-        type: 'announcement',
-        message: announcementMessage.trim(),
-      };
-    } else if (kind === 'question') {
-      if (!questionText.trim()) {
-        setCreateError('Question text is required');
-        return;
-      }
-      if (!questionFormKey.trim()) {
-        setCreateError('Question form key is required');
-        return;
-      }
-      payload = {
-        type: 'question',
-        question: questionText.trim(),
-        formKey: questionFormKey.trim(),
-        inputType: questionInputType,
-      };
-    } else if (kind === 'multistep_form') {
-      const validQuestions = multistepQuestions.filter(
-        (q) => q.question.trim() && q.formKey.trim(),
-      );
-      if (validQuestions.length === 0) {
-        setCreateError('At least one question is required for multistep form');
-        return;
-      }
-      payload = {
-        type: 'multistep_form',
-        questions: validQuestions.map((q) => ({
-          type: 'question' as const,
-          question: q.question.trim(),
-          formKey: q.formKey.trim(),
-          inputType: q.inputType as 'text' | 'number' | 'email' | 'password' | 'tel',
-        })),
-      };
-    } else if (kind === 'mad_lib') {
-      if (!madLibTemplate.trim()) {
-        setCreateError('Mad lib template is required');
-        return;
-      }
-      const validVariables = madLibVariables.filter((v) => v.name.trim() && v.id.trim());
-      if (validVariables.length === 0) {
-        setCreateError('At least one variable is required for mad lib');
-        return;
-      }
-      payload = {
-        type: 'mad_lib',
-        template: madLibTemplate.trim(),
-        variables: validVariables,
-      };
-    }
-
-    const visible_to_segments = visibleSegmentsText
-      .split(',')
-      .map((s) => s.trim())
-      .filter(Boolean);
-    const target_user_ids = targetUserIdsText
-      .split(',')
-      .map((s) => s.trim())
-      .filter(Boolean);
-
-    const submitPayload = {
-      kind,
-      payload,
-      visible_to_roles: visibleRoles,
-      visible_to_segments,
-      target_user_ids,
-      status: status,
-      open_immediately: openImmediately,
-    };
-
-    await createExperienceBlock(submitPayload);
-
-    onClose();
-
-    if (status === 'open') {
-      await onEndCurrentBlock();
-    }
-
-    // Reset form state
-    resetForm();
-  };
+    kind,
+    setKind,
+    handler,
+    participants,
+    submit,
+    isSubmitting,
+    error,
+    visibleRoles,
+    setVisibleRoles,
+    visibleSegmentsText,
+    setVisibleSegmentsText,
+    targetUserIdsText,
+    setTargetUserIdsText,
+    viewAdditionalDetails,
+    setViewAdditionalDetails,
+  } = useCreateBlockContext();
 
   return (
     <div className={styles.root}>
-      {createError && <div className={styles.error}>{createError}</div>}
+      {error && <div className={styles.error}>{error}</div>}
+
       <Dropdown
         label="Kind"
         options={[
@@ -201,36 +66,11 @@ export default function CreateExperience({
           { label: 'Mad Lib', value: 'mad_lib' },
         ]}
         value={kind}
-        onChange={(value) => {
-          setKind(value);
-          resetForm();
-        }}
+        onChange={setKind}
         required
       />
 
-      <ExperienceKindDetails
-        kind={kind}
-        pollQuestion={pollQuestion}
-        setPollQuestion={setPollQuestion}
-        pollType={pollType}
-        setPollType={setPollType}
-        pollOptions={pollOptions}
-        setPollOptions={setPollOptions}
-        questionText={questionText}
-        setQuestionText={setQuestionText}
-        setQuestionFormKey={setQuestionFormKey}
-        questionInputType={questionInputType}
-        setQuestionInputType={setQuestionInputType}
-        multistepQuestions={multistepQuestions}
-        setMultistepQuestions={setMultistepQuestions}
-        announcementMessage={announcementMessage}
-        setAnnouncementMessage={setAnnouncementMessage}
-        madLibTemplate={madLibTemplate}
-        setMadLibTemplate={setMadLibTemplate}
-        madLibVariables={madLibVariables}
-        setMadLibVariables={setMadLibVariables}
-        participants={participants}
-      />
+      <BlockEditor kind={kind} handler={handler} participants={participants} />
 
       {viewAdditionalDetails && (
         <div className={styles.additionalDetails}>
@@ -261,28 +101,14 @@ export default function CreateExperience({
       )}
 
       <div className={styles.actions}>
-        <Button onClick={onClose}>Back</Button>
+        <Button onClick={() => window.history.back()}>Back</Button>
         <Button onClick={() => setViewAdditionalDetails(!viewAdditionalDetails)}>
           {viewAdditionalDetails ? 'Hide Additional Details' : 'View Additional Details'}
         </Button>
-        <Button
-          onClick={() => {
-            setOpenImmediately(false);
-            onSubmit('hidden');
-          }}
-          loading={creating}
-          loadingText="Creating..."
-        >
+        <Button onClick={() => submit('hidden')} loading={isSubmitting} loadingText="Creating...">
           Queue block
         </Button>
-        <Button
-          onClick={() => {
-            setOpenImmediately(true);
-            onSubmit('open');
-          }}
-          loading={creating}
-          loadingText="Creating..."
-        >
+        <Button onClick={() => submit('open')} loading={isSubmitting} loadingText="Creating...">
           Play now
         </Button>
       </div>
@@ -290,240 +116,56 @@ export default function CreateExperience({
   );
 }
 
-function ExperienceKindDetails(props: {
+interface BlockEditorProps {
   kind: Block['kind'];
-  pollQuestion: string;
-  setPollQuestion: (question: string) => void;
-  pollType: 'single' | 'multiple';
-  setPollType: (type: 'single' | 'multiple') => void;
-  pollOptions: string[];
-  setPollOptions: (options: string[]) => void;
-  questionText: string;
-  setQuestionText: (text: string) => void;
-  setQuestionFormKey: (key: string) => void;
-  questionInputType: 'text' | 'number' | 'email' | 'password' | 'tel';
-  setQuestionInputType: (type: 'text' | 'number' | 'email' | 'password' | 'tel') => void;
-  multistepQuestions: Array<{ question: string; formKey: string; inputType: string }>;
-  setMultistepQuestions: (
-    questions: Array<{ question: string; formKey: string; inputType: string }>,
-  ) => void;
-  announcementMessage: string;
-  setAnnouncementMessage: (message: string) => void;
-  madLibTemplate: string;
-  setMadLibTemplate: (template: string) => void;
-  madLibVariables: Array<{ id: string; name: string; assigned_user_id?: string }>;
-  setMadLibVariables: (
-    variables: Array<{ id: string; name: string; assigned_user_id?: string }>,
-  ) => void;
+  handler: any;
   participants: ParticipantSummary[];
-}) {
-  switch (props.kind) {
-    case 'poll':
-      return (
-        <div className={styles.details}>
-          <div className={styles.left}>
-            <TextInput
-              label="Poll Question"
-              placeholder="What is your question?"
-              required
-              value={props.pollQuestion}
-              onChange={(e) => {
-                console.log('onChange', e.target.value);
-                props.setPollQuestion(e.target.value);
-              }}
-            />
-            <Dropdown
-              label="Poll Type"
-              options={[
-                { label: 'Single Choice', value: 'single' },
-                { label: 'Multiple Choice', value: 'multiple' },
-              ]}
-              required
-              value={props.pollType}
-              onChange={props.setPollType}
-            />
-          </div>
-          <div className={styles.right}>
-            <div className={styles.list}>
-              {props.pollOptions.map((option, index) => (
-                <div className={styles.item} key={index}>
-                  <TextInput
-                    key={index}
-                    label={`Option ${index + 1}`}
-                    placeholder={`Option ${index + 1}`}
-                    value={option}
-                    onChange={(e) => {
-                      const newOptions = [...props.pollOptions];
-                      newOptions[index] = e.target.value;
-                      props.setPollOptions(newOptions);
-                    }}
-                  />
-                  {props.pollOptions.length > 2 && (
-                    <Button
-                      type="button"
-                      onClick={() => {
-                        const newOptions = props.pollOptions.filter((_, i) => i !== index);
-                        props.setPollOptions(newOptions);
-                      }}
-                    >
-                      Remove
-                    </Button>
-                  )}
-                </div>
-              ))}
-            </div>
-            <Button
-              type="button"
-              onClick={() => {
-                const newOptions = [...props.pollOptions, ''];
-                props.setPollOptions(newOptions);
-              }}
-            >
-              Add Option
-            </Button>
-          </div>
-        </div>
-      );
-    case 'question':
-      return (
-        <div className={styles.details}>
-          <div className={styles.left}>
-            <TextInput
-              label="Question"
-              placeholder="What is your question?"
-              required
-              value={props.questionText}
-              onChange={(e) => {
-                const newQuestionText = e.target.value;
-                props.setQuestionText(newQuestionText);
+}
 
-                // Automatically set the form key to the question text
-                props.setQuestionFormKey(newQuestionText.split(' ').join('_').toLowerCase());
-              }}
-            />
-            <Dropdown
-              label="Input Type"
-              options={[
-                { label: 'Text', value: 'text' },
-                { label: 'Number', value: 'number' },
-                { label: 'Email', value: 'email' },
-                { label: 'Password', value: 'password' },
-                { label: 'Phone', value: 'tel' },
-              ]}
-              required
-              value={props.questionInputType}
-              onChange={props.setQuestionInputType}
-            />
-          </div>
-        </div>
-      );
+function BlockEditor({ kind, handler, participants }: BlockEditorProps) {
+  const data = handler.getData();
+  const onChange = (updates: any) => handler.updateData(updates);
+
+  switch (kind) {
+    case 'poll':
+      if (isPollHandler(handler)) {
+        return <CreatePoll data={data} onChange={onChange} />;
+      }
+      break;
+
+    case 'question':
+      if (isQuestionHandler(handler)) {
+        return <CreateQuestion data={data} onChange={onChange} />;
+      }
+      break;
+
     case 'multistep_form':
-      return (
-        <CreateMultistepForm
-          className={styles.details}
-          multistepQuestions={props.multistepQuestions}
-          setMultistepQuestions={props.setMultistepQuestions}
-        />
-      );
+      if (isMultistepFormHandler(handler)) {
+        return (
+          <CreateMultistepForm
+            className={styles.details}
+            multistepQuestions={data.questions}
+            setMultistepQuestions={(questions) => onChange({ questions })}
+          />
+        );
+      }
+      break;
+
     case 'announcement':
-      return (
-        <div className={styles.details}>
-          <div className={styles.center}>
-            <TextInput
-              label="Announcement Message"
-              placeholder="Dearest {{ participant_name }}, this is your announcement."
-              required
-              value={props.announcementMessage}
-              onChange={(e) => props.setAnnouncementMessage(e.target.value)}
-            />
-            <span className={styles.helpText}>
-              {`Include the participant's name with {{ participant_name }}`}
-            </span>
-          </div>
-        </div>
-      );
+      if (isAnnouncementHandler(handler)) {
+        return <CreateAnnouncement data={data} onChange={onChange} />;
+      }
+      break;
+
     case 'mad_lib':
-      return (
-        <div className={styles.details}>
-          <div className={styles.left}>
-            <TextInput
-              label="Mad Lib Template"
-              placeholder="The {{adjective}} {{noun}} jumped over the {{verb}}!"
-              required
-              value={props.madLibTemplate}
-              onChange={(e) => props.setMadLibTemplate(e.target.value)}
-            />
-            <span className={styles.helpText}>
-              Use {`{{variable_name}}`} to mark variables in your template
-            </span>
-          </div>
-          <div className={styles.right}>
-            <div className={styles.list}>
-              {props.madLibVariables.map(
-                (
-                  variable: { id: string; name: string; assigned_user_id?: string },
-                  index: number,
-                ) => (
-                  <div className={styles.item} key={index}>
-                    <TextInput
-                      label={`Variable ${index + 1} Name`}
-                      placeholder="adjective"
-                      value={variable.name}
-                      onChange={(e) => {
-                        const newVariables = [...props.madLibVariables];
-                        newVariables[index].name = e.target.value;
-                        props.setMadLibVariables(newVariables);
-                      }}
-                    />
-                    <Dropdown
-                      label="Assign to participant"
-                      options={[
-                        { label: 'Unassigned', value: '' },
-                        ...props.participants.map((p: { name: string; user_id: string }) => ({
-                          label: p.name,
-                          value: p.user_id,
-                        })),
-                      ]}
-                      value={variable.assigned_user_id || ''}
-                      onChange={(value) => {
-                        const newVariables = [...props.madLibVariables];
-                        newVariables[index].assigned_user_id = value || undefined;
-                        props.setMadLibVariables(newVariables);
-                      }}
-                    />
-                    {props.madLibVariables.length > 1 && (
-                      <Button
-                        type="button"
-                        onClick={() => {
-                          const newVariables = props.madLibVariables.filter(
-                            (_: any, i: number) => i !== index,
-                          );
-                          props.setMadLibVariables(newVariables);
-                        }}
-                      >
-                        Remove
-                      </Button>
-                    )}
-                  </div>
-                ),
-              )}
-            </div>
-            <Button
-              type="button"
-              onClick={() => {
-                const newId = (props.madLibVariables.length + 1).toString();
-                props.setMadLibVariables([
-                  ...props.madLibVariables,
-                  { id: newId, name: '', assigned_user_id: '' },
-                ]);
-              }}
-            >
-              Add Variable
-            </Button>
-          </div>
-        </div>
-      );
+      if (isMadLibHandler(handler)) {
+        return <CreateMadLib data={data} onChange={onChange} participants={participants} />;
+      }
+      break;
+
     default:
-      return <div className={styles.details}>Unknown: {props.kind}</div>;
+      return <div className={styles.details}>Unknown block type: {kind}</div>;
   }
+
+  return <div className={styles.details}>Handler mismatch for {kind}</div>;
 }
