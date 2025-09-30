@@ -1,7 +1,6 @@
 import { TextInput } from '@cctv/core';
 import { BlockStatus, ParticipantSummary } from '@cctv/types';
-
-import { AnnouncementData, BlockComponentProps } from '../types';
+import { AnnouncementData, BlockComponentProps } from '@cctv/types';
 
 import styles from './CreateAnnouncement.module.scss';
 

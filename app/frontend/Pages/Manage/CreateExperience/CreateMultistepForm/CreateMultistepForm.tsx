@@ -5,8 +5,7 @@ import classNames from 'classnames';
 import { Button, TextInput } from '@cctv/core';
 import { Dropdown } from '@cctv/core/Dropdown/Dropdown';
 import { BlockStatus, ParticipantSummary } from '@cctv/types';
-
-import { MultistepFormData } from '../types';
+import { MultistepFormData } from '@cctv/types';
 
 import styles from './CreateMultistepForm.module.scss';
 

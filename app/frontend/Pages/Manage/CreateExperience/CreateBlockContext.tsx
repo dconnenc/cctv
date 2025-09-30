@@ -2,6 +2,7 @@ import { ReactNode, createContext, useCallback, useContext, useState } from 'rea
 
 import { useCreateExperienceBlock } from '@cctv/hooks';
 import { Block, BlockStatus, ParticipantSummary } from '@cctv/types';
+import { BlockData, CreateBlockContextValue } from '@cctv/types';
 
 import {
   buildAnnouncementPayload,
@@ -38,7 +39,6 @@ import {
   processQuestionBeforeSubmit,
   validateQuestion,
 } from './CreateQuestion/CreateQuestion';
-import { BlockData, CreateBlockContextValue } from './types';
 
 const CreateBlockContext = createContext<CreateBlockContextValue | null>(null);
 
