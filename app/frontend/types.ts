@@ -5,7 +5,13 @@ export type ExperienceStatus = 'draft' | 'lobby' | 'live' | 'paused' | 'finished
 export type ParticipantRole = 'audience' | 'player' | 'moderator' | 'host';
 export type ParticipantStatus = 'registered' | 'active';
 export type BlockStatus = 'hidden' | 'open' | 'closed';
-export type BlockKind = 'poll' | 'question' | 'multistep_form' | 'announcement';
+export enum BlockKind {
+  POLL = 'poll',
+  QUESTION = 'question',
+  MULTISTEP_FORM = 'multistep_form',
+  ANNOUNCEMENT = 'announcement',
+  MAD_LIB = 'mad_lib',
+}
 
 // ===== BLOCK PAYLOAD TYPES =====
 
@@ -28,6 +34,64 @@ export interface MultistepFormPayload {
 export interface AnnouncementPayload {
   message: string;
 }
+
+export interface MadLibVariable {
+  id: string;
+  name: string;
+  question: string;
+  dataType: 'text' | 'number' | 'adjective' | 'noun' | 'verb' | 'adverb';
+  assigned_user_id?: string;
+}
+
+export interface MadLibSegment {
+  id: string;
+  type: 'text' | 'variable';
+  content: string; // For text segments, this is the actual text. For variables, this is the variable ID
+}
+
+export interface MadLibPayload {
+  segments: MadLibSegment[];
+  variables: MadLibVariable[];
+}
+
+// Individual API payload types for builder functions
+export interface PollApiPayload {
+  type: 'poll';
+  question: string;
+  options: string[];
+  pollType: 'single' | 'multiple';
+}
+
+export interface QuestionApiPayload {
+  type: 'question';
+  question: string;
+  formKey: string;
+  inputType: 'text' | 'number' | 'email' | 'password' | 'tel';
+}
+
+export interface MultistepFormApiPayload {
+  type: 'multistep_form';
+  questions: Array<{ type: 'question'; question: string; formKey: string; inputType: string }>;
+}
+
+export interface AnnouncementApiPayload {
+  type: 'announcement';
+  message: string;
+}
+
+export interface MadLibApiPayload {
+  type: 'mad_lib';
+  segments: MadLibSegment[];
+  variables: MadLibVariable[];
+}
+
+// Discriminated union for API payloads (what gets sent to backend)
+export type ApiPayload =
+  | PollApiPayload
+  | QuestionApiPayload
+  | MultistepFormApiPayload
+  | AnnouncementApiPayload
+  | MadLibApiPayload;
 
 // ===== ENTITY TYPES =====
 
@@ -70,31 +134,42 @@ interface BaseBlock {
       id: string;
       answer: any;
     } | null;
-    aggregate?: Record<string, number>;
+    aggregate?: Record<string, any>;
+    all_responses?: Record<string, string>;
   };
 }
 
 export interface PollBlock extends BaseBlock {
-  kind: 'poll';
+  kind: BlockKind.POLL;
   payload: PollPayload;
 }
 
 export interface QuestionBlock extends BaseBlock {
-  kind: 'question';
+  kind: BlockKind.QUESTION;
   payload: QuestionPayload;
 }
 
 export interface MultistepFormBlock extends BaseBlock {
-  kind: 'multistep_form';
+  kind: BlockKind.MULTISTEP_FORM;
   payload: MultistepFormPayload;
 }
 
 export interface AnnouncementBlock extends BaseBlock {
-  kind: 'announcement';
+  kind: BlockKind.ANNOUNCEMENT;
   payload: AnnouncementPayload;
 }
 
-export type Block = PollBlock | QuestionBlock | MultistepFormBlock | AnnouncementBlock;
+export interface MadLibBlock extends BaseBlock {
+  kind: BlockKind.MAD_LIB;
+  payload: MadLibPayload;
+}
+
+export type Block =
+  | PollBlock
+  | QuestionBlock
+  | MultistepFormBlock
+  | AnnouncementBlock
+  | MadLibBlock;
 
 export interface Experience {
   id: string;
@@ -140,7 +215,12 @@ export interface RegisterExperienceRequest {
 export interface CreateExperienceBlockRequest {
   experience: {
     kind: BlockKind;
-    payload?: PollPayload | QuestionPayload | MultistepFormPayload | AnnouncementPayload;
+    payload?:
+      | PollPayload
+      | QuestionPayload
+      | MultistepFormPayload
+      | AnnouncementPayload
+      | MadLibPayload;
     visible_to_roles?: ParticipantRole[];
     visible_to_segments?: string[];
     target_user_ids?: string[];
@@ -270,8 +350,6 @@ export interface ApiErrorResponse {
   details?: Record<string, any>;
 }
 
-// ===== CONTEXT TYPES =====
-
 // ===== WEBSOCKET MESSAGE TYPES =====
 
 export const WebSocketMessageTypes = {
@@ -359,6 +437,82 @@ export type WebSocketMessage =
   | ResubscribeRequiredMessage
   | ConfirmSubscriptionMessage
   | PingMessage;
+
+// ===== CREATE EXPERIENCE FORM TYPES =====
+
+// Base data types for each block type (form state)
+export interface PollData {
+  question: string;
+  options: string[];
+  pollType: 'single' | 'multiple';
+}
+
+export interface QuestionData {
+  questionText: string;
+  questionFormKey: string;
+  questionInputType: 'text' | 'number' | 'email' | 'password' | 'tel';
+}
+
+export interface MultistepFormData {
+  questions: Array<{ question: string; formKey: string; inputType: string }>;
+}
+
+export interface AnnouncementData {
+  message: string;
+}
+
+export interface MadLibData {
+  segments: MadLibSegment[];
+  variables: MadLibVariable[];
+}
+
+// Union type for all block component data
+export type BlockComponentData =
+  | PollData
+  | QuestionData
+  | MultistepFormData
+  | AnnouncementData
+  | MadLibData;
+
+// Discriminated union for form block data
+export type FormBlockData =
+  | { kind: BlockKind.POLL; data: PollData }
+  | { kind: BlockKind.QUESTION; data: QuestionData }
+  | { kind: BlockKind.MULTISTEP_FORM; data: MultistepFormData }
+  | { kind: BlockKind.ANNOUNCEMENT; data: AnnouncementData }
+  | { kind: BlockKind.MAD_LIB; data: MadLibData };
+
+export interface CreateBlockContextValue {
+  // Form block data with discriminated union
+  blockData: FormBlockData;
+  setBlockData: (data: FormBlockData | ((prev: FormBlockData) => FormBlockData)) => void;
+  setKind: (kind: BlockKind) => void;
+
+  // Participants
+  participants: ParticipantSummary[];
+
+  // Form submission
+  submit: (status: BlockStatus) => Promise<void>;
+  isSubmitting: boolean;
+  error: string | null;
+
+  // Additional form state
+  visibleRoles: string[];
+  setVisibleRoles: (roles: string[]) => void;
+  visibleSegmentsText: string;
+  setVisibleSegmentsText: (text: string) => void;
+  targetUserIdsText: string;
+  setTargetUserIdsText: (text: string) => void;
+  viewAdditionalDetails: boolean;
+  setViewAdditionalDetails: (view: boolean) => void;
+}
+
+// Props interface for block components
+export interface BlockComponentProps<T = BlockComponentData> {
+  data: T;
+  onChange?: (data: Partial<T>) => void;
+  participants?: ParticipantSummary[];
+}
 
 // ===== CONTEXT TYPES =====
 

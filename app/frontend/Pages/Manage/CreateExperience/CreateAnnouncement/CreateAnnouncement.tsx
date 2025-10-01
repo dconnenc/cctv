@@ -1,0 +1,66 @@
+import { TextInput } from '@cctv/core';
+import { BlockKind, BlockStatus, ParticipantSummary } from '@cctv/types';
+import { AnnouncementApiPayload, AnnouncementData, BlockComponentProps } from '@cctv/types';
+
+import styles from './CreateAnnouncement.module.scss';
+
+export const getDefaultAnnouncementState = (): AnnouncementData => {
+  return {
+    message: '',
+  };
+};
+
+export const validateAnnouncement = (data: AnnouncementData): string | null => {
+  if (!data.message.trim()) {
+    return 'Announcement message is required';
+  }
+
+  return null;
+};
+
+export const buildAnnouncementPayload = (data: AnnouncementData): AnnouncementApiPayload => {
+  return {
+    type: BlockKind.ANNOUNCEMENT,
+    message: data.message.trim(),
+  };
+};
+
+export const canAnnouncementOpenImmediately = (
+  _data: AnnouncementData,
+  _participants: ParticipantSummary[],
+): boolean => {
+  return true;
+};
+
+export const processAnnouncementBeforeSubmit = (
+  data: AnnouncementData,
+  _status: BlockStatus,
+  _participants: ParticipantSummary[],
+): AnnouncementData => {
+  return data;
+};
+
+export default function CreateAnnouncement({
+  data,
+  onChange,
+}: BlockComponentProps<AnnouncementData>) {
+  const updateData = (updates: Partial<AnnouncementData>) => {
+    onChange?.(updates);
+  };
+  return (
+    <div className={styles.details}>
+      <div className={styles.center}>
+        <TextInput
+          label="Announcement Message"
+          placeholder="Dearest {{ participant_name }}, this is your announcement."
+          required
+          value={data.message}
+          onChange={(e) => updateData({ message: e.target.value })}
+        />
+        <span className={styles.helpText}>
+          {`Include the participant's name with {{ participant_name }}`}
+        </span>
+      </div>
+    </div>
+  );
+}

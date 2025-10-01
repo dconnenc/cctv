@@ -1,0 +1,38 @@
+.details {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 600px;
+}
+
+.right,
+.left {
+  padding: 12px;
+  width: 100%;
+
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  align-items: center;
+  justify-content: center;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  align-items: center;
+
+  overflow-y: auto;
+  max-height: 400px;
+}
+
+.item {
+  display: flex;
+  gap: 12px;
+  align-items: end;
+
+  width: 100%;
+}

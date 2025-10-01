@@ -156,6 +156,37 @@ class Api::ExperienceBlocksController < Api::BaseController
     end
   end
 
+  # POST /api/experiences/:experience_id/blocks/:id/submit_mad_lib_response
+  def submit_mad_lib_response
+    with_experience_orchestration do
+      block = @experience.experience_blocks.find(params[:id])
+
+      submission = Experiences::Orchestrator.new(
+        experience: @experience, actor: @user
+      ).submit_mad_lib_response!(
+        block_id: params[:id],
+        answer: params[:answer]
+      )
+
+      # Get updated block with response data
+      updated_block = Experiences::Visibility.serialize_block_for_user(
+        experience: @experience,
+        user: @user,
+        block: block
+      )
+
+      Experiences::Broadcaster.new(@experience).broadcast_experience_update
+
+      render json: {
+        success: true,
+        data: {
+          submission: submission,
+          block: updated_block
+        },
+      }, status: 200
+    end
+  end
+
   private
 
   def experience_code
