@@ -1,8 +1,7 @@
 import { useMemo } from 'react';
 
 import { Column, Pill, Table } from '@cctv/core';
-import { useRefreshMadLibAssignments } from '@cctv/hooks';
-import { Block, BlockStatus, ParticipantSummary } from '@cctv/types';
+import { Block, BlockKind, BlockStatus, ParticipantSummary } from '@cctv/types';
 import { fmtDate } from '@cctv/utils';
 
 import styles from './BlocksTable.module.scss';
@@ -120,7 +119,7 @@ function BlockRowMenu({
         >
           Set “hidden”
         </button>
-        {block.kind === 'mad_lib' && onRefreshMadLib && (
+        {block.kind === BlockKind.MAD_LIB && onRefreshMadLib && (
           <button
             className={styles.menuItem}
             onClick={() => onRefreshMadLib(block)}

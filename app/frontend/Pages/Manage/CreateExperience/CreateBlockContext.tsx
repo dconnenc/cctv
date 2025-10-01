@@ -1,8 +1,16 @@
 import { ReactNode, createContext, useCallback, useContext, useState } from 'react';
 
 import { useCreateExperienceBlock } from '@cctv/hooks';
-import { Block, BlockStatus, ParticipantSummary } from '@cctv/types';
-import { BlockData, CreateBlockContextValue } from '@cctv/types';
+import { Block, BlockKind, BlockStatus, ParticipantSummary } from '@cctv/types';
+import {
+  AnnouncementData,
+  BlockData,
+  CreateBlockContextValue,
+  MadLibData,
+  MultistepFormData,
+  PollData,
+  QuestionData,
+} from '@cctv/types';
 
 import {
   buildAnnouncementPayload,
@@ -60,7 +68,7 @@ interface CreateBlockProviderProps {
 
 // NOTE: There are N number of branches for each block type. This is a good
 // candidate for a factory style pattern, but for now it is all centralized here
-// so we can keep adding too it without the conditional expansion leaking
+// so we can keep adding to it without the conditional expansion leaking
 export function CreateBlockProvider({
   children,
   participants,
@@ -68,22 +76,23 @@ export function CreateBlockProvider({
   onEndCurrentBlock,
   refetchExperience,
 }: CreateBlockProviderProps) {
-  const [kind, setKind] = useState<Block['kind']>('poll');
+  const [kind, setKind] = useState<Block['kind']>(BlockKind.POLL);
 
   const getDefaultState = useCallback((blockKind: Block['kind']): BlockData => {
     switch (blockKind) {
-      case 'poll':
+      case BlockKind.POLL:
         return getDefaultPollState();
-      case 'question':
+      case BlockKind.QUESTION:
         return getDefaultQuestionState();
-      case 'multistep_form':
+      case BlockKind.MULTISTEP_FORM:
         return getDefaultMultistepFormState();
-      case 'announcement':
+      case BlockKind.ANNOUNCEMENT:
         return getDefaultAnnouncementState();
-      case 'mad_lib':
+      case BlockKind.MAD_LIB:
         return getDefaultMadLibState();
       default:
-        throw new Error(`Unknown block kind: ${blockKind}`);
+        const exhaustiveCheck: never = blockKind;
+        throw new Error(`Unknown block kind: ${exhaustiveCheck}`);
     }
   }, []);
 
@@ -116,23 +125,24 @@ export function CreateBlockProvider({
       let validationError: string | null = null;
 
       switch (kind) {
-        case 'poll':
-          validationError = validatePoll(data as any);
+        case BlockKind.POLL:
+          validationError = validatePoll(data as PollData);
           break;
-        case 'question':
-          validationError = validateQuestion(data as any);
+        case BlockKind.QUESTION:
+          validationError = validateQuestion(data as QuestionData);
           break;
-        case 'multistep_form':
-          validationError = validateMultistepForm(data as any);
+        case BlockKind.MULTISTEP_FORM:
+          validationError = validateMultistepForm(data as MultistepFormData);
           break;
-        case 'announcement':
-          validationError = validateAnnouncement(data as any);
+        case BlockKind.ANNOUNCEMENT:
+          validationError = validateAnnouncement(data as AnnouncementData);
           break;
-        case 'mad_lib':
-          validationError = validateMadLib(data as any);
+        case BlockKind.MAD_LIB:
+          validationError = validateMadLib(data as MadLibData);
           break;
         default:
-          validationError = `Unknown block kind: ${kind}`;
+          const exhaustiveCheck: never = kind;
+          validationError = `Unknown block kind: ${exhaustiveCheck}`;
       }
 
       if (validationError) {
@@ -142,21 +152,31 @@ export function CreateBlockProvider({
 
       let canOpenImmediately = true;
       switch (kind) {
-        case 'poll':
-          canOpenImmediately = canPollOpenImmediately(data as any, participants);
+        case BlockKind.POLL:
+          canOpenImmediately = canPollOpenImmediately(data as PollData, participants);
           break;
-        case 'question':
-          canOpenImmediately = canQuestionOpenImmediately(data as any, participants);
+        case BlockKind.QUESTION:
+          canOpenImmediately = canQuestionOpenImmediately(data as QuestionData, participants);
           break;
-        case 'multistep_form':
-          canOpenImmediately = canMultistepFormOpenImmediately(data as any, participants);
+        case BlockKind.MULTISTEP_FORM:
+          canOpenImmediately = canMultistepFormOpenImmediately(
+            data as MultistepFormData,
+            participants,
+          );
           break;
-        case 'announcement':
-          canOpenImmediately = canAnnouncementOpenImmediately(data as any, participants);
+        case BlockKind.ANNOUNCEMENT:
+          canOpenImmediately = canAnnouncementOpenImmediately(
+            data as AnnouncementData,
+            participants,
+          );
           break;
-        case 'mad_lib':
-          canOpenImmediately = canMadLibOpenImmediately(data as any, participants);
+        case BlockKind.MAD_LIB:
+          canOpenImmediately = canMadLibOpenImmediately(data as MadLibData, participants);
           break;
+        default:
+          const exhaustiveCheck: never = kind;
+          canOpenImmediately = false;
+          console.error(`Unknown block kind: ${exhaustiveCheck}`);
       }
 
       if (status === 'open' && !canOpenImmediately) {
@@ -170,44 +190,55 @@ export function CreateBlockProvider({
       // implementation in the future
       let processedData: BlockData;
       switch (kind) {
-        case 'poll':
-          processedData = processPollBeforeSubmit(data as any, status, participants);
+        case BlockKind.POLL:
+          processedData = processPollBeforeSubmit(data as PollData, status, participants);
           break;
-        case 'question':
-          processedData = processQuestionBeforeSubmit(data as any, status, participants);
+        case BlockKind.QUESTION:
+          processedData = processQuestionBeforeSubmit(data as QuestionData, status, participants);
           break;
-        case 'multistep_form':
-          processedData = processMultistepFormBeforeSubmit(data as any, status, participants);
+        case BlockKind.MULTISTEP_FORM:
+          processedData = processMultistepFormBeforeSubmit(
+            data as MultistepFormData,
+            status,
+            participants,
+          );
           break;
-        case 'announcement':
-          processedData = processAnnouncementBeforeSubmit(data as any, status, participants);
+        case BlockKind.ANNOUNCEMENT:
+          processedData = processAnnouncementBeforeSubmit(
+            data as AnnouncementData,
+            status,
+            participants,
+          );
           break;
-        case 'mad_lib':
-          processedData = processMadLibBeforeSubmit(data as any, status, participants);
+        case BlockKind.MAD_LIB:
+          processedData = processMadLibBeforeSubmit(data as MadLibData, status, participants);
           break;
         default:
+          const exhaustiveCheck: never = kind;
           processedData = data;
+          console.error(`Unknown block kind: ${exhaustiveCheck}`);
       }
 
       let payload: Record<string, any>;
       switch (kind) {
-        case 'poll':
-          payload = buildPollPayload(processedData as any);
+        case BlockKind.POLL:
+          payload = buildPollPayload(processedData as PollData);
           break;
-        case 'question':
-          payload = buildQuestionPayload(processedData as any);
+        case BlockKind.QUESTION:
+          payload = buildQuestionPayload(processedData as QuestionData);
           break;
-        case 'multistep_form':
-          payload = buildMultistepFormPayload(processedData as any);
+        case BlockKind.MULTISTEP_FORM:
+          payload = buildMultistepFormPayload(processedData as MultistepFormData);
           break;
-        case 'announcement':
-          payload = buildAnnouncementPayload(processedData as any);
+        case BlockKind.ANNOUNCEMENT:
+          payload = buildAnnouncementPayload(processedData as AnnouncementData);
           break;
-        case 'mad_lib':
-          payload = buildMadLibPayload(processedData as any);
+        case BlockKind.MAD_LIB:
+          payload = buildMadLibPayload(processedData as MadLibData);
           break;
         default:
-          throw new Error(`Unknown block kind: ${kind}`);
+          const exhaustiveCheck: never = kind;
+          throw new Error(`Unknown block kind: ${exhaustiveCheck}`);
       }
 
       const visible_to_segments = visibleSegmentsText

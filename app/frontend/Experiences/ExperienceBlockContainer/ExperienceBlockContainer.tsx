@@ -1,4 +1,4 @@
-import { Block, ParticipantSummary } from '@cctv/types';
+import { Block, BlockKind, ParticipantSummary } from '@cctv/types';
 
 import Announcement from '../Announcement/Announcement';
 import MadLib from '../MadLib/MadLib';
@@ -26,7 +26,7 @@ export default function ExperienceBlockContainer({
   }
 
   switch (block.kind) {
-    case 'poll':
+    case BlockKind.POLL:
       const { question, options, pollType = 'single' } = block.payload;
 
       if (!question || !options || !Array.isArray(options)) {
@@ -43,7 +43,7 @@ export default function ExperienceBlockContainer({
           disabled={disabled}
         />
       );
-    case 'question':
+    case BlockKind.QUESTION:
       return (
         <Question
           blockId={block.id}
@@ -52,7 +52,7 @@ export default function ExperienceBlockContainer({
           disabled={disabled}
         />
       );
-    case 'multistep_form':
+    case BlockKind.MULTISTEP_FORM:
       return (
         <MultistepForm
           blockId={block.id}
@@ -61,9 +61,9 @@ export default function ExperienceBlockContainer({
           disabled={disabled}
         />
       );
-    case 'announcement':
+    case BlockKind.ANNOUNCEMENT:
       return <Announcement participant={participant} {...block.payload} />;
-    case 'mad_lib':
+    case BlockKind.MAD_LIB:
       return (
         <MadLib
           blockId={block.id}

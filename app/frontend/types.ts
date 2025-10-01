@@ -5,7 +5,13 @@ export type ExperienceStatus = 'draft' | 'lobby' | 'live' | 'paused' | 'finished
 export type ParticipantRole = 'audience' | 'player' | 'moderator' | 'host';
 export type ParticipantStatus = 'registered' | 'active';
 export type BlockStatus = 'hidden' | 'open' | 'closed';
-export type BlockKind = 'poll' | 'question' | 'multistep_form' | 'announcement' | 'mad_lib';
+export enum BlockKind {
+  POLL = 'poll',
+  QUESTION = 'question',
+  MULTISTEP_FORM = 'multistep_form',
+  ANNOUNCEMENT = 'announcement',
+  MAD_LIB = 'mad_lib',
+}
 
 // ===== BLOCK PAYLOAD TYPES =====
 
@@ -95,27 +101,27 @@ interface BaseBlock {
 }
 
 export interface PollBlock extends BaseBlock {
-  kind: 'poll';
+  kind: BlockKind.POLL;
   payload: PollPayload;
 }
 
 export interface QuestionBlock extends BaseBlock {
-  kind: 'question';
+  kind: BlockKind.QUESTION;
   payload: QuestionPayload;
 }
 
 export interface MultistepFormBlock extends BaseBlock {
-  kind: 'multistep_form';
+  kind: BlockKind.MULTISTEP_FORM;
   payload: MultistepFormPayload;
 }
 
 export interface AnnouncementBlock extends BaseBlock {
-  kind: 'announcement';
+  kind: BlockKind.ANNOUNCEMENT;
   payload: AnnouncementPayload;
 }
 
 export interface MadLibBlock extends BaseBlock {
-  kind: 'mad_lib';
+  kind: BlockKind.MAD_LIB;
   payload: MadLibPayload;
 }
 
@@ -305,8 +311,6 @@ export interface ApiErrorResponse {
   details?: Record<string, any>;
 }
 
-// ===== CONTEXT TYPES =====
-
 // ===== WEBSOCKET MESSAGE TYPES =====
 
 export const WebSocketMessageTypes = {
@@ -426,9 +430,7 @@ export interface MadLibData {
 // Union type for all block data
 export type BlockData = PollData | QuestionData | MultistepFormData | AnnouncementData | MadLibData;
 
-// Context interface
 export interface CreateBlockContextValue {
-  // Block type
   kind: Block['kind'];
   setKind: (kind: Block['kind']) => void;
 
