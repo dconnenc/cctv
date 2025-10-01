@@ -302,8 +302,8 @@ export default function CreateMadLib({ data, onChange }: BlockComponentProps<Mad
                         <Dropdown
                           label="Assign to participant"
                           options={[
-                            { label: 'Unassigned', value: '' },
-                            { label: 'Random Assignment', value: 'random' },
+                            { label: 'No one', value: '' },
+                            { label: 'Random', value: 'random' },
                             ...getAvailableParticipants(
                               data.variables.findIndex((v) => v.id === variable.id),
                             ).map((p) => ({
