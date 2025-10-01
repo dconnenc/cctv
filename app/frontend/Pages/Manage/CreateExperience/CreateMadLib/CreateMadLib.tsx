@@ -1,5 +1,5 @@
 import { Button, TextInput } from '@cctv/core';
-import { Dropdown } from '@cctv/core/Dropdown/Dropdown';
+import { Dropdown } from '@cctv/core';
 import { BlockKind, BlockStatus, ParticipantSummary } from '@cctv/types';
 import { BlockComponentProps, MadLibApiPayload, MadLibData } from '@cctv/types';
 
