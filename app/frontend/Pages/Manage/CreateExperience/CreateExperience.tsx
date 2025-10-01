@@ -1,14 +1,6 @@
 import { Button, TextInput } from '@cctv/core';
 import { Dropdown } from '@cctv/core/Dropdown/Dropdown';
-import {
-  AnnouncementData,
-  BlockKind,
-  MadLibData,
-  MultistepFormData,
-  ParticipantSummary,
-  PollData,
-  QuestionData,
-} from '@cctv/types';
+import { BlockKind, ParticipantSummary } from '@cctv/types';
 
 import CreateAnnouncement from './CreateAnnouncement/CreateAnnouncement';
 import { CreateBlockProvider, useCreateBlockContext } from './CreateBlockContext';
@@ -36,7 +28,7 @@ export default function CreateExperience(props: CreateExperienceProps) {
 
 function CreateExperienceForm() {
   const {
-    kind,
+    blockData,
     setKind,
     submit,
     isSubmitting,
@@ -58,7 +50,7 @@ function CreateExperienceForm() {
           { label: 'Announcement', value: BlockKind.ANNOUNCEMENT },
           { label: 'Mad Lib', value: BlockKind.MAD_LIB },
         ]}
-        value={kind}
+        value={blockData.kind}
         onChange={setKind}
         required
       />
@@ -83,37 +75,34 @@ function CreateExperienceForm() {
 }
 
 function BlockEditor() {
-  const { kind, data, setData, participants } = useCreateBlockContext();
+  const { blockData, setBlockData, participants } = useCreateBlockContext();
 
   const onChange = (updates: any) => {
-    setData((prev) => ({ ...prev, ...updates }));
+    setBlockData((prev) => ({
+      ...prev,
+      data: { ...prev.data, ...updates },
+    }));
   };
 
-  switch (kind) {
+  switch (blockData.kind) {
     case BlockKind.POLL:
-      return <CreatePoll data={data as PollData} onChange={onChange} />;
-
+      return <CreatePoll data={blockData.data} onChange={onChange} />;
     case BlockKind.QUESTION:
-      return <CreateQuestion data={data as QuestionData} onChange={onChange} />;
-
+      return <CreateQuestion data={blockData.data} onChange={onChange} />;
     case BlockKind.MULTISTEP_FORM:
       return (
         <CreateMultistepForm
           className={styles.details}
-          multistepQuestions={(data as MultistepFormData).questions}
+          multistepQuestions={blockData.data.questions}
           setMultistepQuestions={(questions) => onChange({ questions })}
         />
       );
-
     case BlockKind.ANNOUNCEMENT:
-      return <CreateAnnouncement data={data as AnnouncementData} onChange={onChange} />;
-
+      return <CreateAnnouncement data={blockData.data} onChange={onChange} />;
     case BlockKind.MAD_LIB:
-      return (
-        <CreateMadLib data={data as MadLibData} onChange={onChange} participants={participants} />
-      );
+      return <CreateMadLib data={blockData.data} onChange={onChange} participants={participants} />;
     default:
-      const exhaustiveCheck: never = kind;
+      const exhaustiveCheck: never = blockData;
       return <div className={styles.details}>Unknown block type: {exhaustiveCheck}</div>;
   }
 }

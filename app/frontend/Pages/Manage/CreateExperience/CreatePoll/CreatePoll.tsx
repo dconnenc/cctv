@@ -1,7 +1,7 @@
 import { Button, TextInput } from '@cctv/core';
 import { Dropdown } from '@cctv/core/Dropdown/Dropdown';
 import { BlockStatus, ParticipantSummary } from '@cctv/types';
-import { BlockComponentProps, PollData } from '@cctv/types';
+import { BlockComponentProps, PollApiPayload, PollData } from '@cctv/types';
 
 import styles from './CreatePoll.module.scss';
 
@@ -27,7 +27,7 @@ export const validatePoll = (data: PollData): string | null => {
   return null;
 };
 
-export const buildPollPayload = (data: PollData): Record<string, any> => {
+export const buildPollPayload = (data: PollData): PollApiPayload => {
   const validOptions = data.options.filter((opt) => opt.trim() !== '');
 
   return {

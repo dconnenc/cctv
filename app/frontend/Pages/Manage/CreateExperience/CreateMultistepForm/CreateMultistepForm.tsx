@@ -5,7 +5,7 @@ import classNames from 'classnames';
 import { Button, TextInput } from '@cctv/core';
 import { Dropdown } from '@cctv/core/Dropdown/Dropdown';
 import { BlockStatus, ParticipantSummary } from '@cctv/types';
-import { MultistepFormData } from '@cctv/types';
+import { MultistepFormApiPayload, MultistepFormData } from '@cctv/types';
 
 import styles from './CreateMultistepForm.module.scss';
 
@@ -25,7 +25,7 @@ export const validateMultistepForm = (data: MultistepFormData): string | null =>
   return null;
 };
 
-export const buildMultistepFormPayload = (data: MultistepFormData): Record<string, any> => {
+export const buildMultistepFormPayload = (data: MultistepFormData): MultistepFormApiPayload => {
   const validQuestions = data.questions.filter((q) => q.question.trim() && q.formKey.trim());
 
   return {

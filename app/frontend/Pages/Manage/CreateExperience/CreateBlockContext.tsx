@@ -1,16 +1,8 @@
 import { ReactNode, createContext, useCallback, useContext, useState } from 'react';
 
 import { useCreateExperienceBlock } from '@cctv/hooks';
-import { Block, BlockKind, BlockStatus, ParticipantSummary } from '@cctv/types';
-import {
-  AnnouncementData,
-  BlockData,
-  CreateBlockContextValue,
-  MadLibData,
-  MultistepFormData,
-  PollData,
-  QuestionData,
-} from '@cctv/types';
+import { BlockKind, BlockStatus, ParticipantSummary } from '@cctv/types';
+import { ApiPayload, CreateBlockContextValue, FormBlockData } from '@cctv/types';
 
 import {
   buildAnnouncementPayload,
@@ -76,27 +68,27 @@ export function CreateBlockProvider({
   onEndCurrentBlock,
   refetchExperience,
 }: CreateBlockProviderProps) {
-  const [kind, setKind] = useState<Block['kind']>(BlockKind.POLL);
-
-  const getDefaultState = useCallback((blockKind: Block['kind']): BlockData => {
+  const getDefaultFormData = useCallback((blockKind: BlockKind): FormBlockData => {
     switch (blockKind) {
       case BlockKind.POLL:
-        return getDefaultPollState();
+        return { kind: BlockKind.POLL, data: getDefaultPollState() };
       case BlockKind.QUESTION:
-        return getDefaultQuestionState();
+        return { kind: BlockKind.QUESTION, data: getDefaultQuestionState() };
       case BlockKind.MULTISTEP_FORM:
-        return getDefaultMultistepFormState();
+        return { kind: BlockKind.MULTISTEP_FORM, data: getDefaultMultistepFormState() };
       case BlockKind.ANNOUNCEMENT:
-        return getDefaultAnnouncementState();
+        return { kind: BlockKind.ANNOUNCEMENT, data: getDefaultAnnouncementState() };
       case BlockKind.MAD_LIB:
-        return getDefaultMadLibState();
+        return { kind: BlockKind.MAD_LIB, data: getDefaultMadLibState() };
       default:
         const exhaustiveCheck: never = blockKind;
         throw new Error(`Unknown block kind: ${exhaustiveCheck}`);
     }
   }, []);
 
-  const [data, setData] = useState<BlockData>(() => getDefaultState(kind));
+  const [blockData, setBlockData] = useState<FormBlockData>(() =>
+    getDefaultFormData(BlockKind.POLL),
+  );
 
   const [visibleRoles, setVisibleRoles] = useState<string[]>([]);
   const [visibleSegmentsText, setVisibleSegmentsText] = useState<string>('');
@@ -110,12 +102,11 @@ export function CreateBlockProvider({
     setError: setCreateError,
   } = useCreateExperienceBlock({ refetchExperience });
 
-  const handleKindChange = useCallback(
-    (newKind: Block['kind']) => {
-      setKind(newKind);
-      setData(getDefaultState(newKind));
+  const setKind = useCallback(
+    (newKind: BlockKind) => {
+      setBlockData(getDefaultFormData(newKind));
     },
-    [getDefaultState],
+    [getDefaultFormData],
   );
 
   const submit = useCallback(
@@ -124,25 +115,25 @@ export function CreateBlockProvider({
 
       let validationError: string | null = null;
 
-      switch (kind) {
+      switch (blockData.kind) {
         case BlockKind.POLL:
-          validationError = validatePoll(data as PollData);
+          validationError = validatePoll(blockData.data);
           break;
         case BlockKind.QUESTION:
-          validationError = validateQuestion(data as QuestionData);
+          validationError = validateQuestion(blockData.data);
           break;
         case BlockKind.MULTISTEP_FORM:
-          validationError = validateMultistepForm(data as MultistepFormData);
+          validationError = validateMultistepForm(blockData.data);
           break;
         case BlockKind.ANNOUNCEMENT:
-          validationError = validateAnnouncement(data as AnnouncementData);
+          validationError = validateAnnouncement(blockData.data);
           break;
         case BlockKind.MAD_LIB:
-          validationError = validateMadLib(data as MadLibData);
+          validationError = validateMadLib(blockData.data);
           break;
         default:
-          const exhaustiveCheck: never = kind;
-          validationError = `Unknown block kind: ${exhaustiveCheck}`;
+          // This should never be reached due to exhaustive checking
+          validationError = `Unknown block kind: ${(blockData as any).kind}`;
       }
 
       if (validationError) {
@@ -151,32 +142,26 @@ export function CreateBlockProvider({
       }
 
       let canOpenImmediately = true;
-      switch (kind) {
+      switch (blockData.kind) {
         case BlockKind.POLL:
-          canOpenImmediately = canPollOpenImmediately(data as PollData, participants);
+          canOpenImmediately = canPollOpenImmediately(blockData.data, participants);
           break;
         case BlockKind.QUESTION:
-          canOpenImmediately = canQuestionOpenImmediately(data as QuestionData, participants);
+          canOpenImmediately = canQuestionOpenImmediately(blockData.data, participants);
           break;
         case BlockKind.MULTISTEP_FORM:
-          canOpenImmediately = canMultistepFormOpenImmediately(
-            data as MultistepFormData,
-            participants,
-          );
+          canOpenImmediately = canMultistepFormOpenImmediately(blockData.data, participants);
           break;
         case BlockKind.ANNOUNCEMENT:
-          canOpenImmediately = canAnnouncementOpenImmediately(
-            data as AnnouncementData,
-            participants,
-          );
+          canOpenImmediately = canAnnouncementOpenImmediately(blockData.data, participants);
           break;
         case BlockKind.MAD_LIB:
-          canOpenImmediately = canMadLibOpenImmediately(data as MadLibData, participants);
+          canOpenImmediately = canMadLibOpenImmediately(blockData.data, participants);
           break;
         default:
-          const exhaustiveCheck: never = kind;
+          // This should never be reached due to exhaustive checking
           canOpenImmediately = false;
-          console.error(`Unknown block kind: ${exhaustiveCheck}`);
+          console.error(`Unknown block kind: ${(blockData as any).kind}`);
       }
 
       if (status === 'open' && !canOpenImmediately) {
@@ -188,57 +173,64 @@ export function CreateBlockProvider({
       // For example, if a block needs to randomize assignments, this step can
       // be used. We may be able to push this all server side with an actual
       // implementation in the future
-      let processedData: BlockData;
-      switch (kind) {
+      let processedFormData: FormBlockData;
+      switch (blockData.kind) {
         case BlockKind.POLL:
-          processedData = processPollBeforeSubmit(data as PollData, status, participants);
+          processedFormData = {
+            kind: BlockKind.POLL,
+            data: processPollBeforeSubmit(blockData.data, status, participants),
+          };
           break;
         case BlockKind.QUESTION:
-          processedData = processQuestionBeforeSubmit(data as QuestionData, status, participants);
+          processedFormData = {
+            kind: BlockKind.QUESTION,
+            data: processQuestionBeforeSubmit(blockData.data, status, participants),
+          };
           break;
         case BlockKind.MULTISTEP_FORM:
-          processedData = processMultistepFormBeforeSubmit(
-            data as MultistepFormData,
-            status,
-            participants,
-          );
+          processedFormData = {
+            kind: BlockKind.MULTISTEP_FORM,
+            data: processMultistepFormBeforeSubmit(blockData.data, status, participants),
+          };
           break;
         case BlockKind.ANNOUNCEMENT:
-          processedData = processAnnouncementBeforeSubmit(
-            data as AnnouncementData,
-            status,
-            participants,
-          );
+          processedFormData = {
+            kind: BlockKind.ANNOUNCEMENT,
+            data: processAnnouncementBeforeSubmit(blockData.data, status, participants),
+          };
           break;
         case BlockKind.MAD_LIB:
-          processedData = processMadLibBeforeSubmit(data as MadLibData, status, participants);
+          processedFormData = {
+            kind: BlockKind.MAD_LIB,
+            data: processMadLibBeforeSubmit(blockData.data, status, participants),
+          };
           break;
         default:
-          const exhaustiveCheck: never = kind;
-          processedData = data;
-          console.error(`Unknown block kind: ${exhaustiveCheck}`);
+          // This should never be reached due to exhaustive checking
+          processedFormData = blockData as any;
+          console.error(`Unknown block kind: ${(blockData as any).kind}`);
       }
 
-      let payload: Record<string, any>;
-      switch (kind) {
+      let payload: ApiPayload;
+      switch (processedFormData.kind) {
         case BlockKind.POLL:
-          payload = buildPollPayload(processedData as PollData);
+          payload = buildPollPayload(processedFormData.data);
           break;
         case BlockKind.QUESTION:
-          payload = buildQuestionPayload(processedData as QuestionData);
+          payload = buildQuestionPayload(processedFormData.data);
           break;
         case BlockKind.MULTISTEP_FORM:
-          payload = buildMultistepFormPayload(processedData as MultistepFormData);
+          payload = buildMultistepFormPayload(processedFormData.data);
           break;
         case BlockKind.ANNOUNCEMENT:
-          payload = buildAnnouncementPayload(processedData as AnnouncementData);
+          payload = buildAnnouncementPayload(processedFormData.data);
           break;
         case BlockKind.MAD_LIB:
-          payload = buildMadLibPayload(processedData as MadLibData);
+          payload = buildMadLibPayload(processedFormData.data);
           break;
         default:
-          const exhaustiveCheck: never = kind;
-          throw new Error(`Unknown block kind: ${exhaustiveCheck}`);
+          // This should never be reached due to exhaustive checking
+          throw new Error(`Unknown block kind: ${(processedFormData as any).kind}`);
       }
 
       const visible_to_segments = visibleSegmentsText
@@ -251,7 +243,7 @@ export function CreateBlockProvider({
         .filter(Boolean);
 
       const submitPayload = {
-        kind,
+        kind: blockData.kind,
         payload,
         visible_to_roles: visibleRoles,
         visible_to_segments,
@@ -269,16 +261,15 @@ export function CreateBlockProvider({
       }
 
       // Reset all form state
-      setData(getDefaultState(kind));
+      setBlockData(getDefaultFormData(blockData.kind));
       setVisibleRoles([]);
       setVisibleSegmentsText('');
       setTargetUserIdsText('');
       setViewAdditionalDetails(false);
     },
     [
-      data,
+      blockData,
       participants,
-      kind,
       visibleRoles,
       visibleSegmentsText,
       targetUserIdsText,
@@ -286,14 +277,14 @@ export function CreateBlockProvider({
       onClose,
       onEndCurrentBlock,
       setCreateError,
+      getDefaultFormData,
     ],
   );
 
   const contextValue: CreateBlockContextValue = {
-    kind,
-    setKind: handleKindChange,
-    data,
-    setData,
+    blockData,
+    setBlockData,
+    setKind,
     participants,
     submit,
     isSubmitting,

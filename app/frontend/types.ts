@@ -54,6 +54,45 @@ export interface MadLibPayload {
   variables: MadLibVariable[];
 }
 
+// Individual API payload types for builder functions
+export interface PollApiPayload {
+  type: 'poll';
+  question: string;
+  options: string[];
+  pollType: 'single' | 'multiple';
+}
+
+export interface QuestionApiPayload {
+  type: 'question';
+  question: string;
+  formKey: string;
+  inputType: 'text' | 'number' | 'email' | 'password' | 'tel';
+}
+
+export interface MultistepFormApiPayload {
+  type: 'multistep_form';
+  questions: Array<{ type: 'question'; question: string; formKey: string; inputType: string }>;
+}
+
+export interface AnnouncementApiPayload {
+  type: 'announcement';
+  message: string;
+}
+
+export interface MadLibApiPayload {
+  type: 'mad_lib';
+  segments: MadLibSegment[];
+  variables: MadLibVariable[];
+}
+
+// Discriminated union for API payloads (what gets sent to backend)
+export type ApiPayload =
+  | PollApiPayload
+  | QuestionApiPayload
+  | MultistepFormApiPayload
+  | AnnouncementApiPayload
+  | MadLibApiPayload;
+
 // ===== ENTITY TYPES =====
 
 export interface User {
@@ -427,16 +466,27 @@ export interface MadLibData {
   variables: MadLibVariable[];
 }
 
-// Union type for all block data
-export type BlockData = PollData | QuestionData | MultistepFormData | AnnouncementData | MadLibData;
+// Union type for all block component data
+export type BlockComponentData =
+  | PollData
+  | QuestionData
+  | MultistepFormData
+  | AnnouncementData
+  | MadLibData;
+
+// Discriminated union for form block data
+export type FormBlockData =
+  | { kind: BlockKind.POLL; data: PollData }
+  | { kind: BlockKind.QUESTION; data: QuestionData }
+  | { kind: BlockKind.MULTISTEP_FORM; data: MultistepFormData }
+  | { kind: BlockKind.ANNOUNCEMENT; data: AnnouncementData }
+  | { kind: BlockKind.MAD_LIB; data: MadLibData };
 
 export interface CreateBlockContextValue {
-  kind: Block['kind'];
-  setKind: (kind: Block['kind']) => void;
-
-  // Block data
-  data: BlockData;
-  setData: (data: BlockData | ((prev: BlockData) => BlockData)) => void;
+  // Form block data with discriminated union
+  blockData: FormBlockData;
+  setBlockData: (data: FormBlockData | ((prev: FormBlockData) => FormBlockData)) => void;
+  setKind: (kind: BlockKind) => void;
 
   // Participants
   participants: ParticipantSummary[];
@@ -458,7 +508,7 @@ export interface CreateBlockContextValue {
 }
 
 // Props interface for block components
-export interface BlockComponentProps<T = BlockData> {
+export interface BlockComponentProps<T = BlockComponentData> {
   data: T;
   onChange?: (data: Partial<T>) => void;
   participants?: ParticipantSummary[];
