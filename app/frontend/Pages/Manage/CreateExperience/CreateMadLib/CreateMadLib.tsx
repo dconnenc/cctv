@@ -1,6 +1,6 @@
 import { Button, TextInput } from '@cctv/core';
 import { Dropdown } from '@cctv/core/Dropdown/Dropdown';
-import { BlockStatus, ParticipantSummary } from '@cctv/types';
+import { BlockKind, BlockStatus, ParticipantSummary } from '@cctv/types';
 import { BlockComponentProps, MadLibApiPayload, MadLibData } from '@cctv/types';
 
 import { useCreateBlockContext } from '../CreateBlockContext';
@@ -96,7 +96,7 @@ export const buildMadLibPayload = (data: MadLibData): MadLibApiPayload => {
   const validVariables = data.variables.filter((v) => v.name.trim() && v.question.trim());
 
   return {
-    type: 'mad_lib',
+    type: BlockKind.MAD_LIB,
     segments: validSegments,
     variables: validVariables,
   };

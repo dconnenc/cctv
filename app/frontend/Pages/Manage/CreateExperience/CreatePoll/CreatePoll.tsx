@@ -1,6 +1,6 @@
 import { Button, TextInput } from '@cctv/core';
 import { Dropdown } from '@cctv/core/Dropdown/Dropdown';
-import { BlockStatus, ParticipantSummary } from '@cctv/types';
+import { BlockKind, BlockStatus, ParticipantSummary } from '@cctv/types';
 import { BlockComponentProps, PollApiPayload, PollData } from '@cctv/types';
 
 import styles from './CreatePoll.module.scss';
@@ -31,7 +31,7 @@ export const buildPollPayload = (data: PollData): PollApiPayload => {
   const validOptions = data.options.filter((opt) => opt.trim() !== '');
 
   return {
-    type: 'poll',
+    type: BlockKind.POLL,
     question: data.question.trim(),
     options: validOptions,
     pollType: data.pollType,

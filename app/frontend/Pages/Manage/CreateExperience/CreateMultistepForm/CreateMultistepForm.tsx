@@ -4,7 +4,7 @@ import classNames from 'classnames';
 
 import { Button, TextInput } from '@cctv/core';
 import { Dropdown } from '@cctv/core/Dropdown/Dropdown';
-import { BlockStatus, ParticipantSummary } from '@cctv/types';
+import { BlockKind, BlockStatus, ParticipantSummary } from '@cctv/types';
 import { MultistepFormApiPayload, MultistepFormData } from '@cctv/types';
 
 import styles from './CreateMultistepForm.module.scss';
@@ -29,7 +29,7 @@ export const buildMultistepFormPayload = (data: MultistepFormData): MultistepFor
   const validQuestions = data.questions.filter((q) => q.question.trim() && q.formKey.trim());
 
   return {
-    type: 'multistep_form',
+    type: BlockKind.MULTISTEP_FORM,
     questions: validQuestions.map((q) => ({
       type: 'question' as const,
       question: q.question.trim(),

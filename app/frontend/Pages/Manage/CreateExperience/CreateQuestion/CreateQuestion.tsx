@@ -1,6 +1,6 @@
 import { TextInput } from '@cctv/core';
 import { Dropdown } from '@cctv/core/Dropdown/Dropdown';
-import { BlockStatus, ParticipantSummary } from '@cctv/types';
+import { BlockKind, BlockStatus, ParticipantSummary } from '@cctv/types';
 import { BlockComponentProps, QuestionApiPayload, QuestionData } from '@cctv/types';
 
 import styles from './CreateQuestion.module.scss';
@@ -27,7 +27,7 @@ export const validateQuestion = (data: QuestionData): string | null => {
 
 export const buildQuestionPayload = (data: QuestionData): QuestionApiPayload => {
   return {
-    type: 'question',
+    type: BlockKind.QUESTION,
     question: data.questionText.trim(),
     formKey: data.questionFormKey.trim(),
     inputType: data.questionInputType,

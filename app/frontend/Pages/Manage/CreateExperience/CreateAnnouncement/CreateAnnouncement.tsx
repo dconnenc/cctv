@@ -1,5 +1,5 @@
 import { TextInput } from '@cctv/core';
-import { BlockStatus, ParticipantSummary } from '@cctv/types';
+import { BlockKind, BlockStatus, ParticipantSummary } from '@cctv/types';
 import { AnnouncementApiPayload, AnnouncementData, BlockComponentProps } from '@cctv/types';
 
 import styles from './CreateAnnouncement.module.scss';
@@ -20,7 +20,7 @@ export const validateAnnouncement = (data: AnnouncementData): string | null => {
 
 export const buildAnnouncementPayload = (data: AnnouncementData): AnnouncementApiPayload => {
   return {
-    type: 'announcement',
+    type: BlockKind.ANNOUNCEMENT,
     message: data.message.trim(),
   };
 };
