@@ -1,7 +1,12 @@
-import { Button, TextInput } from '@cctv/core';
-import { Dropdown } from '@cctv/core/Dropdown/Dropdown';
-import { BlockKind, BlockStatus, ParticipantSummary } from '@cctv/types';
-import { BlockComponentProps, PollApiPayload, PollData } from '@cctv/types';
+import { Button, Dropdown, TextInput } from '@cctv/core';
+import {
+  BlockComponentProps,
+  BlockKind,
+  BlockStatus,
+  ParticipantSummary,
+  PollApiPayload,
+  PollData,
+} from '@cctv/types';
 
 import styles from './CreatePoll.module.scss';
 

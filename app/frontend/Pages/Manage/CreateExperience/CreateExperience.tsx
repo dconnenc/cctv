@@ -59,7 +59,7 @@ function CreateExperienceForm() {
       {viewAdditionalDetails && <AdditionalDetails />}
 
       <div className={styles.actions}>
-        <Button onClick={() => window.history.back()}>Back</Button>
+        <Button onClick={onClose}>Back</Button>
         <Button onClick={() => setViewAdditionalDetails(!viewAdditionalDetails)}>
           {viewAdditionalDetails ? 'Hide Additional Details' : 'View Additional Details'}
         </Button>

@@ -1,7 +1,12 @@
-import { TextInput } from '@cctv/core';
-import { Dropdown } from '@cctv/core/Dropdown/Dropdown';
-import { BlockKind, BlockStatus, ParticipantSummary } from '@cctv/types';
-import { BlockComponentProps, QuestionApiPayload, QuestionData } from '@cctv/types';
+import { Dropdown, TextInput } from '@cctv/core';
+import {
+  BlockComponentProps,
+  BlockKind,
+  BlockStatus,
+  ParticipantSummary,
+  QuestionApiPayload,
+  QuestionData,
+} from '@cctv/types';
 
 import styles from './CreateQuestion.module.scss';
 
