@@ -54,8 +54,19 @@ intentional as this is a prototype
 
 Follow existing patterns
 
+Do not make changes backwards compatible. Do complete refactors
+
+Do not add comments into the code base explaining your changes. Comments are
+strictly for code documentation when applicable. Not to convey temporal
+information about a change you make.
+
+Do not add in documentation files explaining your changes or testing scripts
+outside of the test suite
+
 ### Front-end
 
 - Use css modules
 - Prefer components UI elements from app/frontend/Core
 - Don't repeat colors and variables. use variables from app/frontend/styles.css
+- import from index files, not full paths
+- Don't cast `as any`. Use the type system correctly
