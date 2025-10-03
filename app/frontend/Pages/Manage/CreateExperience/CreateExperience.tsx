@@ -33,6 +33,7 @@ function CreateExperienceForm() {
     submit,
     isSubmitting,
     error,
+    onClose,
     viewAdditionalDetails,
     setViewAdditionalDetails,
   } = useCreateBlockContext();
