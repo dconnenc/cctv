@@ -28,6 +28,13 @@ export const validateMadLib = (data: MadLibData): string | null => {
     return 'Variables must have both name and question configured';
   }
 
+  for (const segment of variableSegments) {
+    const variable = data.variables.find((v) => v.id === segment.content);
+    if (!variable?.assigned_user_id) {
+      return 'Each variable must have an assigned user';
+    }
+  }
+
   return null;
 };
 
