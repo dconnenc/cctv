@@ -4,17 +4,31 @@ class Api::ExperienceBlocksController < Api::BaseController
   # POST /api/experiences/:experience_id/blocks
   def create
     with_experience_orchestration do
-      block = Experiences::Orchestrator.new(
+      orchestrator = Experiences::Orchestrator.new(
         experience: @experience, actor: @user
-      ).add_block!(
-        kind: params[:experience][:kind],
-        payload:  params[:experience][:payload] || {},
-        visible_to_roles:  params[:experience][:visible_to_roles] || [],
-        visible_to_segments: params[:experience][:visible_to_segments] || [],
-        target_user_ids:  params[:experience][:target_user_ids] || [],
-        status:  params[:experience][:status] || :hidden,
-        open_immediately:  params[:experience][:open_immediately] || false
       )
+
+      block = if params[:experience][:variables].present?
+        orchestrator.add_block_with_dependencies!(
+          kind: params[:experience][:kind],
+          payload: params[:experience][:payload] || {},
+          visible_to_roles: params[:experience][:visible_to_roles] || [],
+          visible_to_segments: params[:experience][:visible_to_segments] || [],
+          target_user_ids: params[:experience][:target_user_ids] || [],
+          status: params[:experience][:status] || :hidden,
+          variables: params[:experience][:variables] || []
+        )
+      else
+        orchestrator.add_block!(
+          kind: params[:experience][:kind],
+          payload: params[:experience][:payload] || {},
+          visible_to_roles: params[:experience][:visible_to_roles] || [],
+          visible_to_segments: params[:experience][:visible_to_segments] || [],
+          target_user_ids: params[:experience][:target_user_ids] || [],
+          status: params[:experience][:status] || :hidden,
+          open_immediately: params[:experience][:open_immediately] || false
+        )
+      end
 
       Experiences::Broadcaster.new(@experience).broadcast_experience_update
 
