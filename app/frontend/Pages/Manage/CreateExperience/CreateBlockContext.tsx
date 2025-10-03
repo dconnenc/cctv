@@ -17,13 +17,7 @@ import {
   processAnnouncementBeforeSubmit,
   validateAnnouncement,
 } from './CreateAnnouncement/CreateAnnouncement';
-import {
-  buildMadLibPayload,
-  canMadLibOpenImmediately,
-  getDefaultMadLibState,
-  processMadLibBeforeSubmit,
-  validateMadLib,
-} from './CreateMadLib/CreateMadLib';
+import { getDefaultMadLibState, validateMadLib } from './CreateMadLib/CreateMadLib';
 import {
   buildMultistepFormPayload,
   canMultistepFormOpenImmediately,
@@ -162,7 +156,7 @@ export function CreateBlockProvider({
           canOpenImmediately = canAnnouncementOpenImmediately(blockData.data, participants);
           break;
         case BlockKind.MAD_LIB:
-          canOpenImmediately = canMadLibOpenImmediately(blockData.data, participants);
+          canOpenImmediately = true;
           break;
         default:
           // This should never be reached due to exhaustive checking
@@ -208,7 +202,7 @@ export function CreateBlockProvider({
         case BlockKind.MAD_LIB:
           processedFormData = {
             kind: BlockKind.MAD_LIB,
-            data: processMadLibBeforeSubmit(blockData.data, status, participants),
+            data: blockData.data,
           };
           break;
         default:
@@ -232,7 +226,10 @@ export function CreateBlockProvider({
           payload = buildAnnouncementPayload(processedFormData.data);
           break;
         case BlockKind.MAD_LIB:
-          payload = buildMadLibPayload(processedFormData.data);
+          payload = {
+            type: BlockKind.MAD_LIB,
+            segments: processedFormData.data.segments,
+          };
           break;
         default:
           // This should never be reached due to exhaustive checking
@@ -248,7 +245,7 @@ export function CreateBlockProvider({
         .map((s) => s.trim())
         .filter(Boolean);
 
-      const submitPayload = {
+      let submitPayload: any = {
         kind: blockData.kind,
         payload,
         visible_to_roles: visibleRoles,
@@ -257,6 +254,24 @@ export function CreateBlockProvider({
         status: status,
         open_immediately: status === 'open',
       };
+
+      if (blockData.kind === BlockKind.MAD_LIB) {
+        const internalData = processedFormData.data as any;
+        const variables = (internalData.variables || []).map((v: any) => ({
+          key: v.id,
+          label: v.name,
+          datatype: v.dataType === 'number' ? 'number' : 'string',
+          required: true,
+          source: {
+            kind: 'question',
+            question: v.question,
+            input_type: 'text',
+            target_user_ids: v.assigned_user_id ? [v.assigned_user_id] : [],
+          },
+        }));
+
+        submitPayload.variables = variables;
+      }
 
       await createExperienceBlock(submitPayload);
 
