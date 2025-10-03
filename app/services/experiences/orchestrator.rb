@@ -181,7 +181,93 @@ module Experiences
       end
     end
 
+    def add_block_with_dependencies!(
+      kind:,
+      payload: {},
+      visible_to_roles: [],
+      visible_to_segments: [],
+      target_user_ids: [],
+      status: :hidden,
+      variables: []
+    )
+      actor_action do
+        authorize! experience, to: :manage_blocks?, with: ExperiencePolicy
+
+        transaction do
+          parent_block = experience.experience_blocks.create!(
+            kind: kind,
+            status: status,
+            payload: payload.except(:variables),
+            visible_to_roles: visible_to_roles,
+            visible_to_segments: visible_to_segments,
+            target_user_ids: target_user_ids
+          )
+
+          variables.each_with_index do |var_spec, index|
+            variable = parent_block.variables.create!(
+              key: var_spec[:key],
+              label: var_spec[:label],
+              datatype: var_spec[:datatype] || "string",
+              required: var_spec[:required].nil? ? true : var_spec[:required]
+            )
+
+            if var_spec[:source]
+              child_block = create_child_block(
+                parent_block: parent_block,
+                source_spec: var_spec[:source],
+                position: index
+              )
+
+              ExperienceBlockVariableBinding.create!(
+                variable: variable,
+                source_block: child_block
+              )
+            end
+          end
+
+          parent_block
+        end
+      end
+    end
+
     private
+
+    def create_child_block(parent_block:, source_spec:, position:)
+      child_payload = case source_spec[:kind]
+      when "question"
+        {
+          question: source_spec[:question],
+          formKey: source_spec[:key] || SecureRandom.uuid,
+          inputType: source_spec[:input_type] || "text"
+        }
+      when "poll"
+        {
+          question: source_spec[:question],
+          options: source_spec[:options],
+          pollType: source_spec[:poll_type] || "single"
+        }
+      else
+        {}
+      end
+
+      child_block = experience.experience_blocks.create!(
+        kind: source_spec[:kind],
+        status: parent_block.status,
+        payload: child_payload,
+        visible_to_roles: parent_block.visible_to_roles,
+        visible_to_segments: parent_block.visible_to_segments,
+        target_user_ids: source_spec[:target_user_ids] || []
+      )
+
+      ExperienceBlockLink.create!(
+        parent_block: parent_block,
+        child_block: child_block,
+        relationship: :depends_on,
+        position: position
+      )
+
+      child_block
+    end
 
     def guard_state!(allowed)
       return if Array(allowed).map(&:to_s).include?(experience.status)

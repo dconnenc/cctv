@@ -81,26 +81,23 @@ class BlockSerializer
       {} # Announcements don't have responses
 
     when ExperienceBlock::MAD_LIB
-      submissions = block.experience_mad_lib_submissions
-      total = submissions.count
-      user_response = submissions.find_by(user_id: user&.id)
+      participant_record = block.experience.experience_participants.find_by(user_id: user&.id)
 
-      response = {
-        total: total,
-        user_response: format_mad_lib_user_response(user_response),
-        user_responded: user_response.present?
-      }
-
-      # Add aggregate data for moderators/hosts and all responses for rendering
-      if mod_or_host?(participant_role)
-        response[:aggregate] = calculate_mad_lib_aggregate(submissions)
-        response[:all_responses] = format_all_mad_lib_responses(submissions)
+      resolved_variables = if participant_record
+        BlockResolver.resolve_variables(
+          block: block,
+          participant: participant_record
+        )
       else
-        response[:aggregate] = nil
-        response[:all_responses] = format_all_mad_lib_responses(submissions)
+        {}
       end
 
-      response
+      {
+        total: 0,
+        user_response: nil,
+        user_responded: false,
+        resolved_variables: resolved_variables
+      }
 
     else
       {}
@@ -152,25 +149,12 @@ class BlockSerializer
       {} # Announcements don't have responses
 
     when ExperienceBlock::MAD_LIB
-      submissions = block.experience_mad_lib_submissions
-      total = submissions.count
-
-      response = {
-        total: total,
-        user_response: nil, # Stream context doesn't include individual responses
-        user_responded: false
+      {
+        total: 0,
+        user_response: nil,
+        user_responded: false,
+        resolved_variables: {}
       }
-
-      # Add aggregate data for moderators/hosts and all responses for rendering
-      if mod_or_host?(participant_role)
-        response[:aggregate] = calculate_mad_lib_aggregate(submissions)
-        response[:all_responses] = format_all_mad_lib_responses(submissions)
-      else
-        response[:aggregate] = nil
-        response[:all_responses] = format_all_mad_lib_responses(submissions)
-      end
-
-      response
 
     else
       {}
@@ -206,42 +190,6 @@ class BlockSerializer
         selectedOptions: Array(user_response.answer["selectedOptions"])
       }
     }
-  end
-
-  def self.format_mad_lib_user_response(user_response)
-    return nil unless user_response
-    {
-      id: user_response.id,
-      answer: user_response.answer
-    }
-  end
-
-  def self.calculate_mad_lib_aggregate(submissions)
-    aggregate = {}
-    submissions.each do |submission|
-      variable_id = submission.answer["variable_id"]
-      value = submission.answer["value"]
-      if variable_id && value
-        aggregate[variable_id] ||= []
-        aggregate[variable_id] << {
-          user_id: submission.user_id,
-          value: value
-        }
-      end
-    end
-    aggregate
-  end
-
-  def self.format_all_mad_lib_responses(submissions)
-    responses = {}
-    submissions.each do |submission|
-      variable_id = submission.answer["variable_id"]
-      value = submission.answer["value"]
-      if variable_id && value
-        responses[variable_id] = value
-      end
-    end
-    responses
   end
 
   def self.mod_or_host?(participant_role)

@@ -99,10 +99,11 @@ module Experiences
     end
 
     def payload_for_user(user)
+      resolved_blocks = resolve_blocks_for_user
       {
         experience: self.class.experience_structure(
           experience,
-          visible_blocks.map { |block| serialize_block_for_user(block, user) }
+          resolved_blocks.map { |block| serialize_block_for_user(block, user) }
         )
       }
     end
@@ -126,6 +127,29 @@ module Experiences
 
     def block_visible_to_stream?(block)
       block_visible?(block)
+    end
+
+    def resolve_blocks_for_user
+      eligible = visible_blocks.sort_by(&:created_at)
+      resolved = []
+
+      eligible.each do |block|
+        if block.has_dependencies?
+          participant_record = experience.experience_participants.find_by(user_id: user.id)
+          next unless participant_record
+
+          unresolved_child = BlockResolver.next_unresolved_child(
+            block: block,
+            participant: participant_record
+          )
+
+          resolved << (unresolved_child || block)
+        else
+          resolved << block
+        end
+      end
+
+      resolved
     end
 
     def visible_blocks
