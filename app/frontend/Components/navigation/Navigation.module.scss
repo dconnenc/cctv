@@ -1,0 +1,135 @@
+.topnav {
+  min-height: var(--nav-h);
+  margin-top: 0;
+  top: 0;
+  left: 0;
+  width: 100%;
+  position: fixed;
+  z-index: 1000;
+}
+
+.topnav__inner {
+  width: 100%;
+  max-width: calc(100vw - 2rem);
+  margin: 0 auto;
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  padding: 0.75rem 1rem;
+  flex-wrap: wrap;
+}
+
+.topnav__mobile {
+  display: none;
+  width: 100%;
+  max-width: calc(100vw - 2rem);
+  margin: 0 auto;
+  padding: 8px 0 8px calc(1rem + env(safe-area-inset-left));
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.topnav__toggle {
+  border: 2px solid var(--white);
+  border-radius: 8px;
+  background: rgba(50, 17, 17, 0.1);
+  color: var(--white);
+  text-shadow: var(--tv-glow);
+  width: 40px;
+  height: 36px;
+  padding: 0;
+  box-sizing: border-box;
+  line-height: 0;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  margin-right: 1rem;
+}
+
+.topnav__icon,
+.topnav__icon::before,
+.topnav__icon::after {
+  content: '';
+  display: block;
+  width: 22px;
+  height: 2px;
+  background: var(--white);
+  box-shadow: var(--tv-glow);
+  border-radius: 2px;
+  transition: transform 160ms ease;
+}
+
+.topnav__icon {
+  position: relative;
+}
+
+.topnav__icon::before {
+  position: absolute;
+  top: -7px;
+}
+
+.topnav__icon::after {
+  position: absolute;
+  top: 7px;
+}
+
+.isOpen .topnav__icon {
+  transform: rotate(45deg);
+}
+
+.isOpen .topnav__icon::before {
+  transform: translateY(7px) rotate(90deg);
+}
+
+.isOpen .topnav__icon::after {
+  transform: translateY(-7px) rotate(90deg);
+}
+
+.topnav__dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 100%;
+}
+
+.topnav__dropdownInner {
+  width: 100%;
+  max-width: calc(100vw - 2rem);
+  margin: 0 auto;
+  padding: 0.75rem 1rem 0.75rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(6px);
+}
+
+.topnav__dropdownInner .link {
+  width: 100%;
+  text-align: left;
+}
+
+.topnav:hover {
+  background-color: rgba(255, 255, 255, 0.5);
+}
+
+/* Switch to mobile nav under tablet width */
+@media (max-width: 768px) {
+  .topnav__inner {
+    display: none;
+  }
+  .topnav__mobile {
+    display: flex;
+  }
+}
+
+/* Disable hover effects on touch devices */
+@media (hover: none) and (pointer: coarse) {
+  .topnav:hover {
+    background-color: transparent;
+  }
+}

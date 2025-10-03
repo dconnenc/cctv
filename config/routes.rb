@@ -19,6 +19,7 @@ Rails.application.routes.draw do
   namespace :api do
     resources :users, only: [] do
       get "me", on: :collection
+      post "sign_out_user", on: :collection
     end
     resources :experiences, only: [:create, :show] do
       collection do

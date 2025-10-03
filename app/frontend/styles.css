@@ -116,27 +116,6 @@ body {
   font-weight: 800;
 }
 
-.topnav {
-  min-height: var(--nav-h);
-  margin-top: 0;
-  top: 0;
-  left: 0;
-  width: 100%;
-  position: fixed;
-  display: flex;
-  flex-direction: row;
-  justify-content: center;
-  align-items: center;
-  gap: 12px;
-  padding: 8px env(safe-area-inset-right) 8px env(safe-area-inset-left);
-  flex-wrap: wrap;
-  z-index: 1000;
-}
-
-.topnav:hover {
-  background-color: rgba(255, 255, 255, 0.5);
-}
-
 /* Route wink (content-only) transition: out then in */
 .wink-container {
   width: 100%;
@@ -193,13 +172,6 @@ body {
     margin-left: auto;
     margin-right: auto;
     text-align: center;
-  }
-}
-
-/* Disable hover effects on touch devices */
-@media (hover: none) and (pointer: coarse) {
-  .topnav:hover {
-    background-color: transparent;
   }
 }
 

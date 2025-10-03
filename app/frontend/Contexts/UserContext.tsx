@@ -19,6 +19,7 @@ interface UserContextType {
   isAuthenticated: boolean;
   isAdmin: boolean;
   refreshUser: () => Promise<void>;
+  logOut: () => Promise<boolean>;
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
@@ -34,12 +35,18 @@ export function UserProvider({ children }: UserProviderProps) {
   const isAuthenticated = user !== null;
   const isAdmin = user?.super_admin === true || user?.admin === true;
 
+  const userFetch = async (input: RequestInfo | URL, init: RequestInit = {}) => {
+    return fetch(input, {
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json', ...(init.headers || {}) },
+      ...init,
+    });
+  };
+
   const refreshUser = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch('/api/users/me', {
-        credentials: 'include', // Include session cookies
-      });
+      const response = await userFetch('/api/users/me');
 
       if (response.ok) {
         const userData = await response.json();
@@ -60,6 +67,19 @@ export function UserProvider({ children }: UserProviderProps) {
     }
   };
 
+  const logOut = async () => {
+    try {
+      const response = await userFetch('/api/users/sign_out_user', { method: 'POST' });
+      if (response.ok) {
+        setUser(null);
+        return true;
+      }
+      return false;
+    } catch (e) {
+      return false;
+    }
+  };
+
   // Check for existing session on mount
   useEffect(() => {
     refreshUser();
@@ -71,6 +91,7 @@ export function UserProvider({ children }: UserProviderProps) {
     isAuthenticated,
     isAdmin,
     refreshUser,
+    logOut,
   };
 
   return <UserContext.Provider value={value}>{children}</UserContext.Provider>;

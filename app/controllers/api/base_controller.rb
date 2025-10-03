@@ -1,6 +1,8 @@
 class Api::BaseController < ApplicationController
   skip_before_action :verify_authenticity_token
 
+  include Passwordless::ControllerHelpers
+
   class UnauthorizedError < StandardError; end
   class NotFoundError < StandardError; end
 

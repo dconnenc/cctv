@@ -6,4 +6,12 @@ class Api::UsersController < Api::BaseController
       render json: {}, status: :ok
     end
   end
+
+  def sign_out_user
+    if current_user
+      sign_out(User)
+    end
+
+    render json: { success: true }, status: :ok
+  end
 end
