@@ -3,9 +3,6 @@
   flex-direction: column;
   gap: 16px;
   padding: 24px;
-  background: rgba(0, 0, 0, 0.5);
-  border-radius: 12px;
-  box-shadow: var(--card-shadow, 0 8px 12px rgba(0, 0, 0, 0.4));
 }
 
 .header {
@@ -17,8 +14,10 @@
 
 .title {
   font-size: 24px;
-  font-weight: 600;
+  font-weight: 700;
   margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 1px;
 }
 
 .actions {
@@ -30,6 +29,13 @@
     display: flex;
     align-items: center;
     gap: 8px;
+    border: 2px solid var(--white);
+    background: transparent;
+
+    &:hover {
+      background: var(--white);
+      color: black;
+    }
   }
 }
 

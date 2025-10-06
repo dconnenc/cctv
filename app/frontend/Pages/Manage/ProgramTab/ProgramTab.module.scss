@@ -6,22 +6,26 @@
 
 .header {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end;
   align-items: center;
   gap: 16px;
   flex-wrap: wrap;
-}
-
-.title {
-  font-size: 20px;
-  font-weight: 600;
-  margin: 0;
+  margin-bottom: 16px;
 }
 
 .header button {
   display: flex;
   align-items: center;
   gap: 8px;
+  border: 2px solid var(--white);
+  background: transparent;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+
+  &:hover {
+    background: var(--white);
+    color: black;
+  }
 }
 
 .content {

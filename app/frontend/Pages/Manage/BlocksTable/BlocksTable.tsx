@@ -92,7 +92,7 @@ export function BlocksTable({
       {viewMode === 'tree' && hasHierarchy ? (
         <BlockTree blocks={blocks} participants={participants || []} />
       ) : (
-        <Table columns={columns} data={blocks} emptyState="No blocks yet." />
+        <Table columns={columns} data={blocks} emptyState="No scheduled programming" />
       )}
     </div>
   );

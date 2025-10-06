@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Button, Dropdown } from '@cctv/core';
 import { Experience, ParticipantSummary } from '@cctv/types';
 
+import offlineTvUrl from '../../../images/offline-tv-vectors.svg';
 import BlockPreview from '../BlockPreview/BlockPreview';
 
 import styles from './ContextView.module.scss';
@@ -75,7 +76,8 @@ export default function ContextView({
           />
         ) : (
           <div className={styles.emptyState}>
-            {viewMode === 'tv' ? 'No block on TV' : 'No block for participant'}
+            <img src={offlineTvUrl} alt="Offline TV" className={styles.offlineTv} />
+            <div className={styles.emptyMessage}>No scheduled programming</div>
           </div>
         )}
       </div>

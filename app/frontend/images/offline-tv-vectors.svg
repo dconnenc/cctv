@@ -1,0 +1,58 @@
+<?xml version="1.0"?>
+<svg xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns="http://www.w3.org/2000/svg" xmlns:cc="http://creativecommons.org/ns#" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:svg="http://www.w3.org/2000/svg" id="svg4152" viewBox="0 0 779.88 584.38" version="1.1">
+  <g id="layer1" transform="translate(-7.2051 -140.17)">
+    <g id="g4014" transform="matrix(.84033 0 0 .84033 -435.15 56.289)">
+      <g id="g3975" transform="matrix(.63038 0 0 .63038 700.57 186.59)">
+        <rect id="rect3181" height="848.6" width="157.88" y="-137.65" x="-276.29" fill="#cfcb34"/>
+        <rect id="rect3951" transform="scale(-1,1)" height="848.6" width="266.42" y="-137.65" x="-148.01" fill="#04ca97"/>
+        <rect id="rect3953" height="848.6" width="268.39" y="-137.65" x="148.01" fill="#00d004"/>
+        <rect id="rect3955" transform="scale(-1,1)" height="848.6" width="274.31" y="-137.65" x="-690.72" fill="#ce00cd"/>
+        <rect id="rect3957" height="848.6" width="272.34" y="-137.65" x="690.72" fill="#cf0004"/>
+        <rect id="rect3959" transform="scale(-1,1)" height="848.6" width="232.87" y="-137.65" x="-1195.9" fill="#0000d0"/>
+        <rect id="rect3961" transform="scale(1,-1)" height="254.58" width="157.88" y="-965.53" x="-276.29" fill="#fff"/>
+        <rect id="rect3965" transform="scale(-1)" height="254.58" width="266.42" y="-965.53" x="-148.01" fill="#f9f9f9"/>
+        <rect id="rect3967" transform="scale(1,-1)" height="254.58" width="268.39" y="-965.53" x="148.01" fill="#97989c"/>
+        <rect id="rect3969" transform="scale(-1)" height="254.58" width="274.31" y="-965.53" x="-690.72" fill="#656764"/>
+        <rect id="rect3971" transform="scale(1,-1)" height="254.58" width="272.34" y="-965.53" x="690.72" fill="#2e3430"/>
+        <rect id="rect3973" transform="scale(-1)" height="254.58" width="232.87" y="-965.53" x="-1195.9"/>
+      </g>
+    </g>
+  </g>
+  <metadata>
+    <rdf:RDF>
+      <cc:Work>
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage"/>
+        <cc:license rdf:resource="http://creativecommons.org/licenses/publicdomain/"/>
+        <dc:publisher>
+          <cc:Agent rdf:about="http://openclipart.org/">
+            <dc:title>Openclipart</dc:title>
+          </cc:Agent>
+        </dc:publisher>
+        <dc:title>Offline TV - TV fora do ar</dc:title>
+        <dc:date>2013-07-23T14:58:22</dc:date>
+        <dc:description>Offline TV colorbars for calibration</dc:description>
+        <dc:source>http://openclipart.org/detail/181116/offline-tv---tv-fora-do-ar-by-cliparteles-181116</dc:source>
+        <dc:creator>
+          <cc:Agent>
+            <dc:title>cliparteles</dc:title>
+          </cc:Agent>
+        </dc:creator>
+        <dc:subject>
+          <rdf:Bag>
+            <rdf:li>color bars</rdf:li>
+            <rdf:li>standards</rdf:li>
+            <rdf:li>template</rdf:li>
+            <rdf:li>templates</rdf:li>
+            <rdf:li>tv</rdf:li>
+          </rdf:Bag>
+        </dc:subject>
+      </cc:Work>
+      <cc:License rdf:about="http://creativecommons.org/licenses/publicdomain/">
+        <cc:permits rdf:resource="http://creativecommons.org/ns#Reproduction"/>
+        <cc:permits rdf:resource="http://creativecommons.org/ns#Distribution"/>
+        <cc:permits rdf:resource="http://creativecommons.org/ns#DerivativeWorks"/>
+      </cc:License>
+    </rdf:RDF>
+  </metadata>
+</svg>

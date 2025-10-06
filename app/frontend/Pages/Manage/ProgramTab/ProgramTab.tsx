@@ -25,7 +25,6 @@ export default function ProgramTab({
   return (
     <div className={styles.root}>
       <div className={styles.header}>
-        <h4 className={styles.title}>Program Blocks</h4>
         <Button onClick={onCreateBlock}>
           <Plus size={16} />
           <span>Block</span>

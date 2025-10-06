@@ -37,10 +37,11 @@ export default function ParticipantsTab({ participants }: ParticipantsTabProps) 
 
   return (
     <div className={styles.root}>
-      <h4 className={styles.title}>Participants</h4>
-      <div className={styles.content}>
-        <Table columns={columns} data={participants} emptyState="No participants yet." />
-      </div>
+      <Table
+        columns={columns}
+        data={participants}
+        emptyState="Your show has no attendess. Don't take it personally."
+      />
     </div>
   );
 }
