@@ -9,7 +9,7 @@ import styles from './Navigation.module.scss';
 export const TopNav = () => {
   const [open, setOpen] = useState(false);
   const navRef = useRef<HTMLElement | null>(null);
-  const { user, logOut } = useUser();
+  const { user, logOut, isLoading } = useUser();
   const isAdmin = user?.role === 'admin' || user?.role === 'superadmin';
 
   useEffect(() => {
@@ -48,15 +48,16 @@ export const TopNav = () => {
           </NavLink>
         )}
         <span style={{ marginLeft: 'auto' }} />
-        {user ? (
-          <button className="link" onClick={() => void logOut()}>
-            Logout
-          </button>
-        ) : (
-          <a className="link" href="/users/sign_in">
-            Sign in
-          </a>
-        )}
+        {!isLoading &&
+          (user ? (
+            <button className="link" onClick={() => void logOut()}>
+              Logout
+            </button>
+          ) : (
+            <a className="link" href="/users/sign_in">
+              Sign in
+            </a>
+          ))}
       </div>
       <div className={styles.topnav__mobile}>
         <button
@@ -103,21 +104,22 @@ export const TopNav = () => {
                 Create
               </NavLink>
             )}
-            {user ? (
-              <button
-                className="link"
-                onClick={() => {
-                  setOpen(false);
-                  void logOut();
-                }}
-              >
-                Logout
-              </button>
-            ) : (
-              <a className="link" href="/users/sign_in" onClick={() => setOpen(false)}>
-                Sign in
-              </a>
-            )}
+            {isLoading &&
+              (user ? (
+                <button
+                  className="link"
+                  onClick={() => {
+                    setOpen(false);
+                    void logOut();
+                  }}
+                >
+                  Logout
+                </button>
+              ) : (
+                <a className="link" href="/users/sign_in" onClick={() => setOpen(false)}>
+                  Sign in
+                </a>
+              ))}
           </div>
         </div>
       )}

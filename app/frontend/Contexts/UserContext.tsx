@@ -50,7 +50,7 @@ export function UserProvider({ children }: UserProviderProps) {
 
       if (response.ok) {
         const userData = await response.json();
-        if (userData) {
+        if (userData && Object.keys(userData).length !== 0) {
           setUser(userData);
         } else {
           setUser(null);
