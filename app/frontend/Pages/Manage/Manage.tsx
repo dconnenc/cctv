@@ -4,7 +4,7 @@ import classNames from 'classnames';
 
 import { useExperience } from '@cctv/contexts';
 import { Button, Column, Pill, Table } from '@cctv/core';
-import { useChangeBlockStatus, useExperienceStart, useRefreshMadLibAssignments } from '@cctv/hooks';
+import { useChangeBlockStatus, useExperienceStart } from '@cctv/hooks';
 import { Block, BlockStatus, Experience, ParticipantSummary } from '@cctv/types';
 
 import { BlocksTable } from './BlocksTable/BlocksTable';
@@ -49,11 +49,7 @@ export default function Manage() {
     setError: setStatusError,
   } = useChangeBlockStatus();
 
-  const {
-    refresh: refreshMadLibAssignments,
-    error: refreshError,
-    setError: setRefreshError,
-  } = useRefreshMadLibAssignments();
+  const { error: refreshError, setError: setRefreshError } = useRefreshMadLibAssignments();
 
   const onChangeBlockStatus = useCallback(
     async (block: Block | undefined, next: BlockStatus) => {
@@ -90,42 +86,6 @@ export default function Manage() {
       setBusyBlockId(undefined);
     },
     [code, experienceFetch, changeStatus, setStatusError],
-  );
-
-  const onRefreshMadLib = useCallback(
-    async (block: Block) => {
-      console.log('onRefreshMadLib', block, code);
-      if (!code) return;
-      setBusyBlockId(block.id);
-      setRefreshError(null);
-
-      const result = await refreshMadLibAssignments(block);
-
-      // Re-fetch experience when done
-      if (code) {
-        try {
-          const res = await experienceFetch(`/api/experiences/${encodeURIComponent(code)}`, {
-            method: 'GET',
-          });
-
-          const data: {
-            success?: boolean;
-            experience?: Experience;
-          } = await res.json();
-
-          if (data?.success) {
-            await refetchExperience();
-          }
-        } catch {}
-      }
-
-      if (!result?.success && result?.error) {
-        alert(result.error);
-      }
-
-      setBusyBlockId(undefined);
-    },
-    [code, experienceFetch, refreshMadLibAssignments, setRefreshError, refetchExperience],
   );
 
   const currentBlock = useMemo(
