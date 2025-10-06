@@ -205,22 +205,31 @@ module Experiences
 
           variables.each_with_index do |var_spec, index|
             variable = parent_block.variables.create!(
-              key: var_spec[:key],
-              label: var_spec[:label],
-              datatype: var_spec[:datatype] || "string",
-              required: var_spec[:required].nil? ? true : var_spec[:required]
+              key: var_spec["key"],
+              label: var_spec["label"],
+              datatype: var_spec["datatype"] || "string",
+              required: var_spec["required"].nil? ? true : var_spec["required"]
             )
 
-            if var_spec[:source]
-              child_block = create_child_block(
-                parent_block: parent_block,
-                source_spec: var_spec[:source],
-                position: index
-              )
+            if var_spec["source"]
+              child_block = if var_spec["source"]["type"] == "participant"
+                create_participant_source_block(
+                  parent_block: parent_block,
+                  variable: variable,
+                  participant_id: var_spec["source"]["participant_id"],
+                  position: index
+                )
+              else
+                create_child_block(
+                  parent_block: parent_block,
+                  source_spec: var_spec["source"],
+                  position: index
+                )
+              end
 
               ExperienceBlockVariableBinding.create!(
                 variable: variable,
-                source_block: child_block
+                source_block_id: child_block.id
               )
             end
           end
@@ -232,31 +241,40 @@ module Experiences
 
     private
 
-    def create_child_block(parent_block:, source_spec:, position:)
-      child_payload = case source_spec[:kind]
-      when "question"
-        {
-          question: source_spec[:question],
-          formKey: source_spec[:key] || SecureRandom.uuid,
-          inputType: source_spec[:input_type] || "text"
-        }
-      when "poll"
-        {
-          question: source_spec[:question],
-          options: source_spec[:options],
-          pollType: source_spec[:poll_type] || "single"
-        }
-      else
-        {}
-      end
+    def create_participant_source_block(parent_block:, variable:, participant_id:, position:)
+      participant = experience.experience_participants.find(participant_id)
 
       child_block = experience.experience_blocks.create!(
-        kind: source_spec[:kind],
+        kind: ExperienceBlock::QUESTION,
         status: parent_block.status,
-        payload: child_payload,
+        payload: {
+          question: variable.label,
+          formKey: variable.key,
+          inputType: variable.datatype == "number" ? "number" : "text"
+        },
         visible_to_roles: parent_block.visible_to_roles,
         visible_to_segments: parent_block.visible_to_segments,
-        target_user_ids: source_spec[:target_user_ids] || []
+        target_user_ids: [participant.user_id]
+      )
+
+      ExperienceBlockLink.create!(
+        parent_block: parent_block,
+        child_block: child_block,
+        relationship: :depends_on,
+        position: position
+      )
+
+      child_block
+    end
+
+    def create_child_block(parent_block:, source_spec:, position:)
+      child_block = experience.experience_blocks.create!(
+        kind: source_spec["kind"],
+        status: parent_block.status,
+        payload: source_spec["payload"] || {},
+        visible_to_roles: parent_block.visible_to_roles,
+        visible_to_segments: parent_block.visible_to_segments,
+        target_user_ids: source_spec["target_user_ids"] || []
       )
 
       ExperienceBlockLink.create!(

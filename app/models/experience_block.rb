@@ -36,9 +36,9 @@ class ExperienceBlock < ApplicationRecord
     dependent: :destroy
 
   enum status: {
-    hidden: "hidden",
-    open: "open",
-    closed: "closed"
+    hidden: HIDDEN = "hidden",
+    open: OPEN = "open",
+    closed: CLOSED = "closed"
   }
 
   validates :kind, presence: true, inclusion: { in: KINDS }
