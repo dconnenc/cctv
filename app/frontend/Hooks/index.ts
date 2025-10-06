@@ -9,3 +9,4 @@ export { useSubmitQuestionResponse } from './useSubmitQuestionResponse';
 export { useSubmitMultistepFormResponse } from './useSubmitMultistepFormResponse';
 export { useChangeBlockStatus } from './useChangeBlockStatus';
 export { useExperienceStart } from './useExperienceStart';
+export { useExperiencePreview } from './useExperiencePreview';

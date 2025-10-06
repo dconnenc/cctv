@@ -31,6 +31,10 @@ class ExperiencePolicy < ApplicationPolicy
     admin? || host_participant?
   end
 
+  def manage?
+    admin? || host_participant? || moderator_participant?
+  end
+
   private
 
   def admin?
@@ -41,5 +45,11 @@ class ExperiencePolicy < ApplicationPolicy
     return false unless user
 
     record.experience_participants.host.exists?(user: user)
+  end
+
+  def moderator_participant?
+    return false unless user
+
+    record.experience_participants.moderator.exists?(user: user)
   end
 end

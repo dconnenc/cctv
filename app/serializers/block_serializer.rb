@@ -20,8 +20,12 @@ class BlockSerializer
     end
 
     visibility_data = serialize_visibility_metadata(block, participant_role)
+    dag_metadata = serialize_dag_metadata(block, participant_role)
 
-    base_structure.merge(responses: response_data).merge(visibility_data)
+    base_structure
+      .merge(responses: response_data)
+      .merge(visibility_data)
+      .merge(dag_metadata)
   end
 
   def self.serialize_for_user(block, participant_role:, user:)
@@ -84,7 +88,7 @@ class BlockSerializer
       participant_record = block.experience.experience_participants.find_by(user_id: user&.id)
 
       resolved_variables = if participant_record
-        BlockResolver.resolve_variables(
+        Experiences::BlockResolver.resolve_variables(
           block: block,
           participant: participant_record
         )
@@ -173,7 +177,10 @@ class BlockSerializer
   def self.calculate_poll_aggregate(submissions)
     aggregate = {}
     submissions.each do |submission|
-      selected_options = submission.answer["selectedOptions"] || []
+      selected_options = submission.answer["selectedOptions"]
+      selected_options = Array(selected_options) if selected_options
+      selected_options ||= []
+      
       selected_options.each do |option|
         aggregate[option] ||= 0
         aggregate[option] += 1
@@ -190,6 +197,39 @@ class BlockSerializer
         selectedOptions: Array(user_response.answer["selectedOptions"])
       }
     }
+  end
+
+  def self.serialize_dag_metadata(block, participant_role)
+    return {} unless mod_or_host?(participant_role)
+
+    metadata = {
+      child_block_ids: block.children.pluck(:id),
+      parent_block_ids: block.parents.pluck(:id)
+    }
+
+    if block.kind == ExperienceBlock::MAD_LIB
+      metadata[:variables] = block.variables.map do |variable|
+        {
+          id: variable.id,
+          key: variable.key,
+          label: variable.label,
+          datatype: variable.datatype,
+          required: variable.required
+        }
+      end
+
+      metadata[:variable_bindings] = block.variables.flat_map do |variable|
+        variable.bindings.map do |binding|
+          {
+            id: binding.id,
+            variable_id: binding.variable_id,
+            source_block_id: binding.source_block_id
+          }
+        end
+      end
+    end
+
+    metadata
   end
 
   def self.mod_or_host?(participant_role)

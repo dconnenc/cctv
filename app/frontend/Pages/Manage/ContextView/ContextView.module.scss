@@ -1,0 +1,72 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 24px;
+  background: rgba(0, 0, 0, 0.5);
+  border-radius: 12px;
+  box-shadow: var(--card-shadow, 0 8px 12px rgba(0, 0, 0, 0.4));
+  min-height: 400px;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.toggleButtons {
+  display: flex;
+  gap: 8px;
+}
+
+.status {
+  font-size: 14px;
+}
+
+.connected {
+  color: var(--green);
+}
+
+.disconnected {
+  color: var(--red);
+}
+
+.participantSelector {
+  width: 100%;
+}
+
+.preview {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+}
+
+.emptyState {
+  padding: 32px;
+  text-align: center;
+  opacity: 0.6;
+}
+
+@media (max-width: 768px) {
+  .root {
+    padding: 16px;
+  }
+
+  .header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .toggleButtons {
+    width: 100%;
+
+    button {
+      flex: 1;
+    }
+  }
+}

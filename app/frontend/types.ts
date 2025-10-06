@@ -45,7 +45,6 @@ export interface BlockLink {
 
 export interface BlockVariable {
   id: string;
-  experience_block_id: string;
   key: string;
   label: string;
   datatype: 'string' | 'number' | 'text';
@@ -56,6 +55,14 @@ export interface BlockVariableBinding {
   id: string;
   variable_id: string;
   source_block_id: string;
+}
+
+export interface MadLibVariable {
+  id: string;
+  name: string;
+  question: string;
+  dataType: 'text' | 'number';
+  assigned_user_id?: string;
 }
 
 export interface MadLibSegment {
@@ -140,6 +147,8 @@ interface BaseBlock {
   target_user_ids?: string[];
   created_at?: string;
   updated_at?: string;
+  child_block_ids?: string[];
+  parent_block_ids?: string[];
   responses?: {
     total: number;
     user_responded: boolean;
@@ -175,6 +184,8 @@ export interface AnnouncementBlock extends BaseBlock {
 export interface MadLibBlock extends BaseBlock {
   kind: BlockKind.MAD_LIB;
   payload: MadLibPayload;
+  variables?: BlockVariable[];
+  variable_bindings?: BlockVariableBinding[];
   responses?: {
     total: number;
     user_responded: boolean;
@@ -195,6 +206,7 @@ export interface Experience {
   name: string;
   code: string;
   status: ExperienceStatus;
+  description?: string;
   creator_id: string;
   hosts: ExperienceParticipant[];
   participants: ExperienceParticipant[];

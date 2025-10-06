@@ -3,9 +3,9 @@ import classNames from 'classnames';
 import { ExperienceBlockContainer } from '@cctv/experiences';
 import { Block, ParticipantSummary } from '@cctv/types';
 
-import styles from './ViewUserScreen.module.scss';
+import styles from './BlockPreview.module.scss';
 
-export default function ViewUserScreen({
+export default function BlockPreview({
   className,
   block,
   participant,

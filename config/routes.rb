@@ -27,6 +27,7 @@ Rails.application.routes.draw do
       end
 
       member do
+        get :preview
         post :register
         post :open_lobby
         post :start

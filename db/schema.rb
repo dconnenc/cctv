@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2025_10_03_000002) do
+ActiveRecord::Schema[7.2].define(version: 2025_10_06_201949) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "citext"
   enable_extension "plpgsql"
@@ -148,6 +148,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_10_03_000002) do
     t.boolean "join_open", default: false, null: false
     t.datetime "started_at"
     t.datetime "ended_at"
+    t.text "description"
     t.index ["creator_id"], name: "index_experiences_on_creator_id"
     t.index ["status"], name: "index_experiences_on_status"
   end

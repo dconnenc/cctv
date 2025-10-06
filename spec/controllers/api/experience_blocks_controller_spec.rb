@@ -151,6 +151,14 @@ RSpec.describe Api::ExperienceBlocksController, type: :controller do
           # The mad lib depends on two child blocks. Each child block
           # provides data for one variable through a variable binding.
 
+          broadcaster = instance_double(
+            Experiences::Broadcaster,
+            broadcast_experience_update: true
+          )
+          allow(Experiences::Broadcaster).to receive(:new).and_return(
+            broadcaster
+          )
+
           expect { subject }.to change {
             ExperienceBlock
               .where(
@@ -236,6 +244,18 @@ RSpec.describe Api::ExperienceBlocksController, type: :controller do
             "options" => ["coding", "reading", "gaming"],
             "pollType" => "single"
           })
+
+          # Verify broadcaster was called
+          expect(broadcaster).to have_received(
+            :broadcast_experience_update
+          )
+
+          # Verify response format and status
+          expect(response.status).to eql(200)
+          json_response = JSON.parse(response.body)
+          expect(json_response["success"]).to be(true)
+          expect(json_response["data"]["id"]).to eql(mad_lib_block.id)
+          expect(json_response["data"]["kind"]).to eql("mad_lib")
         end
       end
     end

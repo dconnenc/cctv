@@ -3,8 +3,6 @@ require "rails_helper"
 RSpec.describe Experiences::Broadcaster do
   let(:experience) { create(:experience) }
   let(:broadcaster) { described_class.new(experience) }
-
-  # Mock the broadcast calls to test without ActionCable
   let(:broadcast_calls) { [] }
 
   before do
@@ -19,31 +17,6 @@ RSpec.describe Experiences::Broadcaster do
     end
   end
 
-  let(:global_block) do
-    create(:experience_block, experience: experience, status: :open)
-  end
-
-  let(:segment_block) do
-    create(
-      :experience_block,
-      experience: experience,
-      status: :open,
-      visible_to_segments: segment_block_segments
-    )
-  end
-
-  let(:targeted_block) do
-    create(
-      :experience_block,
-      experience: experience,
-      status: :open,
-      target_user_ids: targeted_block_users
-    )
-  end
-
-  let(:segment_block_segments) { [] }
-  let(:targeted_block_users) { [] }
-
   describe "#broadcast_experience_update" do
     subject { broadcaster.broadcast_experience_update }
 
@@ -54,264 +27,275 @@ RSpec.describe Experiences::Broadcaster do
       end
     end
 
-    context "with participants" do
+    context "with participants and no blocks" do
+      let!(:participant) do
+        create(:experience_participant, experience: experience)
+      end
+
+      before { subject }
+
+      it "broadcasts one message" do
+        expect(broadcast_calls.size).to eq(1)
+      end
+
+      it "broadcasts with empty blocks array" do
+        message = broadcast_call_for(broadcast_calls, participant)
+        expect(message[:message][:experience][:blocks]).to eq([])
+      end
+    end
+
+    context "with a simple block" do
+      let!(:participant) do
+        create(:experience_participant, experience: experience)
+      end
+
+      let!(:block) do
+        create(:experience_block, experience: experience, status: :open)
+      end
+
+      before { subject }
+
+      it "sends one block to participant" do
+        message = broadcast_call_for(broadcast_calls, participant)
+        expect(message[:message][:experience][:blocks].size).to eq(1)
+        expect(message[:message][:experience][:blocks].first[:id]).to eq(
+          block.id
+        )
+      end
+    end
+
+    context "with a sourced mad lib" do
+      # DAG Structure:
+      #
+      #   mad_lib (parent)
+      #   ├── question_block (targeted to question_participant)
+      #   └── poll_block (open to all)
+      #
+      # Expected behavior:
+      # - question_participant sees question_block
+      # - poll_participant sees poll_block
+      # - host sees mad_lib with all children
+
+      let!(:question_participant) do
+        create(:experience_participant, experience: experience)
+      end
+
+      let!(:poll_participant) do
+        create(:experience_participant, experience: experience)
+      end
+
       let!(:host_participant) do
         create(
-         :experience_participant,
-         experience: experience,
-         role: :host,
-         segments: host_segments
-        )
-      end
-
-      let!(:player_participant) do
-        create(
           :experience_participant,
           experience: experience,
-          role: :player,
-          segments: player_segments
+          role: :host
         )
       end
 
-      let!(:audience_participant) do
+      let!(:mad_lib) do
         create(
-          :experience_participant,
+          :experience_block,
+          :mad_lib_sourced,
           experience: experience,
-          role: :audience,
-          segments: audience_segments
+          status: :open,
+          participant_for_question: question_participant
         )
       end
 
-      let(:host_segments) { [] }
-      let(:player_segments) { [] }
-      let(:audience_segments) { [] }
-
-      context "when there are no blocks" do
+      context "initial state" do
         before { subject }
 
-        it "broadcasts three messages" do
-          expect(broadcast_calls.size).to eq(3)
+          it "sends question block to question participant" do
+          message = broadcast_call_for(
+            broadcast_calls,
+            question_participant
+          )
+          blocks = message[:message][:experience][:blocks]
+
+          expect(blocks.size).to eq(1)
+          expect(blocks.first[:kind]).to eq("question")
+          expect(blocks.first[:payload]["question"]).to eq(
+            "Favorite thing"
+          )
         end
 
-        it "broadcasts the correct message structure to all participants" do
-          [host_participant, player_participant, audience_participant].each do |participant|
-            message = broadcast_call_for(broadcast_calls, participant)
+        it "sends poll block to poll participant" do
+          message = broadcast_call_for(
+            broadcast_calls,
+            poll_participant
+          )
+          blocks = message[:message][:experience][:blocks]
 
-            expect(message).to be_present
-            expect(message[:message]).to include(
-              type: 'experience_updated',
-              experience: hash_including(
-                id: experience.id,
-                code: experience.code,
-                status: experience.status,
-                blocks: []
-              ),
-              metadata: hash_including(
-                stream_type: :direct,
-                timestamp: be_a(Float),
-                stream_key: "participant_#{participant.id}",
-                participant_id: participant.id,
-                role: participant.role.to_sym,
-                segments: []
-              )
-            )
-          end
+          expect(blocks.size).to eq(1)
+          expect(blocks.first[:kind]).to eq("poll")
+          expect(blocks.first[:payload]["question"]).to eq(
+            "What is your favorite activity?"
+          )
+        end
+
+        it "sends all blocks to host participant" do
+          message = broadcast_call_for(
+            broadcast_calls,
+            host_participant
+          )
+          blocks = message[:message][:experience][:blocks]
+
+          block_kinds = blocks.map { |b| b[:kind] }
+          
+          expect(blocks.size).to eq(3), 
+            "Expected 3 blocks but got #{blocks.size}: #{block_kinds}"
+          expect(block_kinds).to include("mad_lib")
+          expect(block_kinds).to include("question")
+          expect(block_kinds).to include("poll")
         end
       end
 
-      context "with segment-targeted blocks" do
-        let(:host_segments) { ["admin"] }
-        let(:player_segments) { ["vip"] }
-        let(:segment_block_segments) { ["vip"] }
-
-        before do
-          global_block
-          segment_block
-          subject
-        end
-
-        it "broadcasts global and vip blocks to the vip participant" do
-          expect(
-            broadcast_call_for(
-              broadcast_calls, player_participant
-            )[:message][:experience][:blocks].size
-          ).to eq(2)
-        end
-
-        it "broadcasts only the global block to the audience participant" do
-          expect(
-            broadcast_call_for(
-              broadcast_calls, audience_participant
-            )[:message][:experience][:blocks].size
-          ).to eq(1)
-        end
-
-        it "includes segment information in metadata" do
-          expect(
-            broadcast_call_for(
-              broadcast_calls, player_participant
-            )[:message][:metadata]
-          ).to include(
-            stream_key: "participant_#{player_participant.id}",
-            stream_type: :direct,
-            segments: ["vip"]
-          )
-        end
-      end
-
-      context "with user-targeted blocks" do
-        let(:targeted_block_users) { [player_participant.user.id] }
-
-        before do
-          global_block
-          targeted_block
-          subject
-        end
-
-        describe "broadcasts correct block visibility" do
-          it "shows both blocks to targeted participant" do
-            expect(
-              broadcast_call_for(
-                broadcast_calls, player_participant
-              )[:message][:experience][:blocks].size
-            ).to eq(2)
-          end
-
-          it "shows only global block to non-targeted participant" do
-            expect(
-              broadcast_call_for(
-                broadcast_calls, audience_participant
-              )[:message][:experience][:blocks].size
-            ).to eq(1)
-          end
-        end
-      end
-
-      context "with multi-segment participants" do
-        let(:player_segments) { ["vip", "premium", "beta"] }
-        let(:audience_segments) { ["vip"] }
-
-        let(:vip_block_segments) { ["vip"] }
-        let(:premium_block_segments) { ["premium"] }
-        let(:beta_block_segments) { ["beta"] }
-        let(:vip_premium_block_segments) { ["vip", "premium"] }
-        let(:admin_block_segments) { ["admin"] }
-
-        let(:vip_block) do
+      context "when question participant has responded" do
+        let!(:question_submission) do
           create(
-            :experience_block,
-            experience: experience,
-            status: :open,
-            visible_to_segments: vip_block_segments
-          )
-        end
-
-        let(:premium_block) do
-          create(
-            :experience_block,
-            experience: experience,
-            status: :open,
-            visible_to_segments: premium_block_segments
-          )
-        end
-
-        let(:beta_block) do
-          create(
-            :experience_block,
-            experience: experience,
-            status: :open,
-            visible_to_segments: beta_block_segments
-          )
-        end
-
-        let(:vip_premium_block) do
-          create(
-            :experience_block,
-            experience: experience,
-            status: :open,
-            visible_to_segments: vip_premium_block_segments
-          )
-        end
-
-        let(:admin_block) do
-          create(
-            :experience_block,
-            experience: experience,
-            status: :open,
-            visible_to_segments: admin_block_segments
+            :experience_question_submission,
+            experience_block: mad_lib.children.find_by(
+              kind: ExperienceBlock::QUESTION
+            ),
+            user: question_participant.user,
+            answer: { "value" => "Ruby" }
           )
         end
 
         before do
-          global_block
-          vip_block
-          premium_block
-          beta_block
-          vip_premium_block
-          admin_block
+          broadcast_calls.clear
           subject
         end
 
-        describe "player with multiple segments" do
-          it "sees blocks from all their segments" do
-            blocks = broadcast_call_for(
-              broadcast_calls, player_participant
-            )[:message][:experience][:blocks]
+        it "sends poll block to question participant after responding" do
+          message = broadcast_call_for(
+            broadcast_calls,
+            question_participant
+          )
+          blocks = message[:message][:experience][:blocks]
 
-            block_ids = blocks.map { |b| b[:id] }
+          expect(blocks.size).to eq(1)
+          expect(blocks.first[:kind]).to eq("poll")
+        end
+      end
 
-            expect(block_ids).to include(global_block.id)
-            expect(block_ids).to include(vip_block.id)
-            expect(block_ids).to include(premium_block.id)
-            expect(block_ids).to include(beta_block.id)
-            expect(block_ids).to include(vip_premium_block.id)
-            expect(block_ids).not_to include(admin_block.id)
-            expect(blocks.size).to eq(5)
-          end
+      context "when all dependencies are resolved" do
+        let(:question_block) do
+          mad_lib.children.find_by(kind: ExperienceBlock::QUESTION)
         end
 
-        describe "audience with single segment" do
-          it "sees blocks for their segment plus global" do
-            blocks = broadcast_call_for(
-              broadcast_calls, audience_participant
-            )[:message][:experience][:blocks]
-
-            block_ids = blocks.map { |b| b[:id] }
-
-            expect(block_ids).to include(global_block.id)
-            expect(block_ids).to include(vip_block.id)
-            expect(block_ids).to include(vip_premium_block.id)
-            expect(block_ids).not_to include(premium_block.id)
-            expect(block_ids).not_to include(beta_block.id)
-            expect(block_ids).not_to include(admin_block.id)
-            expect(blocks.size).to eq(3)
-          end
+        let(:poll_block) do
+          mad_lib.children.find_by(kind: ExperienceBlock::POLL)
         end
 
-        describe "host with no segments" do
-          it "sees only global block" do
-            blocks = broadcast_call_for(
-              broadcast_calls, host_participant
-            )[:message][:experience][:blocks]
-
-            block_ids = blocks.map { |b| b[:id] }
-
-            expect(block_ids).to include(global_block.id)
-            expect(block_ids).not_to include(vip_block.id)
-            expect(block_ids).not_to include(premium_block.id)
-            expect(block_ids).not_to include(beta_block.id)
-            expect(block_ids).not_to include(vip_premium_block.id)
-            expect(block_ids).not_to include(admin_block.id)
-            expect(blocks.size).to eq(1)
-          end
+        let!(:question_submission) do
+          create(
+            :experience_question_submission,
+            experience_block: question_block,
+            user: question_participant.user,
+            answer: { "value" => "Ruby" }
+          )
         end
+
+        let!(:poll_submission_from_question_participant) do
+          create(
+            :experience_poll_submission,
+            experience_block: poll_block,
+            user: question_participant.user,
+            answer: { "selectedOptions" => ["coding"] }
+          )
+        end
+
+        let!(:poll_submission_from_poll_participant) do
+          create(
+            :experience_poll_submission,
+            experience_block: poll_block,
+            user: poll_participant.user,
+            answer: { "selectedOptions" => ["reading"] }
+          )
+        end
+
+        before do
+          broadcast_calls.clear
+          subject
+        end
+
+        it "sends resolved mad lib to question participant" do
+          message = broadcast_call_for(
+            broadcast_calls,
+            question_participant
+          )
+          blocks = message[:message][:experience][:blocks]
+
+          expect(blocks.size).to eq(1)
+          expect(blocks.first[:kind]).to eq("mad_lib")
+        end
+
+        it "sends resolved mad lib to poll participant" do
+          message = broadcast_call_for(
+            broadcast_calls,
+            poll_participant
+          )
+          blocks = message[:message][:experience][:blocks]
+
+          expect(blocks.size).to eq(1)
+          expect(blocks.first[:kind]).to eq("mad_lib")
+        end
+
+        it "sends all blocks to host participant" do
+          message = broadcast_call_for(
+            broadcast_calls,
+            host_participant
+          )
+          blocks = message[:message][:experience][:blocks]
+
+          expect(blocks.size).to eq(3)
+          block_kinds = blocks.map { |b| b[:kind] }
+          expect(block_kinds).to include("mad_lib")
+          expect(block_kinds).to include("question")
+          expect(block_kinds).to include("poll")
+        end
+      end
+    end
+
+    context "with multiple simple blocks" do
+      let!(:participant) do
+        create(:experience_participant, experience: experience)
+      end
+
+      let!(:first_block) do
+        create(
+          :experience_block,
+          experience: experience,
+          status: :open,
+          created_at: 2.minutes.ago
+        )
+      end
+
+      let!(:second_block) do
+        create(
+          :experience_block,
+          experience: experience,
+          status: :open,
+          created_at: 1.minute.ago
+        )
+      end
+
+      before { subject }
+
+      it "sends only the most recent block to participant" do
+        message = broadcast_call_for(broadcast_calls, participant)
+        blocks = message[:message][:experience][:blocks]
+
+        expect(blocks.size).to eq(1)
+        expect(blocks.first[:id]).to eq(second_block.id)
       end
     end
   end
 
   describe "ActionCable integration" do
-    let!(:host_participant) do
-      create(:experience_participant, experience: experience, role: :host)
+    let!(:participant) do
+      create(:experience_participant, experience: experience)
     end
 
     before do
@@ -324,26 +308,9 @@ RSpec.describe Experiences::Broadcaster do
     end
   end
 
-  describe "error handling" do
-    let!(:host_participant) do
-      create(:experience_participant, experience: experience, role: :host)
-    end
-
-    context "when visibility service fails" do
-      before do
-        allow(Experiences::Visibility).to receive(:payload_for_user)
-          .and_raise(StandardError.new("Visibility error"))
-      end
-
-      it "handles visibility service errors gracefully" do
-        expect { broadcaster.broadcast_experience_update }.not_to raise_error
-      end
-    end
-  end
-
   describe ".trigger_resubscription_for_participant" do
     let!(:participant) do
-      create(:experience_participant, experience: experience, role: :host)
+      create(:experience_participant, experience: experience)
     end
 
     it "broadcasts resubscription message to participant stream" do

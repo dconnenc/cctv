@@ -35,11 +35,18 @@ module Experiences
       return nil unless block.has_dependencies?
 
       block.children.find do |child|
-        !has_user_responded?(child)
+        child_visible?(child) && !has_user_responded?(child)
       end
     end
 
     private
+
+    def child_visible?(child)
+      Experiences::Visibility.block_visible_to_user?(
+        block: child,
+        user: participant.user
+      )
+    end
 
     def extract_value_from_block(source_block)
       submission = find_submission(source_block)

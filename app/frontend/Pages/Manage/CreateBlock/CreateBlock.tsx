@@ -9,24 +9,24 @@ import CreateMultistepForm from './CreateMultistepForm/CreateMultistepForm';
 import CreatePoll from './CreatePoll/CreatePoll';
 import CreateQuestion from './CreateQuestion/CreateQuestion';
 
-import styles from './CreateExperience.module.scss';
+import styles from './CreateBlock.module.scss';
 
-interface CreateExperienceProps {
+interface CreateBlockProps {
   refetchExperience: () => Promise<void>;
   onClose: () => void;
   participants: ParticipantSummary[];
   onEndCurrentBlock: () => Promise<void>;
 }
 
-export default function CreateExperience(props: CreateExperienceProps) {
+export default function CreateBlock(props: CreateBlockProps) {
   return (
     <CreateBlockProvider {...props}>
-      <CreateExperienceForm />
+      <CreateBlockForm />
     </CreateBlockProvider>
   );
 }
 
-function CreateExperienceForm() {
+function CreateBlockForm() {
   const {
     blockData,
     setKind,

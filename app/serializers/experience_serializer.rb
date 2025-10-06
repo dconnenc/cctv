@@ -7,6 +7,7 @@ class ExperienceSerializer
       name: experience.name,
       code: experience.code,
       status: experience.status,
+      description: experience.description,
       creator_id: experience.creator_id,
       created_at: experience.created_at,
       updated_at: experience.updated_at,
