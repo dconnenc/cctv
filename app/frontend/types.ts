@@ -35,23 +35,37 @@ export interface AnnouncementPayload {
   message: string;
 }
 
-export interface MadLibVariable {
+export interface BlockLink {
   id: string;
-  name: string;
-  question: string;
-  dataType: 'text' | 'number' | 'adjective' | 'noun' | 'verb' | 'adverb';
-  assigned_user_id?: string;
+  parent_block_id: string;
+  child_block_id: string;
+  relationship: 'depends_on';
+  position: number;
+}
+
+export interface BlockVariable {
+  id: string;
+  experience_block_id: string;
+  key: string;
+  label: string;
+  datatype: 'string' | 'number' | 'text';
+  required: boolean;
+}
+
+export interface BlockVariableBinding {
+  id: string;
+  variable_id: string;
+  source_block_id: string;
 }
 
 export interface MadLibSegment {
   id: string;
   type: 'text' | 'variable';
-  content: string; // For text segments, this is the actual text. For variables, this is the variable ID
+  content: string;
 }
 
 export interface MadLibPayload {
   segments: MadLibSegment[];
-  variables: MadLibVariable[];
 }
 
 // Individual API payload types for builder functions
@@ -82,7 +96,6 @@ export interface AnnouncementApiPayload {
 export interface MadLibApiPayload {
   type: 'mad_lib';
   segments: MadLibSegment[];
-  variables: MadLibVariable[];
 }
 
 // Discriminated union for API payloads (what gets sent to backend)
@@ -162,6 +175,12 @@ export interface AnnouncementBlock extends BaseBlock {
 export interface MadLibBlock extends BaseBlock {
   kind: BlockKind.MAD_LIB;
   payload: MadLibPayload;
+  responses?: {
+    total: number;
+    user_responded: boolean;
+    user_response: null;
+    resolved_variables?: Record<string, string>;
+  };
 }
 
 export type Block =

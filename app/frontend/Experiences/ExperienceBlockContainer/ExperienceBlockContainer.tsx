@@ -65,12 +65,7 @@ export default function ExperienceBlockContainer({
       return <Announcement participant={participant} {...block.payload} />;
     case BlockKind.MAD_LIB:
       return (
-        <MadLib
-          blockId={block.id}
-          responses={block.responses}
-          {...block.payload}
-          disabled={disabled}
-        />
+        <MadLib blockId={block.id} responses={block.responses} segments={block.payload.segments} />
       );
     default:
       const exhaustiveCheck: never = block;
