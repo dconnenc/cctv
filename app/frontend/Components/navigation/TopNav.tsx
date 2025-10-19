@@ -10,7 +10,7 @@ export const TopNav = () => {
   const [open, setOpen] = useState(false);
   const navRef = useRef<HTMLElement | null>(null);
   const { user, logOut } = useUser();
-  const isAdmin = user?.role === 'admin' || user?.role === 'superadmin';
+  const isAdmin = user?.role === 'admin' || user?.admin === true;
 
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {

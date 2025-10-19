@@ -1,6 +1,6 @@
 class ExperiencePolicy < ApplicationPolicy
   def create?
-    user&.admin? || user&.superadmin?
+    user&.admin?
   end
 
   def show?
@@ -34,7 +34,7 @@ class ExperiencePolicy < ApplicationPolicy
   private
 
   def admin?
-    user&.admin? || user&.superadmin?
+    user&.admin?
   end
 
   def host_participant?

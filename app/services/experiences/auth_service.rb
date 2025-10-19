@@ -125,7 +125,7 @@ module Experiences
 
       user = ::User.find_by(id: user_id)
       raise NotFound, "user not found" if user.nil?
-      raise Unauthorized, "not an admin" unless user.admin? || user.superadmin?
+      raise Unauthorized, "not an admin" unless user.admin?
 
       user
     end

@@ -28,7 +28,7 @@ class Api::BaseController < ApplicationController
   private
 
   def session_admin_signed_in?
-    current_user&.admin? || current_user&.superadmin?
+    current_user&.admin?
   end
 
   def set_as_session_admin

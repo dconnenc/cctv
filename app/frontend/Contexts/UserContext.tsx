@@ -10,7 +10,6 @@ interface User {
   updated_at: string;
   role: UserRole;
   admin: boolean;
-  super_admin: boolean;
 }
 
 interface UserContextType {
@@ -33,7 +32,7 @@ export function UserProvider({ children }: UserProviderProps) {
   const [isLoading, setIsLoading] = useState(true);
 
   const isAuthenticated = user !== null;
-  const isAdmin = user?.super_admin === true || user?.admin === true;
+  const isAdmin = user?.admin === true || user?.role === 'admin';
 
   const userFetch = async (input: RequestInfo | URL, init: RequestInit = {}) => {
     return fetch(input, {

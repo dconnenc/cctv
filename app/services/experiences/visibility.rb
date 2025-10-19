@@ -10,7 +10,7 @@ module Experiences
         .find_by(user_id: user.id)
 
       # Admin users can see everything even without being participants
-      if user.admin? || user.superadmin?
+      if user.admin?
         return new(
           experience: experience,
           user_role: user.role,
@@ -45,7 +45,7 @@ module Experiences
     end
 
     def self.block_visible_to_user?(block:, user:)
-      return true if user.admin? || user.superadmin?
+      return true if user.admin?
 
       participant_record = block
         .experience
@@ -69,7 +69,7 @@ module Experiences
         .find_by(user_id: user.id)
 
       # Treat admin's as host-level permissions when they are not participants
-      if user.admin? || user.superadmin?
+      if user.admin?
         effective_participant_role = participant_record&.role || "host"
 
         return BlockSerializer.serialize_for_user(
@@ -144,7 +144,7 @@ module Experiences
     private
 
     def user_admin?
-      user_role == "admin" || user_role == "superadmin"
+      user_role == "admin"
     end
 
     def moderator_or_host?

@@ -1,6 +1,6 @@
 // ===== CORE DOMAIN TYPES =====
 
-export type UserRole = 'user' | 'admin' | 'superadmin';
+export type UserRole = 'user' | 'admin';
 export type ExperienceStatus = 'draft' | 'lobby' | 'live' | 'paused' | 'finished' | 'archived';
 export type ParticipantRole = 'audience' | 'player' | 'moderator' | 'host';
 export type ParticipantStatus = 'registered' | 'active';
