@@ -1,14 +1,12 @@
-import { useState } from 'react';
+import { useMemo } from 'react';
 
-import { Button, Dropdown } from '@cctv/core';
 import { Experience, ParticipantSummary } from '@cctv/types';
 
 import offlineTvUrl from '../../../images/offline-tv-vectors.svg';
 import BlockPreview from '../BlockPreview/BlockPreview';
+import { ViewSelector } from './ViewSelector';
 
 import styles from './ContextView.module.scss';
-
-type ViewMode = 'tv' | 'participant';
 
 interface ContextViewProps {
   tvView?: Experience;
@@ -27,26 +25,24 @@ export default function ContextView({
   setSelectedParticipantId,
   isConnected,
 }: ContextViewProps) {
-  const [viewMode, setViewMode] = useState<ViewMode>('tv');
+  const viewMode = selectedParticipantId === 'tv' ? 'tv' : 'participant';
 
-  const currentBlock =
-    viewMode === 'tv'
+  const currentBlock = useMemo(() => {
+    return viewMode === 'tv'
       ? tvView?.blocks.find((block) => block.status === 'open')
       : participantView?.blocks[0];
+  }, [viewMode, tvView, participantView]);
 
   const participant = participants.find((p) => p.id === selectedParticipantId);
 
   return (
     <div className={styles.root}>
       <div className={styles.header}>
-        <div className={styles.toggleButtons}>
-          <Button onClick={() => setViewMode('tv')} disabled={viewMode === 'tv'}>
-            TV View
-          </Button>
-          <Button onClick={() => setViewMode('participant')} disabled={viewMode === 'participant'}>
-            Participant View
-          </Button>
-        </div>
+        <ViewSelector
+          participants={participants}
+          value={selectedParticipantId}
+          onChange={setSelectedParticipantId}
+        />
 
         <div className={styles.status}>
           {isConnected ? (
@@ -56,17 +52,6 @@ export default function ContextView({
           )}
         </div>
       </div>
-
-      {viewMode === 'participant' && (
-        <div className={styles.participantSelector}>
-          <Dropdown
-            options={participants.map((p) => ({ label: p.name, value: p.id }))}
-            value={selectedParticipantId}
-            onChange={setSelectedParticipantId}
-            label="Viewing as"
-          />
-        </div>
-      )}
 
       <div className={styles.preview}>
         {currentBlock ? (

@@ -2,7 +2,10 @@ import { useCallback, useMemo, useState } from 'react';
 
 import { useNavigate } from 'react-router-dom';
 
+import { Plus } from 'lucide-react';
+
 import { useExperience } from '@cctv/contexts';
+import { Button } from '@cctv/core';
 import { useChangeBlockStatus, useExperiencePreview, useExperienceStart } from '@cctv/hooks';
 import { Block, BlockStatus, ParticipantSummary } from '@cctv/types';
 
@@ -130,19 +133,28 @@ export default function Manage() {
       </div>
 
       <div className={styles.bottomRow}>
-        <div className={styles.tabs}>
-          <button
-            className={activeTab === 'program' ? styles.tabActive : styles.tab}
-            onClick={() => setActiveTab('program')}
-          >
-            Program
-          </button>
-          <button
-            className={activeTab === 'participants' ? styles.tabActive : styles.tab}
-            onClick={() => setActiveTab('participants')}
-          >
-            Participants
-          </button>
+        <div className={styles.tabsRow}>
+          <div className={styles.tabs}>
+            <button
+              className={activeTab === 'program' ? styles.tabActive : styles.tab}
+              onClick={() => setActiveTab('program')}
+            >
+              Program
+            </button>
+            <button
+              className={activeTab === 'participants' ? styles.tabActive : styles.tab}
+              onClick={() => setActiveTab('participants')}
+            >
+              Participants
+            </button>
+          </div>
+
+          {activeTab === 'program' && (
+            <Button onClick={handleCreateBlock} className={styles.createButton}>
+              <Plus size={16} />
+              <span>Programming</span>
+            </Button>
+          )}
         </div>
 
         <div className={styles.tabContent}>

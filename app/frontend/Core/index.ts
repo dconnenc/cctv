@@ -5,3 +5,5 @@ export { Pill } from './Pill/Pill';
 export { Dropdown } from './Dropdown/Dropdown';
 export { Table } from './Table/Table';
 export type { Column } from './Table/Table';
+export { Combobox } from './Combobox/Combobox';
+export type { ComboboxOption, ComboboxStickyOption } from './Combobox/Combobox';

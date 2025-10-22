@@ -63,11 +63,10 @@ export function useCreateExperienceBlock({
         open_immediately,
       };
 
-      console.log('payload: ', submitPayload);
       try {
         const res = await experienceFetch(`/api/experiences/${encodeURIComponent(code)}/blocks`, {
           method: 'POST',
-          body: JSON.stringify({ experience: submitPayload }),
+          body: JSON.stringify({ block: submitPayload }),
         });
 
         const data: CreateExperienceApiResponse = await res.json();
