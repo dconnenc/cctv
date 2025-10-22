@@ -4,6 +4,8 @@ import { useUser } from '@cctv/contexts';
 import { useExperience } from '@cctv/contexts';
 import { ExperienceBlockContainer } from '@cctv/experiences';
 
+import AdminNotification from './AdminNotification/AdminNotification';
+
 import styles from './Experience.module.scss';
 
 export default function Experience() {
@@ -45,7 +47,6 @@ export default function Experience() {
 
   const participants = experience?.participants || [];
 
-  // Lobby state
   if (experienceStatus === 'lobby') {
     return (
       <section className="page flex-centered">
@@ -58,40 +59,8 @@ export default function Experience() {
           </div>
         )}
 
-        {/* Admin viewing notification */}
-        {isAdmin && !participant && (
-          <div className={styles.adminNotification}>
-            <p className={styles.adminMessage}>
-              You're viewing this experience as an admin but aren't registered as a participant.
-            </p>
-            <div className={styles.adminActions}>
-              <Link to={`/experiences/${code}/register`} className={styles.adminActionButton}>
-                Register to Participate
-              </Link>
-              <Link to={`/experiences/${code}/manage`} className={styles.adminActionButton}>
-                Manage Experience
-              </Link>
-            </div>
-          </div>
-        )}
+        {isAdmin && !participant && <AdminNotification code={code!} />}
 
-        <p className={styles.participantsCount}>
-          Participants: {participants.length}
-          {isPolling && <span className={styles.loadingSpinner}>🔄</span>}
-        </p>
-
-        {/* WebSocket Connection Status */}
-        <div className={styles.connectionStatus}>
-          {wsConnected ? (
-            <span className={styles.connected}>🟢 Real-time connected</span>
-          ) : (
-            <span className={styles.disconnected}>
-              🔴 {wsError || 'Not connected to real-time updates'}
-            </span>
-          )}
-        </div>
-
-        {/* Participants List */}
         <div className={styles.participantsContainer}>
           <h4 className={styles.participantsTitle}>Players in Lobby:</h4>
           {participants.length > 0 ? (
@@ -139,22 +108,7 @@ export default function Experience() {
         <div className={styles.activeExperience}>
           <h1 className={styles.title}>{experience?.name || code}</h1>
 
-          {/* Admin viewing notification */}
-          {isAdmin && !participant && (
-            <div className={styles.adminNotification}>
-              <p className={styles.adminMessage}>
-                You're viewing this experience as an admin but aren't registered as a participant.
-              </p>
-              <div className={styles.adminActions}>
-                <Link to={`/experiences/${code}/register`} className={styles.adminActionButton}>
-                  Register to Participate
-                </Link>
-                <Link to={`/experiences/${code}/manage`} className={styles.adminActionButton}>
-                  Manage Experience
-                </Link>
-              </div>
-            </div>
-          )}
+          {isAdmin && !participant && <AdminNotification code={code!} />}
 
           <div className={styles.experienceContent}>
             {openBlock && participant ? (

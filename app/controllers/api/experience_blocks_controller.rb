@@ -94,6 +94,22 @@ class Api::ExperienceBlocksController < Api::BaseController
     end
   end
 
+  # POST /api/experiences/:experience_id/blocks/:id/hide
+  def hide
+    with_experience_orchestration do
+      block = Experiences::Orchestrator.new(
+        experience: @experience, actor: @user
+      ).hide_block!(params[:id])
+
+      Experiences::Broadcaster.new(@experience).broadcast_experience_update
+
+      render json: {
+        success: true,
+        data: block,
+      }, status: 200
+    end
+  end
+
   # POST /api/experiences/:experience_id/blocks/:id/submit_poll_response
   def submit_poll_response
     with_experience_orchestration do

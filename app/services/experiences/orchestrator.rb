@@ -48,6 +48,16 @@ module Experiences
       end
     end
 
+    def hide_block!(block_id)
+      actor_action do
+        authorize! experience, to: :manage_blocks?, with: ExperiencePolicy
+
+        block = experience.experience_blocks.find(block_id)
+
+        block.update(status: :hidden)
+      end
+    end
+
     def open_lobby!
       actor_action do
         authorize! experience, to: :open_lobby?, with: ExperiencePolicy

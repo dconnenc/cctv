@@ -31,9 +31,9 @@ export function useChangeBlockStatus() {
           path = `${baseUrl}open`;
         } else if (status === 'closed') {
           path = `${baseUrl}close`;
+        } else if (status === 'hidden') {
+          path = `${baseUrl}hide`;
         }
-
-        body = JSON.stringify({ experience: { status: 'hidden' } });
 
         const res = await experienceFetch(path, { method, body });
         const data = await res.json();

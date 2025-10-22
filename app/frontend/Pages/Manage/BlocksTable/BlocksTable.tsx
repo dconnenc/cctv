@@ -118,6 +118,7 @@ function BlockRowMenu({
   busy?: boolean;
 }) {
   const choose = (status: BlockStatus) => () => onChange(status);
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -127,13 +128,13 @@ function BlockRowMenu({
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         <DropdownMenuItem onClick={choose('open')} disabled={busy || block.status === 'open'}>
-          Set "open"
+          Open
         </DropdownMenuItem>
         <DropdownMenuItem onClick={choose('closed')} disabled={busy || block.status === 'closed'}>
-          Set "closed"
+          Close
         </DropdownMenuItem>
         <DropdownMenuItem onClick={choose('hidden')} disabled={busy || block.status === 'hidden'}>
-          Set "hidden"
+          Hide
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
