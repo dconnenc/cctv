@@ -1,6 +1,17 @@
 import { useMemo, useState } from 'react';
 
-import { Button, Column, Pill, Table } from '@cctv/core';
+import { MoreHorizontal } from 'lucide-react';
+
+import {
+  Button,
+  Column,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  Pill,
+  Table,
+} from '@cctv/core';
 import { Block, BlockKind, BlockStatus, ParticipantSummary } from '@cctv/types';
 import { fmtDate } from '@cctv/utils';
 
@@ -108,31 +119,23 @@ function BlockRowMenu({
 }) {
   const choose = (status: BlockStatus) => () => onChange(status);
   return (
-    <details className={styles.menu}>
-      <summary className={styles.menuButton} aria-label="Open row actions" />
-      <div className={styles.menuList} role="menu">
-        <button
-          className={styles.menuItem}
-          onClick={choose('open')}
-          disabled={busy || block.status === 'open'}
-        >
-          Set “open”
-        </button>
-        <button
-          className={styles.menuItem}
-          onClick={choose('closed')}
-          disabled={busy || block.status === 'closed'}
-        >
-          Set “closed”
-        </button>
-        <button
-          className={styles.menuItem}
-          onClick={choose('hidden')}
-          disabled={busy || block.status === 'hidden'}
-        >
-          Set “hidden”
-        </button>
-      </div>
-    </details>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button className={styles.menuButton} disabled={busy}>
+          <MoreHorizontal size={16} />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuItem onClick={choose('open')} disabled={busy || block.status === 'open'}>
+          Set "open"
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={choose('closed')} disabled={busy || block.status === 'closed'}>
+          Set "closed"
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={choose('hidden')} disabled={busy || block.status === 'hidden'}>
+          Set "hidden"
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
