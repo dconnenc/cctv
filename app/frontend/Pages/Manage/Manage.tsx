@@ -4,7 +4,13 @@ import { useNavigate } from 'react-router-dom';
 
 import { useExperience } from '@cctv/contexts';
 import { Panel } from '@cctv/core';
-import { useChangeBlockStatus, useExperiencePreview, useExperienceStart } from '@cctv/hooks';
+import {
+  useChangeBlockStatus,
+  useExperiencePause,
+  useExperiencePreview,
+  useExperienceResume,
+  useExperienceStart,
+} from '@cctv/hooks';
 import { Block, BlockStatus, ParticipantSummary } from '@cctv/types';
 
 import ContextDetails from './ContextDetails/ContextDetails';
@@ -31,6 +37,8 @@ export default function Manage() {
   } = useExperience();
 
   const { startExperience, isLoading: starting, error: startError } = useExperienceStart();
+  const { pauseExperience, isLoading: pausing, error: pauseError } = useExperiencePause();
+  const { resumeExperience, isLoading: resuming, error: resumeError } = useExperienceResume();
   const [selectedParticipantId, setSelectedParticipantId] = useState<string | undefined>(
     experience?.participants[0]?.id,
   );
@@ -105,7 +113,8 @@ export default function Manage() {
     );
   }
 
-  const errorMessage = experienceError || startError || statusError;
+  const errorMessage = experienceError || startError || pauseError || resumeError || statusError;
+  const isChangingState = starting || pausing || resuming;
 
   const currentBlock =
     viewMode === 'tv'
@@ -150,8 +159,9 @@ export default function Manage() {
           <ExperienceControl
             experience={experience}
             onStart={startExperience}
-            onPause={startExperience}
-            isStarting={starting}
+            onPause={pauseExperience}
+            onResume={resumeExperience}
+            isLoading={isChangingState}
             onCreateBlock={handleCreateBlock}
           />
         </div>

@@ -9,4 +9,6 @@ export { useSubmitQuestionResponse } from './useSubmitQuestionResponse';
 export { useSubmitMultistepFormResponse } from './useSubmitMultistepFormResponse';
 export { useChangeBlockStatus } from './useChangeBlockStatus';
 export { useExperienceStart } from './useExperienceStart';
+export { useExperiencePause } from './useExperiencePause';
+export { useExperienceResume } from './useExperienceResume';
 export { useExperiencePreview } from './useExperiencePreview';

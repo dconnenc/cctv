@@ -9,7 +9,8 @@ interface ExperienceControlProps {
   experience?: Experience;
   onStart: () => void;
   onPause: () => void;
-  isStarting: boolean;
+  onResume: () => void;
+  isLoading: boolean;
   onCreateBlock: () => void;
 }
 
@@ -17,13 +18,42 @@ export default function ExperienceControl({
   experience,
   onStart,
   onPause,
-  isStarting,
+  onResume,
+  isLoading,
   onCreateBlock,
 }: ExperienceControlProps) {
   if (!experience) return null;
 
-  const isLive = experience.status === 'live';
   const statusLabel = experience.status.charAt(0).toUpperCase() + experience.status.slice(1);
+
+  const getActionButton = () => {
+    switch (experience.status) {
+      case 'draft':
+      case 'lobby':
+        return (
+          <Button onClick={onStart} loading={isLoading} loadingText="Starting...">
+            <Play size={16} />
+            <span>Start</span>
+          </Button>
+        );
+      case 'live':
+        return (
+          <Button onClick={onPause} loading={isLoading} loadingText="Pausing...">
+            <Pause size={16} />
+            <span>Pause</span>
+          </Button>
+        );
+      case 'paused':
+        return (
+          <Button onClick={onResume} loading={isLoading} loadingText="Resuming...">
+            <Play size={16} />
+            <span>Resume</span>
+          </Button>
+        );
+      default:
+        return null;
+    }
+  };
 
   return (
     <Panel
@@ -40,17 +70,7 @@ export default function ExperienceControl({
           <Plus size={16} />
           <span>Block</span>
         </Button>
-        {isLive ? (
-          <Button onClick={onPause} loading={isStarting} loadingText="Pausing...">
-            <Pause size={16} />
-            <span>Pause</span>
-          </Button>
-        ) : (
-          <Button onClick={onStart} loading={isStarting} loadingText="Starting...">
-            <Play size={16} />
-            <span>Start</span>
-          </Button>
-        )}
+        {getActionButton()}
       </div>
 
       {experience.description && <p className={styles.description}>{experience.description}</p>}

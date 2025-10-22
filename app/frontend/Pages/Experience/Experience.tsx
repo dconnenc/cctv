@@ -98,8 +98,8 @@ export default function Experience() {
     );
   }
 
-  // Active experience state (for when the experience is actually running)
-  if (experienceStatus === 'live') {
+  // Active experience state (for when the experience is live or paused)
+  if (experienceStatus === 'live' || experienceStatus === 'paused') {
     // Find the first open block to display
     const openBlock = experience?.blocks?.find((block) => block.status === 'open');
 
@@ -113,11 +113,19 @@ export default function Experience() {
           <div className={styles.experienceContent}>
             {openBlock && participant ? (
               <div className={styles.activeBlock}>
-                <ExperienceBlockContainer block={openBlock} participant={participant} />
+                <ExperienceBlockContainer
+                  block={openBlock}
+                  participant={participant}
+                  disabled={experience?.status === 'paused'}
+                />
               </div>
             ) : (
               <div className={styles.waitingForBlock}>
-                <p>Waiting for the next activity...</p>
+                <p>
+                  {experience?.status === 'paused'
+                    ? 'Experience is paused...'
+                    : 'Waiting for the next activity...'}
+                </p>
               </div>
             )}
           </div>
