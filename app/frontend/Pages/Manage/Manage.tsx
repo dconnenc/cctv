@@ -9,7 +9,7 @@ import { Block, BlockStatus, ParticipantSummary } from '@cctv/types';
 
 import ContextDetails from './ContextDetails/ContextDetails';
 import ContextView from './ContextView/ContextView';
-import ExperienceHeader from './ExperienceHeader/ExperienceHeader';
+import ExperienceControl from './ExperienceControl/ExperienceControl';
 import ParticipantsTab from './ParticipantsTab/ParticipantsTab';
 import ProgramTab from './ProgramTab/ProgramTab';
 import UpNextPanel from './UpNextPanel/UpNextPanel';
@@ -147,7 +147,7 @@ export default function Manage() {
 
       <div className={styles.bottomRow}>
         <div className={styles.experienceInfo}>
-          <ExperienceHeader
+          <ExperienceControl
             experience={experience}
             onStart={startExperience}
             onPause={startExperience}

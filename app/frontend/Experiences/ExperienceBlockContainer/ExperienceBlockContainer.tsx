@@ -18,11 +18,11 @@ export default function ExperienceBlockContainer({
   disabled = false,
 }: ExperienceBlockContainerProps) {
   if (!participant) {
-    return <p>Do you even go here? You're not part of this!</p>;
+    return <p>Do you even belong here? You're not part of this!</p>;
   }
 
   if (!block.payload) {
-    return <p>Party's over, everyone go home. Experience not found.</p>;
+    return <p>Party's over, everyone go home.</p>;
   }
 
   switch (block.kind) {

@@ -3,9 +3,9 @@ import { Pause, Play, Plus } from 'lucide-react';
 import { Button, Panel, Pill } from '@cctv/core';
 import { Experience, ExperienceStatus } from '@cctv/types';
 
-import styles from './ExperienceHeader.module.scss';
+import styles from './ExperienceControl.module.scss';
 
-interface ExperienceHeaderProps {
+interface ExperienceControlProps {
   experience?: Experience;
   onStart: () => void;
   onPause: () => void;
@@ -13,13 +13,13 @@ interface ExperienceHeaderProps {
   onCreateBlock: () => void;
 }
 
-export default function ExperienceHeader({
+export default function ExperienceControl({
   experience,
   onStart,
   onPause,
   isStarting,
   onCreateBlock,
-}: ExperienceHeaderProps) {
+}: ExperienceControlProps) {
   if (!experience) return null;
 
   const isLive = experience.status === 'live';
@@ -27,6 +27,7 @@ export default function ExperienceHeader({
 
   return (
     <Panel
+      title="Control"
       headerContent={
         <div className={styles.header}>
           <h3 className={styles.title}>{experience.name}</h3>
