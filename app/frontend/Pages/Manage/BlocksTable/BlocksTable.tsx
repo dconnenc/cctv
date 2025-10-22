@@ -26,7 +26,6 @@ export function BlocksTable({
 
   const columns: Column<Block>[] = useMemo(() => {
     return [
-      { key: 'id', label: 'Block ID', Cell: (b) => <span className={styles.mono}>{b.id}</span> },
       { key: 'kind', label: 'Kind', Cell: (b) => <span>{b.kind}</span> },
       { key: 'status', label: 'Status', Cell: (b) => <Pill label={b.status} /> },
       {

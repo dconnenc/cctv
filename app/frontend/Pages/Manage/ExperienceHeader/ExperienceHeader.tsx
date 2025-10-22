@@ -1,6 +1,6 @@
-import { Pause, Play } from 'lucide-react';
+import { Pause, Play, Plus } from 'lucide-react';
 
-import { Button, Pill } from '@cctv/core';
+import { Button, Panel, Pill } from '@cctv/core';
 import { Experience, ExperienceStatus } from '@cctv/types';
 
 import styles from './ExperienceHeader.module.scss';
@@ -10,6 +10,7 @@ interface ExperienceHeaderProps {
   onStart: () => void;
   onPause: () => void;
   isStarting: boolean;
+  onCreateBlock: () => void;
 }
 
 export default function ExperienceHeader({
@@ -17,6 +18,7 @@ export default function ExperienceHeader({
   onStart,
   onPause,
   isStarting,
+  onCreateBlock,
 }: ExperienceHeaderProps) {
   if (!experience) return null;
 
@@ -24,13 +26,19 @@ export default function ExperienceHeader({
   const statusLabel = experience.status.charAt(0).toUpperCase() + experience.status.slice(1);
 
   return (
-    <div className={styles.root}>
-      <div className={styles.header}>
-        <h3 className={styles.title}>{experience.name}</h3>
-        <Pill label={statusLabel} />
-      </div>
-
+    <Panel
+      headerContent={
+        <div className={styles.header}>
+          <h3 className={styles.title}>{experience.name}</h3>
+          <Pill label={statusLabel} />
+        </div>
+      }
+    >
       <div className={styles.actions}>
+        <Button onClick={onCreateBlock}>
+          <Plus size={16} />
+          <span>Block</span>
+        </Button>
         {isLive ? (
           <Button onClick={onPause} loading={isStarting} loadingText="Pausing...">
             <Pause size={16} />
@@ -45,6 +53,6 @@ export default function ExperienceHeader({
       </div>
 
       {experience.description && <p className={styles.description}>{experience.description}</p>}
-    </div>
+    </Panel>
   );
 }

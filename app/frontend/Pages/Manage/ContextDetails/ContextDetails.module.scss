@@ -1,0 +1,66 @@
+.status {
+  font-size: 14px;
+}
+
+.connected {
+  color: var(--green);
+}
+
+.disconnected {
+  color: var(--red);
+}
+
+.toggleButtons {
+  display: flex;
+  gap: 8px;
+}
+
+.participantSelector {
+  width: 100%;
+}
+
+.blockDetails {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+}
+
+.detailsTitle {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0 0 8px 0;
+}
+
+.detailRow {
+  display: flex;
+  gap: 8px;
+  font-size: 14px;
+}
+
+.label {
+  font-weight: 500;
+  opacity: 0.7;
+  min-width: 80px;
+}
+
+.value {
+  font-weight: 400;
+  text-transform: capitalize;
+}
+
+@media (max-width: 768px) {
+  .root {
+    padding: 16px;
+  }
+
+  .toggleButtons {
+    width: 100%;
+
+    button {
+      flex: 1;
+    }
+  }
+}

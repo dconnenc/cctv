@@ -1,6 +1,3 @@
-import { Plus } from 'lucide-react';
-
-import { Button } from '@cctv/core';
 import { Block, BlockStatus, ParticipantSummary } from '@cctv/types';
 
 import { BlocksTable } from '../BlocksTable/BlocksTable';
@@ -12,7 +9,6 @@ interface ProgramTabProps {
   participants: ParticipantSummary[];
   onBlockStatusChange: (block: Block, status: BlockStatus) => void;
   busyBlockId?: string;
-  onCreateBlock: () => void;
 }
 
 export default function ProgramTab({
@@ -20,18 +16,9 @@ export default function ProgramTab({
   participants,
   onBlockStatusChange,
   busyBlockId,
-  onCreateBlock,
 }: ProgramTabProps) {
   return (
     <div className={styles.root}>
-      <div className={styles.header}>
-        <h4 className={styles.title}>Program Blocks</h4>
-        <Button onClick={onCreateBlock}>
-          <Plus size={16} />
-          <span>Block</span>
-        </Button>
-      </div>
-
       <div className={styles.content}>
         <BlocksTable
           blocks={blocks}

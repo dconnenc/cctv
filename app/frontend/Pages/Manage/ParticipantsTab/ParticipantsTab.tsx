@@ -13,11 +13,6 @@ export default function ParticipantsTab({ participants }: ParticipantsTabProps) 
   const columns: Column<ParticipantSummary>[] = useMemo(() => {
     return [
       {
-        key: 'id',
-        label: 'ID',
-        Cell: (p) => <span className={styles.mono}>{p.id}</span>,
-      },
-      {
         key: 'name',
         label: 'Name',
         Cell: (p) => <span>{p.name || '—'}</span>,
@@ -37,10 +32,7 @@ export default function ParticipantsTab({ participants }: ParticipantsTabProps) 
 
   return (
     <div className={styles.root}>
-      <h4 className={styles.title}>Participants</h4>
-      <div className={styles.content}>
-        <Table columns={columns} data={participants} emptyState="No participants yet." />
-      </div>
+      <Table columns={columns} data={participants} emptyState="No participants yet." />
     </div>
   );
 }
