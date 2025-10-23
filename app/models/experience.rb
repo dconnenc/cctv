@@ -20,6 +20,9 @@ class Experience < ApplicationRecord
   }
 
   validates :code, presence: true, uniqueness: true, length: { minimum: 1, maximum: 255 }
+  validates :code_slug, presence: true, uniqueness: true
+
+  before_validation :generate_code_slug, if: :code_changed?
 
   def self.validate_code(code)
     return [false, "Nil code"] if code.nil?
@@ -31,8 +34,14 @@ class Experience < ApplicationRecord
     end
   end
 
+  # Find by user-entered code (case-insensitive via citext)
   def self.find_by_code(code)
     find_by(code: code)
+  end
+
+  # Find by URL slug
+  def self.find_by_slug(slug)
+    find_by(code_slug: slug)
   end
 
   # Generate a random experience code
@@ -62,6 +71,22 @@ class Experience < ApplicationRecord
 
   def jwt_for_participant(user)
     Experiences::AuthService.jwt_for_participant(experience: self, user: user)
+  end
+
+  private
+
+  # Generate a URL-safe slug from the code
+  # Preserves the original code but creates a slug for use in URLs
+  def generate_code_slug
+    return if code.blank?
+
+    # Convert to lowercase and replace non-alphanumeric characters with hyphens
+    slug = code.downcase
+               .gsub(/[^a-z0-9\-]/, '-')  # Replace non-alphanumeric with hyphens
+               .gsub(/-+/, '-')            # Collapse multiple hyphens
+               .gsub(/^-|-$/, '')          # Remove leading/trailing hyphens
+
+    self.code_slug = slug
   end
 
 end

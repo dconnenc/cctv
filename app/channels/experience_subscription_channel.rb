@@ -225,10 +225,14 @@ class ExperienceSubscriptionChannel < ApplicationCable::Channel
   end
 
   def find_experience_or_reject
-    experience = Experience.find_by(code: params[:code])
+    # Frontend sends 'code' param which contains the slug from URL
+    # Accept both 'code' and 'code_slug' for backward compatibility during transition
+    slug = params[:code_slug] || params[:code]
+    
+    experience = Experience.find_by(code_slug: slug)
     return experience if experience
 
-    Rails.logger.warn "[ExperienceChannel] Experience not found: #{params[:code]}"
+    Rails.logger.warn "[ExperienceChannel] Experience not found with slug: #{slug}"
     reject
     nil
   end

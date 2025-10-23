@@ -23,8 +23,9 @@ class Api::ExperiencesController < Api::BaseController
           experience: {
             id: experience.id,
             code: experience.code,
+            code_slug: experience.code_slug,
             created_at: experience.created_at,
-            url: generate_experience_path(experience.code)
+            url: generate_experience_path(experience.code_slug)
           },
         }, status: :created
       else
@@ -145,7 +146,8 @@ class Api::ExperiencesController < Api::BaseController
   # Handles code submission - checks if user exists and is registered
   def join
     code = join_params
-    experience = Experience.find_by(code: code)
+    # Allow lookup by code (as entered by user)
+    experience = Experience.find_by_code(code)
 
     if experience.nil?
       render json: { type: 'error', error: "Invalid experience code" }, status: :not_found
@@ -155,7 +157,7 @@ class Api::ExperiencesController < Api::BaseController
     if current_user && experience.user_registered?(current_user)
       render json: {
         type: 'success',
-        url: generate_experience_path(experience.code),
+        url: generate_experience_path(experience.code_slug),
         status: "registered"
       }
     else
@@ -163,7 +165,7 @@ class Api::ExperiencesController < Api::BaseController
         type: 'needs_registration',
         experience_code: code,
         status: "needs_registration",
-        url: "/experiences/#{experience.code}/register"
+        url: "/experiences/#{experience.code_slug}/register"
       }
     end
   end
@@ -171,7 +173,8 @@ class Api::ExperiencesController < Api::BaseController
   # POST /api/experiences/register
   # Handles user registration for an experience
   def register
-    experience = Experience.find_by(code: register_params[:code])
+    # Allow lookup by code (as entered by user)
+    experience = Experience.find_by_code(register_params[:code])
 
     if experience.nil?
       render json: { type: 'error', error: "Invalid experience code" }, status: :not_found
@@ -205,21 +208,12 @@ class Api::ExperiencesController < Api::BaseController
     render json: {
       type: 'success',
       jwt: experience.jwt_for_participant(user),
-      url: generate_experience_path(experience.code),
+      url: generate_experience_path(experience.code_slug),
       status: "registered"
     }
   end
 
   private
-
-  def experience_code
-    %w[experience_id id code]
-      .map { |k| params[k] }
-      .compact
-      .first
-      &.to_s
-      &.strip
-  end
 
   def join_params
     params.require(:code)
@@ -266,8 +260,8 @@ class Api::ExperiencesController < Api::BaseController
   def authorize_participant_for_show(claims)
     user, experience = Experiences::AuthService.authorize_participant!(claims)
 
-    # Verify experience code matches URL parameter
-    if params[:id] != experience.code
+    # Verify experience slug matches URL parameter
+    if params[:id] != experience.code_slug
       render json: { type: 'error', error: "Experience mismatch" }, status: :unauthorized
       return nil
     end
@@ -290,11 +284,12 @@ class Api::ExperiencesController < Api::BaseController
     [current_user, experience]
   end
 
-  def find_experience_by_code_or_render_error(code)
-    experience = Experience.find_by(code: code)
+  def find_experience_by_code_or_render_error(slug)
+    # Find by URL-safe slug
+    experience = Experience.find_by(code_slug: slug)
 
     if experience.nil?
-      render json: { type: 'error', error: "Invalid experience code" }, status: :not_found
+      render json: { type: 'error', error: "Experience not found" }, status: :not_found
       return nil
     end
 

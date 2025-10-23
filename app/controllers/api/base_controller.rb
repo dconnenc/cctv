@@ -34,14 +34,15 @@ class Api::BaseController < ApplicationController
   def set_as_session_admin
     @auth_source = :session_admin
     @user        = current_user
-    @experience  = find_experience_by_code!(experience_code)
+    @experience  = find_experience_by_slug!(experience_slug)
   end
 
   def set_as_jwt_participant(claims)
     @auth_source = :jwt_participant
     @user, @experience = Experiences::AuthService.authorize_participant!(claims)
 
-    if experience_code.present? && experience_code != @experience.code
+    # Verify URL slug matches the experience from JWT
+    if experience_slug.present? && experience_slug != @experience.code_slug
       raise UnauthorizedError, "experience mismatch"
     end
   end
@@ -60,10 +61,19 @@ class Api::BaseController < ApplicationController
     request.headers["Authorization"] || request.headers["HTTP_AUTHORIZATION"]
   end
 
-  def find_experience_by_code!(code)
-    ::Experience.find_by!(code: code)
+  def find_experience_by_slug!(slug)
+    ::Experience.find_by!(code_slug: slug)
   rescue ActiveRecord::RecordNotFound
     raise NotFoundError, "experience not found"
+  end
+
+  def experience_slug
+    %w[experience_id id code]
+      .map { |k| params[k] }
+      .compact
+      .first
+      &.to_s
+      &.strip
   end
 
   def with_experience_orchestration

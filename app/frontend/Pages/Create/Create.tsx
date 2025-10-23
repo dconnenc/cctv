@@ -35,7 +35,7 @@ export default function Create() {
     const response = await post(
       JSON.stringify({
         experience: {
-          code: code.trim().toUpperCase(),
+          code: code.trim(),
           name: name.trim(),
         },
       }),
