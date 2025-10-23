@@ -9,7 +9,8 @@ The data model can be dervied from the schema (db/schema.rb) and the types file
 
 An experience represents the top level container for an interactive experience.
 
-Participants represent users who are joining a given experience
+Participants represent users who are joining a given experience.
+ExperienceParticipants are the model that represents this.
 
 ExperienceBlocks (blocks on the frontend) are the components which make up an
 interactive experience. They have a payload column for rapid prototyping so any

@@ -5,3 +5,12 @@ export { Pill } from './Pill/Pill';
 export { Dropdown } from './Dropdown/Dropdown';
 export { Table } from './Table/Table';
 export type { Column } from './Table/Table';
+export { Panel } from './Panel/Panel';
+export {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+} from './DropdownMenu/DropdownMenu';

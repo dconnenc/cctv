@@ -27,6 +27,7 @@ Rails.application.routes.draw do
       end
 
       member do
+        get :preview
         post :register
         post :open_lobby
         post :start
@@ -42,6 +43,7 @@ Rails.application.routes.draw do
         member do
           post :open
           post :close
+          post :hide
           post :submit_poll_response
           post :submit_question_response
           post :submit_multistep_form_response

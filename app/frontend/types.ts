@@ -35,23 +35,50 @@ export interface AnnouncementPayload {
   message: string;
 }
 
+export interface BlockLink {
+  id: string;
+  parent_block_id: string;
+  child_block_id: string;
+  relationship: 'depends_on';
+  position: number;
+}
+
+export interface BlockVariable {
+  id: string;
+  key: string;
+  label: string;
+  datatype: 'string' | 'number' | 'text';
+  required: boolean;
+}
+
+export interface BlockVariableBinding {
+  id: string;
+  variable_id: string;
+  source_block_id: string;
+}
+
 export interface MadLibVariable {
   id: string;
   name: string;
   question: string;
-  dataType: 'text' | 'number' | 'adjective' | 'noun' | 'verb' | 'adverb';
+  dataType: 'text' | 'number';
   assigned_user_id?: string;
+}
+
+export interface MadLibPart {
+  id: string;
+  type: 'text' | 'variable';
+  content: string;
 }
 
 export interface MadLibSegment {
   id: string;
   type: 'text' | 'variable';
-  content: string; // For text segments, this is the actual text. For variables, this is the variable ID
+  content: string;
 }
 
 export interface MadLibPayload {
-  segments: MadLibSegment[];
-  variables: MadLibVariable[];
+  parts: MadLibPart[];
 }
 
 // Individual API payload types for builder functions
@@ -81,8 +108,7 @@ export interface AnnouncementApiPayload {
 
 export interface MadLibApiPayload {
   type: 'mad_lib';
-  segments: MadLibSegment[];
-  variables: MadLibVariable[];
+  parts: MadLibPart[];
 }
 
 // Discriminated union for API payloads (what gets sent to backend)
@@ -127,6 +153,9 @@ interface BaseBlock {
   target_user_ids?: string[];
   created_at?: string;
   updated_at?: string;
+  child_block_ids?: string[];
+  parent_block_ids?: string[];
+  children?: Block[];
   responses?: {
     total: number;
     user_responded: boolean;
@@ -135,7 +164,12 @@ interface BaseBlock {
       answer: any;
     } | null;
     aggregate?: Record<string, any>;
-    all_responses?: Record<string, string>;
+    all_responses?: Array<{
+      id: string;
+      user_id: string;
+      answer: any;
+      created_at: string;
+    }>;
   };
 }
 
@@ -162,6 +196,14 @@ export interface AnnouncementBlock extends BaseBlock {
 export interface MadLibBlock extends BaseBlock {
   kind: BlockKind.MAD_LIB;
   payload: MadLibPayload;
+  variables?: BlockVariable[];
+  variable_bindings?: BlockVariableBinding[];
+  responses?: {
+    total: number;
+    user_responded: boolean;
+    user_response: null;
+    resolved_variables?: Record<string, string>;
+  };
 }
 
 export type Block =
@@ -176,6 +218,7 @@ export interface Experience {
   name: string;
   code: string;
   status: ExperienceStatus;
+  description?: string;
   creator_id: string;
   hosts: ExperienceParticipant[];
   participants: ExperienceParticipant[];
@@ -212,21 +255,32 @@ export interface RegisterExperienceRequest {
   name?: string;
 }
 
+export interface CreateBlockPayload {
+  kind: BlockKind;
+  payload?:
+    | PollPayload
+    | QuestionPayload
+    | MultistepFormPayload
+    | AnnouncementPayload
+    | MadLibPayload;
+  visible_to_roles?: ParticipantRole[];
+  visible_to_segments?: string[];
+  target_user_ids?: string[];
+  status?: BlockStatus;
+  open_immediately?: boolean;
+  variables?: Array<{
+    key: string;
+    label: string;
+    datatype: 'string' | 'number' | 'text';
+    required: boolean;
+    source:
+      | { type: 'participant'; participant_id: string }
+      | { kind: 'question'; question: string; input_type: string };
+  }>;
+}
+
 export interface CreateExperienceBlockRequest {
-  experience: {
-    kind: BlockKind;
-    payload?:
-      | PollPayload
-      | QuestionPayload
-      | MultistepFormPayload
-      | AnnouncementPayload
-      | MadLibPayload;
-    visible_to_roles?: ParticipantRole[];
-    visible_to_segments?: string[];
-    target_user_ids?: string[];
-    status?: BlockStatus;
-    open_immediately?: boolean;
-  };
+  block: CreateBlockPayload;
 }
 
 // ===== API RESPONSE TYPES =====
@@ -462,7 +516,7 @@ export interface AnnouncementData {
 }
 
 export interface MadLibData {
-  segments: MadLibSegment[];
+  parts: MadLibPart[];
   variables: MadLibVariable[];
 }
 

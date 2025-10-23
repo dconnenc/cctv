@@ -44,6 +44,47 @@ module Experiences
       ).payload
     end
 
+    def self.payload_for_tv(experience:)
+      parent_blocks = experience.experience_blocks.reject do |block|
+        block.parent_links.exists?
+      end
+
+      blocks_with_resolved_variables = parent_blocks.map do |block|
+        serialize_block_for_tv(experience: experience, block: block)
+      end
+
+      {
+        experience: experience_structure(
+          experience,
+          blocks_with_resolved_variables
+        )
+      }
+    end
+
+    def self.serialize_block_for_tv(experience:, block:)
+      serialized = BlockSerializer.serialize_for_stream(
+        block,
+        participant_role: "host"
+      )
+
+      if block.kind == ExperienceBlock::MAD_LIB
+        all_resolved_variables = {}
+
+        experience.experience_participants.each do |participant|
+          participant_vars = Experiences::BlockResolver.resolve_variables(
+            block: block,
+            participant: participant
+          )
+          all_resolved_variables.merge!(participant_vars)
+        end
+
+        serialized[:responses][:resolved_variables] =
+          all_resolved_variables
+      end
+
+      serialized
+    end
+
     def self.block_visible_to_user?(block:, user:)
       return true if user.admin? || user.superadmin?
 
@@ -99,10 +140,20 @@ module Experiences
     end
 
     def payload_for_user(user)
+      blocks = if moderator_or_host? || user_admin?
+        # For moderators/hosts, only return parent blocks (no parent_block_ids)
+        # Child blocks are accessible via child_block_ids in the DAG metadata
+        parent_blocks_only = visible_blocks.reject { |b| b.parent_links.exists? }
+        parent_blocks_only.map { |block| serialize_block_for_user(block, user) }
+      else
+        resolved_block = resolve_block_for_user(user)
+        resolved_block ? [serialize_block_for_user(resolved_block, user)] : []
+      end
+
       {
         experience: self.class.experience_structure(
           experience,
-          visible_blocks.map { |block| serialize_block_for_user(block, user) }
+          blocks
         )
       }
     end
@@ -126,6 +177,35 @@ module Experiences
 
     def block_visible_to_stream?(block)
       block_visible?(block)
+    end
+
+    def resolve_block_for_user(user)
+      return nil if visible_blocks.empty?
+
+      parent_blocks = visible_blocks.reject do |b|
+        b.parent_links.exists?
+      end
+
+      participant_record = experience
+        .experience_participants
+        .find_by(user_id: user.id)
+      return nil unless participant_record
+
+      parent_blocks.sort_by(&:created_at).reverse_each do |block|
+        if block.has_dependencies?
+          unresolved_child = BlockResolver.next_unresolved_child(
+            block: block,
+            participant: participant_record
+          )
+
+          return unresolved_child if unresolved_child
+          return block
+        else
+          return block
+        end
+      end
+
+      nil
     end
 
     def visible_blocks
@@ -152,6 +232,8 @@ module Experiences
     end
 
     def rules_allow_block?(block)
+      return true if moderator_or_host?
+      
       targeting_rules_exist = block.visible_to_roles.present? ||
         block.visible_to_segments.present? ||
         block.target_user_ids.present?

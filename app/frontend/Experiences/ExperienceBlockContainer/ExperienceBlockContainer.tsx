@@ -18,11 +18,11 @@ export default function ExperienceBlockContainer({
   disabled = false,
 }: ExperienceBlockContainerProps) {
   if (!participant) {
-    return <p>Do you even go here? You're not part of this!</p>;
+    return <p>Do you even belong here? You're not part of this!</p>;
   }
 
   if (!block.payload) {
-    return <p>Party's over, everyone go home. Experience not found.</p>;
+    return <p>Party's over, everyone go home.</p>;
   }
 
   switch (block.kind) {
@@ -64,14 +64,7 @@ export default function ExperienceBlockContainer({
     case BlockKind.ANNOUNCEMENT:
       return <Announcement participant={participant} {...block.payload} />;
     case BlockKind.MAD_LIB:
-      return (
-        <MadLib
-          blockId={block.id}
-          responses={block.responses}
-          {...block.payload}
-          disabled={disabled}
-        />
-      );
+      return <MadLib responses={block.responses} parts={block.payload.parts} />;
     default:
       const exhaustiveCheck: never = block;
       return (

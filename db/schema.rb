@@ -10,18 +10,56 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2025_09_28_183953) do
+ActiveRecord::Schema[7.2].define(version: 2025_10_06_201949) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "citext"
   enable_extension "plpgsql"
 
   # Custom types defined in this database.
   # Note that some types may not work with other database engines. Be careful if changing database.
+  create_enum "block_link_relationship", ["depends_on"]
+  create_enum "block_variable_datatype", ["string", "number", "text"]
   create_enum "experience_block_statuses", ["hidden", "open", "closed"]
   create_enum "experience_participant_roles", ["audience", "player", "moderator", "host"]
   create_enum "experience_statuses", ["draft", "lobby", "live", "paused", "finished", "archived"]
   create_enum "participant_status", ["registered", "active"]
   create_enum "user_roles", ["user", "admin", "superadmin"]
+
+  create_table "experience_block_links", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "parent_block_id", null: false
+    t.uuid "child_block_id", null: false
+    t.enum "relationship", default: "depends_on", null: false, enum_type: "block_link_relationship"
+    t.integer "position", default: 0, null: false
+    t.jsonb "meta", default: {}, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["child_block_id"], name: "idx_eb_links_unique_child", unique: true
+    t.index ["child_block_id"], name: "index_experience_block_links_on_child_block_id"
+    t.index ["parent_block_id", "child_block_id"], name: "idx_eb_links_parent_child", unique: true
+    t.index ["parent_block_id"], name: "index_experience_block_links_on_parent_block_id"
+  end
+
+  create_table "experience_block_variable_bindings", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "variable_id", null: false
+    t.uuid "source_block_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["source_block_id"], name: "index_experience_block_variable_bindings_on_source_block_id"
+    t.index ["variable_id", "source_block_id"], name: "idx_eb_var_bind_unique", unique: true
+    t.index ["variable_id"], name: "index_experience_block_variable_bindings_on_variable_id"
+  end
+
+  create_table "experience_block_variables", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "experience_block_id", null: false
+    t.string "key", null: false
+    t.string "label", null: false
+    t.enum "datatype", default: "string", null: false, enum_type: "block_variable_datatype"
+    t.boolean "required", default: true, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["experience_block_id", "key"], name: "idx_eb_vars_block_key", unique: true
+    t.index ["experience_block_id"], name: "index_experience_block_variables_on_experience_block_id"
+  end
 
   create_table "experience_blocks", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.uuid "experience_id", null: false
@@ -110,6 +148,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_09_28_183953) do
     t.boolean "join_open", default: false, null: false
     t.datetime "started_at"
     t.datetime "ended_at"
+    t.text "description"
     t.index ["creator_id"], name: "index_experiences_on_creator_id"
     t.index ["status"], name: "index_experiences_on_status"
   end
@@ -139,6 +178,11 @@ ActiveRecord::Schema[7.2].define(version: 2025_09_28_183953) do
     t.index ["email"], name: "index_users_on_email", unique: true
   end
 
+  add_foreign_key "experience_block_links", "experience_blocks", column: "child_block_id", on_delete: :cascade
+  add_foreign_key "experience_block_links", "experience_blocks", column: "parent_block_id", on_delete: :cascade
+  add_foreign_key "experience_block_variable_bindings", "experience_block_variables", column: "variable_id", on_delete: :cascade
+  add_foreign_key "experience_block_variable_bindings", "experience_blocks", column: "source_block_id", on_delete: :cascade
+  add_foreign_key "experience_block_variables", "experience_blocks", on_delete: :cascade
   add_foreign_key "experience_blocks", "experiences", on_delete: :cascade
   add_foreign_key "experience_mad_lib_submissions", "experience_blocks", on_delete: :cascade
   add_foreign_key "experience_mad_lib_submissions", "users", on_delete: :cascade

@@ -1,20 +1,49 @@
 class Api::ExperienceBlocksController < Api::BaseController
   before_action :authenticate_and_set_user_and_experience
 
+  def create_params
+    permitted = params.require(:block).permit(
+      :kind,
+      :status,
+      visible_to_roles: [],
+      visible_to_segments: [],
+      target_user_ids: []
+    )
+    
+    permitted[:payload] = params[:block][:payload] if params[:block][:payload]
+    permitted[:variables] = params[:block][:variables] if params[:block][:variables]
+    
+    permitted
+  end
+
   # POST /api/experiences/:experience_id/blocks
   def create
     with_experience_orchestration do
-      block = Experiences::Orchestrator.new(
+      orchestrator = Experiences::Orchestrator.new(
         experience: @experience, actor: @user
-      ).add_block!(
-        kind: params[:experience][:kind],
-        payload:  params[:experience][:payload] || {},
-        visible_to_roles:  params[:experience][:visible_to_roles] || [],
-        visible_to_segments: params[:experience][:visible_to_segments] || [],
-        target_user_ids:  params[:experience][:target_user_ids] || [],
-        status:  params[:experience][:status] || :hidden,
-        open_immediately:  params[:experience][:open_immediately] || false
       )
+
+      block = if create_params[:variables].present?
+        orchestrator.add_block_with_dependencies!(
+          kind: create_params[:kind],
+          payload: create_params[:payload] || {},
+          visible_to_roles: create_params[:visible_to_roles] || [],
+          visible_to_segments: create_params[:visible_to_segments] || [],
+          target_user_ids: create_params[:target_user_ids] || [],
+          status: create_params[:status] || :hidden,
+          variables: create_params[:variables] || []
+        )
+      else
+        orchestrator.add_block!(
+          kind: create_params[:kind],
+          payload: create_params[:payload] || {},
+          visible_to_roles: create_params[:visible_to_roles] || [],
+          visible_to_segments: create_params[:visible_to_segments] || [],
+          target_user_ids: create_params[:target_user_ids] || [],
+          status: create_params[:status] || :hidden,
+          open_immediately: create_params[:open_immediately] || false
+        )
+      end
 
       Experiences::Broadcaster.new(@experience).broadcast_experience_update
 
@@ -55,6 +84,22 @@ class Api::ExperienceBlocksController < Api::BaseController
       block = Experiences::Orchestrator.new(
         experience: @experience, actor: @user
       ).close_block!(params[:id])
+
+      Experiences::Broadcaster.new(@experience).broadcast_experience_update
+
+      render json: {
+        success: true,
+        data: block,
+      }, status: 200
+    end
+  end
+
+  # POST /api/experiences/:experience_id/blocks/:id/hide
+  def hide
+    with_experience_orchestration do
+      block = Experiences::Orchestrator.new(
+        experience: @experience, actor: @user
+      ).hide_block!(params[:id])
 
       Experiences::Broadcaster.new(@experience).broadcast_experience_update
 

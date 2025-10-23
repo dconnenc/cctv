@@ -19,9 +19,13 @@ class BlockSerializer
       raise ArgumentError, "Invalid context: #{context}. Must be :user or :stream"
     end
 
-    visibility_data = serialize_visibility_metadata(block, participant_role)
+    visibility_data = serialize_visibility_metadata(block, participant_role, user)
+    dag_metadata = serialize_dag_metadata(block, participant_role, user)
 
-    base_structure.merge(responses: response_data).merge(visibility_data)
+    base_structure
+      .merge(responses: response_data)
+      .merge(visibility_data)
+      .merge(dag_metadata)
   end
 
   def self.serialize_for_user(block, participant_role:, user:)
@@ -60,47 +64,88 @@ class BlockSerializer
       total = submissions.count
       user_response = submissions.find_by(user_id: user&.id)
 
-      {
+      response = {
         total: total,
         user_response: format_user_response(user_response),
         user_responded: user_response.present?
       }
+
+      # Add all submissions for moderators/hosts/admins
+      if mod_or_host?(participant_role) || user_admin?(user)
+        response[:all_responses] = submissions.map do |submission|
+          {
+            id: submission.id,
+            user_id: submission.user_id,
+            answer: submission.answer,
+            created_at: submission.created_at
+          }
+        end
+      end
+
+      response
 
     when ExperienceBlock::MULTISTEP_FORM
       submissions = block.experience_multistep_form_submissions
       total = submissions.count
       user_response = submissions.find_by(user_id: user&.id)
 
-      {
+      response = {
         total: total,
         user_response: format_user_response(user_response),
         user_responded: user_response.present?
       }
 
+      # Add all submissions for moderators/hosts/admins
+      if mod_or_host?(participant_role) || user_admin?(user)
+        response[:all_responses] = submissions.map do |submission|
+          {
+            id: submission.id,
+            user_id: submission.user_id,
+            answer: submission.answer,
+            created_at: submission.created_at
+          }
+        end
+      end
+
+      response
+
     when ExperienceBlock::ANNOUNCEMENT
       {} # Announcements don't have responses
 
     when ExperienceBlock::MAD_LIB
-      submissions = block.experience_mad_lib_submissions
-      total = submissions.count
-      user_response = submissions.find_by(user_id: user&.id)
+      participant_record = block.experience.experience_participants.find_by(user_id: user&.id)
 
-      response = {
-        total: total,
-        user_response: format_mad_lib_user_response(user_response),
-        user_responded: user_response.present?
-      }
-
-      # Add aggregate data for moderators/hosts and all responses for rendering
-      if mod_or_host?(participant_role)
-        response[:aggregate] = calculate_mad_lib_aggregate(submissions)
-        response[:all_responses] = format_all_mad_lib_responses(submissions)
+      resolved_variables = if participant_record
+        Experiences::BlockResolver.resolve_variables(
+          block: block,
+          participant: participant_record
+        )
       else
-        response[:aggregate] = nil
-        response[:all_responses] = format_all_mad_lib_responses(submissions)
+        {}
       end
 
-      response
+      # Calculate aggregate responses from child blocks
+      total_responses = if block.has_dependencies?
+        block.children.sum do |child|
+          case child.kind
+          when ExperienceBlock::QUESTION
+            child.experience_question_submissions.count
+          when ExperienceBlock::POLL
+            child.experience_poll_submissions.count
+          else
+            0
+          end
+        end
+      else
+        0
+      end
+
+      {
+        total: total_responses,
+        user_response: nil,
+        user_responded: false,
+        resolved_variables: resolved_variables
+      }
 
     else
       {}
@@ -152,44 +197,35 @@ class BlockSerializer
       {} # Announcements don't have responses
 
     when ExperienceBlock::MAD_LIB
-      submissions = block.experience_mad_lib_submissions
-      total = submissions.count
-
-      response = {
-        total: total,
-        user_response: nil, # Stream context doesn't include individual responses
-        user_responded: false
+      {
+        total: 0,
+        user_response: nil,
+        user_responded: false,
+        resolved_variables: {}
       }
-
-      # Add aggregate data for moderators/hosts and all responses for rendering
-      if mod_or_host?(participant_role)
-        response[:aggregate] = calculate_mad_lib_aggregate(submissions)
-        response[:all_responses] = format_all_mad_lib_responses(submissions)
-      else
-        response[:aggregate] = nil
-        response[:all_responses] = format_all_mad_lib_responses(submissions)
-      end
-
-      response
 
     else
       {}
     end
   end
 
-  def self.serialize_visibility_metadata(block, participant_role)
-    return {} unless mod_or_host?(participant_role)
+  def self.serialize_visibility_metadata(block, participant_role, user)
+    return {} unless mod_or_host?(participant_role) || user_admin?(user)
 
     {
       visible_to_roles: block.visible_to_roles,
-      visible_to_segments: block.visible_to_segments
+      visible_to_segments: block.visible_to_segments,
+      target_user_ids: block.target_user_ids
     }
   end
 
   def self.calculate_poll_aggregate(submissions)
     aggregate = {}
     submissions.each do |submission|
-      selected_options = submission.answer["selectedOptions"] || []
+      selected_options = submission.answer["selectedOptions"]
+      selected_options = Array(selected_options) if selected_options
+      selected_options ||= []
+      
       selected_options.each do |option|
         aggregate[option] ||= 0
         aggregate[option] += 1
@@ -208,43 +244,52 @@ class BlockSerializer
     }
   end
 
-  def self.format_mad_lib_user_response(user_response)
-    return nil unless user_response
-    {
-      id: user_response.id,
-      answer: user_response.answer
-    }
-  end
+  def self.serialize_dag_metadata(block, participant_role, user)
+    return {} unless mod_or_host?(participant_role) || user_admin?(user)
 
-  def self.calculate_mad_lib_aggregate(submissions)
-    aggregate = {}
-    submissions.each do |submission|
-      variable_id = submission.answer["variable_id"]
-      value = submission.answer["value"]
-      if variable_id && value
-        aggregate[variable_id] ||= []
-        aggregate[variable_id] << {
-          user_id: submission.user_id,
-          value: value
+    metadata = {
+      child_block_ids: block.children.pluck(:id),
+      parent_block_ids: block.parents.pluck(:id)
+    }
+
+    # Include full child block data for moderators/hosts
+    if block.children.any?
+      metadata[:children] = block.children.map do |child|
+        serialize_block(child, participant_role: participant_role, context: :stream, user: user)
+      end
+    end
+
+    if block.kind == ExperienceBlock::MAD_LIB
+      metadata[:variables] = block.variables.map do |variable|
+        {
+          id: variable.id,
+          key: variable.key,
+          label: variable.label,
+          datatype: variable.datatype,
+          required: variable.required
         }
       end
-    end
-    aggregate
-  end
 
-  def self.format_all_mad_lib_responses(submissions)
-    responses = {}
-    submissions.each do |submission|
-      variable_id = submission.answer["variable_id"]
-      value = submission.answer["value"]
-      if variable_id && value
-        responses[variable_id] = value
+      metadata[:variable_bindings] = block.variables.flat_map do |variable|
+        variable.bindings.map do |binding|
+          {
+            id: binding.id,
+            variable_id: binding.variable_id,
+            source_block_id: binding.source_block_id
+          }
+        end
       end
     end
-    responses
+
+    metadata
   end
 
   def self.mod_or_host?(participant_role)
     ["moderator", "host"].include?(participant_role.to_s)
+  end
+
+  def self.user_admin?(user)
+    return false unless user
+    ["admin", "superadmin"].include?(user.role.to_s)
   end
 end

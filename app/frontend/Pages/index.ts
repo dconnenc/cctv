@@ -6,3 +6,4 @@ export { default as Join } from './join';
 export { default as Register } from './Register';
 export { default as Stylesheet } from './stylesheet';
 export { default as Manage } from './Manage/Manage';
+export { default as ManageCreateBlock } from './ManageCreateBlock/ManageCreateBlock';

@@ -1,4 +1,4 @@
-import { ButtonHTMLAttributes, PropsWithChildren } from 'react';
+import { ButtonHTMLAttributes, PropsWithChildren, forwardRef } from 'react';
 
 import styles from './Button.module.scss';
 
@@ -10,32 +10,30 @@ type ButtonProps = PropsWithChildren &
     loadingText?: string;
   };
 
-export const Button = ({
-  children,
-  type = 'button',
-  loading = false,
-  loadingText,
-  disabled,
-  ...props
-}: ButtonProps) => {
-  const isDisabled = disabled || loading;
+export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
+  ({ children, type = 'button', loading = false, loadingText, disabled, ...props }, ref) => {
+    const isDisabled = disabled || loading;
 
-  const getButtonText = () => {
-    if (loading && loadingText) {
-      return loadingText;
-    }
-    return children;
-  };
+    const getButtonText = () => {
+      if (loading && loadingText) {
+        return loadingText;
+      }
+      return children;
+    };
 
-  return (
-    <button
-      className={`${styles.button} ${loading ? styles.loading : ''}`}
-      type={type}
-      disabled={isDisabled}
-      {...props}
-    >
-      {loading && <span className={styles.spinner} aria-hidden="true" />}
-      <span className={styles.content}>{getButtonText()}</span>
-    </button>
-  );
-};
+    return (
+      <button
+        ref={ref}
+        className={`${styles.button} ${loading ? styles.loading : ''}`}
+        type={type}
+        disabled={isDisabled}
+        {...props}
+      >
+        {loading && <span className={styles.spinner} aria-hidden="true" />}
+        <span className={styles.content}>{getButtonText()}</span>
+      </button>
+    );
+  },
+);
+
+Button.displayName = 'Button';

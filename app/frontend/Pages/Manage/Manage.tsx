@@ -1,47 +1,66 @@
 import { useCallback, useMemo, useState } from 'react';
 
-import classNames from 'classnames';
+import { useNavigate } from 'react-router-dom';
 
 import { useExperience } from '@cctv/contexts';
-import { Button, Column, Pill, Table } from '@cctv/core';
-import { useChangeBlockStatus, useExperienceStart, useRefreshMadLibAssignments } from '@cctv/hooks';
-import { Block, BlockStatus, Experience, ParticipantSummary } from '@cctv/types';
+import { Panel } from '@cctv/core';
+import {
+  useChangeBlockStatus,
+  useExperiencePause,
+  useExperiencePreview,
+  useExperienceResume,
+  useExperienceStart,
+} from '@cctv/hooks';
+import { Block, BlockStatus, ParticipantSummary } from '@cctv/types';
 
-import { BlocksTable } from './BlocksTable/BlocksTable';
-import CreateExperience from './CreateExperience/CreateExperience';
-import SectionHeader from './SectionHeader/SectionHeader';
-import ViewAudienceSection from './ViewAudienceSection/ViewAudienceSection';
-import ViewExperienceDetails from './ViewExperienceDetails/ViewExperienceDetails';
-import ViewTvSection from './ViewTvSection/ViewTvSection';
+import ContextDetails from './ContextDetails/ContextDetails';
+import ContextView from './ContextView/ContextView';
+import ExperienceControl from './ExperienceControl/ExperienceControl';
+import ParticipantsTab from './ParticipantsTab/ParticipantsTab';
+import ProgramTab from './ProgramTab/ProgramTab';
+import UpNextPanel from './UpNextPanel/UpNextPanel';
 
 import styles from './Manage.module.scss';
 
+type Tab = 'program' | 'participants';
+
 export default function Manage() {
+  const navigate = useNavigate();
   const {
     experience,
     code,
+    jwt,
     isLoading,
-    isPolling,
-    experienceStatus,
     error: experienceError,
     experienceFetch,
     refetchExperience,
   } = useExperience();
 
   const { startExperience, isLoading: starting, error: startError } = useExperienceStart();
+  const { pauseExperience, isLoading: pausing, error: pauseError } = useExperiencePause();
+  const { resumeExperience, isLoading: resuming, error: resumeError } = useExperienceResume();
   const [selectedParticipantId, setSelectedParticipantId] = useState<string | undefined>(
-    experience?.participants[0].id,
+    experience?.participants[0]?.id,
   );
-  const [view, setView] = useState<'audience' | 'tv'>('audience');
-
-  const [showCreate, setShowCreate] = useState<boolean>(false);
-  const [showBlocks, setShowBlocks] = useState<boolean>(false);
+  const [activeTab, setActiveTab] = useState<Tab>('program');
   const [busyBlockId, setBusyBlockId] = useState<string>();
+  const [viewMode, setViewMode] = useState<'tv' | 'participant'>('tv');
 
-  const participantsCombined: ParticipantSummary[] = [
-    ...(experience?.hosts || []),
-    ...(experience?.participants || []),
-  ];
+  const {
+    tvView,
+    participantView,
+    isConnected: previewConnected,
+  } = useExperiencePreview({
+    code: code || '',
+    participantId: selectedParticipantId,
+    enabled: !!selectedParticipantId,
+    jwt,
+  });
+
+  const participantsCombined: ParticipantSummary[] = useMemo(
+    () => [...(experience?.hosts || []), ...(experience?.participants || [])],
+    [experience],
+  );
 
   const {
     change: changeStatus,
@@ -49,33 +68,22 @@ export default function Manage() {
     setError: setStatusError,
   } = useChangeBlockStatus();
 
-  const {
-    refresh: refreshMadLibAssignments,
-    error: refreshError,
-    setError: setRefreshError,
-  } = useRefreshMadLibAssignments();
-
   const onChangeBlockStatus = useCallback(
     async (block: Block | undefined, next: BlockStatus) => {
-      console.log('onChangeBlockStatus', block, next, code);
-      if (!block) return;
-      if (!code) return;
+      if (!block || !code) return;
+
       setBusyBlockId(block.id);
       setStatusError(null);
 
       const result = await changeStatus(block, next);
 
-      // No optimistic updates: re-fetch experience when done
       if (code) {
         try {
           const res = await experienceFetch(`/api/experiences/${encodeURIComponent(code)}`, {
             method: 'GET',
           });
 
-          const data: {
-            success?: boolean;
-            experience?: Experience;
-          } = await res.json();
+          const data: { success?: boolean } = await res.json();
 
           if (data?.success) {
             await refetchExperience();
@@ -89,49 +97,12 @@ export default function Manage() {
 
       setBusyBlockId(undefined);
     },
-    [code, experienceFetch, changeStatus, setStatusError],
+    [code, experienceFetch, changeStatus, setStatusError, refetchExperience],
   );
 
-  const onRefreshMadLib = useCallback(
-    async (block: Block) => {
-      console.log('onRefreshMadLib', block, code);
-      if (!code) return;
-      setBusyBlockId(block.id);
-      setRefreshError(null);
-
-      const result = await refreshMadLibAssignments(block);
-
-      // Re-fetch experience when done
-      if (code) {
-        try {
-          const res = await experienceFetch(`/api/experiences/${encodeURIComponent(code)}`, {
-            method: 'GET',
-          });
-
-          const data: {
-            success?: boolean;
-            experience?: Experience;
-          } = await res.json();
-
-          if (data?.success) {
-            await refetchExperience();
-          }
-        } catch {}
-      }
-
-      if (!result?.success && result?.error) {
-        alert(result.error);
-      }
-
-      setBusyBlockId(undefined);
-    },
-    [code, experienceFetch, refreshMadLibAssignments, setRefreshError, refetchExperience],
-  );
-
-  const currentBlock = useMemo(
-    () => experience?.blocks.find((block) => block.status === 'open'),
-    [experience],
-  );
+  const handleCreateBlock = () => {
+    navigate(`/experiences/${code}/manage/blocks/new`);
+  };
 
   if (isLoading) {
     return (
@@ -142,96 +113,89 @@ export default function Manage() {
     );
   }
 
-  if (showBlocks) {
-    return (
-      <section className={classNames('page', styles.root)}>
-        <BlocksTable
-          blocks={experience?.blocks || []}
-          onChange={onChangeBlockStatus}
-          busyId={busyBlockId}
-          participants={participantsCombined}
-          onRefreshMadLib={onRefreshMadLib}
-        />
-        <div>
-          <Button onClick={() => setShowBlocks(false)}>Back</Button>
-        </div>
-      </section>
-    );
-  }
+  const errorMessage = experienceError || startError || pauseError || resumeError || statusError;
+  const isChangingState = starting || pausing || resuming;
 
-  if (showCreate) {
-    return (
-      <section className={classNames('page', styles.root)}>
-        <CreateExperience
-          refetchExperience={refetchExperience}
-          onClose={() => setShowCreate(false)}
-          onEndCurrentBlock={() => onChangeBlockStatus(currentBlock, 'closed')}
-          participants={participantsCombined}
-        />
-      </section>
-    );
-  }
+  const currentBlock =
+    viewMode === 'tv'
+      ? tvView?.blocks.find((block) => block.status === 'open')
+      : participantView?.blocks[0];
 
-  const ViewSection = view === 'audience' ? ViewAudienceSection : ViewTvSection;
-
-  const errorMessage = experienceError || startError || statusError || refreshError;
+  const participant = participantsCombined.find((p) => p.id === selectedParticipantId);
 
   return (
     <section className={styles.root}>
       {errorMessage && <div className={styles.errorBanner}>{errorMessage}</div>}
 
-      <ViewSection
-        className={styles.top}
-        experience={experience}
-        participantId={selectedParticipantId}
-        setSelectedParticipantId={setSelectedParticipantId}
-      />
+      <div className={styles.topRow}>
+        <div className={styles.upNext}>
+          <UpNextPanel />
+        </div>
 
-      <Button onClick={() => setView(view === 'audience' ? 'tv' : 'audience')}>
-        Switch to {view === 'audience' ? 'TV' : 'Audience'}
-      </Button>
+        <div className={styles.contextDetails}>
+          <ContextDetails
+            tvView={tvView}
+            participantView={participantView}
+            participants={participantsCombined}
+            selectedParticipantId={selectedParticipantId}
+            setSelectedParticipantId={setSelectedParticipantId}
+            isConnected={previewConnected}
+            viewMode={viewMode}
+            setViewMode={setViewMode}
+          />
+        </div>
 
-      <div className={styles.bottom}>
-        <div className={styles.details}>
-          <SectionHeader title="Details" />
-          <ViewExperienceDetails isPolling={isPolling} experience={experience} />
+        <div className={styles.contextView}>
+          <ContextView
+            block={currentBlock}
+            participant={viewMode === 'participant' ? participant : undefined}
+            emptyMessage={viewMode === 'tv' ? 'No block on TV' : 'No block for participant'}
+          />
         </div>
-        <div className={styles.participants}>
-          <SectionHeader title="Participants" />
-          <ParticipantsTable rows={participantsCombined} />
+      </div>
+
+      <div className={styles.bottomRow}>
+        <div className={styles.experienceInfo}>
+          <ExperienceControl
+            experience={experience}
+            onStart={startExperience}
+            onPause={pauseExperience}
+            onResume={resumeExperience}
+            isLoading={isChangingState}
+            onCreateBlock={handleCreateBlock}
+          />
         </div>
-        <div className={styles.actions}>
-          <SectionHeader title="Actions" />
-          <div className={styles.actionsContent}>
-            <Button onClick={startExperience} loading={starting} loadingText="Starting...">
-              {experienceStatus === 'live' ? 'Pause' : 'Start'}
-            </Button>
+
+        <Panel className={styles.tableContainer}>
+          <div className={styles.tabs}>
+            <button
+              className={activeTab === 'program' ? styles.tabActive : styles.tab}
+              onClick={() => setActiveTab('program')}
+            >
+              Program
+            </button>
+            <button
+              className={activeTab === 'participants' ? styles.tabActive : styles.tab}
+              onClick={() => setActiveTab('participants')}
+            >
+              Participants
+            </button>
           </div>
-          <div className={styles.actionsContent}>
-            <Button onClick={() => setShowCreate(true)} loading={starting}>
-              Create block
-            </Button>
+
+          <div className={styles.tabContent}>
+            {activeTab === 'program' ? (
+              <ProgramTab
+                blocks={experience?.blocks || []}
+                participants={participantsCombined}
+                onBlockStatusChange={onChangeBlockStatus}
+                busyBlockId={busyBlockId}
+              />
+            ) : (
+              <ParticipantsTab participants={participantsCombined} />
+            )}
           </div>
-          <div className={styles.actionsContent}>
-            <Button onClick={() => setShowBlocks(true)} loading={starting}>
-              View all blocks
-            </Button>
-          </div>
-        </div>
+        </Panel>
       </div>
     </section>
   );
-}
-
-function ParticipantsTable({ rows }: { rows: ParticipantSummary[] }) {
-  const columns: Column<ParticipantSummary>[] = useMemo(() => {
-    return [
-      { key: 'id', label: 'ID', Cell: (p) => <span className={styles.mono}>{p.id}</span> },
-      { key: 'name', label: 'Name', Cell: (p) => <span>{p.name || '—'}</span> },
-      { key: 'email', label: 'Email', Cell: (p) => <span>{p.email || '—'}</span> },
-      { key: 'role', label: 'Role', Cell: (p) => <Pill label={p.role} /> },
-    ];
-  }, []);
-
-  return <Table columns={columns} data={rows} emptyState="No participants yet." />;
 }

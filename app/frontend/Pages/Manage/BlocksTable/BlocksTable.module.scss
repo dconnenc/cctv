@@ -124,3 +124,9 @@
   opacity: 0.45;
   cursor: not-allowed;
 }
+
+.childIndicator {
+  color: var(--gray, #9ca3af);
+  margin-right: 0.25rem;
+  font-family: monospace;
+}

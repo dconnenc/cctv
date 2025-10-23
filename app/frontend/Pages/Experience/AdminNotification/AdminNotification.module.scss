@@ -1,0 +1,26 @@
+.adminNotification {
+  background-color: rgba(255, 165, 0, 0.15);
+  border: 1px solid rgba(255, 165, 0, 0.3);
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+.adminMessage {
+  margin: 0 0 1rem 0;
+  color: var(--yellow);
+  font-size: 0.95rem;
+  line-height: 1.4;
+}
+
+.adminActions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
+
+  a {
+    text-decoration: none;
+  }
+}

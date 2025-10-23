@@ -1,0 +1,120 @@
+.details {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 600px;
+}
+
+.madLibBuilder {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  width: 100%;
+  padding: 12px;
+}
+
+.builderSection {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.preview {
+  padding: 16px;
+  border: 2px solid var(--gray);
+  border-radius: 8px;
+  min-height: 60px;
+  background: var(--black);
+  font-size: 18px;
+  line-height: 1.4;
+}
+
+.part {
+  display: inline;
+}
+
+.textPart {
+  color: var(--white);
+}
+
+.variablePart {
+  color: var(--yellow);
+  font-weight: bold;
+  background: rgba(255, 255, 0, 0.1);
+  padding: 2px 4px;
+  border-radius: 4px;
+}
+
+.builderControls {
+  display: flex;
+  gap: 12px;
+}
+
+.partEditor {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.partItem {
+  display: flex;
+  gap: 12px;
+  align-items: end;
+  padding: 12px;
+  border: 1px solid var(--gray);
+  border-radius: 8px;
+}
+
+.partNumber {
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.textPartEditor {
+  flex: 1;
+}
+
+.variablePartEditor {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.variableInfo h5 {
+  margin: 0;
+  color: var(--yellow);
+  font-size: 16px;
+}
+
+.variableFields {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: rgba(255, 255, 0, 0.05);
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 0, 0.2);
+}
+
+.partActions {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.partActions button {
+  min-width: 40px;
+  padding: 4px 8px;
+  font-size: 14px;
+}

@@ -56,6 +56,7 @@ export function ExperienceProvider({ children }: ExperienceProviderProps) {
   const experienceFetch = useCallback(
     async (url: string, options: RequestInit = {}) => {
       if (!currentCode) throw new Error('No experience code available');
+
       let headers: RequestInit['headers'] = {
         'Content-Type': 'application/json',
         ...options.headers,
@@ -74,10 +75,12 @@ export function ExperienceProvider({ children }: ExperienceProviderProps) {
 
       if (response.status === 401) {
         qaLogger('401 invalid response; clearing experience JWT');
+
         if (jwt) {
           // If we get a 401 from a jwt request, it is likely invalid/expired
           clearJWT();
         }
+
         const err = new Error('Authentication expired');
         (err as any).code = 401;
         throw err;
