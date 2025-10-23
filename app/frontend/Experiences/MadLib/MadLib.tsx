@@ -3,7 +3,6 @@ import { MadLibPart } from '@cctv/types';
 import styles from './MadLib.module.scss';
 
 interface MadLibProps {
-  blockId: string;
   parts: MadLibPart[];
   responses?: {
     total: number;
@@ -13,7 +12,7 @@ interface MadLibProps {
   };
 }
 
-export default function MadLib({ blockId, parts, responses }: MadLibProps) {
+export default function MadLib({ parts, responses }: MadLibProps) {
   const resolvedVariables = responses?.resolved_variables || {};
 
   const renderMadLib = () => {

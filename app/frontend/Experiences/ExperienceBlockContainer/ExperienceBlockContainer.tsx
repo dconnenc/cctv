@@ -64,7 +64,7 @@ export default function ExperienceBlockContainer({
     case BlockKind.ANNOUNCEMENT:
       return <Announcement participant={participant} {...block.payload} />;
     case BlockKind.MAD_LIB:
-      return <MadLib blockId={block.id} responses={block.responses} parts={block.payload.parts} />;
+      return <MadLib responses={block.responses} parts={block.payload.parts} />;
     default:
       const exhaustiveCheck: never = block;
       return (

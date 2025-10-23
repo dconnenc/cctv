@@ -6,7 +6,7 @@ import { qaLogger } from '@cctv/utils';
 export interface SubmitQuestionResponseParams {
   blockId: string;
   answer: {
-    text: string;
+    value: string;
     submittedAt: string;
   };
 }

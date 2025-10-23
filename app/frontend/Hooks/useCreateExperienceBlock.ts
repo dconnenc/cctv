@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react';
 
 import { useExperience } from '@cctv/contexts/ExperienceContext';
-import { Block, CreateExperienceApiResponse } from '@cctv/types';
+import { CreateExperienceApiResponse } from '@cctv/types';
 import { qaLogger } from '@cctv/utils';
 
 type BlockStatus = 'hidden' | 'open' | 'closed';

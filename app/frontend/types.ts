@@ -71,8 +71,14 @@ export interface MadLibPart {
   content: string;
 }
 
+export interface MadLibSegment {
+  id: string;
+  type: 'text' | 'variable';
+  content: string;
+}
+
 export interface MadLibPayload {
-  segments: MadLibSegment[];
+  parts: MadLibPart[];
 }
 
 // Individual API payload types for builder functions
@@ -102,7 +108,7 @@ export interface AnnouncementApiPayload {
 
 export interface MadLibApiPayload {
   type: 'mad_lib';
-  segments: MadLibSegment[];
+  parts: MadLibPart[];
 }
 
 // Discriminated union for API payloads (what gets sent to backend)
@@ -149,6 +155,7 @@ interface BaseBlock {
   updated_at?: string;
   child_block_ids?: string[];
   parent_block_ids?: string[];
+  children?: Block[];
   responses?: {
     total: number;
     user_responded: boolean;
@@ -157,7 +164,12 @@ interface BaseBlock {
       answer: any;
     } | null;
     aggregate?: Record<string, any>;
-    all_responses?: Record<string, string>;
+    all_responses?: Array<{
+      id: string;
+      user_id: string;
+      answer: any;
+      created_at: string;
+    }>;
   };
 }
 
@@ -244,7 +256,7 @@ export interface RegisterExperienceRequest {
 }
 
 export interface CreateExperienceBlockRequest {
-  experience: {
+  block: {
     kind: BlockKind;
     payload?:
       | PollPayload
@@ -257,6 +269,15 @@ export interface CreateExperienceBlockRequest {
     target_user_ids?: string[];
     status?: BlockStatus;
     open_immediately?: boolean;
+    variables?: Array<{
+      key: string;
+      label: string;
+      datatype: 'string' | 'number' | 'text';
+      required: boolean;
+      source:
+        | { type: 'participant'; participant_id: string }
+        | { kind: 'question'; question: string; input_type: string };
+    }>;
   };
 }
 

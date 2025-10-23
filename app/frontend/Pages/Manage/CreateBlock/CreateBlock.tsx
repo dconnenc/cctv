@@ -21,19 +21,22 @@ interface CreateBlockProps {
 export default function CreateBlock(props: CreateBlockProps) {
   return (
     <CreateBlockProvider {...props}>
-      <CreateBlockForm />
+      <CreateBlockForm onClose={props.onClose} />
     </CreateBlockProvider>
   );
 }
 
-function CreateBlockForm() {
+interface CreateBlockFormProps {
+  onClose: () => void;
+}
+
+function CreateBlockForm({ onClose }: CreateBlockFormProps) {
   const {
     blockData,
     setKind,
     submit,
     isSubmitting,
     error,
-    onClose,
     viewAdditionalDetails,
     setViewAdditionalDetails,
   } = useCreateBlockContext();
