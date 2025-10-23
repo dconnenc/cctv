@@ -64,6 +64,7 @@ export function ExperienceProvider({ children }: ExperienceProviderProps) {
 
   const currentCode = code || '';
   const isManagePage = location.pathname.includes('/manage');
+  const isTvPage = location.pathname.includes('/tv');
 
   // Helper to make requests with credentials
   const experienceFetch = useCallback(
@@ -151,8 +152,8 @@ export function ExperienceProvider({ children }: ExperienceProviderProps) {
     setError(undefined);
     setIsLoading(true);
 
-    if (isManagePage && isAdmin) {
-      // Admin on manage page: try to load or fetch admin JWT
+    if ((isManagePage || isTvPage) && isAdmin) {
+      // Admin on manage or TV page: try to load or fetch admin JWT
       const storedAdminJWT = getStoredAdminJWT(currentCode);
       if (storedAdminJWT) {
         qaLogger('Found stored admin JWT; setting in context');
@@ -174,7 +175,7 @@ export function ExperienceProvider({ children }: ExperienceProviderProps) {
       }
       setIsLoading(false);
     }
-  }, [currentCode, isManagePage, isAdmin, fetchAdminJWT]);
+  }, [currentCode, isManagePage, isTvPage, isAdmin, fetchAdminJWT]);
 
   // WebSocket connection management
   useEffect(() => {
@@ -196,6 +197,10 @@ export function ExperienceProvider({ children }: ExperienceProviderProps) {
       } else {
         disconnectImpersonationWebsocket();
       }
+    } else if (isTvPage) {
+      qaLogger('[WS SETUP] TV PAGE - Creating 1 websocket: TV');
+      // TV page: single TV websocket
+      connectTvWebsocket();
     } else {
       qaLogger('[WS SETUP] PARTICIPANT PAGE - Creating 1 websocket: Participant');
       // Regular participant page: single websocket
@@ -203,7 +208,7 @@ export function ExperienceProvider({ children }: ExperienceProviderProps) {
     }
 
     return () => disconnectAllWebsockets();
-  }, [jwt, currentCode, isManagePage, impersonatedParticipantId]);
+  }, [jwt, currentCode, isManagePage, isTvPage, impersonatedParticipantId]);
 
   const connectParticipantWebsocket = useCallback(() => {
     if (wsRef.current?.readyState === WebSocket.OPEN) return;

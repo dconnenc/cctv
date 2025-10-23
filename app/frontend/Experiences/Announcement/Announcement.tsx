@@ -3,15 +3,13 @@ import { AnnouncementPayload, ParticipantSummary } from '@cctv/types';
 import styles from './Announcement.module.scss';
 
 interface AnnouncementProps extends AnnouncementPayload {
-  participant: ParticipantSummary;
+  participant?: ParticipantSummary;
 }
 
 export default function Announcement({ participant, message }: AnnouncementProps) {
-  // Basic templating to replace {{participant_name}} with actual name
-  const processedMessage = message.replace(
-    /\{\{participant_name\}\}/g,
-    participant.name || participant.email,
-  );
+  const processedMessage = participant
+    ? message.replace(/\{\{participant_name\}\}/g, participant.name || participant.email)
+    : message;
 
   return (
     <div className={styles.announcement}>

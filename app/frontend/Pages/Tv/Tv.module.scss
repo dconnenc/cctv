@@ -1,0 +1,38 @@
+.root {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 24px;
+  z-index: 3;
+  position: relative;
+}
+
+.blockContainer {
+  width: 100%;
+  max-width: 1200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.qrContainer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+
+.title {
+  font-size: 24px;
+  padding-bottom: 24px;
+}
+
+.subtitle {
+  opacity: 0.6;
+}
+
+.error {
+  color: var(--yellow);
+  text-shadow: none;
+}
