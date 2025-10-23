@@ -231,15 +231,4 @@ class Api::ExperienceBlocksController < Api::BaseController
       }, status: 200
     end
   end
-
-  private
-
-  def experience_code
-    %w[experience_id code]
-      .map { |k| params[k] }
-      .compact
-      .first
-      &.to_s
-      &.strip
-  end
 end
