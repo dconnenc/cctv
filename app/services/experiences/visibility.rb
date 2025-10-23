@@ -49,16 +49,29 @@ module Experiences
         block.parent_links.exists?
       end
 
-      blocks_with_resolved_variables = parent_blocks.map do |block|
-        serialize_block_for_tv(experience: experience, block: block)
+      tv_block = parent_blocks
+        .select(&:open?)
+        .reject { |block| has_visibility_rules?(block) }
+        .first
+
+      blocks = if tv_block
+        [serialize_block_for_tv(experience: experience, block: tv_block)]
+      else
+        []
       end
 
       {
         experience: experience_structure(
           experience,
-          blocks_with_resolved_variables
+          blocks
         )
       }
+    end
+
+    def self.has_visibility_rules?(block)
+      block.visible_to_roles.present? ||
+        block.visible_to_segments.present? ||
+        block.target_user_ids.present?
     end
 
     def self.serialize_block_for_tv(experience:, block:)

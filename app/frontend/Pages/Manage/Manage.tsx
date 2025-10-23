@@ -129,6 +129,8 @@ export default function Manage() {
             block={currentBlock}
             participant={viewMode === 'participant' ? participant : undefined}
             emptyMessage={viewMode === 'tv' ? 'No block on TV' : 'No block for participant'}
+            tvView={tvView}
+            viewMode={viewMode}
           />
         </div>
       </div>
