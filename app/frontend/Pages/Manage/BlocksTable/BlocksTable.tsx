@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 
 import { MoreHorizontal } from 'lucide-react';
 
@@ -13,11 +13,14 @@ import {
   Table,
 } from '@cctv/core';
 import { Block, BlockKind, BlockStatus, ParticipantSummary } from '@cctv/types';
-import { fmtDate } from '@cctv/utils';
-
-import { BlockTree } from '../BlockTree/BlockTree';
 
 import styles from './BlocksTable.module.scss';
+
+interface BlockRow {
+  block: Block;
+  depth: number;
+  isChild: boolean;
+}
 
 export function BlocksTable({
   blocks,
@@ -30,80 +33,135 @@ export function BlocksTable({
   busyId?: string | null;
   participants?: ParticipantSummary[];
 }) {
-  const [viewMode, setViewMode] = useState<'table' | 'tree'>('table');
   const totalParticipants = participants?.length || 0;
 
-  const hasHierarchy = blocks.some((b) => b.child_block_ids && b.child_block_ids.length > 0);
+  // Flatten blocks into hierarchical rows
+  const blockRows = useMemo(() => {
+    const rows: BlockRow[] = [];
 
-  const columns: Column<Block>[] = useMemo(() => {
+    const addBlockAndChildren = (block: Block, depth: number, isChild: boolean) => {
+      rows.push({ block, depth, isChild });
+
+      // Add children from the children array if it exists
+      if ((block as any).children && (block as any).children.length > 0) {
+        (block as any).children.forEach((childBlock: Block) => {
+          addBlockAndChildren(childBlock, depth + 1, true);
+        });
+      }
+    };
+
+    // All blocks returned from the API are now parent blocks
+    // (children are nested within the 'children' property)
+    blocks.forEach((block) => addBlockAndChildren(block, 0, false));
+
+    return rows;
+  }, [blocks]);
+
+  const getTargetParticipantNames = (block: Block): string => {
+    if (!block.target_user_ids || block.target_user_ids.length === 0) return '—';
+    const targetParticipants = participants?.filter((p) =>
+      block.target_user_ids!.includes(p.user_id),
+    );
+    return targetParticipants?.map((p) => p.name).join(', ') || '—';
+  };
+
+  const columns: Column<BlockRow>[] = useMemo(() => {
     return [
-      { key: 'kind', label: 'Kind', Cell: (b) => <span>{b.kind}</span> },
-      { key: 'status', label: 'Status', Cell: (b) => <Pill label={b.status} /> },
+      {
+        key: 'kind',
+        label: 'Kind',
+        Cell: (row) => (
+          <span style={{ paddingLeft: `${row.depth * 24}px` }}>
+            {row.isChild && <span className={styles.childIndicator}>└─ </span>}
+            {row.block.kind}
+          </span>
+        ),
+      },
+      {
+        key: 'status',
+        label: 'Status',
+        Cell: (row) => <Pill label={row.block.status} />,
+      },
       {
         key: 'responses',
         label: 'Responses',
-        Cell: (b) => (
-          <span>
-            {b.responses?.total} / {totalParticipants}
-          </span>
-        ),
+        Cell: (row) => {
+          // For child blocks, show if the assigned participant responded
+          if (row.isChild && row.block.target_user_ids && row.block.target_user_ids.length > 0) {
+            return <span>{row.block.responses?.total ? '✓' : '—'}</span>;
+          }
+          // For parent blocks, show aggregate
+          return (
+            <span>
+              {row.block.responses?.total} / {totalParticipants}
+            </span>
+          );
+        },
       },
       {
         key: 'visible_to_roles',
         label: 'Visible roles',
-        Cell: (b) => (
-          <span>
-            {b.visible_to_roles?.length
-              ? b.visible_to_roles.map((r) => <Pill key={r} label={r} />)
-              : '—'}
-          </span>
-        ),
+        Cell: (row) => {
+          // Hide for child blocks (inherited from parent)
+          if (row.isChild) return <span>—</span>;
+          return (
+            <span>
+              {row.block.visible_to_roles?.length
+                ? row.block.visible_to_roles.map((r) => <Pill key={r} label={r} />)
+                : '—'}
+            </span>
+          );
+        },
       },
       {
         key: 'visible_to_segments',
         label: 'Segments',
-        Cell: (b) => (
-          <span>
-            {b.visible_to_segments?.length
-              ? b.visible_to_segments.map((s) => <Pill key={s} label={s} />)
-              : '—'}
-          </span>
-        ),
+        Cell: (row) => {
+          // Hide for child blocks (inherited from parent)
+          if (row.isChild) return <span>—</span>;
+          return (
+            <span>
+              {row.block.visible_to_segments?.length
+                ? row.block.visible_to_segments.map((s) => <Pill key={s} label={s} />)
+                : '—'}
+            </span>
+          );
+        },
       },
       {
         key: 'target_user_ids',
-        label: 'Targets',
-        Cell: (b) => <span>{b.target_user_ids?.length ?? 0}</span>,
+        label: 'Target',
+        Cell: (row) => {
+          // For child blocks, show the assigned participant name
+          if (row.isChild) {
+            return <span>→ {getTargetParticipantNames(row.block)}</span>;
+          }
+          // For parent blocks with children, show — (targeting is on children)
+          if ((row.block as any).children && (row.block as any).children.length > 0) {
+            return <span>—</span>;
+          }
+          // For parent blocks without children, show count
+          return <span>{row.block.target_user_ids?.length ?? 0}</span>;
+        },
       },
-      { key: 'created_at', label: 'Created', Cell: (b) => <span>{fmtDate(b.created_at)}</span> },
       {
         key: 'actions',
         label: 'Actions',
         isHidden: true,
-        Cell: (b) => (
-          <BlockRowMenu block={b} onChange={(s) => onChange(b, s)} busy={busyId === b.id} />
+        Cell: (row) => (
+          <BlockRowMenu
+            block={row.block}
+            onChange={(s) => onChange(row.block, s)}
+            busy={busyId === row.block.id}
+          />
         ),
       },
     ];
-  }, []);
+  }, [totalParticipants, participants, busyId, onChange]);
 
   return (
     <div>
-      {hasHierarchy && (
-        <div className={styles.viewModeToggle}>
-          <Button onClick={() => setViewMode('table')} disabled={viewMode === 'table'}>
-            Table View
-          </Button>
-          <Button onClick={() => setViewMode('tree')} disabled={viewMode === 'tree'}>
-            Tree View
-          </Button>
-        </div>
-      )}
-      {viewMode === 'tree' && hasHierarchy ? (
-        <BlockTree blocks={blocks} participants={participants || []} />
-      ) : (
-        <Table columns={columns} data={blocks} emptyState="No blocks yet." />
-      )}
+      <Table columns={columns} data={blockRows} emptyState="No blocks yet." />
     </div>
   );
 }

@@ -141,7 +141,10 @@ module Experiences
 
     def payload_for_user(user)
       blocks = if moderator_or_host? || user_admin?
-        visible_blocks.map { |block| serialize_block_for_user(block, user) }
+        # For moderators/hosts, only return parent blocks (no parent_block_ids)
+        # Child blocks are accessible via child_block_ids in the DAG metadata
+        parent_blocks_only = visible_blocks.reject { |b| b.parent_links.exists? }
+        parent_blocks_only.map { |block| serialize_block_for_user(block, user) }
       else
         resolved_block = resolve_block_for_user(user)
         resolved_block ? [serialize_block_for_user(resolved_block, user)] : []
