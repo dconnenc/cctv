@@ -11,7 +11,6 @@ interface ContextDetailsProps {
   participants: ParticipantSummary[];
   selectedParticipantId?: string;
   setSelectedParticipantId: (id: string) => void;
-  isConnected: boolean;
   viewMode: ViewMode;
   setViewMode: (mode: ViewMode) => void;
 }
@@ -22,7 +21,6 @@ export default function ContextDetails({
   participants,
   selectedParticipantId,
   setSelectedParticipantId,
-  isConnected,
   viewMode,
   setViewMode,
 }: ContextDetailsProps) {
@@ -33,14 +31,6 @@ export default function ContextDetails({
 
   return (
     <Panel title="Details">
-      <div className={styles.status}>
-        {isConnected ? (
-          <span className={styles.connected}>🟢 Live</span>
-        ) : (
-          <span className={styles.disconnected}>🔴 Not connected</span>
-        )}
-      </div>
-
       <div className={styles.toggleButtons}>
         <Button onClick={() => setViewMode('tv')} disabled={viewMode === 'tv'}>
           TV View
@@ -72,18 +62,6 @@ export default function ContextDetails({
             <span className={styles.label}>Status:</span>
             <span className={styles.value}>{currentBlock.status}</span>
           </div>
-          {currentBlock.kind === 'question' && currentBlock.payload?.responses && (
-            <div className={styles.detailRow}>
-              <span className={styles.label}>Responses:</span>
-              <span className={styles.value}>{currentBlock.payload.responses.length}</span>
-            </div>
-          )}
-          {currentBlock.kind === 'poll' && currentBlock.payload?.responses && (
-            <div className={styles.detailRow}>
-              <span className={styles.label}>Responses:</span>
-              <span className={styles.value}>{currentBlock.payload.responses.length}</span>
-            </div>
-          )}
         </div>
       )}
     </Panel>

@@ -29,11 +29,7 @@ export interface CreateExperienceBlockParams {
   }>;
 }
 
-export function useCreateExperienceBlock({
-  refetchExperience,
-}: {
-  refetchExperience: () => Promise<void>;
-}) {
+export function useCreateExperienceBlock() {
   const { code, experienceFetch } = useExperience();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -93,8 +89,6 @@ export function useCreateExperienceBlock({
         }
 
         qaLogger('Successfully created block');
-
-        await refetchExperience();
 
         return data;
       } catch (e: any) {

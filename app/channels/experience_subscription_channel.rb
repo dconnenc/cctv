@@ -1,6 +1,6 @@
 class ExperienceSubscriptionChannel < ApplicationCable::Channel
   def subscribed
-    setup_experience_and_participant
+    setup_experience_and_user
 
     if tv_view_subscription?
       setup_tv_view_subscription
@@ -29,10 +29,16 @@ class ExperienceSubscriptionChannel < ApplicationCable::Channel
 
   private
 
-  def setup_experience_and_participant
+  def setup_experience_and_user
     @experience = find_experience_or_reject
-    @participant = authenticate_participant_or_reject
-    @participant_record = find_participant_record_or_reject
+    @user, @is_admin = authenticate_user_or_reject
+    @participant = find_participant_record_or_reject
+
+    Rails.logger.info(
+      "[ExperienceChannel] Setup complete: user=#{@user&.id}, " \
+      "is_admin=#{@is_admin}, participant=#{@participant&.id}, " \
+      "participant_role=#{@participant&.role}"
+    )
   end
 
   def tv_view_subscription?
@@ -64,13 +70,48 @@ class ExperienceSubscriptionChannel < ApplicationCable::Channel
   end
 
   def setup_stream_subscription
-    @current_stream = stream_key_for_participant(@participant_record)
-    @view_type = 'participant'
+    # Route to admin stream if:
+    # 1. System admin (admin JWT), OR
+    # 2. Experience host/moderator (participant JWT with host/moderator role)
+    is_manager = (@is_admin && !@participant) || is_host_or_moderator?
+
+    Rails.logger.info(
+      "[ExperienceChannel] Stream routing: is_admin=#{@is_admin}, " \
+      "participant=#{@participant&.id}, is_host_or_mod=#{is_host_or_moderator?}, " \
+      "routing_to_admin_stream=#{is_manager}"
+    )
+
+    if is_manager
+      @current_stream = admin_stream_key(@experience)
+      @view_type = 'admin'
+      Rails.logger.info("[ExperienceChannel] Routed to admin stream: #{@current_stream}")
+    else
+      @current_stream = stream_key_for_participant(@participant)
+      @view_type = 'participant'
+      Rails.logger.info("[ExperienceChannel] Routed to participant stream: #{@current_stream}")
+    end
     stream_from @current_stream
     log_stream_subscription
   end
 
+  def is_host_or_moderator?
+    result = @participant&.role == 'host' || @participant&.role == 'moderator'
+    Rails.logger.info(
+      "[ExperienceChannel] is_host_or_moderator? participant_role=#{@participant&.role}, result=#{result}"
+    )
+    result
+  end
+
+  def admin_stream_key(experience)
+    "experience_#{experience.id}_admins"
+  end
+
   def send_initial_experience_state
+    Rails.logger.info(
+      "[ExperienceChannel] send_initial_experience_state: view_type=#{@view_type}, " \
+      "user=#{@user&.id}, participant=#{@participant&.id}, is_admin=#{@is_admin}"
+    )
+    
     case @view_type
     when 'tv'
       transmit(
@@ -80,7 +121,8 @@ class ExperienceSubscriptionChannel < ApplicationCable::Channel
             experience: @experience
           ),
           logical_stream: "tv_view",
-          participant_id: nil
+          participant_id: nil,
+          include_participants: true
         )
       )
     when 'impersonation'
@@ -91,36 +133,93 @@ class ExperienceSubscriptionChannel < ApplicationCable::Channel
             @impersonated_participant.user
           ),
           logical_stream: "participant_#{@impersonated_participant.id}",
-          participant_id: @impersonated_participant.id
+          participant_id: @impersonated_participant.id,
+          include_participants: true
         )
       )
     else
-      transmit(
-        WebsocketMessageService.experience_state(
-          @experience,
-          visibility_payload: payload_for_participant(@participant),
-          logical_stream: "participant_#{@participant_record.id}",
-          participant_id: @participant_record.id
-        )
+      # Admin or participant stream
+      is_manager = (@is_admin && !@participant) || is_host_or_moderator?
+      
+      Rails.logger.info(
+        "[ExperienceChannel] Else branch: is_manager=#{is_manager}, " \
+        "is_admin=#{@is_admin}, participant=#{@participant&.id}, " \
+        "is_host_or_mod=#{is_host_or_moderator?}"
       )
+      
+      if is_manager
+        # Admin/host viewing full experience (managers get full view)
+        Rails.logger.info("[ExperienceChannel] Sending admin initial state")
+        transmit(
+          WebsocketMessageService.experience_state(
+            @experience,
+            visibility_payload: Experiences::Visibility.payload_for_user(
+              experience: @experience,
+              user: @user
+            ),
+            logical_stream: "admin_view",
+            participant_id: nil,
+            include_participants: true
+          )
+        )
+      else
+        # Regular participant stream
+        Rails.logger.info(
+          "[ExperienceChannel] Sending participant initial state: " \
+          "participant_id=#{@participant.id}, user_id=#{@user.id}"
+        )
+        
+        payload = payload_for_participant(@user)
+        Rails.logger.info(
+          "[ExperienceChannel] Participant payload: " \
+          "blocks_count=#{payload.dig(:experience, :blocks)&.length || 0}"
+        )
+        
+        participant_summary = {
+          id: @participant.id,
+          user_id: @participant.user_id,
+          name: @participant.user.name,
+          email: @participant.user.email,
+          role: @participant.role
+        }
+        
+        transmit(
+          WebsocketMessageService.experience_state(
+            @experience,
+            visibility_payload: payload,
+            logical_stream: "participant_#{@participant.id}",
+            participant_id: @participant.id,
+            participant: participant_summary
+          )
+        )
+      end
     end
   end
 
   def valid_resubscription_request?
-    @participant_record && @experience
+    @participant && @experience
   end
 
   def reload_participant_data
-    @participant_record.reload
+    @participant.reload
   end
 
   def send_updated_experience_state
+    participant_summary = {
+      id: @participant.id,
+      user_id: @participant.user_id,
+      name: @participant.user.name,
+      email: @participant.user.email,
+      role: @participant.role
+    }
+    
     transmit(
       WebsocketMessageService.experience_state(
         @experience,
-        visibility_payload: payload_for_participant(@participant_record.user),
-        logical_stream: "participant_#{@participant_record.id}",
-        participant_id: @participant_record.id
+        visibility_payload: payload_for_participant(@user),
+        logical_stream: "participant_#{@participant.id}",
+        participant_id: @participant.id,
+        participant: participant_summary
       )
     )
   end
@@ -134,39 +233,55 @@ class ExperienceSubscriptionChannel < ApplicationCable::Channel
     nil
   end
 
-  def authenticate_participant_or_reject
-    return nil unless @experience && params[:token]
+  def authenticate_user_or_reject
+    return [nil, false] unless @experience && params[:token]
 
     begin
       claims = Experiences::AuthService.decode!(params[:token])
-      user, exp = Experiences::AuthService.authorize_participant!(claims)
 
-      unless exp.id == @experience.id
-        Rails.logger.warn "[ExperienceChannel] Token for wrong experience"
+      case claims[:scope]
+      when Experiences::AuthService::ADMIN
+        # Admin token - verify admin status
+        user = Experiences::AuthService.admin_from_claims!(claims)
+        return [user, true]
+      when Experiences::AuthService::PARTICIPANT
+        # Participant token - verify participant and experience
+        user, exp = Experiences::AuthService.authorize_participant!(claims)
+
+        unless exp.id == @experience.id
+          Rails.logger.warn "[ExperienceChannel] Token for wrong experience"
+          reject
+          return [nil, false]
+        end
+
+        return [user, false]
+      else
+        Rails.logger.warn "[ExperienceChannel] Invalid token scope: #{claims[:scope]}"
         reject
-        return nil
+        return [nil, false]
       end
-
-      user
     rescue Experiences::AuthService::TokenInvalid,
            Experiences::AuthService::TokenExpired,
            Experiences::AuthService::Unauthorized,
            Experiences::AuthService::NotFound => e
       Rails.logger.warn "[ExperienceChannel] Authentication failed: #{e.class}"
       reject
-      nil
+      [nil, false]
     end
   end
 
   def find_participant_record_or_reject
-    return nil unless @participant
+    return nil unless @user
     return nil if tv_view_subscription? || impersonation_subscription?
 
-    participant_record = @experience.experience_participants.find_by(user: @participant)
+    # Admins don't need participant records
+    return nil if @is_admin
+
+    participant_record = @experience.experience_participants.find_by(user: @user)
     return participant_record if participant_record
 
     Rails.logger.warn(
-      "[ExperienceChannel] No participant record found for user #{@participant.id} " \
+      "[ExperienceChannel] No participant record found for user #{@user.id} " \
       "in experience #{@experience.code}"
     )
     reject
@@ -174,26 +289,32 @@ class ExperienceSubscriptionChannel < ApplicationCable::Channel
   end
 
   def authorize_admin_or_host_or_reject
-    unless @participant
+    unless @user
       Rails.logger.warn(
-        "[ExperienceChannel] No authenticated user for admin operation"
+        "[ExperienceChannel] No authenticated user for admin/host operation"
       )
       reject
       return
     end
 
+    # If authenticated with admin JWT (system admin), allow immediately
+    if @is_admin
+      return
+    end
+
+    # Otherwise, check if user is a host/moderator for this experience
     participant_record = @experience.experience_participants.find_by(
-      user: @participant
+      user: @user
     )
 
-    is_admin = @participant.admin? || @participant.superadmin?
-    is_host = participant_record&.role == 'host'
-    is_moderator = participant_record&.role == 'moderator'
+    is_system_admin = @user.admin? || @user.superadmin?
+    is_experience_host = participant_record&.role == 'host'
+    is_experience_moderator = participant_record&.role == 'moderator'
 
-    unless is_admin || is_host || is_moderator
+    unless is_system_admin || is_experience_host || is_experience_moderator
       Rails.logger.warn(
-        "[ExperienceChannel] User #{@participant.id} not authorized " \
-        "for admin operation"
+        "[ExperienceChannel] User #{@user.id} not authorized " \
+        "for admin/host operation (not a system admin, host, or moderator)"
       )
       reject
       return
@@ -226,23 +347,25 @@ class ExperienceSubscriptionChannel < ApplicationCable::Channel
   end
 
   def log_stream_subscription
+    user_id = @user&.id || "anonymous"
     Rails.logger.info(
-      "[ExperienceChannel] User #{@participant.id} subscribing to " \
+      "[ExperienceChannel] User #{user_id} subscribing to " \
       "experience #{@experience.code} via stream #{@current_stream}"
     )
   end
 
   def log_successful_subscription
+    user_id = @user&.id || "anonymous"
     Rails.logger.info(
-      "[ExperienceChannel] Successfully subscribed user #{@participant.id} " \
+      "[ExperienceChannel] Successfully subscribed user #{user_id} " \
       "to experience #{@experience.code}"
     )
   end
 
   def log_unsubscription
-    if @participant_record && @experience
+    if @participant && @experience
       Rails.logger.info(
-        "[ExperienceChannel] User #{@participant_record.user_id} " \
+        "[ExperienceChannel] User #{@participant.user_id} " \
         "unsubscribed from experience #{@experience.code}"
       )
     else
@@ -253,14 +376,14 @@ class ExperienceSubscriptionChannel < ApplicationCable::Channel
   def log_resubscription_request
     Rails.logger.info(
       "[ExperienceChannel] Resubscription requested for user " \
-      "#{@participant_record.user_id} in experience #{@experience.code}"
+      "#{@participant.user_id} in experience #{@experience.code}"
     )
   end
 
   def log_successful_resubscription
     Rails.logger.info(
       "[ExperienceChannel] Successfully resubscribed user " \
-      "#{@participant_record.user_id} with updated payload"
+      "#{@participant.user_id} with updated payload"
     )
   end
 end

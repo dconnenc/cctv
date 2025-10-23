@@ -1,6 +1,7 @@
 import { ReactNode, createContext, useContext, useEffect, useState } from 'react';
 
 import { UserRole } from '@cctv/types';
+import { clearAllExperienceJWTs } from '@cctv/utils';
 
 interface User {
   id: string;
@@ -72,6 +73,7 @@ export function UserProvider({ children }: UserProviderProps) {
       const response = await userFetch('/api/users/sign_out_user', { method: 'POST' });
       if (response.ok) {
         setUser(null);
+        clearAllExperienceJWTs();
         return true;
       }
       return false;

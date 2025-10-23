@@ -462,6 +462,7 @@ export interface ExperienceWebSocketMessage<
   M = WebSocketMessageMetadata,
 > extends BaseWebSocketMessage<T, M> {
   experience: Experience;
+  participant?: ParticipantSummary;
 }
 
 // Specific message types
@@ -578,16 +579,19 @@ export interface ExperienceContextType {
 
   isAuthenticated: boolean;
   isLoading: boolean;
-  isPolling: boolean;
   experienceStatus: 'lobby' | 'live';
   error?: string;
 
   setJWT: (token: string) => void;
   clearJWT: () => void;
   experienceFetch: (url: string, options?: RequestInit) => Promise<Response>;
-  refetchExperience: () => Promise<void>;
 
-  // WebSocket properties
   wsConnected: boolean;
   wsError?: string;
+
+  // Manage page specific properties
+  tvView?: Experience;
+  participantView?: Experience;
+  impersonatedParticipantId?: string;
+  setImpersonatedParticipantId: (id: string | undefined) => void;
 }

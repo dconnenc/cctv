@@ -8,8 +8,9 @@ import {
   useState,
 } from 'react';
 
-import { useParams } from 'react-router-dom';
+import { useLocation, useParams } from 'react-router-dom';
 
+import { useUser } from '@cctv/contexts';
 import {
   Experience,
   ExperienceContextType,
@@ -18,13 +19,17 @@ import {
   WebSocketMessageType,
   WebSocketMessageTypes,
 } from '@cctv/types';
-import { getStoredJWT, qaLogger } from '@cctv/utils';
+import {
+  getJWTKey,
+  getStoredAdminJWT,
+  getStoredJWT,
+  qaLogger,
+  removeStoredAdminJWT,
+  setStoredAdminJWT,
+} from '@cctv/utils';
 
 const ExperienceContext = createContext<ExperienceContextType | undefined>(undefined);
 
-// Helper functions for authenticating users with experiences
-// TODO: use id, not code here
-const getJWTKey = (code: string) => `experience_jwt_${code}`;
 const setStoredJWT = (code: string, jwt: string) => localStorage.setItem(getJWTKey(code), jwt);
 const removeStoredJWT = (code: string) => localStorage.removeItem(getJWTKey(code));
 
@@ -34,42 +39,47 @@ interface ExperienceProviderProps {
 
 export function ExperienceProvider({ children }: ExperienceProviderProps) {
   const { code } = useParams<{ code: string }>();
+  const location = useLocation();
+  const { isAdmin } = useUser();
 
   const [experience, setExperience] = useState<Experience>();
   const [participant, setParticipant] = useState<ParticipantSummary>();
   const [jwt, setJWT] = useState<string>();
 
   const [isLoading, setIsLoading] = useState(false);
-  const [isPolling, setIsPolling] = useState(false);
-
   const [experienceStatus, setExperienceStatus] = useState<'lobby' | 'live'>('lobby');
   const [error, setError] = useState<string>();
+
+  // Manage page specific state
+  const [tvView, setTvView] = useState<Experience>();
+  const [participantView, setParticipantView] = useState<Experience>();
+  const [impersonatedParticipantId, setImpersonatedParticipantId] = useState<string>();
 
   // WebSocket state
   const [wsConnected, setWsConnected] = useState(false);
   const [wsError, setWsError] = useState<string>();
   const wsRef = useRef<WebSocket>();
+  const tvWsRef = useRef<WebSocket>();
+  const impersonationWsRef = useRef<WebSocket>();
 
   const currentCode = code || '';
+  const isManagePage = location.pathname.includes('/manage');
 
-  // Helper to make requests with the required credentials
+  // Helper to make requests with credentials
   const experienceFetch = useCallback(
     async (url: string, options: RequestInit = {}) => {
       if (!currentCode) throw new Error('No experience code available');
 
-      let headers: RequestInit['headers'] = {
-        'Content-Type': 'application/json',
-        ...options.headers,
-      };
-
-      if (jwt) {
-        // If a jwt is available, set credentials
-        headers = {
-          Authorization: `Bearer ${jwt}`,
-          'Content-Type': 'application/json',
-          ...options.headers,
-        };
-      }
+      const headers: RequestInit['headers'] = jwt
+        ? {
+            Authorization: `Bearer ${jwt}`,
+            'Content-Type': 'application/json',
+            ...options.headers,
+          }
+        : {
+            'Content-Type': 'application/json',
+            ...options.headers,
+          };
 
       const response = await fetch(url, { ...options, headers });
 
@@ -77,7 +87,6 @@ export function ExperienceProvider({ children }: ExperienceProviderProps) {
         qaLogger('401 invalid response; clearing experience JWT');
 
         if (jwt) {
-          // If we get a 401 from a jwt request, it is likely invalid/expired
           clearJWT();
         }
 
@@ -96,87 +105,117 @@ export function ExperienceProvider({ children }: ExperienceProviderProps) {
     [jwt, currentCode],
   );
 
-  const loadExperienceData = useCallback(async () => {
-    if (!currentCode) return;
+  // Fetch admin JWT from the API
+  const fetchAdminJWT = useCallback(async () => {
+    if (!currentCode || !isAdmin) return;
 
-    setIsLoading(true);
     try {
-      qaLogger('Fetching experience data');
-      const response = await experienceFetch(`/api/experiences/${encodeURIComponent(currentCode)}`);
+      qaLogger('Fetching admin JWT');
+      const response = await fetch(
+        `/api/experiences/${encodeURIComponent(currentCode)}/admin_token`,
+        {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+        },
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch admin JWT');
+      }
+
       const data = await response.json();
 
-      if (data?.type === 'success') {
-        qaLogger('Experience fetched; updating context');
-        setParticipant(data.participant);
-        setExperience(data.experience);
-
-        const incomingStatus: string | undefined = data.experience?.status;
-        setExperienceStatus(incomingStatus === 'live' ? 'live' : 'lobby');
-
-        setError(undefined);
-      } else if (data?.type === 'error') {
-        setError(data.error || 'Failed to load experience');
+      if (data?.success && data?.jwt) {
+        qaLogger('Admin JWT received');
+        setStoredAdminJWT(currentCode, data.jwt);
+        setJWT(data.jwt);
+      } else {
+        throw new Error('Invalid admin JWT response');
       }
     } catch (err) {
-      console.error('Error loading experience:', err);
-      setError(err instanceof Error ? err.message : 'Network error');
-    } finally {
-      setIsLoading(false);
-      setIsPolling(false);
+      console.error('Error fetching admin JWT:', err);
+      setError('Failed to authenticate as admin');
     }
-  }, [jwt, currentCode, experienceFetch]);
+  }, [currentCode, isAdmin]);
 
-  // When the code in the url changes, reset state and hydrate JWT from storage
+  // Load JWT when code changes
   useEffect(() => {
     if (!currentCode) return;
 
     qaLogger(`Experience code changed to ${currentCode} — resetting context`);
     setExperience(undefined);
     setParticipant(undefined);
+    setTvView(undefined);
+    setParticipantView(undefined);
     setError(undefined);
+    setIsLoading(true);
 
-    const stored = getStoredJWT(currentCode);
-    if (stored) {
-      qaLogger('Found stored JWT; setting in context');
-      setJWT(stored);
+    if (isManagePage && isAdmin) {
+      // Admin on manage page: try to load or fetch admin JWT
+      const storedAdminJWT = getStoredAdminJWT(currentCode);
+      if (storedAdminJWT) {
+        qaLogger('Found stored admin JWT; setting in context');
+        setJWT(storedAdminJWT);
+        setIsLoading(false);
+      } else {
+        qaLogger('No stored admin JWT; fetching from API');
+        fetchAdminJWT().finally(() => setIsLoading(false));
+      }
     } else {
-      qaLogger('No stored JWT for this experience');
-      setJWT(undefined);
+      // Participant page: load participant JWT
+      const storedJWT = getStoredJWT(currentCode);
+      if (storedJWT) {
+        qaLogger('Found stored participant JWT; setting in context');
+        setJWT(storedJWT);
+      } else {
+        qaLogger('No stored participant JWT');
+        setJWT(undefined);
+      }
+      setIsLoading(false);
     }
-  }, [currentCode]);
-
-  // Whenever we gain a jwt for this code, load fresh experience data
-  useEffect(() => {
-    // jwt is in the dependency array
-    if (currentCode) {
-      loadExperienceData();
-    }
-  }, [jwt, currentCode, loadExperienceData]);
+  }, [currentCode, isManagePage, isAdmin, fetchAdminJWT]);
 
   // WebSocket connection management
   useEffect(() => {
-    if (jwt && currentCode) {
-      connectToSubscription();
-    } else {
-      disconnectFromSubscription();
+    if (!jwt || !currentCode) {
+      qaLogger('[WS SETUP] No JWT or code, disconnecting all websockets');
+      disconnectAllWebsockets();
+      return;
     }
 
-    return () => disconnectFromSubscription();
-  }, [jwt, currentCode]);
+    if (isManagePage) {
+      qaLogger('[WS SETUP] MANAGE PAGE - Creating 3 websockets: Admin, TV, Impersonation');
+      // Manage page: connect to admin, TV, and impersonation websockets
+      connectAdminWebsocket();
+      connectTvWebsocket();
 
-  const connectToSubscription = useCallback(() => {
+      // Connect impersonation if participant selected
+      if (impersonatedParticipantId) {
+        connectImpersonationWebsocket(impersonatedParticipantId);
+      } else {
+        disconnectImpersonationWebsocket();
+      }
+    } else {
+      qaLogger('[WS SETUP] PARTICIPANT PAGE - Creating 1 websocket: Participant');
+      // Regular participant page: single websocket
+      connectParticipantWebsocket();
+    }
+
+    return () => disconnectAllWebsockets();
+  }, [jwt, currentCode, isManagePage, impersonatedParticipantId]);
+
+  const connectParticipantWebsocket = useCallback(() => {
     if (wsRef.current?.readyState === WebSocket.OPEN) return;
 
-    // TODO: Eventually we should only allow secure WebSocket connections (wss://) in production
-    // For now, we support both HTTP and HTTPS for development convenience
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const wsUrl = `${protocol}//${window.location.host}/cable`;
 
-    qaLogger(`Connecting to WebSocket subscription: ${wsUrl}`);
+    qaLogger(`[PARTICIPANT WS] Connecting: ${wsUrl}`);
     wsRef.current = new WebSocket(wsUrl);
 
     wsRef.current.onopen = () => {
-      qaLogger('WebSocket connected, subscribing to experience updates');
+      qaLogger('[PARTICIPANT WS] WebSocket connected');
       setWsConnected(true);
       setWsError(undefined);
 
@@ -189,138 +228,362 @@ export function ExperienceProvider({ children }: ExperienceProviderProps) {
         }),
       };
 
-      qaLogger('Sending subscription');
       wsRef.current?.send(JSON.stringify(subscription));
     };
 
     wsRef.current.onmessage = (event) => {
       const message = JSON.parse(event.data);
-      handleSubscriptionMessage(message);
+      handleParticipantMessage(message);
     };
 
     wsRef.current.onerror = () => {
-      qaLogger('WebSocket error');
+      qaLogger('[PARTICIPANT WS] WebSocket error');
       setWsError('Connection error');
       setWsConnected(false);
     };
 
     wsRef.current.onclose = () => {
-      qaLogger('WebSocket connection closed');
+      qaLogger('[PARTICIPANT WS] WebSocket closed');
       setWsConnected(false);
     };
   }, [jwt, currentCode]);
 
-  const disconnectFromSubscription = useCallback(() => {
-    if (wsRef.current) {
-      qaLogger('Disconnecting from WebSocket');
-      wsRef.current.close();
-      wsRef.current = undefined;
-      setWsConnected(false);
-      setWsError(undefined);
-    }
-  }, []);
+  const connectAdminWebsocket = useCallback(() => {
+    if (wsRef.current?.readyState === WebSocket.OPEN) return;
 
-  const triggerResubscribe = useCallback(() => {
-    if (wsRef.current?.readyState === WebSocket.OPEN) {
-      qaLogger('Sending resubscribe command to ActionCable');
-      wsRef.current.send(
-        JSON.stringify({
-          command: 'message',
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const wsUrl = `${protocol}//${window.location.host}/cable`;
+
+    qaLogger(`[ADMIN WS] Connecting: ${wsUrl}`);
+    wsRef.current = new WebSocket(wsUrl);
+
+    wsRef.current.onopen = () => {
+      qaLogger('[ADMIN WS] WebSocket connected');
+      setWsConnected(true);
+      setWsError(undefined);
+
+      const subscription = {
+        command: 'subscribe',
+        identifier: JSON.stringify({
+          channel: 'ExperienceSubscriptionChannel',
+          code: currentCode,
+          token: jwt,
+        }),
+      };
+
+      qaLogger('[ADMIN WS] Sending subscription');
+      wsRef.current?.send(JSON.stringify(subscription));
+    };
+
+    wsRef.current.onmessage = (event) => {
+      const message = JSON.parse(event.data);
+      handleAdminMessage(message);
+    };
+
+    wsRef.current.onerror = () => {
+      qaLogger('[ADMIN WS] WebSocket error');
+      setWsError('Connection error');
+      setWsConnected(false);
+    };
+
+    wsRef.current.onclose = (event) => {
+      qaLogger(`[ADMIN WS] WebSocket closed. Code: ${event.code}, Reason: ${event.reason}`);
+      setWsConnected(false);
+    };
+  }, [jwt, currentCode]);
+
+  const connectTvWebsocket = useCallback(() => {
+    if (tvWsRef.current?.readyState === WebSocket.OPEN) return;
+
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const wsUrl = `${protocol}//${window.location.host}/cable`;
+
+    qaLogger(`[TV WS] Connecting: ${wsUrl}`);
+    tvWsRef.current = new WebSocket(wsUrl);
+
+    tvWsRef.current.onopen = () => {
+      qaLogger('[TV WS] WebSocket connected');
+
+      const subscription = {
+        command: 'subscribe',
+        identifier: JSON.stringify({
+          channel: 'ExperienceSubscriptionChannel',
+          code: currentCode,
+          token: jwt,
+          view_type: 'tv',
+        }),
+      };
+
+      tvWsRef.current?.send(JSON.stringify(subscription));
+    };
+
+    tvWsRef.current.onmessage = (event) => {
+      const message = JSON.parse(event.data);
+      handleTvMessage(message);
+    };
+
+    tvWsRef.current.onerror = () => {
+      qaLogger('[TV WS] WebSocket error');
+    };
+
+    tvWsRef.current.onclose = () => {
+      qaLogger('[TV WS] WebSocket closed');
+    };
+  }, [jwt, currentCode]);
+
+  const connectImpersonationWebsocket = useCallback(
+    (participantId: string) => {
+      if (impersonationWsRef.current?.readyState === WebSocket.OPEN) {
+        impersonationWsRef.current.close();
+      }
+
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const wsUrl = `${protocol}//${window.location.host}/cable`;
+
+      qaLogger(`[IMPERSONATION WS] Connecting for participant ${participantId}`);
+      impersonationWsRef.current = new WebSocket(wsUrl);
+
+      impersonationWsRef.current.onopen = () => {
+        qaLogger('[IMPERSONATION WS] WebSocket connected');
+
+        const subscription = {
+          command: 'subscribe',
           identifier: JSON.stringify({
             channel: 'ExperienceSubscriptionChannel',
             code: currentCode,
             token: jwt,
+            as_participant_id: participantId,
           }),
-          data: JSON.stringify({ action: 'resubscribe' }),
-        }),
-      );
-    } else {
-      qaLogger('WebSocket not open, cannot resubscribe');
-    }
-  }, [jwt, currentCode]);
+        };
 
-  const handleSubscriptionMessage = useCallback(
-    (message: any) => {
-      // Handle ActionCable internal messages first
-      if (message.type === 'welcome') {
-        qaLogger('WebSocket connected and welcomed');
-        return;
-      }
+        impersonationWsRef.current?.send(JSON.stringify(subscription));
+      };
 
-      if (message.type === 'ping') {
-        // Silent - these are frequent keep-alive messages
-        return;
-      }
+      impersonationWsRef.current.onmessage = (event) => {
+        const message = JSON.parse(event.data);
+        handleImpersonationMessage(message);
+      };
 
-      if (message.type === 'confirm_subscription') {
-        qaLogger('WebSocket subscription confirmed');
-        return;
-      }
+      impersonationWsRef.current.onerror = () => {
+        qaLogger('[IMPERSONATION WS] WebSocket error');
+      };
 
-      if (message.type === 'disconnect') {
-        qaLogger('WebSocket disconnected by server');
-        setWsError('Disconnected by server');
-        return;
-      }
-
-      // Log for all other message types
-      qaLogger('WebSocket message received');
-
-      // Parse the message - ActionCable wraps messages in a message property for broadcasts
-      const wsMessage: WebSocketMessage = message.message || message;
-
-      // If there's no type after parsing, this might be an unhandled ActionCable message
-      if (!wsMessage || typeof wsMessage !== 'object') {
-        return;
-      }
-
-      const messageType: WebSocketMessageType = wsMessage.type;
-
-      // If we still don't have a message type, skip silently (likely ActionCable internal message)
-      if (!messageType) {
-        return;
-      }
-
-      // Handle our application-specific messages
-      if (messageType === WebSocketMessageTypes.CONFIRM_SUBSCRIPTION) {
-        qaLogger('WebSocket subscription confirmed');
-        return;
-      }
-
-      if (messageType === WebSocketMessageTypes.PING) {
-        return;
-      }
-
-      // Handle resubscription requests
-      if (messageType === WebSocketMessageTypes.RESUBSCRIBE_REQUIRED) {
-        qaLogger('Resubscription required, reconnecting');
-        triggerResubscribe();
-        return;
-      }
-
-      // Handle experience-related messages
-      if (
-        messageType === WebSocketMessageTypes.EXPERIENCE_STATE ||
-        messageType === WebSocketMessageTypes.EXPERIENCE_UPDATED ||
-        messageType === WebSocketMessageTypes.STREAM_CHANGED
-      ) {
-        qaLogger(`Experience updated via WebSocket: ${messageType}`);
-
-        // These messages should have experience data
-        const experienceMessage = wsMessage as any;
-        const updatedExperience = experienceMessage.experience;
-
-        if (updatedExperience) {
-          setExperience(updatedExperience);
-          setExperienceStatus(updatedExperience.status === 'live' ? 'live' : 'lobby');
-          setError(undefined);
-        }
-      } else {
-        qaLogger(`Unknown message type: ${messageType}`);
-      }
+      impersonationWsRef.current.onclose = () => {
+        qaLogger('[IMPERSONATION WS] WebSocket closed');
+      };
     },
-    [triggerResubscribe],
+    [jwt, currentCode],
   );
+
+  const disconnectImpersonationWebsocket = useCallback(() => {
+    if (impersonationWsRef.current) {
+      qaLogger('[IMPERSONATION WS] Disconnecting');
+      impersonationWsRef.current.close();
+      impersonationWsRef.current = undefined;
+      setParticipantView(undefined);
+    }
+  }, []);
+
+  const disconnectAllWebsockets = useCallback(() => {
+    if (wsRef.current) {
+      qaLogger('[WS] Disconnecting main WebSocket');
+      wsRef.current.close();
+      wsRef.current = undefined;
+    }
+    if (tvWsRef.current) {
+      qaLogger('[WS] Disconnecting TV WebSocket');
+      tvWsRef.current.close();
+      tvWsRef.current = undefined;
+    }
+    if (impersonationWsRef.current) {
+      qaLogger('[WS] Disconnecting impersonation WebSocket');
+      impersonationWsRef.current.close();
+      impersonationWsRef.current = undefined;
+    }
+    setWsConnected(false);
+    setWsError(undefined);
+  }, []);
+
+  const handleParticipantMessage = useCallback((message: any) => {
+    if (message.type === 'ping') return;
+
+    if (message.type === 'welcome') return;
+
+    if (message.type === 'confirm_subscription') {
+      qaLogger('[PARTICIPANT WS] Subscription confirmed');
+      return;
+    }
+
+    if (message.type === 'reject_subscription') {
+      qaLogger('[PARTICIPANT WS] SUBSCRIPTION REJECTED - Check backend logs');
+      return;
+    }
+
+    const wsMessage: WebSocketMessage = message.message || message;
+    if (!wsMessage || typeof wsMessage !== 'object') {
+      return;
+    }
+
+    const messageType: WebSocketMessageType = wsMessage.type;
+    if (!messageType) {
+      return;
+    }
+
+    if (
+      messageType === WebSocketMessageTypes.EXPERIENCE_STATE ||
+      messageType === WebSocketMessageTypes.EXPERIENCE_UPDATED ||
+      messageType === WebSocketMessageTypes.STREAM_CHANGED
+    ) {
+      qaLogger(`[PARTICIPANT WS] Processing: ${messageType}`);
+      const experienceMessage = wsMessage as any;
+      const updatedExperience = experienceMessage.experience;
+
+      if (updatedExperience) {
+        qaLogger(
+          `[PARTICIPANT WS] Updating experience: status=${updatedExperience.status}, blocks=${updatedExperience.blocks?.length || 0}`,
+        );
+        setExperience(updatedExperience);
+        setExperienceStatus(updatedExperience.status === 'live' ? 'live' : 'lobby');
+        setError(undefined);
+
+        // Set participant from message
+        if (experienceMessage.participant) {
+          setParticipant(experienceMessage.participant);
+        }
+      }
+    }
+  }, []);
+
+  const handleAdminMessage = useCallback((message: any) => {
+    if (message.type === 'ping') return;
+
+    if (message.type === 'welcome') return;
+
+    if (message.type === 'confirm_subscription') {
+      qaLogger('[ADMIN WS] Subscription confirmed');
+      return;
+    }
+
+    if (message.type === 'reject_subscription') {
+      qaLogger('[ADMIN WS] SUBSCRIPTION REJECTED - Check backend logs');
+      return;
+    }
+
+    const wsMessage: WebSocketMessage = message.message || message;
+    if (!wsMessage || typeof wsMessage !== 'object') {
+      return;
+    }
+
+    const messageType: WebSocketMessageType = wsMessage.type;
+    if (!messageType) {
+      return;
+    }
+
+    if (
+      messageType === WebSocketMessageTypes.EXPERIENCE_STATE ||
+      messageType === WebSocketMessageTypes.EXPERIENCE_UPDATED ||
+      messageType === WebSocketMessageTypes.STREAM_CHANGED
+    ) {
+      qaLogger(`[ADMIN WS] Processing: ${messageType}`);
+      const experienceMessage = wsMessage as any;
+      const updatedExperience = experienceMessage.experience;
+
+      if (updatedExperience) {
+        qaLogger(
+          `[PARTICIPANT WS] Updating experience: status=${updatedExperience.status}, blocks=${updatedExperience.blocks?.length || 0}`,
+        );
+        setExperience(updatedExperience);
+        setExperienceStatus(updatedExperience.status === 'live' ? 'live' : 'lobby');
+        setError(undefined);
+      }
+    }
+  }, []);
+
+  const handleTvMessage = useCallback((message: any) => {
+    if (message.type === 'ping') return;
+
+    if (message.type === 'welcome') return;
+
+    if (message.type === 'confirm_subscription') {
+      qaLogger('[TV WS] Subscription confirmed');
+      return;
+    }
+
+    if (message.type === 'reject_subscription') {
+      qaLogger('[TV WS] SUBSCRIPTION REJECTED - Check backend logs');
+      return;
+    }
+
+    const wsMessage: WebSocketMessage = message.message || message;
+    if (!wsMessage || typeof wsMessage !== 'object') {
+      return;
+    }
+
+    const messageType: WebSocketMessageType = wsMessage.type;
+    if (!messageType) {
+      return;
+    }
+
+    if (
+      messageType === WebSocketMessageTypes.EXPERIENCE_STATE ||
+      messageType === WebSocketMessageTypes.EXPERIENCE_UPDATED ||
+      messageType === WebSocketMessageTypes.STREAM_CHANGED
+    ) {
+      qaLogger(`[TV WS] Processing: ${messageType}`);
+      const experienceMessage = wsMessage as any;
+      const updatedExperience = experienceMessage.experience;
+
+      if (updatedExperience) {
+        qaLogger(
+          `[TV WS] Updating TV view: status=${updatedExperience.status}, blocks=${updatedExperience.blocks?.length || 0}`,
+        );
+        setTvView(updatedExperience);
+      }
+    }
+  }, []);
+
+  const handleImpersonationMessage = useCallback((message: any) => {
+    if (message.type === 'ping') return;
+
+    if (message.type === 'welcome') return;
+
+    if (message.type === 'confirm_subscription') {
+      qaLogger('[IMPERSONATION WS] Subscription confirmed');
+      return;
+    }
+
+    if (message.type === 'reject_subscription') {
+      qaLogger('[IMPERSONATION WS] SUBSCRIPTION REJECTED - Check backend logs');
+      return;
+    }
+
+    const wsMessage: WebSocketMessage = message.message || message;
+    if (!wsMessage || typeof wsMessage !== 'object') {
+      return;
+    }
+
+    const messageType: WebSocketMessageType = wsMessage.type;
+    if (!messageType) {
+      return;
+    }
+
+    if (
+      messageType === WebSocketMessageTypes.EXPERIENCE_STATE ||
+      messageType === WebSocketMessageTypes.EXPERIENCE_UPDATED ||
+      messageType === WebSocketMessageTypes.STREAM_CHANGED
+    ) {
+      qaLogger(`[IMPERSONATION WS] Processing: ${messageType}`);
+      const experienceMessage = wsMessage as any;
+      const updatedExperience = experienceMessage.experience;
+
+      if (updatedExperience) {
+        qaLogger(
+          `[IMPERSONATION WS] Updating participant view: status=${updatedExperience.status}, blocks=${updatedExperience.blocks?.length || 0}`,
+        );
+        setParticipantView(updatedExperience);
+      }
+    }
+  }, []);
 
   const setJWTHandler = useCallback(
     (token: string) => {
@@ -335,10 +598,15 @@ export function ExperienceProvider({ children }: ExperienceProviderProps) {
   );
 
   const clearJWT = useCallback(() => {
-    if (currentCode) removeStoredJWT(currentCode);
+    if (currentCode) {
+      removeStoredJWT(currentCode);
+      removeStoredAdminJWT(currentCode);
+    }
     setJWT(undefined);
     setExperience(undefined);
     setParticipant(undefined);
+    setTvView(undefined);
+    setParticipantView(undefined);
     setError(undefined);
   }, [currentCode]);
 
@@ -350,18 +618,21 @@ export function ExperienceProvider({ children }: ExperienceProviderProps) {
 
     isAuthenticated: jwt !== undefined && currentCode !== '',
     isLoading,
-    isPolling,
     experienceStatus,
     error,
 
     setJWT: setJWTHandler,
     clearJWT,
     experienceFetch,
-    refetchExperience: loadExperienceData,
 
-    // WebSocket properties
     wsConnected,
     wsError,
+
+    // Manage page specific
+    tvView,
+    participantView,
+    impersonatedParticipantId,
+    setImpersonatedParticipantId,
   };
 
   return <ExperienceContext.Provider value={value}>{children}</ExperienceContext.Provider>;
