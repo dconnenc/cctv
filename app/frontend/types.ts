@@ -255,30 +255,32 @@ export interface RegisterExperienceRequest {
   name?: string;
 }
 
+export interface CreateBlockPayload {
+  kind: BlockKind;
+  payload?:
+    | PollPayload
+    | QuestionPayload
+    | MultistepFormPayload
+    | AnnouncementPayload
+    | MadLibPayload;
+  visible_to_roles?: ParticipantRole[];
+  visible_to_segments?: string[];
+  target_user_ids?: string[];
+  status?: BlockStatus;
+  open_immediately?: boolean;
+  variables?: Array<{
+    key: string;
+    label: string;
+    datatype: 'string' | 'number' | 'text';
+    required: boolean;
+    source:
+      | { type: 'participant'; participant_id: string }
+      | { kind: 'question'; question: string; input_type: string };
+  }>;
+}
+
 export interface CreateExperienceBlockRequest {
-  block: {
-    kind: BlockKind;
-    payload?:
-      | PollPayload
-      | QuestionPayload
-      | MultistepFormPayload
-      | AnnouncementPayload
-      | MadLibPayload;
-    visible_to_roles?: ParticipantRole[];
-    visible_to_segments?: string[];
-    target_user_ids?: string[];
-    status?: BlockStatus;
-    open_immediately?: boolean;
-    variables?: Array<{
-      key: string;
-      label: string;
-      datatype: 'string' | 'number' | 'text';
-      required: boolean;
-      source:
-        | { type: 'participant'; participant_id: string }
-        | { kind: 'question'; question: string; input_type: string };
-    }>;
-  };
+  block: CreateBlockPayload;
 }
 
 // ===== API RESPONSE TYPES =====

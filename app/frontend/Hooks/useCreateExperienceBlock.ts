@@ -1,20 +1,32 @@
 import { useCallback, useState } from 'react';
 
 import { useExperience } from '@cctv/contexts/ExperienceContext';
-import { CreateExperienceApiResponse } from '@cctv/types';
+import {
+  BlockKind,
+  BlockStatus,
+  CreateBlockPayload,
+  CreateExperienceApiResponse,
+  ParticipantRole,
+} from '@cctv/types';
 import { qaLogger } from '@cctv/utils';
 
-type BlockStatus = 'hidden' | 'open' | 'closed';
-
 export interface CreateExperienceBlockParams {
-  kind: string;
+  kind: BlockKind;
   payload?: Record<string, any>;
-  visible_to_roles?: string[];
+  visible_to_roles?: ParticipantRole[];
   visible_to_segments?: string[];
   target_user_ids?: string[];
-  status?: BlockStatus; // defaults to "hidden"
-  open_immediately?: boolean; // defaults to false
-  variables?: any[]; // Variable definitions with assignments
+  status?: BlockStatus;
+  open_immediately?: boolean;
+  variables?: Array<{
+    key: string;
+    label: string;
+    datatype: 'string' | 'number' | 'text';
+    required: boolean;
+    source:
+      | { type: 'participant'; participant_id: string }
+      | { kind: 'question'; question: string; input_type: string };
+  }>;
 }
 
 export function useCreateExperienceBlock({
@@ -55,19 +67,16 @@ export function useCreateExperienceBlock({
           `open_immediately=${open_immediately}, status=${status}`,
       );
 
-      const submitPayload: any = {
+      const submitPayload: CreateBlockPayload = {
         kind,
-        payload,
+        payload: payload as any,
         visible_to_roles,
         visible_to_segments,
         target_user_ids,
         status,
         open_immediately,
+        ...(variables && { variables }),
       };
-
-      if (variables) {
-        submitPayload.variables = variables;
-      }
 
       try {
         const res = await experienceFetch(`/api/experiences/${encodeURIComponent(code)}/blocks`, {
