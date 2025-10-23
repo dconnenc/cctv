@@ -55,7 +55,6 @@ interface CreateBlockProviderProps {
   participants: ParticipantSummary[];
   onClose: () => void;
   onEndCurrentBlock: () => Promise<void>;
-  refetchExperience: () => Promise<void>;
 }
 
 // NOTE: There are N number of branches for each block type. This is a good
@@ -66,7 +65,6 @@ export function CreateBlockProvider({
   participants,
   onClose,
   onEndCurrentBlock,
-  refetchExperience,
 }: CreateBlockProviderProps) {
   const getDefaultFormData = useCallback((blockKind: BlockKind): FormBlockData => {
     switch (blockKind) {
@@ -100,7 +98,7 @@ export function CreateBlockProvider({
     isLoading: isSubmitting,
     error: createError,
     setError: setCreateError,
-  } = useCreateExperienceBlock({ refetchExperience });
+  } = useCreateExperienceBlock();
 
   const setKind = useCallback(
     (newKind: BlockKind) => {

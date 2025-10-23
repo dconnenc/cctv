@@ -12,7 +12,6 @@ import CreateQuestion from './CreateQuestion/CreateQuestion';
 import styles from './CreateBlock.module.scss';
 
 interface CreateBlockProps {
-  refetchExperience: () => Promise<void>;
   onClose: () => void;
   participants: ParticipantSummary[];
   onEndCurrentBlock: () => Promise<void>;

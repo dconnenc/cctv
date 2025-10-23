@@ -32,6 +32,25 @@ export function qaLogger(output: string) {
 export const getJWTKey = (code: string) => `experience_jwt_${code}`;
 export const getStoredJWT = (code: string) => localStorage.getItem(getJWTKey(code));
 
+export const getAdminJWTKey = (code: string) => `experience_admin_jwt_${code}`;
+export const getStoredAdminJWT = (code: string) => localStorage.getItem(getAdminJWTKey(code));
+export const setStoredAdminJWT = (code: string, jwt: string) =>
+  localStorage.setItem(getAdminJWTKey(code), jwt);
+export const removeStoredAdminJWT = (code: string) => localStorage.removeItem(getAdminJWTKey(code));
+
+export const clearAllExperienceJWTs = () => {
+  const keysToRemove: string[] = [];
+
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (key && (key.startsWith('experience_jwt_') || key.startsWith('experience_admin_jwt_'))) {
+      keysToRemove.push(key);
+    }
+  }
+
+  keysToRemove.forEach((key) => localStorage.removeItem(key));
+};
+
 export const fmtDate = (s?: string | null) => (s ? new Date(s).toLocaleString() : '—');
 
 export const capitalize = (s?: string | null) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : '');

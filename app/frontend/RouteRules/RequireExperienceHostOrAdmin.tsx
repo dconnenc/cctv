@@ -12,7 +12,7 @@ import { getStoredJWT } from '@cctv/utils';
  */
 const RequireExperienceHostOrAdmin = () => {
   const { user, isAdmin, isLoading: userLoading } = useUser();
-  const { experience, user: expUser, code, isLoading: expLoading } = useExperience();
+  const { experience, participant, code, isLoading: expLoading } = useExperience();
   const jwt = useMemo(() => (code ? getStoredJWT(code) : null), [code]);
 
   // Wait until both contexts are loaded
@@ -26,8 +26,9 @@ const RequireExperienceHostOrAdmin = () => {
 
   // Determine host via experience.hosts
   const isHost = !!experience?.hosts?.some(
-    (h: { id?: string; email?: string }) =>
-      (expUser?.id && h.id === expUser.id) || (expUser?.email && h.email === expUser.email),
+    (h: { id?: string; email?: string; user_id?: string }) =>
+      (participant?.user_id && h.user_id === participant.user_id) ||
+      (participant?.email && h.email === participant.email),
   );
 
   // If not a host, redirect back the experience main page

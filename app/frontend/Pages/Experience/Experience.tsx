@@ -9,17 +9,7 @@ import AdminNotification from './AdminNotification/AdminNotification';
 import styles from './Experience.module.scss';
 
 export default function Experience() {
-  const {
-    experience,
-    participant,
-    code,
-    isLoading,
-    isPolling,
-    experienceStatus,
-    error,
-    wsConnected,
-    wsError,
-  } = useExperience();
+  const { experience, participant, code, isLoading, experienceStatus, error } = useExperience();
   const { isAdmin } = useUser();
 
   if (isLoading) {
@@ -100,8 +90,7 @@ export default function Experience() {
 
   // Active experience state (for when the experience is live or paused)
   if (experienceStatus === 'live' || experienceStatus === 'paused') {
-    // Find the first open block to display
-    const openBlock = experience?.blocks?.find((block) => block.status === 'open');
+    const currentBlock = experience?.blocks?.[0];
 
     return (
       <section className="page">
@@ -111,10 +100,10 @@ export default function Experience() {
           {isAdmin && !participant && <AdminNotification code={code!} />}
 
           <div className={styles.experienceContent}>
-            {openBlock && participant ? (
+            {currentBlock && participant ? (
               <div className={styles.activeBlock}>
                 <ExperienceBlockContainer
-                  block={openBlock}
+                  block={currentBlock}
                   participant={participant}
                   disabled={experience?.status === 'paused'}
                 />

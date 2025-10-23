@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { useNavigate } from 'react-router-dom';
 
@@ -7,7 +7,6 @@ import { Panel } from '@cctv/core';
 import {
   useChangeBlockStatus,
   useExperiencePause,
-  useExperiencePreview,
   useExperienceResume,
   useExperienceStart,
 } from '@cctv/hooks';
@@ -29,38 +28,33 @@ export default function Manage() {
   const {
     experience,
     code,
-    jwt,
     isLoading,
     error: experienceError,
-    experienceFetch,
-    refetchExperience,
+    tvView,
+    participantView,
+    impersonatedParticipantId,
+    setImpersonatedParticipantId,
   } = useExperience();
 
   const { startExperience, isLoading: starting, error: startError } = useExperienceStart();
   const { pauseExperience, isLoading: pausing, error: pauseError } = useExperiencePause();
   const { resumeExperience, isLoading: resuming, error: resumeError } = useExperienceResume();
-  const [selectedParticipantId, setSelectedParticipantId] = useState<string | undefined>(
-    experience?.participants[0]?.id,
-  );
+
   const [activeTab, setActiveTab] = useState<Tab>('program');
   const [busyBlockId, setBusyBlockId] = useState<string>();
   const [viewMode, setViewMode] = useState<'tv' | 'participant'>('tv');
-
-  const {
-    tvView,
-    participantView,
-    isConnected: previewConnected,
-  } = useExperiencePreview({
-    code: code || '',
-    participantId: selectedParticipantId,
-    enabled: !!selectedParticipantId,
-    jwt,
-  });
 
   const participantsCombined: ParticipantSummary[] = useMemo(
     () => [...(experience?.hosts || []), ...(experience?.participants || [])],
     [experience],
   );
+
+  // Initialize impersonated participant to first participant when experience loads
+  useEffect(() => {
+    if (participantsCombined.length > 0 && !impersonatedParticipantId) {
+      setImpersonatedParticipantId(participantsCombined[0].id);
+    }
+  }, [participantsCombined, impersonatedParticipantId, setImpersonatedParticipantId]);
 
   const {
     change: changeStatus,
@@ -77,27 +71,13 @@ export default function Manage() {
 
       const result = await changeStatus(block, next);
 
-      if (code) {
-        try {
-          const res = await experienceFetch(`/api/experiences/${encodeURIComponent(code)}`, {
-            method: 'GET',
-          });
-
-          const data: { success?: boolean } = await res.json();
-
-          if (data?.success) {
-            await refetchExperience();
-          }
-        } catch {}
-      }
-
       if (!result?.success && result?.error) {
         alert(result.error);
       }
 
       setBusyBlockId(undefined);
     },
-    [code, experienceFetch, changeStatus, setStatusError, refetchExperience],
+    [code, changeStatus, setStatusError],
   );
 
   const handleCreateBlock = () => {
@@ -121,7 +101,7 @@ export default function Manage() {
       ? tvView?.blocks.find((block) => block.status === 'open')
       : participantView?.blocks[0];
 
-  const participant = participantsCombined.find((p) => p.id === selectedParticipantId);
+  const participant = participantsCombined.find((p) => p.id === impersonatedParticipantId);
 
   return (
     <section className={styles.root}>
@@ -137,9 +117,8 @@ export default function Manage() {
             tvView={tvView}
             participantView={participantView}
             participants={participantsCombined}
-            selectedParticipantId={selectedParticipantId}
-            setSelectedParticipantId={setSelectedParticipantId}
-            isConnected={previewConnected}
+            selectedParticipantId={impersonatedParticipantId}
+            setSelectedParticipantId={setImpersonatedParticipantId}
             viewMode={viewMode}
             setViewMode={setViewMode}
           />

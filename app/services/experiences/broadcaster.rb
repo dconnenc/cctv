@@ -19,6 +19,7 @@ class Experiences::Broadcaster
     end
 
     broadcast_tv_view
+    broadcast_admin_view
   end
 
   def self.trigger_resubscription_for_participant(participant)
@@ -40,6 +41,10 @@ class Experiences::Broadcaster
     "experience_#{experience.id}_tv"
   end
 
+  def self.admin_stream_key(experience)
+    "experience_#{experience.id}_admins"
+  end
+
   private
 
   def broadcast_tv_view
@@ -55,7 +60,8 @@ class Experiences::Broadcaster
           stream_type: :tv,
           participant_id: nil,
           role: :host,
-          segments: []
+          segments: [],
+          include_participants: true
         )
       )
     rescue => e
@@ -67,8 +73,53 @@ class Experiences::Broadcaster
     end
   end
 
+  def broadcast_admin_view
+    begin
+      # Get all parent blocks with full admin visibility
+      parent_blocks = experience.experience_blocks.reject { |b| b.parent_links.exists? }
+      blocks = parent_blocks.map do |block|
+        BlockSerializer.serialize_for_stream(block, participant_role: "host")
+      end
+
+      admin_payload = {
+        experience: Experiences::Visibility.experience_structure(experience, blocks)
+      }
+
+      send_broadcast(
+        self.class.admin_stream_key(experience),
+        WebsocketMessageService.experience_updated(
+          experience,
+          visibility_payload: admin_payload,
+          stream_key: "admin_view",
+          stream_type: :admin,
+          participant_id: nil,
+          role: :host,
+          segments: [],
+          include_participants: true
+        )
+      )
+    rescue => e
+      Rails.logger.error(
+        "Error broadcasting to admin view: #{e.message}"
+      )
+      Rails.logger.error(
+        "[Broadcaster] Backtrace: #{e.backtrace.first(3).join(', ')}"
+      )
+
+      return
+    end
+  end
+
   def broadcast_to_participant(participant)
     begin
+      participant_summary = {
+        id: participant.id,
+        user_id: participant.user_id,
+        name: participant.user.name,
+        email: participant.user.email,
+        role: participant.role
+      }
+      
       send_broadcast(
         self.class.stream_key_for_participant(participant),
         WebsocketMessageService.experience_updated(
@@ -81,7 +132,8 @@ class Experiences::Broadcaster
           stream_type: :direct,
           participant_id: participant.id,
           role: participant.role.to_sym,
-          segments: participant.segments || []
+          segments: participant.segments || [],
+          participant: participant_summary
         )
       )
     rescue => e

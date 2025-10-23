@@ -1,7 +1,7 @@
 class Api::ExperiencesController < Api::BaseController
   authorize :user, through: :current_user
   before_action :authenticate_and_set_user_and_experience,
-    only: [:open_lobby, :start, :pause, :resume]
+    only: [:open_lobby, :start, :pause, :resume, :admin_token]
 
   # POST /api/experiences
   def create
@@ -109,6 +109,19 @@ class Api::ExperiencesController < Api::BaseController
     end
   end
 
+  # POST /api/experiences/:id/admin_token
+  def admin_token
+    authorize! @experience, to: :manage?
+
+    jwt = Experiences::AuthService.jwt_for_admin(user: @user)
+
+    render json: {
+      type: 'success',
+      success: true,
+      jwt: jwt
+    }, status: :ok
+  end
+
   # GET /api/experiences/:id
   def show
     authenticated_user, experience = authenticate_for_experience_show
@@ -126,51 +139,6 @@ class Api::ExperiencesController < Api::BaseController
       visibility_payload: visibility_payload,
       current_participant: current_participant
     )
-  end
-
-  # GET /api/experiences/:id/preview
-  def preview
-    authenticated_user, experience = authenticate_for_experience_show
-    return unless authenticated_user && experience
-
-    authorize! experience, to: :manage?
-
-    participant_id = params[:participant_id]
-    target_participant = if participant_id.present?
-      experience.experience_participants.find_by(id: participant_id)
-    else
-      experience.experience_participants.first
-    end
-
-    unless target_participant
-      render json: {
-        type: 'error',
-        error: 'Participant not found'
-      }, status: :not_found
-      return
-    end
-
-    tv_payload = Experiences::Visibility.payload_for_tv(
-      experience: experience
-    )
-
-    participant_payload = Experiences::Visibility.payload_for_user(
-      experience: experience,
-      user: target_participant.user
-    )
-
-    admin_payload = Experiences::Visibility.payload_for_user(
-      experience: experience,
-      user: authenticated_user
-    )
-
-    render json: {
-      type: 'success',
-      success: true,
-      tv_view: tv_payload[:experience],
-      participant_view: participant_payload[:experience],
-      all_blocks: admin_payload[:experience]
-    }
   end
 
   # POST /api/experiences/join
