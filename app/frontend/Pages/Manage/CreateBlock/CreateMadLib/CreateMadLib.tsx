@@ -16,32 +16,33 @@ interface MadLibVariable {
 }
 
 interface MadLibDataInternal {
-  segments: Array<{ id: string; type: 'text' | 'variable'; content: string }>;
+  parts: Array<{ id: string; type: 'text' | 'variable'; content: string }>;
   variables: MadLibVariable[];
 }
 
 export const getDefaultMadLibState = (): MadLibData => {
   return {
-    segments: [],
+    parts: [],
+    variables: [],
   };
 };
 
 export const validateMadLib = (data: MadLibDataInternal): string | null => {
-  const validSegments = data.segments.filter((s) => s.content.trim());
+  const validParts = data.parts.filter((s) => s.content.trim());
 
-  if (validSegments.length === 0) {
-    return 'Mad lib must have at least one segment';
+  if (validParts.length === 0) {
+    return 'Mad lib must have at least one part';
   }
 
   const validVariables = data.variables.filter((v) => v.name.trim() && v.question.trim());
-  const variableSegments = validSegments.filter((s) => s.type === 'variable');
+  const variableParts = validParts.filter((s) => s.type === 'variable');
 
-  if (variableSegments.length > 0 && validVariables.length === 0) {
+  if (variableParts.length > 0 && validVariables.length === 0) {
     return 'Variables must have both name and question configured';
   }
 
-  for (const segment of variableSegments) {
-    const variable = data.variables.find((v) => v.id === segment.content);
+  for (const part of variableParts) {
+    const variable = data.variables.find((v) => v.id === part.content);
     if (!variable?.assigned_user_id) {
       return 'Each variable must have an assigned user';
     }
@@ -54,32 +55,29 @@ export default function CreateMadLib({ data, onChange }: BlockComponentProps<Mad
   const { participants } = useCreateBlockContext();
 
   const internalData: MadLibDataInternal = {
-    segments: data.segments,
-    variables: (data as any).variables || [],
+    parts: data.parts,
+    variables: data.variables || [],
   };
 
   const setInternalData = (newData: Partial<MadLibDataInternal>) => {
-    onChange?.({ ...data, ...newData } as any);
+    onChange?.({ ...internalData, ...newData });
   };
 
-  const updateSegment = (index: number, content: string) => {
-    const newSegments = [...internalData.segments];
-    newSegments[index] = { ...newSegments[index], content };
-    setInternalData({ segments: newSegments });
+  const updatePart = (index: number, content: string) => {
+    const newParts = [...internalData.parts];
+    newParts[index] = { ...newParts[index], content };
+    setInternalData({ parts: newParts });
   };
 
-  const addTextSegment = () => {
+  const addTextPart = () => {
     const newId = Date.now().toString();
-    const newSegments = [
-      ...internalData.segments,
-      { id: newId, type: 'text' as const, content: ' ' },
-    ];
-    setInternalData({ segments: newSegments });
+    const newParts = [...internalData.parts, { id: newId, type: 'text' as const, content: ' ' }];
+    setInternalData({ parts: newParts });
   };
 
-  const addVariableSegment = () => {
+  const addVariablePart = () => {
     const newVariableId = Date.now().toString();
-    const newSegmentId = (Date.now() + 1).toString();
+    const newPartId = (Date.now() + 1).toString();
 
     const newVariable = {
       id: newVariableId,
@@ -89,62 +87,62 @@ export default function CreateMadLib({ data, onChange }: BlockComponentProps<Mad
       assigned_user_id: undefined,
     };
 
-    const newSegment = {
-      id: newSegmentId,
+    const newPart = {
+      id: newPartId,
       type: 'variable' as const,
       content: newVariableId,
     };
 
     const newData = {
       variables: [...internalData.variables, newVariable],
-      segments: [...internalData.segments, newSegment],
+      parts: [...internalData.parts, newPart],
     };
 
     setInternalData(newData);
   };
 
-  const removeSegment = (index: number) => {
-    const segment = internalData.segments[index];
-    let newSegments = internalData.segments.filter((_, i) => i !== index);
+  const removePart = (index: number) => {
+    const part = internalData.parts[index];
+    let newParts = internalData.parts.filter((_, i) => i !== index);
 
     let newVariables = internalData.variables;
-    if (segment.type === 'variable') {
-      newVariables = internalData.variables.filter((v) => v.id !== segment.content);
+    if (part.type === 'variable') {
+      newVariables = internalData.variables.filter((v) => v.id !== part.content);
     }
 
-    const combinedSegments = [];
-    for (let i = 0; i < newSegments.length; i++) {
-      const currentSegment = newSegments[i];
+    const combinedParts = [];
+    for (let i = 0; i < newParts.length; i++) {
+      const currentPart = newParts[i];
 
-      if (currentSegment.type === 'text') {
-        let combinedContent = currentSegment.content;
+      if (currentPart.type === 'text') {
+        let combinedContent = currentPart.content;
         let nextIndex = i + 1;
 
-        while (nextIndex < newSegments.length && newSegments[nextIndex].type === 'text') {
+        while (nextIndex < newParts.length && newParts[nextIndex].type === 'text') {
           const currentEndsWithSpace = combinedContent.endsWith(' ');
-          const nextStartsWithSpace = newSegments[nextIndex].content.startsWith(' ');
+          const nextStartsWithSpace = newParts[nextIndex].content.startsWith(' ');
 
           if (!currentEndsWithSpace && !nextStartsWithSpace) {
             combinedContent += ' ';
           }
 
-          combinedContent += newSegments[nextIndex].content;
+          combinedContent += newParts[nextIndex].content;
           nextIndex++;
         }
 
-        combinedSegments.push({
-          ...currentSegment,
+        combinedParts.push({
+          ...currentPart,
           content: combinedContent,
         });
 
         i = nextIndex - 1;
       } else {
-        combinedSegments.push(currentSegment);
+        combinedParts.push(currentPart);
       }
     }
 
     setInternalData({
-      segments: combinedSegments,
+      parts: combinedParts,
       variables: newVariables,
     });
   };
@@ -166,10 +164,10 @@ export default function CreateMadLib({ data, onChange }: BlockComponentProps<Mad
     });
   };
 
-  const canAddTextSegment = () => {
-    if (internalData.segments.length === 0) return true;
-    const lastSegment = internalData.segments[internalData.segments.length - 1];
-    return lastSegment.type !== 'text';
+  const canAddTextPart = () => {
+    if (internalData.parts.length === 0) return true;
+    const lastPart = internalData.parts[internalData.parts.length - 1];
+    return lastPart.type !== 'text';
   };
 
   return (
@@ -178,13 +176,13 @@ export default function CreateMadLib({ data, onChange }: BlockComponentProps<Mad
         <div className={styles.builderSection}>
           <div>Mad Lib Builder</div>
           <div className={styles.preview}>
-            {internalData.segments.map((segment) => (
-              <span key={segment.id} className={styles.segment}>
-                {segment.type === 'text' ? (
-                  <span className={styles.textSegment}>{segment.content}</span>
+            {internalData.parts.map((part) => (
+              <span key={part.id} className={styles.part}>
+                {part.type === 'text' ? (
+                  <span className={styles.textPart}>{part.content}</span>
                 ) : (
-                  <span className={styles.variableSegment}>
-                    {internalData.variables.find((v) => v.id === segment.content)?.name ||
+                  <span className={styles.variablePart}>
+                    {internalData.variables.find((v) => v.id === part.content)?.name ||
                       '[Variable]'}
                   </span>
                 )}
@@ -192,39 +190,38 @@ export default function CreateMadLib({ data, onChange }: BlockComponentProps<Mad
             ))}
           </div>
           <div className={styles.builderControls}>
-            <Button type="button" onClick={addTextSegment} disabled={!canAddTextSegment()}>
+            <Button type="button" onClick={addTextPart} disabled={!canAddTextPart()}>
               Add Text
             </Button>
-            <Button type="button" onClick={addVariableSegment}>
+            <Button type="button" onClick={addVariablePart}>
               Add Variable
             </Button>
           </div>
         </div>
 
-        <div className={styles.segmentEditor}>
-          <div>Mad Lib Segments</div>
-          {internalData.segments.map((segment, index) => (
-            <div key={segment.id} className={styles.segmentItem}>
-              <div className={styles.segmentNumber}>{index + 1}</div>
-              {segment.type === 'text' ? (
-                <div className={styles.textSegmentEditor}>
+        <div className={styles.partEditor}>
+          <div>Mad Lib Parts</div>
+          {internalData.parts.map((part, index) => (
+            <div key={part.id} className={styles.partItem}>
+              <div className={styles.partNumber}>{index + 1}</div>
+              {part.type === 'text' ? (
+                <div className={styles.textPartEditor}>
                   <TextInput
                     label="Text"
-                    value={segment.content}
-                    onChange={(e) => updateSegment(index, e.target.value)}
+                    value={part.content}
+                    onChange={(e) => updatePart(index, e.target.value)}
                   />
                 </div>
               ) : (
-                <div className={styles.variableSegmentEditor}>
+                <div className={styles.variablePartEditor}>
                   <div className={styles.variableInfo}>
                     <h5>
                       Variable:{' '}
-                      {internalData.variables.find((v) => v.id === segment.content)?.name ||
-                        'Unnamed'}
+                      {internalData.variables.find((v) => v.id === part.content)?.name || 'Unnamed'}
                     </h5>
                   </div>
                   {(() => {
-                    const variable = internalData.variables.find((v) => v.id === segment.content);
+                    const variable = internalData.variables.find((v) => v.id === part.content);
                     if (!variable) return null;
 
                     return (
@@ -273,8 +270,8 @@ export default function CreateMadLib({ data, onChange }: BlockComponentProps<Mad
                   })()}
                 </div>
               )}
-              <div className={styles.segmentActions}>
-                <Button type="button" onClick={() => removeSegment(index)}>
+              <div className={styles.partActions}>
+                <Button type="button" onClick={() => removePart(index)}>
                   Remove
                 </Button>
               </div>

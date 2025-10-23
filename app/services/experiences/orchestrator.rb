@@ -252,7 +252,7 @@ module Experiences
     private
 
     def create_participant_source_block(parent_block:, variable:, participant_id:, position:)
-      participant = experience.experience_participants.find(participant_id)
+      participant = experience.experience_participants.find_by!(user_id: participant_id)
 
       child_block = experience.experience_blocks.create!(
         kind: ExperienceBlock::QUESTION,

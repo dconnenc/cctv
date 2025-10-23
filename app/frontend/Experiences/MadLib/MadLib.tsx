@@ -1,10 +1,10 @@
-import { MadLibSegment } from '@cctv/types';
+import { MadLibPart } from '@cctv/types';
 
 import styles from './MadLib.module.scss';
 
 interface MadLibProps {
   blockId: string;
-  segments: MadLibSegment[];
+  parts: MadLibPart[];
   responses?: {
     total: number;
     user_responded: boolean;
@@ -13,16 +13,16 @@ interface MadLibProps {
   };
 }
 
-export default function MadLib({ blockId, segments, responses }: MadLibProps) {
+export default function MadLib({ blockId, parts, responses }: MadLibProps) {
   const resolvedVariables = responses?.resolved_variables || {};
 
   const renderMadLib = () => {
-    return segments
-      .map((segment) => {
-        if (segment.type === 'text') {
-          return segment.content;
+    return parts
+      .map((part) => {
+        if (part.type === 'text') {
+          return part.content;
         } else {
-          const value = resolvedVariables[segment.content];
+          const value = resolvedVariables[part.content];
           return value ? `<strong>${value}</strong>` : `<em>_____</em>`;
         }
       })

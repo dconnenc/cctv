@@ -14,6 +14,7 @@ export interface CreateExperienceBlockParams {
   target_user_ids?: string[];
   status?: BlockStatus; // defaults to "hidden"
   open_immediately?: boolean; // defaults to false
+  variables?: any[]; // Variable definitions with assignments
 }
 
 export function useCreateExperienceBlock({
@@ -34,6 +35,7 @@ export function useCreateExperienceBlock({
       target_user_ids = [],
       status = 'hidden',
       open_immediately = false,
+      variables,
     }: CreateExperienceBlockParams): Promise<CreateExperienceApiResponse | null> => {
       if (!code) {
         setError('Missing experience code');
@@ -53,7 +55,7 @@ export function useCreateExperienceBlock({
           `open_immediately=${open_immediately}, status=${status}`,
       );
 
-      const submitPayload = {
+      const submitPayload: any = {
         kind,
         payload,
         visible_to_roles,
@@ -63,11 +65,14 @@ export function useCreateExperienceBlock({
         open_immediately,
       };
 
-      console.log('payload: ', submitPayload);
+      if (variables) {
+        submitPayload.variables = variables;
+      }
+
       try {
         const res = await experienceFetch(`/api/experiences/${encodeURIComponent(code)}/blocks`, {
           method: 'POST',
-          body: JSON.stringify({ experience: submitPayload }),
+          body: JSON.stringify({ block: submitPayload }),
         });
 
         const data: CreateExperienceApiResponse = await res.json();

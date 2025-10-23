@@ -65,7 +65,7 @@ export interface MadLibVariable {
   assigned_user_id?: string;
 }
 
-export interface MadLibSegment {
+export interface MadLibPart {
   id: string;
   type: 'text' | 'variable';
   content: string;
@@ -493,7 +493,7 @@ export interface AnnouncementData {
 }
 
 export interface MadLibData {
-  segments: MadLibSegment[];
+  parts: MadLibPart[];
   variables: MadLibVariable[];
 }
 

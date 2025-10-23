@@ -31,15 +31,15 @@
   line-height: 1.4;
 }
 
-.segment {
+.part {
   display: inline;
 }
 
-.textSegment {
+.textPart {
   color: var(--white);
 }
 
-.variableSegment {
+.variablePart {
   color: var(--yellow);
   font-weight: bold;
   background: rgba(255, 255, 0, 0.1);
@@ -52,13 +52,13 @@
   gap: 12px;
 }
 
-.segmentEditor {
+.partEditor {
   display: flex;
   flex-direction: column;
   gap: 12px;
 }
 
-.segmentItem {
+.partItem {
   display: flex;
   gap: 12px;
   align-items: end;
@@ -67,7 +67,7 @@
   border-radius: 8px;
 }
 
-.segmentNumber {
+.partNumber {
   border-radius: 50%;
   width: 32px;
   height: 32px;
@@ -79,11 +79,11 @@
   flex-shrink: 0;
 }
 
-.textSegmentEditor {
+.textPartEditor {
   flex: 1;
 }
 
-.variableSegmentEditor {
+.variablePartEditor {
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -106,14 +106,14 @@
   border: 1px solid rgba(255, 255, 0, 0.2);
 }
 
-.segmentActions {
+.partActions {
   display: flex;
   flex-direction: column;
   gap: 4px;
   flex-shrink: 0;
 }
 
-.segmentActions button {
+.partActions button {
   min-width: 40px;
   padding: 4px 8px;
   font-size: 14px;

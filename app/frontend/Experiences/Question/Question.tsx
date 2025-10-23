@@ -50,7 +50,7 @@ export default function Question({
     const response = await submitQuestionResponse({
       blockId: actualBlockId,
       answer: {
-        text: value,
+        value: value,
         submittedAt: new Date().toISOString(),
       },
     });
@@ -63,7 +63,7 @@ export default function Question({
   if (submittedValue || userAlreadyResponded) {
     const displayValue =
       submittedValue ||
-      responses?.user_response?.answer?.text ||
+      responses?.user_response?.answer?.value ||
       'You have already responded to this question.';
 
     return (

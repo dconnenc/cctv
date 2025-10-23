@@ -228,7 +228,7 @@ export function CreateBlockProvider({
         case BlockKind.MAD_LIB:
           payload = {
             type: BlockKind.MAD_LIB,
-            segments: processedFormData.data.segments,
+            parts: processedFormData.data.parts,
           };
           break;
         default:
@@ -262,12 +262,16 @@ export function CreateBlockProvider({
           label: v.name,
           datatype: v.dataType === 'number' ? 'number' : 'string',
           required: true,
-          source: {
-            kind: 'question',
-            question: v.question,
-            input_type: 'text',
-            target_user_ids: v.assigned_user_id ? [v.assigned_user_id] : [],
-          },
+          source: v.assigned_user_id
+            ? {
+                type: 'participant',
+                participant_id: v.assigned_user_id,
+              }
+            : {
+                kind: 'question',
+                question: v.question,
+                input_type: 'text',
+              },
         }));
 
         submitPayload.variables = variables;

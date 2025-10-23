@@ -48,9 +48,10 @@ class ExperienceBlock < ApplicationRecord
     children.exists?
   end
 
-  def calculate_depth
+  def depth
     return 0 if children.empty?
-    1 + children.map(&:calculate_depth).max
+
+    1 + children.map(&:depth).max
   end
 
   def leaf_block?

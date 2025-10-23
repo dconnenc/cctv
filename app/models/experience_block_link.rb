@@ -31,7 +31,7 @@ class ExperienceBlockLink < ApplicationRecord
   def depth_limit
     return unless child_block
 
-    if child_block_id.depth >= ExperienceBlock::MAX_DEPENDENCY_DEPTH
+    if child_block.depth >= ExperienceBlock::MAX_DEPENDENCY_DEPTH
       errors.add(
         :base,
         "Maximum dependency depth of #{ExperienceBlock::MAX_DEPENDENCY_DEPTH} exceeded"
