@@ -189,7 +189,8 @@ class ExperienceSubscriptionChannel < ApplicationCable::Channel
             visibility_payload: payload,
             logical_stream: "participant_#{@participant.id}",
             participant_id: @participant.id,
-            participant: participant_summary
+            participant: participant_summary,
+            include_participants: true
           )
         )
       end
@@ -219,7 +220,8 @@ class ExperienceSubscriptionChannel < ApplicationCable::Channel
         visibility_payload: payload_for_participant(@user),
         logical_stream: "participant_#{@participant.id}",
         participant_id: @participant.id,
-        participant: participant_summary
+        participant: participant_summary,
+        include_participants: true
       )
     )
   end

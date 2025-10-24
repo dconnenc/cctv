@@ -246,7 +246,7 @@ module Experiences
 
     def rules_allow_block?(block)
       return true if moderator_or_host?
-      
+
       targeting_rules_exist = block.visible_to_roles.present? ||
         block.visible_to_segments.present? ||
         block.target_user_ids.present?
