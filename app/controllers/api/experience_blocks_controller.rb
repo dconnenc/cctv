@@ -9,10 +9,10 @@ class Api::ExperienceBlocksController < Api::BaseController
       visible_to_segments: [],
       target_user_ids: []
     )
-    
+
     permitted[:payload] = params[:block][:payload] if params[:block][:payload]
     permitted[:variables] = params[:block][:variables] if params[:block][:variables]
-    
+
     permitted
   end
 
@@ -45,6 +45,7 @@ class Api::ExperienceBlocksController < Api::BaseController
         )
       end
 
+      @experience.reload
       Experiences::Broadcaster.new(@experience).broadcast_experience_update
 
       render json: {

@@ -17,7 +17,6 @@ import ContextView from './ContextView/ContextView';
 import ExperienceControl from './ExperienceControl/ExperienceControl';
 import ParticipantsTab from './ParticipantsTab/ParticipantsTab';
 import ProgramTab from './ProgramTab/ProgramTab';
-import UpNextPanel from './UpNextPanel/UpNextPanel';
 
 import styles from './Manage.module.scss';
 
@@ -109,7 +108,22 @@ export default function Manage() {
 
       <div className={styles.topRow}>
         <div className={styles.upNext}>
-          <UpNextPanel />
+          <ContextView
+            block={
+              viewMode === 'tv'
+                ? (tvView?.next_block ?? undefined)
+                : (participantView?.next_block ?? undefined)
+            }
+            participant={viewMode === 'participant' ? participant : undefined}
+            emptyMessage={
+              viewMode === 'tv'
+                ? 'No upcoming block for TV'
+                : `No upcoming block for ${participant?.name || 'participant'}`
+            }
+            tvView={undefined}
+            viewMode={viewMode}
+            title="Up Next"
+          />
         </div>
 
         <div className={styles.contextDetails}>
@@ -131,6 +145,7 @@ export default function Manage() {
             emptyMessage={viewMode === 'tv' ? 'No block on TV' : 'No block for participant'}
             tvView={tvView}
             viewMode={viewMode}
+            title="Current"
           />
         </div>
       </div>

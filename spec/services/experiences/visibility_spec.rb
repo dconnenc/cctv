@@ -562,4 +562,235 @@ RSpec.describe Experiences::Visibility do
       end
     end
   end
+
+  describe ".next_block_for_tv" do
+    let(:experience) { create(:experience, status: :live) }
+    
+    context "with multiple public parent blocks" do
+      let!(:block1) { create(:experience_block, experience: experience, status: :open, position: 0) }
+      let!(:block2) { create(:experience_block, experience: experience, status: :open, position: 1) }
+      let!(:block3) { create(:experience_block, experience: experience, status: :open, position: 2) }
+      
+      it "returns second block when first is current" do
+        next_block = described_class.next_block_for_tv(experience: experience)
+        
+        expect(next_block).to eq(block2)
+      end
+    end
+    
+    context "with blocks that have visibility rules" do
+      let!(:public_block) { create(:experience_block, experience: experience, status: :open, position: 0) }
+      let!(:targeted_block) do
+        create(:experience_block, experience: experience, status: :open, position: 1, target_user_ids: [create(:user).id])
+      end
+      
+      it "skips blocks with targeting rules" do
+        next_block = described_class.next_block_for_tv(experience: experience)
+        
+        expect(next_block).to be_nil
+      end
+    end
+    
+    context "when current is last block" do
+      let!(:block) { create(:experience_block, experience: experience, status: :open, position: 0) }
+      
+      it "returns nil" do
+        next_block = described_class.next_block_for_tv(experience: experience)
+        
+        expect(next_block).to be_nil
+      end
+    end
+  end
+
+  describe ".next_block_for_admin" do
+    let(:experience) { create(:experience, status: :live) }
+    
+    context "with multiple blocks including hidden" do
+      let!(:block1) { create(:experience_block, experience: experience, status: :open, position: 0) }
+      let!(:block2) { create(:experience_block, experience: experience, status: :hidden, position: 1) }
+      let!(:block3) { create(:experience_block, experience: experience, status: :closed, position: 2) }
+      
+      it "returns next block regardless of status" do
+        next_block = described_class.next_block_for_admin(experience: experience)
+        
+        expect(next_block).to eq(block2)
+      end
+    end
+    
+    context "with nested blocks" do
+      let!(:parent) { create(:experience_block, experience: experience, status: :open, position: 0) }
+      let!(:child) { create(:experience_block, experience: experience, status: :open, position: 0, parent_block: parent) }
+      
+      before do
+        create(:experience_block_link, parent_block: parent, child_block: child)
+      end
+      
+      it "returns first child when parent has dependencies" do
+        next_block = described_class.next_block_for_admin(experience: experience)
+        
+        expect(next_block).to eq(child)
+      end
+    end
+  end
+
+  describe "#next_block_for_user" do
+    let(:experience) { create(:experience, status: :live) }
+    let(:user) { create(:user, :user) }
+    let(:participant) do
+      create(:experience_participant, experience: experience, user: user, role: :player, segments: [])
+    end
+    
+    let(:visibility) do
+      described_class.new(
+        experience: experience,
+        user_role: user.role,
+        participant_role: participant.role,
+        segments: participant.segments,
+        target_user_ids: [user.id]
+      )
+    end
+    
+    before { participant }
+    
+    context "with simple sequential parent blocks" do
+      let!(:block1) { create(:experience_block, experience: experience, status: :open, position: 0) }
+      let!(:block2) { create(:experience_block, experience: experience, status: :open, position: 1) }
+      
+      before do
+        allow(visibility).to receive(:resolve_block_for_user).and_return(block1)
+      end
+      
+      it "returns next parent block" do
+        expect(visibility.next_block_for_user(user)).to eq(block2)
+      end
+    end
+    
+    context "with nested blocks" do
+      let!(:parent) { create(:experience_block, experience: experience, status: :open, position: 0) }
+      let!(:child1) { create(:experience_block, experience: experience, status: :open, position: 0, parent_block: parent) }
+      let!(:child2) { create(:experience_block, experience: experience, status: :open, position: 1, parent_block: parent) }
+      
+      before do
+        create(:experience_block_link, parent_block: parent, child_block: child1)
+        create(:experience_block_link, parent_block: parent, child_block: child2)
+      end
+      
+      context "when current block is first child" do
+        before do
+          allow(visibility).to receive(:resolve_block_for_user).and_return(child1)
+        end
+        
+        it "returns next child sibling" do
+          expect(visibility.next_block_for_user(user)).to eq(child2)
+        end
+      end
+      
+      context "when current block is last child" do
+        let!(:next_parent) { create(:experience_block, experience: experience, status: :open, position: 1) }
+        
+        before do
+          allow(visibility).to receive(:resolve_block_for_user).and_return(child2)
+        end
+        
+        it "returns parent's next sibling" do
+          expect(visibility.next_block_for_user(user)).to eq(next_parent)
+        end
+      end
+    end
+    
+    context "when next parent has nested children" do
+      let!(:parent1) { create(:experience_block, experience: experience, status: :open, position: 0) }
+      let!(:parent2) { create(:experience_block, experience: experience, status: :open, position: 1) }
+      let!(:child_of_parent2) { create(:experience_block, experience: experience, status: :open, position: 0, parent_block: parent2) }
+      
+      before do
+        create(:experience_block_link, parent_block: parent2, child_block: child_of_parent2)
+        allow(visibility).to receive(:resolve_block_for_user).and_return(parent1)
+      end
+      
+      it "returns first child of next parent" do
+        allow(Experiences::BlockResolver).to receive(:next_unresolved_child)
+          .with(block: parent2, participant: participant)
+          .and_return(child_of_parent2)
+        
+        expect(visibility.next_block_for_user(user)).to eq(child_of_parent2)
+      end
+    end
+    
+    context "when no next block exists" do
+      let!(:block) { create(:experience_block, experience: experience, status: :open, position: 0) }
+      
+      before do
+        allow(visibility).to receive(:resolve_block_for_user).and_return(block)
+      end
+      
+      it "returns nil" do
+        expect(visibility.next_block_for_user(user)).to be_nil
+      end
+    end
+    
+    context "when user is admin" do
+      let(:admin_user) { create(:user, :admin) }
+      let!(:block1) { create(:experience_block, experience: experience, status: :open, position: 0) }
+      let!(:hidden_block) { create(:experience_block, experience: experience, status: :hidden, position: 1) }
+      
+      let(:admin_visibility) do
+        described_class.new(
+          experience: experience,
+          user_role: admin_user.role,
+          participant_role: nil,
+          segments: [],
+          target_user_ids: [admin_user.id]
+        )
+      end
+      
+      before do
+        allow(admin_visibility).to receive(:resolve_block_for_user).and_return(block1)
+      end
+      
+      it "returns hidden blocks" do
+        expect(admin_visibility.next_block_for_user(admin_user)).to eq(hidden_block)
+      end
+    end
+  end
+
+  describe "#payload_for_user" do
+    let(:experience) { create(:experience, status: :live) }
+    let(:user) { create(:user, :user) }
+    let(:participant) do
+      create(:experience_participant, experience: experience, user: user, role: :player, segments: [])
+    end
+    
+    let(:visibility) do
+      described_class.new(
+        experience: experience,
+        user_role: user.role,
+        participant_role: participant.role,
+        segments: participant.segments,
+        target_user_ids: [user.id]
+      )
+    end
+    
+    let!(:current_block) { create(:experience_block, experience: experience, status: :open, position: 0) }
+    let!(:next_block) { create(:experience_block, experience: experience, status: :open, position: 1) }
+    
+    before { participant }
+    
+    it "includes next_block in payload" do
+      payload = visibility.payload_for_user(user)
+      
+      expect(payload[:experience][:next_block]).to be_present
+      expect(payload[:experience][:next_block][:id]).to eq(next_block.id)
+    end
+    
+    context "when no next block exists" do
+      before { next_block.destroy }
+      
+      it "sets next_block to nil" do
+        payload = visibility.payload_for_user(user)
+        
+        expect(payload[:experience][:next_block]).to be_nil
+      end
+    end
+  end
 end

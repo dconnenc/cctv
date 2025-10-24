@@ -7,9 +7,12 @@ class ExperienceBlockLink < ApplicationRecord
   }
 
   validates :parent_block_id, :child_block_id, presence: true
+  validates :child_block_id, uniqueness: true
   validate :no_self_loops
   validate :no_cycles
   validate :depth_limit
+
+  after_commit :sync_child_parent_id, on: [:create, :update]
 
   private
 
@@ -60,5 +63,9 @@ class ExperienceBlockLink < ApplicationRecord
     )
 
     result.any?
+  end
+
+  def sync_child_parent_id
+    child_block.update_column(:parent_block_id, parent_block_id) if child_block.parent_block_id != parent_block_id
   end
 end

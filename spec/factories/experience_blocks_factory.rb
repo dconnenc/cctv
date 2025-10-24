@@ -4,6 +4,8 @@ FactoryBot.define do
 
     kind { "poll" }
     status { ExperienceBlock.statuses[:open] }
+    
+    sequence(:position) { |n| n }
 
     trait :mad_lib_sourced do
       kind { ExperienceBlock::MAD_LIB }
@@ -52,7 +54,9 @@ FactoryBot.define do
               "inputType" => "text"
             },
             target_user_ids: evaluator.participant_for_question ?
-              [evaluator.participant_for_question.user_id] : []
+              [evaluator.participant_for_question.user_id] : [],
+            parent_block_id: block.id,
+            position: 0
           )
 
         poll_block = evaluator.poll_source_block ||
@@ -61,7 +65,9 @@ FactoryBot.define do
             experience: block.experience,
             kind: ExperienceBlock::POLL,
             status: block.status,
-            payload: evaluator.poll_payload
+            payload: evaluator.poll_payload,
+            parent_block_id: block.id,
+            position: 1
           )
 
         thing_variable = block.variables.create!(
@@ -91,15 +97,13 @@ FactoryBot.define do
         ExperienceBlockLink.create!(
           parent_block: block,
           child_block: question_block,
-          relationship: :depends_on,
-          position: 0
+          relationship: :depends_on
         )
 
         ExperienceBlockLink.create!(
           parent_block: block,
           child_block: poll_block,
-          relationship: :depends_on,
-          position: 1
+          relationship: :depends_on
         )
       end
     end

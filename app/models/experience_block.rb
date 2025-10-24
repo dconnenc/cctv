@@ -10,6 +10,15 @@ class ExperienceBlock < ApplicationRecord
   ]
 
   belongs_to :experience
+  belongs_to :parent_block,
+    class_name: "ExperienceBlock",
+    optional: true
+
+  has_many :child_blocks,
+    -> { order(position: :asc) },
+    class_name: "ExperienceBlock",
+    foreign_key: :parent_block_id,
+    dependent: :destroy
 
   has_many :experience_poll_submissions, dependent: :destroy
   has_many :experience_question_submissions, dependent: :destroy
@@ -27,7 +36,7 @@ class ExperienceBlock < ApplicationRecord
     foreign_key: :parent_block_id,
     dependent: :destroy
   has_many :children,
-    -> { order("experience_block_links.position ASC") },
+    -> { order(position: :asc) },
     through: :child_links,
     source: :child_block
 
@@ -44,6 +53,16 @@ class ExperienceBlock < ApplicationRecord
   validates :kind, presence: true, inclusion: { in: KINDS }
   validate :visibility_roles
 
+  validates :position,
+    presence: true,
+    numericality: { only_integer: true, greater_than_or_equal_to: 0 }
+
+  after_create :sync_parent_from_links
+
+  scope :parent_blocks, -> { where(parent_block_id: nil) }
+  scope :child_blocks, -> { where.not(parent_block_id: nil) }
+  scope :ordered, -> { order(position: :asc) }
+
   def has_dependencies?
     children.exists?
   end
@@ -58,7 +77,38 @@ class ExperienceBlock < ApplicationRecord
     children.empty?
   end
 
+  def parent_block?
+    parent_block_id.nil?
+  end
+
+  def child_block?
+    parent_block_id.present?
+  end
+
+  def siblings
+    if parent_block?
+      experience.experience_blocks.parent_blocks.where.not(id: id)
+    else
+      ExperienceBlock.where(parent_block_id: parent_block_id).where.not(id: id)
+    end
+  end
+
+  def next_sibling
+    siblings.where("position > ?", position).order(position: :asc).first
+  end
+
+  def previous_sibling
+    siblings.where("position < ?", position).order(position: :desc).first
+  end
+
   private
+
+  def sync_parent_from_links
+    if parent_links.any? && parent_block_id.nil?
+      link = parent_links.first
+      update_column(:parent_block_id, link.parent_block_id)
+    end
+  end
 
   def visibility_roles
     allowed = ExperienceParticipant.roles.keys.map(&:to_s)
