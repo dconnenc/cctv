@@ -149,6 +149,8 @@ export interface ExperienceParticipant {
 interface BaseBlock {
   id: string;
   status: BlockStatus;
+  position: number;
+  parent_block_id?: string | null;
   visible_to_roles?: ParticipantRole[];
   visible_to_segments?: string[];
   target_user_ids?: string[];
@@ -224,6 +226,7 @@ export interface Experience {
   hosts: ExperienceParticipant[];
   participants: ExperienceParticipant[];
   blocks: Block[];
+  next_block?: Block | null;
   created_at: string;
   updated_at: string;
 }

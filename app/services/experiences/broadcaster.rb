@@ -75,21 +75,13 @@ class Experiences::Broadcaster
 
   def broadcast_admin_view
     begin
-      # Get all parent blocks with full admin visibility
-      parent_blocks = experience.experience_blocks.reject { |b| b.parent_links.exists? }
-      blocks = parent_blocks.map do |block|
-        BlockSerializer.serialize_for_stream(block, participant_role: "host")
-      end
-
-      admin_payload = {
-        experience: Experiences::Visibility.experience_structure(experience, blocks)
-      }
-
       send_broadcast(
         self.class.admin_stream_key(experience),
         WebsocketMessageService.experience_updated(
           experience,
-          visibility_payload: admin_payload,
+          visibility_payload: Experiences::Visibility.payload_for_admin(
+            experience: experience
+          ),
           stream_key: "admin_view",
           stream_type: :admin,
           participant_id: nil,

@@ -4,6 +4,69 @@ module Experiences
       :experience, :user_role, :participant_role, :segments, :target_user_ids
     )
 
+    def self.payload_for_admin(experience:)
+      visible_blocks = admin_visible_blocks(experience)
+      blocks = visible_blocks.reject(&:child_block?).map do |block|
+        BlockSerializer.serialize_for_stream(block, participant_role: "host")
+      end
+
+      current_block = resolve_block_for_admin(experience: experience, blocks: visible_blocks)
+      blocks_without_current = current_block ? visible_blocks.reject { |b| b == current_block } : visible_blocks
+      next_block = resolve_block_for_admin(experience: experience, blocks: blocks_without_current)
+
+      serialized_next = if next_block
+        BlockSerializer.serialize_for_stream(next_block, participant_role: "host")
+      else
+        nil
+      end
+
+      {
+        experience: experience_structure(
+          experience,
+          blocks,
+          next_block: serialized_next
+        )
+      }
+    end
+
+    def self.next_block_for_admin(experience:)
+      visible_blocks = admin_visible_blocks(experience)
+      current_block = resolve_block_for_admin(experience: experience, blocks: visible_blocks)
+      return nil unless current_block
+      
+      blocks_without_current = visible_blocks.reject { |b| b == current_block }
+      resolve_block_for_admin(experience: experience, blocks: blocks_without_current)
+    end
+
+    def self.next_block_for_tv(experience:)
+      visible_blocks = tv_visible_blocks(experience)
+      current_block = visible_blocks.first
+      return nil unless current_block
+      
+      blocks_without_current = visible_blocks.reject { |b| b == current_block }
+      blocks_without_current.first
+    end
+
+    def self.admin_visible_blocks(experience)
+      experience.experience_blocks.order(position: :asc)
+    end
+
+    def self.resolve_block_for_admin(experience:, blocks:)
+      return nil if blocks.empty?
+
+      parent_blocks = blocks.reject(&:child_block?)
+      
+      parent_blocks.sort_by(&:position).each do |block|
+        if block.has_dependencies?
+          first_child = block.child_blocks.order(position: :asc).first
+          return first_child if first_child
+        end
+        return block
+      end
+
+      nil
+    end
+
     def self.payload_for_user(experience:, user:)
       participant_record = experience
         .experience_participants
@@ -45,27 +108,52 @@ module Experiences
     end
 
     def self.payload_for_tv(experience:)
-      parent_blocks = experience.experience_blocks.reject do |block|
-        block.parent_links.exists?
-      end
-
-      tv_block = parent_blocks
-        .select(&:open?)
-        .reject { |block| has_visibility_rules?(block) }
-        .first
-
-      blocks = if tv_block
-        [serialize_block_for_tv(experience: experience, block: tv_block)]
+      visible_blocks = tv_visible_blocks(experience)
+      
+      current_block = visible_blocks.first
+      blocks = if current_block
+        [serialize_block_for_tv(experience: experience, block: current_block)]
       else
         []
+      end
+
+      next_block = visible_blocks.second
+      serialized_next = if next_block
+        serialize_block_for_tv(experience: experience, block: next_block)
+      else
+        nil
       end
 
       {
         experience: experience_structure(
           experience,
-          blocks
+          blocks,
+          next_block: serialized_next
         )
       }
+    end
+
+    def self.tv_visible_blocks(experience)
+      parent_blocks = experience.parent_blocks
+        .where(status: 'open')
+        .where(visible_to_roles: [], visible_to_segments: [], target_user_ids: [])
+        .order(position: :asc)
+
+      result = []
+      parent_blocks.each do |parent|
+        if parent.has_dependencies?
+          first_child = parent.child_blocks.order(position: :asc).first
+          if first_child && !has_visibility_rules?(first_child)
+            result << first_child
+          else
+            result << parent
+          end
+        else
+          result << parent
+        end
+      end
+
+      result
     end
 
     def self.has_visibility_rules?(block)
@@ -154,19 +242,20 @@ module Experiences
 
     def payload_for_user(user)
       blocks = if moderator_or_host? || user_admin?
-        # For moderators/hosts, only return parent blocks (no parent_block_ids)
-        # Child blocks are accessible via child_block_ids in the DAG metadata
-        parent_blocks_only = visible_blocks.reject { |b| b.parent_links.exists? }
+        parent_blocks_only = visible_blocks.reject(&:child_block?)
         parent_blocks_only.map { |block| serialize_block_for_user(block, user) }
       else
         resolved_block = resolve_block_for_user(user)
         resolved_block ? [serialize_block_for_user(resolved_block, user)] : []
       end
+      
+      next_block = next_block_for_user(user)
 
       {
         experience: self.class.experience_structure(
           experience,
-          blocks
+          blocks,
+          next_block: next_block ? serialize_block_for_user(next_block, user) : nil
         )
       }
     end
@@ -192,19 +281,17 @@ module Experiences
       block_visible?(block)
     end
 
-    def resolve_block_for_user(user)
-      return nil if visible_blocks.empty?
+    def resolve_block_for_user(user, blocks: visible_blocks)
+      return nil if blocks.empty?
 
-      parent_blocks = visible_blocks.reject do |b|
-        b.parent_links.exists?
-      end
+      parent_blocks = blocks.reject(&:child_block?)
 
       participant_record = experience
         .experience_participants
         .find_by(user_id: user.id)
       return nil unless participant_record
 
-      parent_blocks.sort_by(&:created_at).reverse_each do |block|
+      parent_blocks.sort_by(&:position).each do |block|
         if block.has_dependencies?
           unresolved_child = BlockResolver.next_unresolved_child(
             block: block,
@@ -221,9 +308,20 @@ module Experiences
       nil
     end
 
+    def next_block_for_user(user)
+      current_block = resolve_block_for_user(user)
+      return nil unless current_block
+      
+      # Get all visible blocks except the current resolved block
+      blocks_without_current = visible_blocks.reject { |b| b == current_block }
+      
+      # Use the same resolution logic on the remaining blocks
+      resolve_block_for_user(user, blocks: blocks_without_current)
+    end
+
     def visible_blocks
       @visible_blocks ||= begin
-        blocks = experience.experience_blocks
+        blocks = experience.experience_blocks.order(position: :asc)
 
         return blocks if user_admin?
         return [] if participant_role.nil?
@@ -282,14 +380,15 @@ module Experiences
       )
     end
 
-    def self.experience_structure(experience, blocks)
+    def self.experience_structure(experience, blocks, next_block: nil)
       {
         id: experience.id,
         code: experience.code,
         status: experience.status,
         started_at: experience.started_at,
         ended_at: experience.ended_at,
-        blocks: blocks
+        blocks: blocks,
+        next_block: next_block
       }
     end
   end

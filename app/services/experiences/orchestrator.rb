@@ -13,13 +13,16 @@ module Experiences
         authorize! experience, to: :manage_blocks?, with: ExperiencePolicy
 
         transaction do
+          max_position = experience.experience_blocks.parent_blocks.maximum(:position) || -1
+
           block = experience.experience_blocks.create!(
             kind: kind,
             status: status,
             payload: payload,
             visible_to_roles: visible_to_roles,
             visible_to_segments: visible_to_segments,
-            target_user_ids: target_user_ids
+            target_user_ids: target_user_ids,
+            position: max_position + 1
           )
           block.update!(status: :open) if open_immediately
 
@@ -114,7 +117,7 @@ module Experiences
     def submit_poll_response!(block_id:, answer:)
       actor_action do
         block = experience.experience_blocks.find(block_id)
-        
+
         # Use dedicated ExperienceBlockPolicy to check visibility rules
         authorize! block, to: :submit_poll_response?, with: ExperienceBlockPolicy
 
@@ -134,7 +137,7 @@ module Experiences
     def submit_question_response!(block_id:, answer:)
       actor_action do
         block = experience.experience_blocks.find(block_id)
-        
+
         # Use dedicated ExperienceBlockPolicy to check visibility rules
         authorize! block, to: :submit_question_response?, with: ExperienceBlockPolicy
 
@@ -154,7 +157,7 @@ module Experiences
     def submit_multistep_form_response!(block_id:, answer:)
       actor_action do
         block = experience.experience_blocks.find(block_id)
-        
+
         # Use dedicated ExperienceBlockPolicy to check visibility rules
         authorize! block, to: :submit_multistep_form_response?, with: ExperienceBlockPolicy
 
@@ -174,7 +177,7 @@ module Experiences
     def submit_mad_lib_response!(block_id:, answer:)
       actor_action do
         block = experience.experience_blocks.find(block_id)
-        
+
         # Use dedicated ExperienceBlockPolicy to check visibility rules
         authorize! block, to: :submit_mad_lib_response?, with: ExperienceBlockPolicy
 
@@ -204,13 +207,16 @@ module Experiences
         authorize! experience, to: :manage_blocks?, with: ExperiencePolicy
 
         transaction do
+          max_position = experience.experience_blocks.parent_blocks.maximum(:position) || -1
+
           parent_block = experience.experience_blocks.create!(
             kind: kind,
             status: status,
             payload: payload.except(:variables),
             visible_to_roles: visible_to_roles,
             visible_to_segments: visible_to_segments,
-            target_user_ids: target_user_ids
+            target_user_ids: target_user_ids,
+            position: max_position + 1
           )
 
           variables.each_with_index do |var_spec, index|
@@ -264,14 +270,15 @@ module Experiences
         },
         visible_to_roles: parent_block.visible_to_roles,
         visible_to_segments: parent_block.visible_to_segments,
-        target_user_ids: [participant.user_id]
+        target_user_ids: [participant.user_id],
+        parent_block_id: parent_block.id,
+        position: position
       )
 
       ExperienceBlockLink.create!(
         parent_block: parent_block,
         child_block: child_block,
-        relationship: :depends_on,
-        position: position
+        relationship: :depends_on
       )
 
       child_block
@@ -284,7 +291,9 @@ module Experiences
         payload: source_spec["payload"] || {},
         visible_to_roles: parent_block.visible_to_roles,
         visible_to_segments: parent_block.visible_to_segments,
-        target_user_ids: source_spec["target_user_ids"] || []
+        target_user_ids: source_spec["target_user_ids"] || [],
+        parent_block_id: parent_block.id,
+        position: position
       )
 
       ExperienceBlockLink.create!(

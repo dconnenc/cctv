@@ -6,6 +6,8 @@ FactoryBot.define do
     status { ExperienceParticipant.statuses[:registered] }
 
     role { ExperienceParticipant.roles[:audience] }
+    
+    name { user&.name || "Test Participant" }
 
     trait :audience do
       role { ExperienceParticipant.roles[:audience] }

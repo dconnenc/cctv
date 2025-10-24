@@ -12,6 +12,7 @@ interface ContextViewProps {
   emptyMessage: string;
   tvView?: Experience;
   viewMode: 'tv' | 'participant';
+  title?: string;
 }
 
 export default function ContextView({
@@ -20,12 +21,14 @@ export default function ContextView({
   emptyMessage,
   tvView,
   viewMode,
+  title,
 }: ContextViewProps) {
+  const panelTitle = title || (viewMode === 'tv' ? 'TV View' : 'Current');
   if (viewMode === 'tv' && tvView) {
     const tvBlock = tvView.blocks[0];
 
     return (
-      <Panel title="TV View">
+      <Panel title={panelTitle}>
         <div className={styles.preview}>
           {tvBlock ? <BlockPreview block={tvBlock} /> : <QRCodeDisplay experience={tvView} />}
         </div>
@@ -34,7 +37,7 @@ export default function ContextView({
   }
 
   return (
-    <Panel title="Current">
+    <Panel title={panelTitle}>
       <div className={styles.preview}>
         {block ? (
           <BlockPreview block={block} participant={participant} />

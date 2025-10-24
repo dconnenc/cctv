@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2025_10_23_193653) do
+ActiveRecord::Schema[7.2].define(version: 2025_10_24_154744) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "citext"
   enable_extension "plpgsql"
@@ -29,7 +29,6 @@ ActiveRecord::Schema[7.2].define(version: 2025_10_23_193653) do
     t.uuid "parent_block_id", null: false
     t.uuid "child_block_id", null: false
     t.enum "relationship", default: "depends_on", null: false, enum_type: "block_link_relationship"
-    t.integer "position", default: 0, null: false
     t.jsonb "meta", default: {}, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
@@ -71,9 +70,14 @@ ActiveRecord::Schema[7.2].define(version: 2025_10_23_193653) do
     t.uuid "target_user_ids", default: [], null: false, array: true
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.uuid "parent_block_id"
+    t.integer "position", default: 0, null: false
+    t.index ["experience_id", "position"], name: "index_parent_blocks_unique_position", unique: true, where: "(parent_block_id IS NULL)"
     t.index ["experience_id", "status"], name: "index_experience_blocks_on_experience_id_and_status"
     t.index ["experience_id"], name: "index_experience_blocks_on_experience_id"
     t.index ["kind"], name: "index_experience_blocks_on_kind"
+    t.index ["parent_block_id", "position"], name: "index_child_blocks_unique_position", unique: true, where: "(parent_block_id IS NOT NULL)"
+    t.index ["parent_block_id"], name: "index_experience_blocks_on_parent_block_id"
     t.index ["target_user_ids"], name: "index_experience_blocks_on_target_user_ids", using: :gin
     t.index ["visible_to_roles"], name: "index_experience_blocks_on_visible_to_roles", using: :gin
     t.index ["visible_to_segments"], name: "index_experience_blocks_on_visible_to_segments", using: :gin
@@ -186,6 +190,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_10_23_193653) do
   add_foreign_key "experience_block_variable_bindings", "experience_block_variables", column: "variable_id", on_delete: :cascade
   add_foreign_key "experience_block_variable_bindings", "experience_blocks", column: "source_block_id", on_delete: :cascade
   add_foreign_key "experience_block_variables", "experience_blocks", on_delete: :cascade
+  add_foreign_key "experience_blocks", "experience_blocks", column: "parent_block_id"
   add_foreign_key "experience_blocks", "experiences", on_delete: :cascade
   add_foreign_key "experience_mad_lib_submissions", "experience_blocks", on_delete: :cascade
   add_foreign_key "experience_mad_lib_submissions", "users", on_delete: :cascade

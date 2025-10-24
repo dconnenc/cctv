@@ -5,6 +5,7 @@ class ExperienceSerializer
     include_participants: false
   )
     blocks = visibility_payload&.dig(:experience, :blocks) || []
+    next_block = visibility_payload&.dig(:experience, :next_block)
 
     result = {
       id: experience.id,
@@ -16,7 +17,8 @@ class ExperienceSerializer
       creator_id: experience.creator_id,
       created_at: experience.created_at,
       updated_at: experience.updated_at,
-      blocks: blocks
+      blocks: blocks,
+      next_block: next_block
     }
 
     if include_participants

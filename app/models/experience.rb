@@ -6,7 +6,14 @@ class Experience < ApplicationRecord
            class_name: 'ExperienceParticipant'
   has_many :hosts, through: :host_participants, source: :user
 
-  has_many :experience_blocks, dependent: :destroy
+  has_many :experience_blocks, 
+    -> { order(position: :asc) },
+    dependent: :destroy
+
+  has_many :parent_blocks,
+    -> { where(parent_block_id: nil).order(position: :asc) },
+    class_name: "ExperienceBlock",
+    foreign_key: :experience_id
 
   belongs_to :creator, class_name: 'User'
 
