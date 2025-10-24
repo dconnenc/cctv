@@ -1,5 +1,9 @@
 class ExperienceSerializer
-  def self.serialize_experience(experience, visibility_payload: nil, include_participants: false)
+  def self.serialize_experience(
+    experience,
+    visibility_payload: nil,
+    include_participants: false
+  )
     blocks = visibility_payload&.dig(:experience, :blocks) || []
 
     result = {
@@ -16,24 +20,45 @@ class ExperienceSerializer
     }
 
     if include_participants
-      result[:hosts] = serialize_participants(experience.experience_participants.host)
-      result[:participants] = serialize_participants(experience.experience_participants)
+      result[:hosts] = serialize_participants(
+        experience.experience_participants.host
+      )
+
+      result[:participants] = serialize_participants(
+        experience.experience_participants
+      )
     end
 
     result
   end
 
-  def self.serialize_for_api_response(experience, visibility_payload:, current_participant: nil)
+  def self.serialize_for_api_response(
+    experience,
+    visibility_payload:,
+    current_participant: nil
+  )
     {
       type: 'success',
       success: true,
-      experience: serialize_experience(experience, visibility_payload: visibility_payload, include_participants: true),
+      experience: serialize_experience(
+        experience,
+        visibility_payload: visibility_payload,
+        include_participants: true
+      ),
       participant: current_participant ? serialize_participant_summary(current_participant) : nil
     }
   end
 
-  def self.serialize_for_websocket_message(experience, visibility_payload:, include_participants: false)
-    serialize_experience(experience, visibility_payload: visibility_payload, include_participants: include_participants)
+  def self.serialize_for_websocket_message(
+    experience,
+    visibility_payload:,
+    include_participants: false
+  )
+    serialize_experience(
+      experience,
+      visibility_payload: visibility_payload,
+      include_participants: include_participants
+    )
   end
 
   def self.serialize_participants(participants)

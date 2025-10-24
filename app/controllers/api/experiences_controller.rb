@@ -241,6 +241,7 @@ class Api::ExperiencesController < Api::BaseController
 
     unless experience.user_registered?(user)
       experience.register_user(user, name: register_params[:participant_name])
+      Experiences::Broadcaster.new(experience).broadcast_experience_update
     end
 
     render json: {
