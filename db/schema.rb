@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2025_10_23_185830) do
+ActiveRecord::Schema[7.2].define(version: 2025_10_23_193653) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "citext"
   enable_extension "plpgsql"
@@ -109,6 +109,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_10_23_185830) do
     t.datetime "updated_at", null: false
     t.enum "role", default: "audience", null: false, enum_type: "experience_participant_roles"
     t.string "segments", default: [], null: false, array: true
+    t.string "name", null: false
     t.index ["experience_id", "status"], name: "index_experience_participants_on_experience_id_and_status"
     t.index ["experience_id"], name: "index_experience_participants_on_experience_id"
     t.index ["fingerprint"], name: "index_experience_participants_on_fingerprint"

@@ -29,6 +29,7 @@ Rails.application.routes.draw do
       member do
         post :admin_token
         post :register
+        get :registration_info
         post :open_lobby
         post :start
         post :pause

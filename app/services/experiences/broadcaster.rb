@@ -115,7 +115,7 @@ class Experiences::Broadcaster
       participant_summary = {
         id: participant.id,
         user_id: participant.user_id,
-        name: participant.user.name,
+        name: participant.name,
         email: participant.user.email,
         role: participant.role
       }
@@ -133,7 +133,8 @@ class Experiences::Broadcaster
           participant_id: participant.id,
           role: participant.role.to_sym,
           segments: participant.segments || [],
-          participant: participant_summary
+          participant: participant_summary,
+          include_participants: true
         )
       )
     rescue => e

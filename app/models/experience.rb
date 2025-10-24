@@ -58,8 +58,8 @@ class Experience < ApplicationRecord
     has_user?(user)
   end
 
-  def register_user(user)
-    users << user
+  def register_user(user, name:)
+    experience_participants.create!(user: user, name: name)
   end
 
   # Add a user to this experience with fingerprint

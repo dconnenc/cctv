@@ -1,21 +1,38 @@
-import { FormEvent, useId, useMemo } from 'react';
+import { FormEvent, useId } from 'react';
 
 import { useSearchParams } from 'react-router-dom';
 
 import { Button, TextInput } from '@cctv/core';
+import { useGet } from '@cctv/hooks';
 import { useJoinExperience } from '@cctv/hooks/useJoinExperience';
 import { getFormData } from '@cctv/utils';
+
+interface RegistrationInfoResponse {
+  type: 'success' | 'error';
+  experience?: {
+    name: string;
+    code: string;
+    code_slug: string;
+    description?: string;
+    join_open: boolean;
+  };
+  error?: string;
+}
 
 export default function Join() {
   const [searchParams] = useSearchParams();
 
-  // Check for prefilled code from QR code or URL params
-  const code = useMemo(() => {
-    const prefilledCode = searchParams.get('code');
-    if (prefilledCode) {
-      return prefilledCode.toUpperCase();
-    }
-  }, [searchParams]);
+  // Get slug from URL query params (e.g., ?code=secret-code)
+  const slugFromUrl = searchParams.get('code');
+
+  // Fetch the actual experience code from the slug
+  const { data: registrationInfo } = useGet<RegistrationInfoResponse>({
+    url: `/api/experiences/${slugFromUrl}/registration_info`,
+    enabled: !!slugFromUrl,
+  });
+
+  // Use the actual code from the API, not the slug
+  const code = registrationInfo?.experience?.code;
 
   const id = useId();
   const { joinExperience, isLoading, error } = useJoinExperience();

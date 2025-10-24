@@ -4,8 +4,10 @@ import { RegisterExperienceApiResponse } from '@cctv/types';
 import { qaLogger } from '@cctv/utils';
 
 interface RegisterExperienceParams {
-  email: string;
+  email?: string;
   name?: string;
+  participantName: string;
+  isAuthenticated: boolean;
 }
 
 export function useRegisterExperience() {
@@ -14,10 +16,20 @@ export function useRegisterExperience() {
     url: `/api/experiences/${code}/register`,
   });
 
-  const registerExperience = async ({ email, name }: RegisterExperienceParams) => {
+  const registerExperience = async ({
+    email,
+    name,
+    participantName,
+    isAuthenticated,
+  }: RegisterExperienceParams) => {
     // Validate required fields
-    if (!email.trim()) {
+    if (!isAuthenticated && (!email || !email.trim())) {
       setError('Please enter your email');
+      return;
+    }
+
+    if (!participantName.trim()) {
+      setError('Please enter your name');
       return;
     }
 
@@ -26,13 +38,15 @@ export function useRegisterExperience() {
       return;
     }
 
-    qaLogger(`Attempting to regsiter participant: ${name}:${email} to ${code}`);
+    qaLogger(
+      `Attempting to register participant: ${participantName}:${email || 'logged-in user'} to ${code}`,
+    );
 
     const response = await post(
       JSON.stringify({
-        email: email.trim(),
+        email: email?.trim() || '',
         name: name?.trim() || '',
-        code: code,
+        participant_name: participantName.trim(),
       }),
     );
 

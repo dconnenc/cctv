@@ -1,33 +1,56 @@
-import { ChangeEvent, FormEvent, KeyboardEvent, useState } from 'react';
+import { ChangeEvent, FormEvent, KeyboardEvent, useEffect, useState } from 'react';
 
 import { useParams } from 'react-router-dom';
 
+import { useUser } from '@cctv/contexts';
 import { Button } from '@cctv/core';
-import { useRegisterExperience } from '@cctv/hooks';
+import { useGet, useRegisterExperience } from '@cctv/hooks';
+
+interface RegistrationInfoResponse {
+  type: 'success' | 'error';
+  experience?: {
+    name: string;
+    code: string;
+    code_slug: string;
+    description?: string;
+    join_open: boolean;
+  };
+  error?: string;
+}
 
 export default function Register() {
   const [email, setEmail] = useState('');
-  const [name, setName] = useState('');
-  const { code } = useParams<{ code: string }>();
+  const [participantName, setParticipantName] = useState('');
+  const { code: slug } = useParams<{ code: string }>();
+  const { user, isAuthenticated } = useUser();
+
+  const { data: registrationInfo } = useGet<RegistrationInfoResponse>({
+    url: `/api/experiences/${slug}/registration_info`,
+    enabled: !!slug,
+  });
 
   const { registerExperience, isLoading, error, setError } = useRegisterExperience();
 
+  useEffect(() => {
+    if (user?.most_recent_participant_name) {
+      setParticipantName(user.most_recent_participant_name);
+    }
+  }, [user]);
+
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    await registerExperience({ email, name });
+    await registerExperience({ email, participantName, isAuthenticated });
   };
 
   const handleEmailChange = (e: ChangeEvent<HTMLInputElement>) => {
     setEmail(e.target.value);
-    // Clear error when user starts typing
     if (error) {
       setError('');
     }
   };
 
-  const handleNameChange = (e: ChangeEvent<HTMLInputElement>) => {
-    setName(e.target.value);
-    // Clear error when user starts typing
+  const handleParticipantNameChange = (e: ChangeEvent<HTMLInputElement>) => {
+    setParticipantName(e.target.value);
     if (error) {
       setError('');
     }
@@ -41,26 +64,36 @@ export default function Register() {
 
   return (
     <section className="page flex-centered">
-      <p className="hero-subtitle">Register for Experience</p>
-      <p style={{ marginBottom: '20px', opacity: 0.8 }}>Code: {code}</p>
+      {registrationInfo?.experience?.name && (
+        <p style={{ marginBottom: '10px', opacity: 0.9, fontWeight: 500 }}>
+          {registrationInfo.experience.name}
+        </p>
+      )}
+      {registrationInfo?.experience?.code && (
+        <p style={{ marginBottom: '20px', opacity: 0.8 }}>
+          Code: {registrationInfo.experience.code}
+        </p>
+      )}
       <form onSubmit={handleSubmit}>
-        <input
-          className="join-input"
-          type="email"
-          placeholder="Your Email"
-          value={email}
-          onChange={handleEmailChange}
-          onKeyPress={handleKeyPress}
-          disabled={isLoading}
-          maxLength={100}
-          style={{ marginBottom: '0.5rem' }}
-        />
+        {!isAuthenticated && (
+          <input
+            className="join-input"
+            type="email"
+            placeholder="Your Email"
+            value={email}
+            onChange={handleEmailChange}
+            onKeyPress={handleKeyPress}
+            disabled={isLoading}
+            maxLength={100}
+            style={{ marginBottom: '0.5rem' }}
+          />
+        )}
         <input
           className="join-input"
           type="text"
-          placeholder="Your Name (optional)"
-          value={name}
-          onChange={handleNameChange}
+          placeholder="Your Name"
+          value={participantName}
+          onChange={handleParticipantNameChange}
           onKeyPress={handleKeyPress}
           disabled={isLoading}
           maxLength={100}
@@ -75,7 +108,9 @@ export default function Register() {
           type="submit"
           loading={isLoading}
           loadingText="Registering..."
-          disabled={!email.trim()}
+          disabled={
+            isAuthenticated ? !participantName.trim() : !email.trim() || !participantName.trim()
+          }
         >
           Register
         </Button>

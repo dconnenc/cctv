@@ -42,7 +42,7 @@ class ExperienceSerializer
         id: participant.id,
         user_id: participant.user.id,
         experience_id: participant.experience_id,
-        name: participant.user.name,
+        name: participant.name,
         email: participant.user.email,
         status: participant.status,
         role: participant.role,
@@ -58,7 +58,7 @@ class ExperienceSerializer
     {
       id: participant.id,
       user_id: participant.user.id,
-      name: participant.user.name,
+      name: participant.name,
       email: participant.user.email,
       role: participant.role
     }

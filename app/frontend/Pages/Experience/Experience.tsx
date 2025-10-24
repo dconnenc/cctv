@@ -40,7 +40,7 @@ export default function Experience() {
   if (experienceStatus === 'lobby') {
     return (
       <section className="page flex-centered">
-        <h1 className={styles.title}>{code}</h1>
+        <h1 className={styles.title}>{experience?.code || code}</h1>
 
         {experience && (
           <div className={styles.experienceInfo}>
@@ -53,7 +53,7 @@ export default function Experience() {
 
         <div className={styles.participantsContainer}>
           <h4 className={styles.participantsTitle}>Players in Lobby:</h4>
-          {participants.length > 0 ? (
+          {experience && participants.length > 0 ? (
             <ul className={styles.participantsList}>
               {participants.map((p) => (
                 <li key={p.id} className={styles.participantItem}>
@@ -71,7 +71,9 @@ export default function Experience() {
               ))}
             </ul>
           ) : (
-            <p className={styles.loadingParticipants}>Loading participants...</p>
+            <p className={styles.loadingParticipants}>
+              {experience ? 'No participants yet...' : 'Loading participants...'}
+            </p>
           )}
         </div>
 

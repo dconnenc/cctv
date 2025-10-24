@@ -18,4 +18,8 @@ class User < ApplicationRecord
   passwordless_with :email
 
   before_save { self.email = email.downcase.strip }
+
+  def most_recent_participant_name
+    experience_participants.order(created_at: :desc).first&.name
+  end
 end

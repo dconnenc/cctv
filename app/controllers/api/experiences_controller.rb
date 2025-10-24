@@ -170,39 +170,77 @@ class Api::ExperiencesController < Api::BaseController
     end
   end
 
-  # POST /api/experiences/register
-  # Handles user registration for an experience
-  def register
-    # Allow lookup by code (as entered by user)
-    experience = Experience.find_by_code(register_params[:code])
+  # GET /api/experiences/:id/registration_info
+  # Public endpoint - returns minimal metadata needed for registration page
+  def registration_info
+    experience = Experience.find_by(code_slug: params[:id])
 
     if experience.nil?
-      render json: { type: 'error', error: "Invalid experience code" }, status: :not_found
+      render json: { type: 'error', error: "Experience not found" }, status: :not_found
+      return
+    end
+
+    render json: {
+      type: 'success',
+      experience: {
+        name: experience.name,
+        code: experience.code,
+        code_slug: experience.code_slug,
+        description: experience.description,
+        join_open: experience.join_open
+      }
+    }
+  end
+
+  # POST /api/experiences/:id/register
+  # Handles user registration for an experience
+  # Uses :id param from route (slug) to find experience
+  def register
+    experience = Experience.find_by(code_slug: params[:id])
+
+    if experience.nil?
+      render json: { type: 'error', error: "Experience not found" }, status: :not_found
       return
     end
 
     authorize! experience, to: :register?
 
-    user = current_user
-
-    if user.nil?
-      user = User.find_or_create_by(email: register_params[:email]) do |u|
-        u.name = register_params[:name] if register_params[:name].present?
-      end
-
-      sign_in(create_passwordless_session(user))
-    else
-      # Update name if provided
-      user.update(name: register_params[:name]) if register_params[:name].present?
-    end
-
-    if user.nil?
-      render json: { type: 'error', error: "Failed to create user account" }, status: :internal_server_error
+    unless register_params[:participant_name].present?
+      render json: { type: 'error', error: "Name is required" }, status: :unprocessable_entity
       return
     end
 
+    user = current_user
+
+    if user.nil?
+      # Security check: prevent anyone from entering an admin email and auto-logging in as admin
+      existing_user = User.find_by(email: register_params[:email])
+      if existing_user && (existing_user.admin? || existing_user.superadmin?)
+        render json: { type: 'error', error: "This email is already registered. Please sign in first." }, status: :forbidden
+        return
+      end
+
+      # Find or create user
+      user = User.find_by(email: register_params[:email])
+
+      if user
+        # Existing user registering for a new experience
+        # Don't update user.name - keep their existing name
+        # The participant_name will be used for the experience_participant record
+      else
+        # New user - use participant_name for the user record
+        user = User.create!(
+          email: register_params[:email],
+          name: register_params[:participant_name]
+        )
+      end
+
+      sign_in(create_passwordless_session(user))
+    end
+    # If user is already logged in (current_user exists), don't modify their user.name
+
     unless experience.user_registered?(user)
-      experience.register_user(user)
+      experience.register_user(user, name: register_params[:participant_name])
     end
 
     render json: {
@@ -220,7 +258,7 @@ class Api::ExperiencesController < Api::BaseController
   end
 
   def register_params
-    params.permit(:code, :email, :name)
+    params.permit(:email, :name, :participant_name)
   end
 
   def generate_experience_path(code)
