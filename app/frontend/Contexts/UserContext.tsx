@@ -12,6 +12,7 @@ interface User {
   role: UserRole;
   admin: boolean;
   super_admin: boolean;
+  most_recent_participant_name?: string;
 }
 
 interface UserContextType {

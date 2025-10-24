@@ -128,6 +128,7 @@ export interface User {
   role: UserRole;
   created_at: string;
   updated_at: string;
+  most_recent_participant_name?: string;
 }
 
 export interface ExperienceParticipant {
@@ -250,9 +251,9 @@ export interface JoinExperienceRequest {
 }
 
 export interface RegisterExperienceRequest {
-  code: string;
   email: string;
   name?: string;
+  participant_name: string;
 }
 
 export interface CreateBlockPayload {

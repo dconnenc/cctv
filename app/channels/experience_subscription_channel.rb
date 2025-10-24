@@ -178,7 +178,7 @@ class ExperienceSubscriptionChannel < ApplicationCable::Channel
         participant_summary = {
           id: @participant.id,
           user_id: @participant.user_id,
-          name: @participant.user.name,
+          name: @participant.name,
           email: @participant.user.email,
           role: @participant.role
         }
@@ -208,7 +208,7 @@ class ExperienceSubscriptionChannel < ApplicationCable::Channel
     participant_summary = {
       id: @participant.id,
       user_id: @participant.user_id,
-      name: @participant.user.name,
+      name: @participant.name,
       email: @participant.user.email,
       role: @participant.role
     }
