@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 
-import { Route } from 'react-router-dom';
-import { Outlet } from 'react-router-dom';
+import { Outlet, Route, useLocation } from 'react-router-dom';
 
 import { BackgroundStatic, RouteWink, TopNav } from '@cctv/components';
 import { ExperienceProvider, UserProvider } from '@cctv/contexts';
@@ -34,11 +33,12 @@ function App() {
     return () => clearTimeout(t);
   }, []);
 
+  const currentRoute = useLocation();
   return (
     <UserProvider>
       <div className={`app${booting ? ' app--booting' : ''}`}>
         <BackgroundStatic />
-        <TopNav />
+        {currentRoute.pathname !== 'monitor' && <TopNav />}
         <div className={styles.root}>
           <RouteWink>
             <Route path="/" element={<Home />} />
