@@ -18,7 +18,7 @@ class Experiences::Broadcaster
       broadcast_to_participant(participant)
     end
 
-    broadcast_tv_view
+    broadcast_monitor_view
     broadcast_admin_view
   end
 
@@ -37,8 +37,8 @@ class Experiences::Broadcaster
     )
   end
 
-  def self.tv_stream_key(experience)
-    "experience_#{experience.id}_tv"
+  def self.monitor_stream_key(experience)
+    "experience_#{experience.id}_monitor"
   end
 
   def self.admin_stream_key(experience)
@@ -47,17 +47,17 @@ class Experiences::Broadcaster
 
   private
 
-  def broadcast_tv_view
+  def broadcast_monitor_view
     begin
       send_broadcast(
-        self.class.tv_stream_key(experience),
+        self.class.monitor_stream_key(experience),
         WebsocketMessageService.experience_updated(
           experience,
-          visibility_payload: Experiences::Visibility.payload_for_tv(
+          visibility_payload: Experiences::Visibility.payload_for_monitor(
             experience: experience
           ),
-          stream_key: "tv_view",
-          stream_type: :tv,
+          stream_key: "monitor_view",
+          stream_type: :monitor,
           participant_id: nil,
           role: :host,
           segments: [],
@@ -66,7 +66,7 @@ class Experiences::Broadcaster
       )
     rescue => e
       Rails.logger.error(
-        "Error broadcasting to TV view: #{e.message}"
+        "Error broadcasting to Monitor view: #{e.message}"
       )
 
       return
@@ -111,7 +111,7 @@ class Experiences::Broadcaster
         email: participant.user.email,
         role: participant.role
       }
-      
+
       send_broadcast(
         self.class.stream_key_for_participant(participant),
         WebsocketMessageService.experience_updated(

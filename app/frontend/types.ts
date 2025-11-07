@@ -594,7 +594,7 @@ export interface ExperienceContextType {
   wsError?: string;
 
   // Manage page specific properties
-  tvView?: Experience;
+  monitorView?: Experience;
   participantView?: Experience;
   impersonatedParticipantId?: string;
   setImpersonatedParticipantId: (id: string | undefined) => void;

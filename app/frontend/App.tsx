@@ -13,9 +13,9 @@ import {
   Join,
   Manage,
   ManageCreateBlock,
+  Monitor,
   Register,
   Stylesheet,
-  Tv,
 } from '@cctv/pages';
 
 import {
@@ -69,7 +69,7 @@ function App() {
                 <Route element={<RequireExperienceHostOrAdmin />}>
                   <Route path="manage" element={<Manage />} />
                   <Route path="manage/blocks/new" element={<ManageCreateBlock />} />
-                  <Route path="tv" element={<Tv />} />
+                  <Route path="monitor " element={<Monitor />} />
                 </Route>
               </Route>
             </Route>

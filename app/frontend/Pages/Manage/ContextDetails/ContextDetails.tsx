@@ -3,10 +3,10 @@ import { Experience, ParticipantSummary } from '@cctv/types';
 
 import styles from './ContextDetails.module.scss';
 
-type ViewMode = 'tv' | 'participant';
+type ViewMode = 'monitor' | 'participant';
 
 interface ContextDetailsProps {
-  tvView?: Experience;
+  monitorView?: Experience;
   participantView?: Experience;
   participants: ParticipantSummary[];
   selectedParticipantId?: string;
@@ -16,7 +16,7 @@ interface ContextDetailsProps {
 }
 
 export default function ContextDetails({
-  tvView,
+  monitorView,
   participantView,
   participants,
   selectedParticipantId,
@@ -25,15 +25,15 @@ export default function ContextDetails({
   setViewMode,
 }: ContextDetailsProps) {
   const currentBlock =
-    viewMode === 'tv'
-      ? tvView?.blocks.find((block) => block.status === 'open')
+    viewMode === 'monitor'
+      ? monitorView?.blocks.find((block) => block.status === 'open')
       : participantView?.blocks[0];
 
   return (
     <Panel title="Details">
       <div className={styles.toggleButtons}>
-        <Button onClick={() => setViewMode('tv')} disabled={viewMode === 'tv'}>
-          TV View
+        <Button onClick={() => setViewMode('monitor')} disabled={viewMode === 'monitor'}>
+          Monitor View
         </Button>
         <Button onClick={() => setViewMode('participant')} disabled={viewMode === 'participant'}>
           Participant View

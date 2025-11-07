@@ -3,16 +3,16 @@ import { ExperienceBlockContainer } from '@cctv/experiences';
 
 import QRCodeDisplay from '../Manage/QRCodeDisplay/QRCodeDisplay';
 
-import styles from './Tv.module.scss';
+import styles from './Monitor.module.scss';
 
-export default function Tv() {
-  const { tvView, code, isLoading, error } = useExperience();
+export default function Monitor() {
+  const { monitorView, code, isLoading, error } = useExperience();
 
   if (isLoading) {
     return (
       <section className="page flex-centered">
         <h1 className={styles.title}>{code || 'Experience'}</h1>
-        <p className={styles.subtitle}>Preparing TV view…</p>
+        <p className={styles.subtitle}>Preparing Monitor view…</p>
       </section>
     );
   }
@@ -26,16 +26,16 @@ export default function Tv() {
     );
   }
 
-  if (!tvView) {
+  if (!monitorView) {
     return (
       <section className="page flex-centered">
         <h1 className={styles.title}>{code}</h1>
-        <p className={styles.subtitle}>Loading TV view...</p>
+        <p className={styles.subtitle}>Loading Monitor view...</p>
       </section>
     );
   }
 
-  const currentBlock = tvView.blocks[0];
+  const currentBlock = monitorView.blocks[0];
 
   return (
     <section className={styles.root}>
@@ -45,7 +45,7 @@ export default function Tv() {
         </div>
       ) : (
         <div className={styles.qrContainer}>
-          <QRCodeDisplay experience={tvView} />
+          <QRCodeDisplay experience={monitorView} />
         </div>
       )}
     </section>

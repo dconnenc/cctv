@@ -10,8 +10,8 @@ interface ContextViewProps {
   block?: Block;
   participant?: ParticipantSummary;
   emptyMessage: string;
-  tvView?: Experience;
-  viewMode: 'tv' | 'participant';
+  monitorView?: Experience;
+  viewMode: 'monitor' | 'participant';
   title?: string;
 }
 
@@ -19,18 +19,22 @@ export default function ContextView({
   block,
   participant,
   emptyMessage,
-  tvView,
+  monitorView,
   viewMode,
   title,
 }: ContextViewProps) {
-  const panelTitle = title || (viewMode === 'tv' ? 'TV View' : 'Current');
-  if (viewMode === 'tv' && tvView) {
-    const tvBlock = tvView.blocks[0];
+  const panelTitle = title || (viewMode === 'monitor' ? 'Monitor View' : 'Current');
+  if (viewMode === 'monitor' && monitorView) {
+    const monitorBlock = monitorView.blocks[0];
 
     return (
       <Panel title={panelTitle}>
         <div className={styles.preview}>
-          {tvBlock ? <BlockPreview block={tvBlock} /> : <QRCodeDisplay experience={tvView} />}
+          {monitorBlock ? (
+            <BlockPreview block={monitorBlock} />
+          ) : (
+            <QRCodeDisplay experience={monitorView} />
+          )}
         </div>
       </Panel>
     );
