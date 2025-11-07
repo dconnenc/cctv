@@ -34,11 +34,12 @@ function App() {
   }, []);
 
   const currentRoute = useLocation();
+
   return (
     <UserProvider>
       <div className={`app${booting ? ' app--booting' : ''}`}>
         <BackgroundStatic />
-        {currentRoute.pathname !== 'monitor' && <TopNav />}
+        {currentRoute.pathname !== '/monitor' && <TopNav />}
         <div className={styles.root}>
           <RouteWink>
             <Route path="/" element={<Home />} />
