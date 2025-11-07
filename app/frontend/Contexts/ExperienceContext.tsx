@@ -51,7 +51,7 @@ export function ExperienceProvider({ children }: ExperienceProviderProps) {
   const [error, setError] = useState<string>();
 
   // Manage page specific state
-  const [tvView, setTvView] = useState<Experience>();
+  const [monitorView, setMonitorView] = useState<Experience>();
   const [participantView, setParticipantView] = useState<Experience>();
   const [impersonatedParticipantId, setImpersonatedParticipantId] = useState<string>();
 
@@ -59,12 +59,12 @@ export function ExperienceProvider({ children }: ExperienceProviderProps) {
   const [wsConnected, setWsConnected] = useState(false);
   const [wsError, setWsError] = useState<string>();
   const wsRef = useRef<WebSocket>();
-  const tvWsRef = useRef<WebSocket>();
+  const monitorWsRef = useRef<WebSocket>();
   const impersonationWsRef = useRef<WebSocket>();
 
   const currentCode = code || '';
   const isManagePage = location.pathname.includes('/manage');
-  const isTvPage = location.pathname.includes('/tv');
+  const isMonitorPage = location.pathname.includes('/monitor');
 
   // Helper to make requests with credentials
   const experienceFetch = useCallback(
@@ -147,13 +147,13 @@ export function ExperienceProvider({ children }: ExperienceProviderProps) {
     qaLogger(`Experience code changed to ${currentCode} — resetting context`);
     setExperience(undefined);
     setParticipant(undefined);
-    setTvView(undefined);
+    setMonitorView(undefined);
     setParticipantView(undefined);
     setError(undefined);
     setIsLoading(true);
 
-    if ((isManagePage || isTvPage) && isAdmin) {
-      // Admin on manage or TV page: try to load or fetch admin JWT
+    if ((isManagePage || isMonitorPage) && isAdmin) {
+      // Admin on manage or Monitor page: try to load or fetch admin JWT
       const storedAdminJWT = getStoredAdminJWT(currentCode);
       if (storedAdminJWT) {
         qaLogger('Found stored admin JWT; setting in context');
@@ -175,7 +175,7 @@ export function ExperienceProvider({ children }: ExperienceProviderProps) {
       }
       setIsLoading(false);
     }
-  }, [currentCode, isManagePage, isTvPage, isAdmin, fetchAdminJWT]);
+  }, [currentCode, isManagePage, isMonitorPage, isAdmin, fetchAdminJWT]);
 
   // WebSocket connection management
   useEffect(() => {
@@ -186,10 +186,10 @@ export function ExperienceProvider({ children }: ExperienceProviderProps) {
     }
 
     if (isManagePage) {
-      qaLogger('[WS SETUP] MANAGE PAGE - Creating 3 websockets: Admin, TV, Impersonation');
-      // Manage page: connect to admin, TV, and impersonation websockets
+      qaLogger('[WS SETUP] MANAGE PAGE - Creating 3 websockets: Admin, Monitor, Impersonation');
+      // Manage page: connect to admin, Monitor, and impersonation websockets
       connectAdminWebsocket();
-      connectTvWebsocket();
+      connectMonitorWebsocket();
 
       // Connect impersonation if participant selected
       if (impersonatedParticipantId) {
@@ -197,10 +197,10 @@ export function ExperienceProvider({ children }: ExperienceProviderProps) {
       } else {
         disconnectImpersonationWebsocket();
       }
-    } else if (isTvPage) {
-      qaLogger('[WS SETUP] TV PAGE - Creating 1 websocket: TV');
-      // TV page: single TV websocket
-      connectTvWebsocket();
+    } else if (isMonitorPage) {
+      qaLogger('[WS SETUP] Monitor PAGE - Creating 1 websocket: Monitor');
+      // Monitor page: single Monitor websocket
+      connectMonitorWebsocket();
     } else {
       qaLogger('[WS SETUP] PARTICIPANT PAGE - Creating 1 websocket: Participant');
       // Regular participant page: single websocket
@@ -208,7 +208,7 @@ export function ExperienceProvider({ children }: ExperienceProviderProps) {
     }
 
     return () => disconnectAllWebsockets();
-  }, [jwt, currentCode, isManagePage, isTvPage, impersonatedParticipantId]);
+  }, [jwt, currentCode, isManagePage, isMonitorPage, impersonatedParticipantId]);
 
   const connectParticipantWebsocket = useCallback(() => {
     if (wsRef.current?.readyState === WebSocket.OPEN) return;
@@ -297,17 +297,17 @@ export function ExperienceProvider({ children }: ExperienceProviderProps) {
     };
   }, [jwt, currentCode]);
 
-  const connectTvWebsocket = useCallback(() => {
-    if (tvWsRef.current?.readyState === WebSocket.OPEN) return;
+  const connectMonitorWebsocket = useCallback(() => {
+    if (monitorWsRef.current?.readyState === WebSocket.OPEN) return;
 
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const wsUrl = `${protocol}//${window.location.host}/cable`;
 
-    qaLogger(`[TV WS] Connecting: ${wsUrl}`);
-    tvWsRef.current = new WebSocket(wsUrl);
+    qaLogger(`[Monitor WS] Connecting: ${wsUrl}`);
+    monitorWsRef.current = new WebSocket(wsUrl);
 
-    tvWsRef.current.onopen = () => {
-      qaLogger('[TV WS] WebSocket connected');
+    monitorWsRef.current.onopen = () => {
+      qaLogger('[Monitor WS] WebSocket connected');
 
       const subscription = {
         command: 'subscribe',
@@ -315,24 +315,24 @@ export function ExperienceProvider({ children }: ExperienceProviderProps) {
           channel: 'ExperienceSubscriptionChannel',
           code: currentCode,
           token: jwt,
-          view_type: 'tv',
+          view_type: 'monitor',
         }),
       };
 
-      tvWsRef.current?.send(JSON.stringify(subscription));
+      monitorWsRef.current?.send(JSON.stringify(subscription));
     };
 
-    tvWsRef.current.onmessage = (event) => {
+    monitorWsRef.current.onmessage = (event) => {
       const message = JSON.parse(event.data);
-      handleTvMessage(message);
+      handleMonitorMessage(message);
     };
 
-    tvWsRef.current.onerror = () => {
-      qaLogger('[TV WS] WebSocket error');
+    monitorWsRef.current.onerror = () => {
+      qaLogger('[Monitor WS] WebSocket error');
     };
 
-    tvWsRef.current.onclose = () => {
-      qaLogger('[TV WS] WebSocket closed');
+    monitorWsRef.current.onclose = () => {
+      qaLogger('[Monitor WS] WebSocket closed');
     };
   }, [jwt, currentCode]);
 
@@ -395,10 +395,10 @@ export function ExperienceProvider({ children }: ExperienceProviderProps) {
       wsRef.current.close();
       wsRef.current = undefined;
     }
-    if (tvWsRef.current) {
-      qaLogger('[WS] Disconnecting TV WebSocket');
-      tvWsRef.current.close();
-      tvWsRef.current = undefined;
+    if (monitorWsRef.current) {
+      qaLogger('[WS] Disconnecting monitor WebSocket');
+      monitorWsRef.current.close();
+      monitorWsRef.current = undefined;
     }
     if (impersonationWsRef.current) {
       qaLogger('[WS] Disconnecting impersonation WebSocket');
@@ -504,18 +504,18 @@ export function ExperienceProvider({ children }: ExperienceProviderProps) {
     }
   }, []);
 
-  const handleTvMessage = useCallback((message: any) => {
+  const handleMonitorMessage = useCallback((message: any) => {
     if (message.type === 'ping') return;
 
     if (message.type === 'welcome') return;
 
     if (message.type === 'confirm_subscription') {
-      qaLogger('[TV WS] Subscription confirmed');
+      qaLogger('[Monitor WS] Subscription confirmed');
       return;
     }
 
     if (message.type === 'reject_subscription') {
-      qaLogger('[TV WS] SUBSCRIPTION REJECTED - Check backend logs');
+      qaLogger('[Monitor WS] SUBSCRIPTION REJECTED - Check backend logs');
       return;
     }
 
@@ -534,15 +534,15 @@ export function ExperienceProvider({ children }: ExperienceProviderProps) {
       messageType === WebSocketMessageTypes.EXPERIENCE_UPDATED ||
       messageType === WebSocketMessageTypes.STREAM_CHANGED
     ) {
-      qaLogger(`[TV WS] Processing: ${messageType}`);
+      qaLogger(`[Monitor WS] Processing: ${messageType}`);
       const experienceMessage = wsMessage as any;
       const updatedExperience = experienceMessage.experience;
 
       if (updatedExperience) {
         qaLogger(
-          `[TV WS] Updating TV view: status=${updatedExperience.status}, blocks=${updatedExperience.blocks?.length || 0}`,
+          `[Monitor WS] Updating Monitor view: status=${updatedExperience.status}, blocks=${updatedExperience.blocks?.length || 0}`,
         );
-        setTvView(updatedExperience);
+        setMonitorView(updatedExperience);
       }
     }
   }, []);
@@ -610,7 +610,7 @@ export function ExperienceProvider({ children }: ExperienceProviderProps) {
     setJWT(undefined);
     setExperience(undefined);
     setParticipant(undefined);
-    setTvView(undefined);
+    setMonitorView(undefined);
     setParticipantView(undefined);
     setError(undefined);
   }, [currentCode]);
@@ -634,7 +634,7 @@ export function ExperienceProvider({ children }: ExperienceProviderProps) {
     wsError,
 
     // Manage page specific
-    tvView,
+    monitorView,
     participantView,
     impersonatedParticipantId,
     setImpersonatedParticipantId,

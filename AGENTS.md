@@ -80,10 +80,10 @@ updates flow through websockets - there is NO manual refetching.
 - Receives filtered view based on visibility rules
 - Backend sends exactly the block(s) that participant should see
 
-**2. TV Stream (Shared)**
+**2. Monitor Stream (Shared)**
 
-- Stream key: `experience_{experience_id}_tv`
-- Shared by all TV viewers
+- Stream key: `experience_{experience_id}_Monitor`
+- Shared by all Monitor viewers
 - Receives public/projected view
 - Shows all parent blocks (for projection/display)
 
@@ -100,7 +100,7 @@ updates flow through websockets - there is NO manual refetching.
 Creates 3 websocket connections:
 
 1. Admin websocket → subscribes to admin stream → updates main experience state
-2. TV websocket → subscribes to TV stream → updates TV preview panel
+2. Monitor websocket → subscribes to Monitor stream → updates Monitor preview panel
 3. Impersonation websocket → subscribes to participant stream → updates selected participant preview
 
 **Participant Page:**
@@ -116,7 +116,7 @@ When any action occurs (start/pause/resume, block status change, poll response, 
 2. `Experiences::Broadcaster.broadcast_experience_update` is called
 3. Three broadcasts are sent:
    - To all participant streams (each gets their filtered payload)
-   - To TV stream (public view with all blocks)
+   - To Monitor stream (public view with all blocks)
    - To admin stream (full view with all blocks)
 4. Frontend websockets receive updates
 5. UI updates automatically
@@ -130,7 +130,7 @@ When any action occurs (start/pause/resume, block status change, poll response, 
 - System admin (admin JWT) → admin stream
 - Experience host/moderator (participant JWT, role=host/moderator) → admin stream
 - Regular participant (participant JWT, role=player/audience) → participant stream
-- TV view parameter (`view_type: 'tv'`) → TV stream
+- Monitor view parameter (`view_type: 'monitor'`) → Monitor stream
 - Impersonation parameter (`as_participant_id: X`) → that participant's stream
 
 ## Frontend Context Management
@@ -140,7 +140,7 @@ When any action occurs (start/pause/resume, block status change, poll response, 
 - JWT loading/generation (detects if admin or participant)
 - Websocket connections (creates 1 or 3 based on route)
 - Experience state (updated via websocket messages only)
-- Manage page state (tvView, participantView, impersonatedParticipantId)
+- Manage page state (monitorView, participantView, impersonatedParticipantId)
 
 The context automatically:
 

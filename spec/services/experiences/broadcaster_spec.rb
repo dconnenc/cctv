@@ -141,8 +141,8 @@ RSpec.describe Experiences::Broadcaster do
           blocks = message[:message][:experience][:blocks]
 
           block_kinds = blocks.map { |b| b[:kind] }
-          
-          expect(blocks.size).to eq(3), 
+
+          expect(blocks.size).to eq(3),
             "Expected 3 blocks but got #{blocks.size}: #{block_kinds}"
           expect(block_kinds).to include("mad_lib")
           expect(block_kinds).to include("question")
@@ -330,28 +330,28 @@ RSpec.describe Experiences::Broadcaster do
   describe "next_block inclusion" do
     let(:experience) { create(:experience, status: :live) }
     let(:participant) { create(:experience_participant, experience: experience, name: "Test User") }
-    
+
     let!(:current_block) { create(:experience_block, experience: experience, status: :open, position: 0) }
     let!(:next_block_open) { create(:experience_block, experience: experience, status: :open, position: 1) }
     let!(:hidden_block) { create(:experience_block, experience: experience, status: :hidden, position: 2) }
-    
-    it "includes next_block in TV stream after serialization" do
+
+    it "includes next_block in Monitor stream after serialization" do
       broadcaster = described_class.new(experience)
-      
+
       expect(ActionCable.server).to receive(:broadcast) do |stream_key, message|
-        expect(stream_key).to include("_tv")
+        expect(stream_key).to include("_monitor")
         # Check the actual serialized experience object that goes over the wire
         expect(message[:experience]).to have_key(:next_block)
         expect(message[:experience][:next_block]).to be_present
         expect(message[:experience][:next_block][:id]).to eq(next_block_open.id)
       end
-      
-      broadcaster.send(:broadcast_tv_view)
+
+      broadcaster.send(:broadcast_monitor_view)
     end
-    
+
     it "includes next_block in admin stream after serialization" do
       broadcaster = described_class.new(experience)
-      
+
       expect(ActionCable.server).to receive(:broadcast) do |stream_key, message|
         expect(stream_key).to include("_admins")
         expect(message[:experience]).to have_key(:next_block)
@@ -359,37 +359,37 @@ RSpec.describe Experiences::Broadcaster do
         # Admin sees next sibling of current open block (which is the open block at position 1)
         expect(message[:experience][:next_block][:id]).to eq(next_block_open.id)
       end
-      
+
       broadcaster.send(:broadcast_admin_view)
     end
-    
+
     it "includes next_block in participant streams after serialization" do
       broadcaster = described_class.new(experience)
-      
+
       expect(ActionCable.server).to receive(:broadcast) do |stream_key, message|
         expect(stream_key).to include("participant_")
         expect(message[:experience]).to have_key(:next_block)
         # Participant might not see next block if it has visibility rules
         # Just verify the key exists (can be nil)
       end
-      
+
       broadcaster.send(:broadcast_to_participant, participant)
     end
-    
+
     context "when there is no next block" do
       let(:single_block_experience) { create(:experience, status: :live) }
       let!(:only_block) { create(:experience_block, experience: single_block_experience, status: :open, position: 0) }
-      
+
       let(:single_broadcaster) { described_class.new(single_block_experience) }
-      
+
       it "sets next_block to nil in serialized output" do
         expect(ActionCable.server).to receive(:broadcast) do |stream_key, message|
-          expect(stream_key).to include("_tv")
+          expect(stream_key).to include("_monitor")
           expect(message[:experience]).to have_key(:next_block)
           expect(message[:experience][:next_block]).to be_nil
         end
-        
-        single_broadcaster.send(:broadcast_tv_view)
+
+        single_broadcaster.send(:broadcast_monitor_view)
       end
     end
   end

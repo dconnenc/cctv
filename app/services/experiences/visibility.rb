@@ -33,16 +33,16 @@ module Experiences
       visible_blocks = admin_visible_blocks(experience)
       current_block = resolve_block_for_admin(experience: experience, blocks: visible_blocks)
       return nil unless current_block
-      
+
       blocks_without_current = visible_blocks.reject { |b| b == current_block }
       resolve_block_for_admin(experience: experience, blocks: blocks_without_current)
     end
 
-    def self.next_block_for_tv(experience:)
-      visible_blocks = tv_visible_blocks(experience)
+    def self.next_block_for_monitor(experience:)
+      visible_blocks = monitor_visible_blocks(experience)
       current_block = visible_blocks.first
       return nil unless current_block
-      
+
       blocks_without_current = visible_blocks.reject { |b| b == current_block }
       blocks_without_current.first
     end
@@ -55,7 +55,7 @@ module Experiences
       return nil if blocks.empty?
 
       parent_blocks = blocks.reject(&:child_block?)
-      
+
       parent_blocks.sort_by(&:position).each do |block|
         if block.has_dependencies?
           first_child = block.child_blocks.order(position: :asc).first
@@ -107,19 +107,19 @@ module Experiences
       ).payload
     end
 
-    def self.payload_for_tv(experience:)
-      visible_blocks = tv_visible_blocks(experience)
-      
+    def self.payload_for_monitor(experience:)
+      visible_blocks = monitor_visible_blocks(experience)
+
       current_block = visible_blocks.first
       blocks = if current_block
-        [serialize_block_for_tv(experience: experience, block: current_block)]
+        [serialize_block_for_monitor(experience: experience, block: current_block)]
       else
         []
       end
 
       next_block = visible_blocks.second
       serialized_next = if next_block
-        serialize_block_for_tv(experience: experience, block: next_block)
+        serialize_block_for_monitor(experience: experience, block: next_block)
       else
         nil
       end
@@ -133,7 +133,7 @@ module Experiences
       }
     end
 
-    def self.tv_visible_blocks(experience)
+    def self.monitor_visible_blocks(experience)
       parent_blocks = experience.parent_blocks
         .where(status: 'open')
         .where(visible_to_roles: [], visible_to_segments: [], target_user_ids: [])
@@ -162,7 +162,7 @@ module Experiences
         block.target_user_ids.present?
     end
 
-    def self.serialize_block_for_tv(experience:, block:)
+    def self.serialize_block_for_monitor(experience:, block:)
       serialized = BlockSerializer.serialize_for_stream(
         block,
         participant_role: "host"
@@ -248,7 +248,7 @@ module Experiences
         resolved_block = resolve_block_for_user(user)
         resolved_block ? [serialize_block_for_user(resolved_block, user)] : []
       end
-      
+
       next_block = next_block_for_user(user)
 
       {
@@ -311,10 +311,10 @@ module Experiences
     def next_block_for_user(user)
       current_block = resolve_block_for_user(user)
       return nil unless current_block
-      
+
       # Get all visible blocks except the current resolved block
       blocks_without_current = visible_blocks.reject { |b| b == current_block }
-      
+
       # Use the same resolution logic on the remaining blocks
       resolve_block_for_user(user, blocks: blocks_without_current)
     end

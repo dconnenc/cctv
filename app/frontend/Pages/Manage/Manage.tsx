@@ -29,7 +29,7 @@ export default function Manage() {
     code,
     isLoading,
     error: experienceError,
-    tvView,
+    monitorView,
     participantView,
     impersonatedParticipantId,
     setImpersonatedParticipantId,
@@ -41,7 +41,7 @@ export default function Manage() {
 
   const [activeTab, setActiveTab] = useState<Tab>('program');
   const [busyBlockId, setBusyBlockId] = useState<string>();
-  const [viewMode, setViewMode] = useState<'tv' | 'participant'>('tv');
+  const [viewMode, setViewMode] = useState<'monitor' | 'participant'>('monitor');
 
   const participantsCombined: ParticipantSummary[] = useMemo(
     () => [...(experience?.hosts || []), ...(experience?.participants || [])],
@@ -96,8 +96,8 @@ export default function Manage() {
   const isChangingState = starting || pausing || resuming;
 
   const currentBlock =
-    viewMode === 'tv'
-      ? tvView?.blocks.find((block) => block.status === 'open')
+    viewMode === 'monitor'
+      ? monitorView?.blocks.find((block) => block.status === 'open')
       : participantView?.blocks[0];
 
   const participant = participantsCombined.find((p) => p.id === impersonatedParticipantId);
@@ -110,17 +110,17 @@ export default function Manage() {
         <div className={styles.upNext}>
           <ContextView
             block={
-              viewMode === 'tv'
-                ? (tvView?.next_block ?? undefined)
+              viewMode === 'monitor'
+                ? (monitorView?.next_block ?? undefined)
                 : (participantView?.next_block ?? undefined)
             }
             participant={viewMode === 'participant' ? participant : undefined}
             emptyMessage={
-              viewMode === 'tv'
-                ? 'No upcoming block for TV'
+              viewMode === 'monitor'
+                ? 'No upcoming block for Monitor'
                 : `No upcoming block for ${participant?.name || 'participant'}`
             }
-            tvView={undefined}
+            monitorView={undefined}
             viewMode={viewMode}
             title="Up Next"
           />
@@ -128,7 +128,7 @@ export default function Manage() {
 
         <div className={styles.contextDetails}>
           <ContextDetails
-            tvView={tvView}
+            monitorView={monitorView}
             participantView={participantView}
             participants={participantsCombined}
             selectedParticipantId={impersonatedParticipantId}
@@ -142,8 +142,10 @@ export default function Manage() {
           <ContextView
             block={currentBlock}
             participant={viewMode === 'participant' ? participant : undefined}
-            emptyMessage={viewMode === 'tv' ? 'No block on TV' : 'No block for participant'}
-            tvView={tvView}
+            emptyMessage={
+              viewMode === 'monitor' ? 'No block on Monitor' : 'No block for participant'
+            }
+            monitorView={monitorView}
             viewMode={viewMode}
             title="Current"
           />

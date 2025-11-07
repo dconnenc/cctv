@@ -2,8 +2,8 @@ class ExperienceSubscriptionChannel < ApplicationCable::Channel
   def subscribed
     setup_experience_and_user
 
-    if tv_view_subscription?
-      setup_tv_view_subscription
+    if monitor_view_subscription?
+      setup_monitor_view_subscription
     elsif impersonation_subscription?
       setup_impersonation_subscription
     else
@@ -41,18 +41,18 @@ class ExperienceSubscriptionChannel < ApplicationCable::Channel
     )
   end
 
-  def tv_view_subscription?
-    params[:view_type] == 'tv'
+  def monitor_view_subscription?
+    params[:view_type] == 'monitor'
   end
 
   def impersonation_subscription?
     params[:as_participant_id].present?
   end
 
-  def setup_tv_view_subscription
+  def setup_monitor_view_subscription
     authorize_admin_or_host_or_reject
-    @current_stream = Experiences::Broadcaster.tv_stream_key(@experience)
-    @view_type = 'tv'
+    @current_stream = Experiences::Broadcaster.monitor_stream_key(@experience)
+    @view_type = 'monitor'
     stream_from @current_stream
     log_stream_subscription
   end
@@ -111,16 +111,16 @@ class ExperienceSubscriptionChannel < ApplicationCable::Channel
       "[ExperienceChannel] send_initial_experience_state: view_type=#{@view_type}, " \
       "user=#{@user&.id}, participant=#{@participant&.id}, is_admin=#{@is_admin}"
     )
-    
+
     case @view_type
-    when 'tv'
+    when 'monitor'
       transmit(
         WebsocketMessageService.experience_state(
           @experience,
-          visibility_payload: Experiences::Visibility.payload_for_tv(
+          visibility_payload: Experiences::Visibility.payload_for_monitor(
             experience: @experience
           ),
-          logical_stream: "tv_view",
+          logical_stream: "monitor_view",
           participant_id: nil,
           include_participants: true
         )
@@ -140,13 +140,13 @@ class ExperienceSubscriptionChannel < ApplicationCable::Channel
     else
       # Admin or participant stream
       is_manager = (@is_admin && !@participant) || is_host_or_moderator?
-      
+
       Rails.logger.info(
         "[ExperienceChannel] Else branch: is_manager=#{is_manager}, " \
         "is_admin=#{@is_admin}, participant=#{@participant&.id}, " \
         "is_host_or_mod=#{is_host_or_moderator?}"
       )
-      
+
       if is_manager
         # Admin/host viewing full experience (managers get full view)
         Rails.logger.info("[ExperienceChannel] Sending admin initial state")
@@ -168,13 +168,13 @@ class ExperienceSubscriptionChannel < ApplicationCable::Channel
           "[ExperienceChannel] Sending participant initial state: " \
           "participant_id=#{@participant.id}, user_id=#{@user.id}"
         )
-        
+
         payload = payload_for_participant(@user)
         Rails.logger.info(
           "[ExperienceChannel] Participant payload: " \
           "blocks_count=#{payload.dig(:experience, :blocks)&.length || 0}"
         )
-        
+
         participant_summary = {
           id: @participant.id,
           user_id: @participant.user_id,
@@ -182,7 +182,7 @@ class ExperienceSubscriptionChannel < ApplicationCable::Channel
           email: @participant.user.email,
           role: @participant.role
         }
-        
+
         transmit(
           WebsocketMessageService.experience_state(
             @experience,
@@ -213,7 +213,7 @@ class ExperienceSubscriptionChannel < ApplicationCable::Channel
       email: @participant.user.email,
       role: @participant.role
     }
-    
+
     transmit(
       WebsocketMessageService.experience_state(
         @experience,
@@ -230,7 +230,7 @@ class ExperienceSubscriptionChannel < ApplicationCable::Channel
     # Frontend sends 'code' param which contains the slug from URL
     # Accept both 'code' and 'code_slug' for backward compatibility during transition
     slug = params[:code_slug] || params[:code]
-    
+
     experience = Experience.find_by(code_slug: slug)
     return experience if experience
 
@@ -278,7 +278,7 @@ class ExperienceSubscriptionChannel < ApplicationCable::Channel
 
   def find_participant_record_or_reject
     return nil unless @user
-    return nil if tv_view_subscription? || impersonation_subscription?
+    return nil if monitor_view_subscription? || impersonation_subscription?
 
     # Admins don't need participant records
     return nil if @is_admin
