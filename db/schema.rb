@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2025_10_24_154744) do
+ActiveRecord::Schema[7.2].define(version: 2025_11_11_152004) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "citext"
   enable_extension "plpgsql"
@@ -72,6 +72,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_10_24_154744) do
     t.datetime "updated_at", null: false
     t.uuid "parent_block_id"
     t.integer "position", default: 0, null: false
+    t.boolean "show_in_lobby", default: false, null: false
     t.index ["experience_id", "position"], name: "index_parent_blocks_unique_position", unique: true, where: "(parent_block_id IS NULL)"
     t.index ["experience_id", "status"], name: "index_experience_blocks_on_experience_id_and_status"
     t.index ["experience_id"], name: "index_experience_blocks_on_experience_id"
