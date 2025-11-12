@@ -139,158 +139,7 @@ RSpec.describe Experiences::Orchestrator do
     end
   end
 
-  describe "#submit_poll_response!" do
-    let(:experience_status) { Experience.statuses[:live] }
-    let(:block_status) { "open" }
-    let(:answer) { "option_a" }
 
-    let(:block) do
-      create(
-        :experience_block,
-        experience: experience,
-        kind: "poll",
-        status: block_status
-      )
-    end
-
-    subject do
-      described_class.new(actor: user, experience: experience).submit_poll_response!(
-        block_id: block.id,
-        answer: answer
-      )
-    end
-
-    context "when the user is a participant and block has no visibility restrictions" do
-      let(:participant_role) { ExperienceParticipant.roles[:audience] }
-
-      it "creates a poll submission" do
-        expect { subject }.to change { ExperiencePollSubmission.count }.by(1)
-      end
-
-      it "returns the submission" do
-        submission = subject
-        expect(submission).to be_a(ExperiencePollSubmission)
-        expect(submission.answer).to eq(answer)
-        expect(submission.user).to eq(user)
-        expect(submission.experience_block).to eq(block)
-      end
-    end
-
-    context "when the user is not a participant" do
-      let(:non_participant_user) { create(:user, :user) }
-
-      subject do
-        described_class.new(actor: non_participant_user, experience: experience).submit_poll_response!(
-          block_id: block.id,
-          answer: answer
-        )
-      end
-
-      it "raises a forbidden error" do
-        expect { subject }.to raise_error(Experiences::ForbiddenError)
-      end
-    end
-
-    context "when the block is not open" do
-      let(:block_status) { "closed" }
-      let(:participant_role) { ExperienceParticipant.roles[:audience] }
-
-      it "raises a forbidden error" do
-        expect { subject }.to raise_error(Experiences::ForbiddenError)
-      end
-    end
-
-    context "when the block has role-based visibility restrictions" do
-      let(:block) do
-        create(
-          :experience_block,
-          experience: experience,
-          kind: "poll",
-          status: "open",
-          visible_to_roles: ["host", "moderator"]
-        )
-      end
-
-      context "and user has an allowed role" do
-        let(:participant_role) { ExperienceParticipant.roles[:host] }
-
-        it "allows submission" do
-          expect { subject }.to change { ExperiencePollSubmission.count }.by(1)
-        end
-      end
-
-      context "and user has a restricted role" do
-        let(:participant_role) { ExperienceParticipant.roles[:audience] }
-
-        it "raises a forbidden error" do
-          expect { subject }.to raise_error(Experiences::ForbiddenError)
-        end
-      end
-    end
-
-    context "when the block has user-specific targeting" do
-      let(:other_user) { create(:user, :user) }
-      let(:block) do
-        create(
-          :experience_block,
-          experience: experience,
-          kind: "poll",
-          status: "open",
-          target_user_ids: [other_user.id]
-        )
-      end
-
-      before do
-        create(
-          :experience_participant,
-          user: other_user,
-          experience: experience,
-          role: :audience
-        )
-      end
-
-      context "and user is targeted" do
-        let(:block) do
-          create(
-            :experience_block,
-            experience: experience,
-            kind: "poll",
-            status: "open",
-            target_user_ids: [user.id]
-          )
-        end
-
-        it "allows submission" do
-          expect { subject }.to change { ExperiencePollSubmission.count }.by(1)
-        end
-      end
-
-      context "and user is not targeted" do
-        it "raises a forbidden error" do
-          expect { subject }.to raise_error(Experiences::ForbiddenError)
-        end
-      end
-    end
-
-    context "when updating an existing submission" do
-      let(:participant_role) { ExperienceParticipant.roles[:audience] }
-
-      before do
-        create(
-          :experience_poll_submission,
-          experience_block: block,
-          user: user,
-          answer: "old_answer"
-        )
-      end
-
-      it "updates the existing submission instead of creating a new one" do
-        expect { subject }.not_to change { ExperiencePollSubmission.count }
-
-        expect(subject.answer).to eq(answer)
-      end
-    end
-  end
 
   describe "#add_block!" do
     let(:kind) { "poll" }
@@ -318,19 +167,16 @@ RSpec.describe Experiences::Orchestrator do
     context "when the actor is authorized to perform the action" do
       let(:participant_role) { ExperienceParticipant.roles[:host] }
 
-      it "creates a new experience block" do
-        expect { subject }.to change { ExperienceBlock.count }.by(1)
-      end
-
-      it "returns the created block" do
+      it "returns a persisted block with the specified configuration" do
         block = subject
-        expect(block).to be_a(ExperienceBlock)
+        expect(block).to be_persisted
         expect(block.kind).to eq(kind)
-        expect(block.payload).to eq(payload)
+        expect(block.payload).to eq(payload.stringify_keys)
         expect(block.status).to eq(status.to_s)
+        expect(block.experience).to eq(experience)
       end
 
-      it "sets the position to the next available position" do
+      it "positions the block after existing blocks" do
         create(:experience_block, experience: experience, position: 5)
         block = subject
         expect(block.position).to eq(6)
@@ -339,35 +185,19 @@ RSpec.describe Experiences::Orchestrator do
       context "when open_immediately is true" do
         let(:open_immediately) { true }
 
-        it "sets the block status to open" do
+        it "opens the block immediately" do
           block = subject
           expect(block.status).to eq("open")
         end
       end
 
-      context "when open_immediately is false" do
-        let(:open_immediately) { false }
-
-        it "keeps the block status as provided" do
-          block = subject
-          expect(block.status).to eq(status.to_s)
-        end
-      end
-
-      context "when visible_to_roles is specified" do
+      context "when visibility restrictions are specified" do
         let(:visible_to_roles) { ["host", "moderator"] }
-
-        it "sets the visible_to_roles on the block" do
-          block = subject
-          expect(block.visible_to_roles).to eq(visible_to_roles)
-        end
-      end
-
-      context "when target_user_ids is specified" do
         let(:target_user_ids) { [user.id] }
 
-        it "sets the target_user_ids on the block" do
+        it "applies the visibility restrictions" do
           block = subject
+          expect(block.visible_to_roles).to eq(visible_to_roles)
           expect(block.target_user_ids).to eq(target_user_ids)
         end
       end
@@ -406,22 +236,17 @@ RSpec.describe Experiences::Orchestrator do
     context "when the actor is authorized to perform the action" do
       let(:participant_role) { ExperienceParticipant.roles[:host] }
 
-      context "and there are no variables" do
-        let(:variables) { [] }
-
-        it "creates a parent block" do
-          expect { subject }.to change { ExperienceBlock.count }.by(1)
-        end
-
-        it "returns the created parent block" do
+      context "with no variables" do
+        it "returns a persisted parent block" do
           block = subject
-          expect(block).to be_a(ExperienceBlock)
+          expect(block).to be_persisted
           expect(block.kind).to eq(kind)
-          expect(block.payload).to eq(payload)
+          expect(block.payload).to eq(payload.stringify_keys)
+          expect(block.variables).to be_empty
         end
       end
 
-      context "and there are variables with participant sources" do
+      context "with a participant source variable" do
         let(:other_user) { create(:user, :user) }
         let(:variables) do
           [
@@ -447,32 +272,24 @@ RSpec.describe Experiences::Orchestrator do
           )
         end
 
-        it "creates a parent block and child block" do
-          expect { subject }.to change { ExperienceBlock.count }.by(2)
-        end
-
-        it "creates a variable for the parent block" do
-          expect { subject }.to change { ExperienceBlockVariable.count }.by(1)
-        end
-
-        it "creates a block link between parent and child" do
-          expect { subject }.to change { ExperienceBlockLink.count }.by(1)
-        end
-
-        it "creates a variable binding" do
-          expect { subject }.to change { ExperienceBlockVariableBinding.count }.by(1)
-        end
-
-        it "creates a question block targeting the participant" do
+        it "creates a variable bound to a question block for that participant" do
           parent_block = subject
-          child_block = parent_block.child_blocks.first
-          expect(child_block.kind).to eq("question")
-          expect(child_block.target_user_ids).to eq([other_user.id])
-          expect(child_block.payload["question"]).to eq("What is your name?")
+
+          variable = parent_block.variables.find_by(key: "name")
+          expect(variable).to be_present
+          expect(variable.label).to eq("What is your name?")
+          expect(variable.datatype).to eq("string")
+          expect(variable.required).to be true
+
+          source_block = variable.bindings.first&.source_block
+          expect(source_block).to be_present
+          expect(source_block.kind).to eq("question")
+          expect(source_block.target_user_ids).to contain_exactly(other_user.id)
+          expect(source_block.payload["question"]).to eq("What is your name?")
         end
       end
 
-      context "and there are variables with block sources" do
+      context "with a block source variable" do
         let(:variables) do
           [
             {
@@ -489,33 +306,21 @@ RSpec.describe Experiences::Orchestrator do
           ]
         end
 
-        it "creates a parent block and child block" do
-          expect { subject }.to change { ExperienceBlock.count }.by(2)
-        end
-
-        it "creates a variable for the parent block" do
-          expect { subject }.to change { ExperienceBlockVariable.count }.by(1)
-        end
-
-        it "creates a block link between parent and child" do
-          expect { subject }.to change { ExperienceBlockLink.count }.by(1)
-        end
-
-        it "creates a variable binding" do
-          expect { subject }.to change { ExperienceBlockVariableBinding.count }.by(1)
-        end
-
-        it "creates a child block with the specified properties" do
+        it "creates a variable bound to the specified block type" do
           parent_block = subject
-          child_block = parent_block.child_blocks.first
-          expect(child_block.kind).to eq("poll")
-          expect(child_block.payload).to eq({ "question" => "Choose one" })
-          expect(child_block.target_user_ids).to eq([user.id])
+
+          variable = parent_block.variables.find_by(key: "answer")
+          expect(variable).to be_present
+
+          source_block = variable.bindings.first&.source_block
+          expect(source_block).to be_present
+          expect(source_block.kind).to eq("poll")
+          expect(source_block.payload).to eq({ "question" => "Choose one" })
+          expect(source_block.target_user_ids).to contain_exactly(user.id)
         end
       end
 
-      context "and there are multiple variables" do
-        let(:other_user) { create(:user, :user) }
+      context "with multiple variables" do
         let(:variables) do
           [
             {
@@ -541,29 +346,17 @@ RSpec.describe Experiences::Orchestrator do
           ]
         end
 
-        before do
-          create(
-            :experience_participant,
-            user: other_user,
-            experience: experience,
-            role: :audience
-          )
-        end
+        it "creates all variables with their corresponding source blocks" do
+          parent_block = subject
 
-        it "creates a parent block and multiple child blocks" do
-          expect { subject }.to change { ExperienceBlock.count }.by(3)
-        end
+          expect(parent_block.variables.count).to eq(2)
+          expect(parent_block.child_blocks.count).to eq(2)
 
-        it "creates variables for each variable spec" do
-          expect { subject }.to change { ExperienceBlockVariable.count }.by(2)
-        end
+          var1 = parent_block.variables.find_by(key: "var1")
+          expect(var1.bindings.first.source_block.kind).to eq("poll")
 
-        it "creates block links for each child" do
-          expect { subject }.to change { ExperienceBlockLink.count }.by(2)
-        end
-
-        it "creates variable bindings for each variable" do
-          expect { subject }.to change { ExperienceBlockVariableBinding.count }.by(2)
+          var2 = parent_block.variables.find_by(key: "var2")
+          expect(var2.bindings.first.source_block.kind).to eq("question")
         end
       end
     end
@@ -577,22 +370,22 @@ RSpec.describe Experiences::Orchestrator do
     end
   end
 
-  describe "#submit_mad_lib_response!" do
+  shared_examples "a submission method" do |method_name, block_kind, submission_class, submission_factory|
     let(:experience_status) { Experience.statuses[:live] }
     let(:block_status) { "open" }
-    let(:answer) { { "name" => "John", "place" => "Park" } }
 
     let(:block) do
       create(
         :experience_block,
         experience: experience,
-        kind: "mad_lib",
+        kind: block_kind,
         status: block_status
       )
     end
 
     subject do
-      described_class.new(actor: user, experience: experience).submit_mad_lib_response!(
+      described_class.new(actor: user, experience: experience).public_send(
+        method_name,
         block_id: block.id,
         answer: answer
       )
@@ -601,13 +394,10 @@ RSpec.describe Experiences::Orchestrator do
     context "when the user is a participant and block has no visibility restrictions" do
       let(:participant_role) { ExperienceParticipant.roles[:audience] }
 
-      it "creates a mad lib submission" do
-        expect { subject }.to change { ExperienceMadLibSubmission.count }.by(1)
-      end
-
-      it "returns the submission" do
+      it "returns a persisted submission with the user's answer" do
         submission = subject
-        expect(submission).to be_a(ExperienceMadLibSubmission)
+        expect(submission).to be_persisted
+        expect(submission).to be_a(submission_class)
         expect(submission.answer).to eq(answer)
         expect(submission.user).to eq(user)
         expect(submission.experience_block).to eq(block)
@@ -618,7 +408,8 @@ RSpec.describe Experiences::Orchestrator do
       let(:non_participant_user) { create(:user, :user) }
 
       subject do
-        described_class.new(actor: non_participant_user, experience: experience).submit_mad_lib_response!(
+        described_class.new(actor: non_participant_user, experience: experience).public_send(
+          method_name,
           block_id: block.id,
           answer: answer
         )
@@ -643,7 +434,7 @@ RSpec.describe Experiences::Orchestrator do
         create(
           :experience_block,
           experience: experience,
-          kind: "mad_lib",
+          kind: block_kind,
           status: "open",
           visible_to_roles: ["host", "moderator"]
         )
@@ -653,7 +444,8 @@ RSpec.describe Experiences::Orchestrator do
         let(:participant_role) { ExperienceParticipant.roles[:host] }
 
         it "allows submission" do
-          expect { subject }.to change { ExperienceMadLibSubmission.count }.by(1)
+          submission = subject
+          expect(submission).to be_persisted
         end
       end
 
@@ -672,7 +464,7 @@ RSpec.describe Experiences::Orchestrator do
         create(
           :experience_block,
           experience: experience,
-          kind: "mad_lib",
+          kind: block_kind,
           status: "open",
           target_user_ids: [other_user.id]
         )
@@ -692,14 +484,15 @@ RSpec.describe Experiences::Orchestrator do
           create(
             :experience_block,
             experience: experience,
-            kind: "mad_lib",
+            kind: block_kind,
             status: "open",
             target_user_ids: [user.id]
           )
         end
 
         it "allows submission" do
-          expect { subject }.to change { ExperienceMadLibSubmission.count }.by(1)
+          submission = subject
+          expect(submission).to be_persisted
         end
       end
 
@@ -712,21 +505,62 @@ RSpec.describe Experiences::Orchestrator do
 
     context "when updating an existing submission" do
       let(:participant_role) { ExperienceParticipant.roles[:audience] }
+      let(:old_answer) { block_kind == "poll" ? "old_answer" : { "name" => "old_name" } }
 
       before do
         create(
-          :experience_mad_lib_submission,
+          submission_factory,
           experience_block: block,
           user: user,
-          answer: { "name" => "old_name" }
+          answer: old_answer
         )
       end
 
-      it "updates the existing submission instead of creating a new one" do
-        expect { subject }.not_to change { ExperienceMadLibSubmission.count }
-
-        expect(subject.answer).to eq(answer)
+      it "updates the existing submission with the new answer" do
+        submission = subject
+        expect(submission.answer).to eq(answer)
+        expect(submission_class.where(user: user, experience_block: block).count).to eq(1)
       end
     end
+  end
+
+  describe "#submit_poll_response!" do
+    let(:answer) { "option_a" }
+
+    it_behaves_like "a submission method",
+      :submit_poll_response!,
+      "poll",
+      ExperiencePollSubmission,
+      :experience_poll_submission
+  end
+
+  describe "#submit_mad_lib_response!" do
+    let(:answer) { { "name" => "John", "place" => "Park" } }
+
+    it_behaves_like "a submission method",
+      :submit_mad_lib_response!,
+      "mad_lib",
+      ExperienceMadLibSubmission,
+      :experience_mad_lib_submission
+  end
+
+  describe "#submit_question_response!" do
+    let(:answer) { "answer text" }
+
+    it_behaves_like "a submission method",
+      :submit_question_response!,
+      "question",
+      ExperienceQuestionSubmission,
+      :experience_question_submission
+  end
+
+  describe "#submit_multistep_form_response!" do
+    let(:answer) { { "step1" => "data", "step2" => "more data" } }
+
+    it_behaves_like "a submission method",
+      :submit_multistep_form_response!,
+      "multistep_form",
+      ExperienceMultistepFormSubmission,
+      :experience_multistep_form_submission
   end
 end

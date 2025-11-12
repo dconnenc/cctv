@@ -296,8 +296,7 @@ module Experiences
       ExperienceBlockLink.create!(
         parent_block: parent_block,
         child_block: child_block,
-        relationship: :depends_on,
-        position: position
+        relationship: :depends_on
       )
 
       child_block
