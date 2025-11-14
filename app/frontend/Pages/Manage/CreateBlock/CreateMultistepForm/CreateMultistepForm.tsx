@@ -7,6 +7,7 @@ import { Dropdown } from '@cctv/core/Dropdown/Dropdown';
 import { BlockKind, BlockStatus, ParticipantSummary } from '@cctv/types';
 import { MultistepFormApiPayload, MultistepFormData } from '@cctv/types';
 
+import sharedStyles from '../CreateBlock.module.scss';
 import styles from './CreateMultistepForm.module.scss';
 
 export const getDefaultMultistepFormState = (): MultistepFormData => {
@@ -55,11 +56,9 @@ export const processMultistepFormBeforeSubmit = (
 };
 
 export default function CreateMultistepForm({
-  className,
   multistepQuestions,
   setMultistepQuestions,
 }: {
-  className?: string;
   multistepQuestions: Array<{ question: string; formKey: string; inputType: string }>;
   setMultistepQuestions: (
     questions: Array<{ question: string; formKey: string; inputType: string }>,
@@ -81,7 +80,7 @@ export default function CreateMultistepForm({
     setMultistepQuestions(newQuestions);
   };
   return (
-    <div className={classNames(styles.root, className)}>
+    <div className={sharedStyles.container}>
       <div className={styles.questions}>
         {multistepQuestions.map((question, index) => (
           <div

@@ -1,7 +1,10 @@
 .root {
+  z-index: 10;
   display: flex;
+  flex-direction: column;
   gap: 12px;
   align-items: center;
+  width: 100%;
 
   font-size: 20px;
   font-weight: 600;
@@ -22,4 +25,8 @@
 }
 .input:hover {
   border-color: var(--yellow);
+}
+
+.labelText {
+  color: var(--white);
 }

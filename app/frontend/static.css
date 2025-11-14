@@ -6,7 +6,7 @@
   position: fixed;
   inset: 0;
   pointer-events: none;
-  z-index: 2;
+  z-index: -1;
   /* Layered corner vignettes + center falloff for near-black corners */
   background:
     radial-gradient(120% 120% at 0% 0%, rgba(0, 0, 0, 0.44) 35%, rgba(0, 0, 0, 0) 62%),

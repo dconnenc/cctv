@@ -20,7 +20,7 @@
   display: flex;
   flex-direction: column;
   position: relative;
-  z-index: 1; /* sit above static background */
+  z-index: 3; /* sit above static background and vignette */
 }
 
 /* Vignette, static, and tear styles moved to src/static.css */
