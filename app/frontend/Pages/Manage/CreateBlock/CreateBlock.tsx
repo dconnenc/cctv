@@ -95,7 +95,6 @@ function BlockEditor() {
     case BlockKind.MULTISTEP_FORM:
       return (
         <CreateMultistepForm
-          className={styles.details}
           multistepQuestions={blockData.data.questions}
           setMultistepQuestions={(questions) => onChange({ questions })}
         />

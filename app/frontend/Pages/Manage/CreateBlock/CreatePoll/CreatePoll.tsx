@@ -8,6 +8,7 @@ import {
   PollData,
 } from '@cctv/types';
 
+import sharedStyles from '../CreateBlock.module.scss';
 import styles from './CreatePoll.module.scss';
 
 export const getDefaultPollState = (): PollData => {
@@ -83,8 +84,8 @@ export default function CreatePoll({ data, onChange }: BlockComponentProps<PollD
     onChange?.({ options: newOptions });
   };
   return (
-    <div className={styles.details}>
-      <div className={styles.left}>
+    <div className={sharedStyles.columns}>
+      <div className={sharedStyles.column}>
         <TextInput
           label="Poll Question"
           placeholder="What is your question?"
@@ -105,7 +106,7 @@ export default function CreatePoll({ data, onChange }: BlockComponentProps<PollD
           onChange={(value) => updateData({ pollType: value as 'single' | 'multiple' })}
         />
       </div>
-      <div className={styles.right}>
+      <div className={sharedStyles.column}>
         <div className={styles.list}>
           {data.options.map((option, index) => (
             <div className={styles.item} key={index}>
