@@ -8,6 +8,7 @@ import {
   QuestionData,
 } from '@cctv/types';
 
+import sharedStyles from '../CreateBlock.module.scss';
 import styles from './CreateQuestion.module.scss';
 
 export const getDefaultQuestionState = (): QuestionData => {
@@ -67,7 +68,7 @@ export default function CreateQuestion({ data, onChange }: BlockComponentProps<Q
     });
   };
   return (
-    <div className={styles.details}>
+    <div className={sharedStyles.details}>
       <div className={styles.left}>
         <TextInput
           label="Question"

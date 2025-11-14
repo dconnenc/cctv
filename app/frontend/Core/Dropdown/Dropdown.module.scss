@@ -1,4 +1,5 @@
 .root {
+  z-index: 10;
   display: flex;
   gap: 12px;
   align-items: center;
@@ -22,4 +23,8 @@
 }
 .input:hover {
   border-color: var(--yellow);
+}
+
+.labelText {
+  color: var(--white);
 }

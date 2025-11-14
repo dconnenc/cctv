@@ -5,6 +5,7 @@ import { BlockComponentProps, MadLibData } from '@cctv/types';
 
 import { useCreateBlockContext } from '../CreateBlockContext';
 
+import sharedStyles from '../CreateBlock.module.scss';
 import styles from './CreateMadLib.module.scss';
 
 interface MadLibVariable {
@@ -171,7 +172,7 @@ export default function CreateMadLib({ data, onChange }: BlockComponentProps<Mad
   };
 
   return (
-    <div className={styles.details}>
+    <div className={sharedStyles.details}>
       <div className={styles.madLibBuilder}>
         <div className={styles.builderSection}>
           <div>Mad Lib Builder</div>

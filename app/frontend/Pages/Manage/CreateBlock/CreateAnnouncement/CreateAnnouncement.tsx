@@ -2,6 +2,7 @@ import { TextInput } from '@cctv/core';
 import { BlockKind, BlockStatus, ParticipantSummary } from '@cctv/types';
 import { AnnouncementApiPayload, AnnouncementData, BlockComponentProps } from '@cctv/types';
 
+import sharedStyles from '../CreateBlock.module.scss';
 import styles from './CreateAnnouncement.module.scss';
 
 export const getDefaultAnnouncementState = (): AnnouncementData => {
@@ -48,7 +49,7 @@ export default function CreateAnnouncement({
     onChange?.(updates);
   };
   return (
-    <div className={styles.details}>
+    <div className={sharedStyles.details}>
       <div className={styles.center}>
         <TextInput
           label="Announcement Message"
