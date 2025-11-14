@@ -91,6 +91,7 @@ export function CreateBlockProvider({
   const [visibleRoles, setVisibleRoles] = useState<string[]>([]);
   const [visibleSegmentsText, setVisibleSegmentsText] = useState<string>('');
   const [targetUserIdsText, setTargetUserIdsText] = useState<string>('');
+  const [showInLobby, setShowInLobby] = useState<boolean>(false);
   const [viewAdditionalDetails, setViewAdditionalDetails] = useState<boolean>(false);
 
   const {
@@ -251,6 +252,7 @@ export function CreateBlockProvider({
         target_user_ids,
         status: status,
         open_immediately: status === 'open',
+        show_in_lobby: showInLobby,
       };
 
       if (blockData.kind === BlockKind.MAD_LIB) {
@@ -288,6 +290,7 @@ export function CreateBlockProvider({
       setVisibleRoles([]);
       setVisibleSegmentsText('');
       setTargetUserIdsText('');
+      setShowInLobby(false);
       setViewAdditionalDetails(false);
     },
     [
@@ -318,6 +321,8 @@ export function CreateBlockProvider({
     setVisibleSegmentsText,
     targetUserIdsText,
     setTargetUserIdsText,
+    showInLobby,
+    setShowInLobby,
     viewAdditionalDetails,
     setViewAdditionalDetails,
   };
