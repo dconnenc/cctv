@@ -27,7 +27,7 @@ class Api::ExperienceBlocksController < Api::BaseController
           visible_to_segments: create_params[:visible_to_segments] || [],
           target_user_ids: create_params[:target_user_ids] || [],
           status: create_params[:status] || :hidden,
-          open_immediately: create_params[:open_immediately] || false
+          open_immediately: create_params[:open_immediately] || false,
           show_in_lobby: create_params[:show_in_lobby] || false
         )
       end

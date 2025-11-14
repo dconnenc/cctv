@@ -154,6 +154,7 @@ interface BaseBlock {
   visible_to_roles?: ParticipantRole[];
   visible_to_segments?: string[];
   target_user_ids?: string[];
+  show_in_lobby?: boolean;
   created_at?: string;
   updated_at?: string;
   child_block_ids?: string[];

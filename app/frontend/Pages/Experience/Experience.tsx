@@ -36,8 +36,27 @@ export default function Experience() {
   }
 
   const participants = experience?.participants || [];
+  const currentBlock = experience?.blocks?.[0];
 
   if (experienceStatus === 'lobby') {
+    if (currentBlock && participant) {
+      return (
+        <section className="page">
+          <div className={styles.activeExperience}>
+            <h1 className={styles.title}>{experience?.name || code}</h1>
+
+            {isAdmin && !participant && <AdminNotification code={code!} />}
+
+            <div className={styles.experienceContent}>
+              <div className={styles.activeBlock}>
+                <ExperienceBlockContainer block={currentBlock} participant={participant} />
+              </div>
+            </div>
+          </div>
+        </section>
+      );
+    }
+
     return (
       <section className="page flex-centered">
         <h1 className={styles.title}>{experience?.code || code}</h1>
@@ -92,8 +111,6 @@ export default function Experience() {
 
   // Active experience state (for when the experience is live or paused)
   if (experienceStatus === 'live' || experienceStatus === 'paused') {
-    const currentBlock = experience?.blocks?.[0];
-
     return (
       <section className="page">
         <div className={styles.activeExperience}>
