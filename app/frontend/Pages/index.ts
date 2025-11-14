@@ -1,4 +1,5 @@
 export { default as About } from './about';
+export { default as Block } from './Block/Block';
 export { default as Create } from './Create/Create';
 export { default as Experience } from './Experience/Experience';
 export { default as Home } from './home';
