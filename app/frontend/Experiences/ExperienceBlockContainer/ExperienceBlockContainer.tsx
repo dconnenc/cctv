@@ -1,6 +1,7 @@
 import { Block, BlockKind, ParticipantSummary } from '@cctv/types';
 
 import Announcement from '../Announcement/Announcement';
+import FamilyFeud from '../FamilyFeud/FamilyFeud';
 import MadLib from '../MadLib/MadLib';
 import MultistepForm from '../MultistepForm/MultistepForm';
 import Poll from '../Poll/Poll';
@@ -61,6 +62,8 @@ export default function ExperienceBlockContainer({
       return <Announcement participant={participant} {...block.payload} />;
     case BlockKind.MAD_LIB:
       return <MadLib responses={block.responses} parts={block.payload.parts} />;
+    case BlockKind.FAMILY_FEUD:
+      return <FamilyFeud {...block.payload} />;
     default:
       const exhaustiveCheck: never = block;
       return (

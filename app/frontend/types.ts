@@ -11,6 +11,7 @@ export enum BlockKind {
   MULTISTEP_FORM = 'multistep_form',
   ANNOUNCEMENT = 'announcement',
   MAD_LIB = 'mad_lib',
+  FAMILY_FEUD = 'family_feud',
 }
 
 // ===== BLOCK PAYLOAD TYPES =====
@@ -33,6 +34,10 @@ export interface MultistepFormPayload {
 
 export interface AnnouncementPayload {
   message: string;
+}
+
+export interface FamilyFeudPayload {
+  title: string;
 }
 
 export interface BlockLink {
@@ -111,13 +116,19 @@ export interface MadLibApiPayload {
   parts: MadLibPart[];
 }
 
+export interface FamilyFeudApiPayload {
+  type: 'family_feud';
+  title: string;
+}
+
 // Discriminated union for API payloads (what gets sent to backend)
 export type ApiPayload =
   | PollApiPayload
   | QuestionApiPayload
   | MultistepFormApiPayload
   | AnnouncementApiPayload
-  | MadLibApiPayload;
+  | MadLibApiPayload
+  | FamilyFeudApiPayload;
 
 // ===== ENTITY TYPES =====
 
@@ -210,12 +221,18 @@ export interface MadLibBlock extends BaseBlock {
   };
 }
 
+export interface FamilyFeudBlock extends BaseBlock {
+  kind: BlockKind.FAMILY_FEUD;
+  payload: FamilyFeudPayload;
+}
+
 export type Block =
   | PollBlock
   | QuestionBlock
   | MultistepFormBlock
   | AnnouncementBlock
-  | MadLibBlock;
+  | MadLibBlock
+  | FamilyFeudBlock;
 
 export interface Experience {
   id: string;
@@ -267,7 +284,8 @@ export interface CreateBlockPayload {
     | QuestionPayload
     | MultistepFormPayload
     | AnnouncementPayload
-    | MadLibPayload;
+    | MadLibPayload
+    | FamilyFeudPayload;
   visible_to_roles?: ParticipantRole[];
   visible_to_segments?: string[];
   target_user_ids?: string[];
@@ -281,6 +299,11 @@ export interface CreateBlockPayload {
     source:
       | { type: 'participant'; participant_id: string }
       | { kind: 'question'; question: string; input_type: string };
+  }>;
+  questions?: Array<{
+    payload: {
+      question: string;
+    };
   }>;
 }
 
@@ -526,13 +549,19 @@ export interface MadLibData {
   variables: MadLibVariable[];
 }
 
+export interface FamilyFeudData {
+  title: string;
+  questions: Array<{ id: string; question: string }>;
+}
+
 // Union type for all block component data
 export type BlockComponentData =
   | PollData
   | QuestionData
   | MultistepFormData
   | AnnouncementData
-  | MadLibData;
+  | MadLibData
+  | FamilyFeudData;
 
 // Discriminated union for form block data
 export type FormBlockData =
@@ -540,7 +569,8 @@ export type FormBlockData =
   | { kind: BlockKind.QUESTION; data: QuestionData }
   | { kind: BlockKind.MULTISTEP_FORM; data: MultistepFormData }
   | { kind: BlockKind.ANNOUNCEMENT; data: AnnouncementData }
-  | { kind: BlockKind.MAD_LIB; data: MadLibData };
+  | { kind: BlockKind.MAD_LIB; data: MadLibData }
+  | { kind: BlockKind.FAMILY_FEUD; data: FamilyFeudData };
 
 export interface CreateBlockContextValue {
   // Form block data with discriminated union
