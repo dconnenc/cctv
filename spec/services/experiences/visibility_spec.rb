@@ -793,4 +793,214 @@ RSpec.describe Experiences::Visibility do
       end
     end
   end
+
+  describe "show_in_lobby visibility" do
+    let(:experience_status) { Experience.statuses[:lobby] }
+    let(:participant_role) { ExperienceParticipant.roles[:audience] }
+
+    subject do
+      described_class.new(
+        experience: experience,
+        user_role: user.role,
+        participant_role: participant_role,
+        segments: [user_segment],
+        target_user_ids: [user.id]
+      ).payload
+    end
+
+    context "when experience is in lobby state" do
+      context "and block has show_in_lobby true" do
+        let!(:lobby_block) do
+          create(
+            :experience_block,
+            experience: experience,
+            status: :hidden,
+            show_in_lobby: true
+          )
+        end
+
+        it "includes the block in visible blocks" do
+          expect(subject[:experience][:blocks].size).to eq(1)
+          expect(subject[:experience][:blocks].first[:id]).to eq(lobby_block.id)
+        end
+      end
+
+      context "and block has show_in_lobby false" do
+        let!(:non_lobby_block) do
+          create(
+            :experience_block,
+            experience: experience,
+            status: :hidden,
+            show_in_lobby: false
+          )
+        end
+
+        it "does not include the block in visible blocks" do
+          expect(subject[:experience][:blocks]).to be_empty
+        end
+      end
+
+      context "with multiple blocks, only some with show_in_lobby true" do
+        let!(:lobby_block_1) do
+          create(
+            :experience_block,
+            experience: experience,
+            status: :hidden,
+            show_in_lobby: true,
+            position: 0
+          )
+        end
+
+        let!(:non_lobby_block) do
+          create(
+            :experience_block,
+            experience: experience,
+            status: :hidden,
+            show_in_lobby: false,
+            position: 1
+          )
+        end
+
+        let!(:lobby_block_2) do
+          create(
+            :experience_block,
+            experience: experience,
+            status: :hidden,
+            show_in_lobby: true,
+            position: 2
+          )
+        end
+
+        it "returns the first lobby block and includes second as next_block" do
+          expect(subject[:experience][:blocks].size).to eq(1)
+          expect(subject[:experience][:blocks].first[:id]).to eq(lobby_block_1.id)
+          expect(subject[:experience][:next_block][:id]).to eq(lobby_block_2.id)
+        end
+      end
+
+      context "and block is open with show_in_lobby true" do
+        let!(:open_lobby_block) do
+          create(
+            :experience_block,
+            experience: experience,
+            status: :open,
+            show_in_lobby: true
+          )
+        end
+
+        it "includes the block" do
+          expect(subject[:experience][:blocks].size).to eq(1)
+          expect(subject[:experience][:blocks].first[:id]).to eq(open_lobby_block.id)
+        end
+      end
+    end
+
+    context "when experience is in live state" do
+      let(:experience_status) { Experience.statuses[:live] }
+
+      context "and block has show_in_lobby true but is hidden" do
+        let!(:hidden_block) do
+          create(
+            :experience_block,
+            experience: experience,
+            status: :hidden,
+            show_in_lobby: true
+          )
+        end
+
+        it "does not include the block" do
+          expect(subject[:experience][:blocks]).to be_empty
+        end
+      end
+
+      context "and block is open with show_in_lobby true" do
+        let!(:open_block) do
+          create(
+            :experience_block,
+            experience: experience,
+            status: :open,
+            show_in_lobby: true
+          )
+        end
+
+        it "includes the block normally" do
+          expect(subject[:experience][:blocks].size).to eq(1)
+          expect(subject[:experience][:blocks].first[:id]).to eq(open_block.id)
+        end
+      end
+    end
+
+    context "when user is a host" do
+      let(:participant_role) { ExperienceParticipant.roles[:host] }
+      let(:experience_status) { Experience.statuses[:lobby] }
+
+      let!(:hidden_block) do
+        create(
+          :experience_block,
+          experience: experience,
+          status: :hidden,
+          show_in_lobby: false
+        )
+      end
+
+      it "can see all blocks regardless of show_in_lobby flag" do
+        block_ids = subject[:experience][:blocks].map { |b| b[:id] }
+        expect(block_ids).to include(hidden_block.id)
+      end
+    end
+  end
+
+  describe ".payload_for_monitor with show_in_lobby" do
+    let(:experience) { create(:experience, status: :lobby) }
+
+    context "when experience is in lobby state" do
+      let!(:lobby_block) do
+        create(
+          :experience_block,
+          experience: experience,
+          show_in_lobby: true,
+          status: :hidden,
+          position: 0
+        )
+      end
+
+      let!(:non_lobby_block) do
+        create(
+          :experience_block,
+          experience: experience,
+          show_in_lobby: false,
+          status: :hidden,
+          position: 1
+        )
+      end
+
+      it "includes blocks with show_in_lobby true" do
+        payload = described_class.payload_for_monitor(experience: experience)
+
+        expect(payload[:experience][:blocks].size).to eq(1)
+        expect(payload[:experience][:blocks].first[:id]).to eq(lobby_block.id)
+      end
+    end
+
+    context "when experience is live" do
+      let(:experience) { create(:experience, status: :live) }
+
+      let!(:open_block) do
+        create(
+          :experience_block,
+          experience: experience,
+          status: :open,
+          show_in_lobby: false,
+          position: 0
+        )
+      end
+
+      it "shows open blocks normally" do
+        payload = described_class.payload_for_monitor(experience: experience)
+
+        expect(payload[:experience][:blocks].size).to eq(1)
+        expect(payload[:experience][:blocks].first[:id]).to eq(open_block.id)
+      end
+    end
+  end
 end

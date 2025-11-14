@@ -215,7 +215,8 @@ class BlockSerializer
     {
       visible_to_roles: block.visible_to_roles,
       visible_to_segments: block.visible_to_segments,
-      target_user_ids: block.target_user_ids
+      target_user_ids: block.target_user_ids,
+      show_in_lobby: block.show_in_lobby
     }
   end
 

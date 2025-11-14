@@ -1,20 +1,6 @@
 class Api::ExperienceBlocksController < Api::BaseController
   before_action :authenticate_and_set_user_and_experience
 
-  def create_params
-    permitted = params.require(:block).permit(
-      :kind,
-      :status,
-      visible_to_roles: [],
-      visible_to_segments: [],
-      target_user_ids: []
-    )
-
-    permitted[:payload] = params[:block][:payload] if params[:block][:payload]
-    permitted[:variables] = params[:block][:variables] if params[:block][:variables]
-
-    permitted
-  end
 
   # POST /api/experiences/:experience_id/blocks
   def create
@@ -41,7 +27,8 @@ class Api::ExperienceBlocksController < Api::BaseController
           visible_to_segments: create_params[:visible_to_segments] || [],
           target_user_ids: create_params[:target_user_ids] || [],
           status: create_params[:status] || :hidden,
-          open_immediately: create_params[:open_immediately] || false
+          open_immediately: create_params[:open_immediately] || false,
+          show_in_lobby: create_params[:show_in_lobby] || false
         )
       end
 
@@ -231,5 +218,24 @@ class Api::ExperienceBlocksController < Api::BaseController
         },
       }, status: 200
     end
+  end
+
+  private
+
+  def create_params
+    permitted = params.require(:block).permit(
+      :kind,
+      :status,
+      :open_immediately,
+      :show_in_lobby,
+      visible_to_roles: [],
+      visible_to_segments: [],
+      target_user_ids: []
+    )
+
+    permitted[:payload] = params[:block][:payload] if params[:block][:payload]
+    permitted[:variables] = params[:block][:variables] if params[:block][:variables]
+
+    permitted
   end
 end

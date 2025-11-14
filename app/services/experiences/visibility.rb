@@ -134,10 +134,17 @@ module Experiences
     end
 
     def self.monitor_visible_blocks(experience)
-      parent_blocks = experience.parent_blocks
-        .where(status: 'open')
-        .where(visible_to_roles: [], visible_to_segments: [], target_user_ids: [])
-        .order(position: :asc)
+      parent_blocks = if experience.status == 'lobby'
+        experience.parent_blocks
+          .where(show_in_lobby: true)
+          .where(visible_to_roles: [], visible_to_segments: [], target_user_ids: [])
+          .order(position: :asc)
+      else
+        experience.parent_blocks
+          .where(status: 'open')
+          .where(visible_to_roles: [], visible_to_segments: [], target_user_ids: [])
+          .order(position: :asc)
+      end
 
       result = []
       parent_blocks.each do |parent|
@@ -327,7 +334,7 @@ module Experiences
         return [] if participant_role.nil?
 
         blocks
-          .select { |block| moderator_or_host? || block.open? }
+          .select { |block| moderator_or_host? || block_visible_by_status?(block) }
           .select { |block| rules_allow_block?(block) }
       end
     end
@@ -340,6 +347,13 @@ module Experiences
 
     def moderator_or_host?
       ["moderator", "host"].include?(participant_role.to_s)
+    end
+
+    def block_visible_by_status?(block)
+      return true if block.open?
+      return true if experience.status == "lobby" && block.show_in_lobby?
+
+      false
     end
 
     def rules_allow_block?(block)

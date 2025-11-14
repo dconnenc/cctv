@@ -7,7 +7,8 @@ module Experiences
       visible_to_segments: [],
       target_user_ids: [],
       status: :hidden,
-      open_immediately: false
+      open_immediately: false,
+      show_in_lobby: false
     )
       actor_action do
         authorize! experience, to: :manage_blocks?, with: ExperiencePolicy
@@ -118,7 +119,6 @@ module Experiences
       actor_action do
         block = experience.experience_blocks.find(block_id)
 
-        # Use dedicated ExperienceBlockPolicy to check visibility rules
         authorize! block, to: :submit_poll_response?, with: ExperienceBlockPolicy
 
         # Create or update the submission. Assumes single response for now
@@ -138,7 +138,6 @@ module Experiences
       actor_action do
         block = experience.experience_blocks.find(block_id)
 
-        # Use dedicated ExperienceBlockPolicy to check visibility rules
         authorize! block, to: :submit_question_response?, with: ExperienceBlockPolicy
 
         # Create or update the submission. Assumes single response for now
@@ -158,7 +157,6 @@ module Experiences
       actor_action do
         block = experience.experience_blocks.find(block_id)
 
-        # Use dedicated ExperienceBlockPolicy to check visibility rules
         authorize! block, to: :submit_multistep_form_response?, with: ExperienceBlockPolicy
 
         # Create or update the submission. Assumes single response for now
@@ -178,7 +176,6 @@ module Experiences
       actor_action do
         block = experience.experience_blocks.find(block_id)
 
-        # Use dedicated ExperienceBlockPolicy to check visibility rules
         authorize! block, to: :submit_mad_lib_response?, with: ExperienceBlockPolicy
 
         # Create or update the submission. Assumes single response for now
@@ -299,8 +296,7 @@ module Experiences
       ExperienceBlockLink.create!(
         parent_block: parent_block,
         child_block: child_block,
-        relationship: :depends_on,
-        position: position
+        relationship: :depends_on
       )
 
       child_block
