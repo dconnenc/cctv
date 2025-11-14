@@ -1,25 +1,12 @@
-.madLibBuilder {
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-  width: 100%;
-  padding: 12px;
-}
-
-.builderSection {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
 .preview {
   padding: 16px;
-  border: 2px solid var(--gray);
+  border: 2px solid var(--white);
   border-radius: 8px;
   min-height: 60px;
   background: var(--black);
   font-size: 18px;
   line-height: 1.4;
+  width: 100%;
 }
 
 .part {
@@ -38,15 +25,11 @@
   border-radius: 4px;
 }
 
-.builderControls {
+.buttonGroup {
   display: flex;
   gap: 12px;
-}
-
-.partEditor {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+  justify-content: center;
+  width: 100%;
 }
 
 .partItem {
@@ -54,8 +37,9 @@
   gap: 12px;
   align-items: end;
   padding: 12px;
-  border: 1px solid var(--gray);
+  border: 1px solid var(--white);
   border-radius: 8px;
+  width: 100%;
 }
 
 .partNumber {

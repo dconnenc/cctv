@@ -49,19 +49,17 @@ export default function CreateAnnouncement({
     onChange?.(updates);
   };
   return (
-    <div className={sharedStyles.details}>
-      <div className={styles.center}>
-        <TextInput
-          label="Announcement Message"
-          placeholder="Dearest {{ participant_name }}, this is your announcement."
-          required
-          value={data.message}
-          onChange={(e) => updateData({ message: e.target.value })}
-        />
-        <span className={styles.helpText}>
-          {`Include the participant's name with {{ participant_name }}`}
-        </span>
-      </div>
+    <div className={sharedStyles.container}>
+      <TextInput
+        label="Announcement Message"
+        placeholder="Dearest {{ participant_name }}, this is your announcement."
+        required
+        value={data.message}
+        onChange={(e) => updateData({ message: e.target.value })}
+      />
+      <span className={styles.helpText}>
+        {`Include the participant's name with {{ participant_name }}`}
+      </span>
     </div>
   );
 }

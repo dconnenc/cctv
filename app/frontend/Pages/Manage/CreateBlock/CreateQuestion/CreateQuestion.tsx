@@ -68,31 +68,29 @@ export default function CreateQuestion({ data, onChange }: BlockComponentProps<Q
     });
   };
   return (
-    <div className={sharedStyles.details}>
-      <div className={styles.left}>
-        <TextInput
-          label="Question"
-          placeholder="What is your question?"
-          required
-          value={data.questionText}
-          onChange={(e) => updateQuestionText(e.target.value)}
-        />
-        <Dropdown
-          label="Input Type"
-          options={[
-            { label: 'Text', value: 'text' },
-            { label: 'Number', value: 'number' },
-            { label: 'Email', value: 'email' },
-            { label: 'Password', value: 'password' },
-            { label: 'Phone', value: 'tel' },
-          ]}
-          required
-          value={data.questionInputType}
-          onChange={(value) =>
-            updateData({ questionInputType: value as QuestionData['questionInputType'] })
-          }
-        />
-      </div>
+    <div className={sharedStyles.container}>
+      <TextInput
+        label="Question"
+        placeholder="What is your question?"
+        required
+        value={data.questionText}
+        onChange={(e) => updateQuestionText(e.target.value)}
+      />
+      <Dropdown
+        label="Input Type"
+        options={[
+          { label: 'Text', value: 'text' },
+          { label: 'Number', value: 'number' },
+          { label: 'Email', value: 'email' },
+          { label: 'Password', value: 'password' },
+          { label: 'Phone', value: 'tel' },
+        ]}
+        required
+        value={data.questionInputType}
+        onChange={(value) =>
+          updateData({ questionInputType: value as QuestionData['questionInputType'] })
+        }
+      />
     </div>
   );
 }

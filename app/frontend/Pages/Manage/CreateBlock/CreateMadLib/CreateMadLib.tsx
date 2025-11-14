@@ -172,114 +172,105 @@ export default function CreateMadLib({ data, onChange }: BlockComponentProps<Mad
   };
 
   return (
-    <div className={sharedStyles.details}>
-      <div className={styles.madLibBuilder}>
-        <div className={styles.builderSection}>
-          <div>Mad Lib Builder</div>
-          <div className={styles.preview}>
-            {internalData.parts.map((part) => (
-              <span key={part.id} className={styles.part}>
-                {part.type === 'text' ? (
-                  <span className={styles.textPart}>{part.content}</span>
-                ) : (
-                  <span className={styles.variablePart}>
-                    {internalData.variables.find((v) => v.id === part.content)?.name ||
-                      '[Variable]'}
-                  </span>
-                )}
+    <div className={sharedStyles.container}>
+      <div className={sharedStyles.sectionTitle}>Mad Lib Builder</div>
+      <div className={styles.preview}>
+        {internalData.parts.map((part) => (
+          <span key={part.id} className={styles.part}>
+            {part.type === 'text' ? (
+              <span className={styles.textPart}>{part.content}</span>
+            ) : (
+              <span className={styles.variablePart}>
+                {internalData.variables.find((v) => v.id === part.content)?.name || '[Variable]'}
               </span>
-            ))}
-          </div>
-          <div className={styles.builderControls}>
-            <Button type="button" onClick={addTextPart} disabled={!canAddTextPart()}>
-              Add Text
-            </Button>
-            <Button type="button" onClick={addVariablePart}>
-              Add Variable
-            </Button>
-          </div>
-        </div>
-
-        <div className={styles.partEditor}>
-          <div>Mad Lib Parts</div>
-          {internalData.parts.map((part, index) => (
-            <div key={part.id} className={styles.partItem}>
-              <div className={styles.partNumber}>{index + 1}</div>
-              {part.type === 'text' ? (
-                <div className={styles.textPartEditor}>
-                  <TextInput
-                    label="Text"
-                    value={part.content}
-                    onChange={(e) => updatePart(index, e.target.value)}
-                  />
-                </div>
-              ) : (
-                <div className={styles.variablePartEditor}>
-                  <div className={styles.variableInfo}>
-                    <h5>
-                      Variable:{' '}
-                      {internalData.variables.find((v) => v.id === part.content)?.name || 'Unnamed'}
-                    </h5>
-                  </div>
-                  {(() => {
-                    const variable = internalData.variables.find((v) => v.id === part.content);
-                    if (!variable) return null;
-
-                    return (
-                      <div className={styles.variableFields}>
-                        <TextInput
-                          label="Variable Name"
-                          placeholder="adjective"
-                          value={variable.name}
-                          onChange={(e) => updateVariable(variable.id, { name: e.target.value })}
-                        />
-                        <TextInput
-                          label="Question to ask user"
-                          placeholder="Enter an adjective"
-                          value={variable.question}
-                          onChange={(e) =>
-                            updateVariable(variable.id, { question: e.target.value })
-                          }
-                        />
-                        <Dropdown
-                          label="Data Type"
-                          options={[
-                            { label: 'Text', value: 'text' },
-                            { label: 'Number', value: 'number' },
-                          ]}
-                          value={variable.dataType}
-                          onChange={(value) => updateVariable(variable.id, { dataType: value })}
-                        />
-                        <Dropdown
-                          label="Assign to participant"
-                          options={[
-                            { label: 'No one', value: '' },
-                            ...getAvailableParticipants(
-                              internalData.variables.findIndex((v) => v.id === variable.id),
-                            ).map((p) => ({
-                              label: p.name,
-                              value: p.user_id,
-                            })),
-                          ]}
-                          value={variable.assigned_user_id || ''}
-                          onChange={(value) =>
-                            updateVariable(variable.id, { assigned_user_id: value || undefined })
-                          }
-                        />
-                      </div>
-                    );
-                  })()}
-                </div>
-              )}
-              <div className={styles.partActions}>
-                <Button type="button" onClick={() => removePart(index)}>
-                  Remove
-                </Button>
-              </div>
-            </div>
-          ))}
-        </div>
+            )}
+          </span>
+        ))}
       </div>
+      <div className={styles.buttonGroup}>
+        <Button type="button" onClick={addTextPart} disabled={!canAddTextPart()}>
+          Add Text
+        </Button>
+        <Button type="button" onClick={addVariablePart}>
+          Add Variable
+        </Button>
+      </div>
+
+      <div className={sharedStyles.sectionTitle}>Mad Lib Parts</div>
+      {internalData.parts.map((part, index) => (
+        <div key={part.id} className={styles.partItem}>
+          <div className={styles.partNumber}>{index + 1}</div>
+          {part.type === 'text' ? (
+            <div className={styles.textPartEditor}>
+              <TextInput
+                label="Text"
+                value={part.content}
+                onChange={(e) => updatePart(index, e.target.value)}
+              />
+            </div>
+          ) : (
+            <div className={styles.variablePartEditor}>
+              <div className={styles.variableInfo}>
+                <h5>
+                  Variable:{' '}
+                  {internalData.variables.find((v) => v.id === part.content)?.name || 'Unnamed'}
+                </h5>
+              </div>
+              {(() => {
+                const variable = internalData.variables.find((v) => v.id === part.content);
+                if (!variable) return null;
+
+                return (
+                  <div className={styles.variableFields}>
+                    <TextInput
+                      label="Variable Name"
+                      placeholder="adjective"
+                      value={variable.name}
+                      onChange={(e) => updateVariable(variable.id, { name: e.target.value })}
+                    />
+                    <TextInput
+                      label="Question to ask user"
+                      placeholder="Enter an adjective"
+                      value={variable.question}
+                      onChange={(e) => updateVariable(variable.id, { question: e.target.value })}
+                    />
+                    <Dropdown
+                      label="Data Type"
+                      options={[
+                        { label: 'Text', value: 'text' },
+                        { label: 'Number', value: 'number' },
+                      ]}
+                      value={variable.dataType}
+                      onChange={(value) => updateVariable(variable.id, { dataType: value })}
+                    />
+                    <Dropdown
+                      label="Assign to participant"
+                      options={[
+                        { label: 'No one', value: '' },
+                        ...getAvailableParticipants(
+                          internalData.variables.findIndex((v) => v.id === variable.id),
+                        ).map((p) => ({
+                          label: p.name,
+                          value: p.user_id,
+                        })),
+                      ]}
+                      value={variable.assigned_user_id || ''}
+                      onChange={(value) =>
+                        updateVariable(variable.id, { assigned_user_id: value || undefined })
+                      }
+                    />
+                  </div>
+                );
+              })()}
+            </div>
+          )}
+          <div className={styles.partActions}>
+            <Button type="button" onClick={() => removePart(index)}>
+              Remove
+            </Button>
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
