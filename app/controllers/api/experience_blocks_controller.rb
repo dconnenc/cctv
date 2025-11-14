@@ -9,7 +9,7 @@ class Api::ExperienceBlocksController < Api::BaseController
         experience: @experience, actor: @user
       )
 
-      block = if create_params[:variables].present?
+      block = if create_params[:variables].present? || create_params[:questions].present?
         orchestrator.add_block_with_dependencies!(
           kind: create_params[:kind],
           payload: create_params[:payload] || {},
@@ -17,7 +17,8 @@ class Api::ExperienceBlocksController < Api::BaseController
           visible_to_segments: create_params[:visible_to_segments] || [],
           target_user_ids: create_params[:target_user_ids] || [],
           status: create_params[:status] || :hidden,
-          variables: create_params[:variables] || []
+          variables: create_params[:variables] || [],
+          questions: create_params[:questions] || []
         )
       else
         orchestrator.add_block!(
@@ -235,6 +236,7 @@ class Api::ExperienceBlocksController < Api::BaseController
 
     permitted[:payload] = params[:block][:payload] if params[:block][:payload]
     permitted[:variables] = params[:block][:variables] if params[:block][:variables]
+    permitted[:questions] = params[:block][:questions] if params[:block][:questions]
 
     permitted
   end
