@@ -562,6 +562,8 @@ export interface CreateBlockContextValue {
   setVisibleSegmentsText: (text: string) => void;
   targetUserIdsText: string;
   setTargetUserIdsText: (text: string) => void;
+  showInLobby: boolean;
+  setShowInLobby: (show: boolean) => void;
   viewAdditionalDetails: boolean;
   setViewAdditionalDetails: (view: boolean) => void;
 }

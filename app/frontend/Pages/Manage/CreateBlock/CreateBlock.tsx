@@ -119,6 +119,8 @@ function AdditionalDetails() {
     setVisibleSegmentsText,
     targetUserIdsText,
     setTargetUserIdsText,
+    showInLobby,
+    setShowInLobby,
   } = useCreateBlockContext();
   return (
     <div className={styles.additionalDetails}>
@@ -145,6 +147,14 @@ function AdditionalDetails() {
         value={targetUserIdsText}
         onChange={setTargetUserIdsText}
       />
+      <label className={styles.checkboxLabel}>
+        <input
+          type="checkbox"
+          checked={showInLobby}
+          onChange={(e) => setShowInLobby(e.target.checked)}
+        />
+        Show in lobby
+      </label>
     </div>
   );
 }
