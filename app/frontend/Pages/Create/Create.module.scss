@@ -6,7 +6,7 @@
 
 .error {
   text-shadow: none;
-  color: var(--yellow);
+  color: hsl(var(--destructive));
   padding-top: 12px;
   font-size: 16px;
 }
@@ -14,16 +14,28 @@
 .title {
   font-size: 24px;
   padding-bottom: 24px;
+  color: hsl(var(--foreground));
+  text-shadow: none;
 }
 
 .link {
   font-weight: 400;
   font-size: clamp(16px, 4vw, 20px);
-  color: var(--yellow);
+  color: hsl(var(--primary));
   text-decoration: none;
   padding-top: 24px;
 }
 
 .link:hover {
   text-decoration: underline;
+}
+
+.container {
+  width: 100%;
+  max-width: 520px;
+  margin: 0 auto;
+  background: hsl(var(--card));
+  color: hsl(var(--card-foreground));
+  border: 1px solid hsl(var(--border));
+  text-shadow: none;
 }
