@@ -37,99 +37,101 @@ export const TopNav = () => {
           </button>
         </div>
 
-        <div className={`${styles.drawer} ${open ? styles.isOpen : ''}`}>
-          <span style={{ width: 16 }} />
-          <NavLink
-            to="/"
-            end
-            className={({ isActive }) => (isActive ? 'link link--active' : 'link')}
-          >
-            {'Home'}
-          </NavLink>
-          <NavLink
-            to="/about"
-            className={({ isActive }) => (isActive ? 'link link--active' : 'link')}
-          >
-            {'About'}
-          </NavLink>
-          <NavLink
-            to="/join"
-            className={({ isActive }) => (isActive ? 'link link--active' : 'link')}
-          >
-            {'Join'}
-          </NavLink>
-          {isAdmin && (
-            <>
-              <div className={styles.dropdown}>
-                <span className={`${styles.dropdownTrigger} link`}>{'Experiences'}</span>
-                <div className={styles.dropdownMenu} role="menu">
-                  {adminExperiences.length > 0 ? (
-                    adminExperiences.map((e) => (
-                      <NavLink
-                        key={e.code}
-                        to={`/experiences/${e.code}/manage`}
-                        className={() => styles.dropdownItem}
-                      >
-                        {e.name}
-                      </NavLink>
-                    ))
-                  ) : (
-                    <span className={styles.dropdownItem} style={{ opacity: 0.7 }}>
-                      No recent
-                    </span>
-                  )}
+        {open && (
+          <>
+            <span style={{ width: 16 }} />
+            <NavLink
+              to="/"
+              end
+              className={({ isActive }) => (isActive ? 'link link--active' : 'link')}
+            >
+              {'Home'}
+            </NavLink>
+            <NavLink
+              to="/about"
+              className={({ isActive }) => (isActive ? 'link link--active' : 'link')}
+            >
+              {'About'}
+            </NavLink>
+            <NavLink
+              to="/join"
+              className={({ isActive }) => (isActive ? 'link link--active' : 'link')}
+            >
+              {'Join'}
+            </NavLink>
+            {isAdmin && (
+              <>
+                <NavLink
+                  to="/create"
+                  className={({ isActive }) => (isActive ? 'link link--active' : 'link')}
+                >
+                  {'Create'}
+                </NavLink>
+                <div className={styles.dropdown}>
+                  <span className={`${styles.dropdownTrigger} link`}>{'Experiences'}</span>
+                  <div className={styles.dropdownMenu} role="menu">
+                    {adminExperiences.length > 0 ? (
+                      adminExperiences.map((e) => (
+                        <a
+                          key={e.code}
+                          href={`/experiences/${e.code}/manage`}
+                          className={styles.dropdownItem}
+                        >
+                          {e.name}
+                        </a>
+                      ))
+                    ) : (
+                      <span className={styles.dropdownItem} style={{ opacity: 0.7 }}>
+                        {'No recent'}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </>
+            )}
+
+            <span style={{ marginLeft: 'auto' }} />
+            <div className={styles.dropdown}>
+              <span className={`${styles.dropdownTrigger} link`} aria-haspopup="menu">
+                <Settings size={16} />
+              </span>
+              <div className={styles.dropdownMenu} role="menu">
+                <div className={styles.topnav__controlRow}>
+                  <span className={styles.switchLabel}>{'Background'}</span>
+                  <Switch
+                    className={styles.switch}
+                    checked={bgAnimated}
+                    onCheckedChange={(checked) => setBgAnimated(!!checked)}
+                    aria-label={bgAnimated ? 'Animated background' : 'Solid background'}
+                    title={bgAnimated ? 'Animated background' : 'Solid background'}
+                  />
+                </div>
+                <div className={styles.topnav__controlRow}>
+                  <span className={styles.switchLabel}>{theme === 'dark' ? 'Dark' : 'Light'}</span>
+                  <Switch
+                    withIcons
+                    className={styles.switch}
+                    checked={theme === 'dark'}
+                    onCheckedChange={(checked) => (checked ? setTheme('dark') : setTheme('light'))}
+                    aria-label={theme === 'dark' ? 'Dark mode' : 'Light mode'}
+                    title={theme === 'dark' ? 'Dark mode' : 'Light mode'}
+                  />
                 </div>
               </div>
-              <NavLink
-                to="/create"
-                className={({ isActive }) => (isActive ? 'link link--active' : 'link')}
-              >
-                Create
-              </NavLink>
-            </>
-          )}
-
-          <span style={{ marginLeft: 'auto' }} />
-          <div className={styles.dropdown}>
-            <span className={`${styles.dropdownTrigger} link`} aria-haspopup="menu">
-              <Settings size={16} />
-            </span>
-            <div className={styles.dropdownMenu} role="menu">
-              <div className={styles.topnav__controlRow}>
-                <span className={styles.switchLabel}>Background</span>
-                <Switch
-                  className={styles.switch}
-                  checked={bgAnimated}
-                  onCheckedChange={(checked) => setBgAnimated(!!checked)}
-                  aria-label={bgAnimated ? 'Animated background' : 'Solid background'}
-                  title={bgAnimated ? 'Animated background' : 'Solid background'}
-                />
-              </div>
-              <div className={styles.topnav__controlRow}>
-                <span className={styles.switchLabel}>{theme === 'dark' ? 'Dark' : 'Light'}</span>
-                <Switch
-                  withIcons
-                  className={styles.switch}
-                  checked={theme === 'dark'}
-                  onCheckedChange={(checked) => (checked ? setTheme('dark') : setTheme('light'))}
-                  aria-label={theme === 'dark' ? 'Dark mode' : 'Light mode'}
-                  title={theme === 'dark' ? 'Dark mode' : 'Light mode'}
-                />
-              </div>
             </div>
-          </div>
 
-          {!isLoading &&
-            (user ? (
-              <button className="link" onClick={() => void logOut()}>
-                Logout
-              </button>
-            ) : (
-              <a className="link" href="/users/sign_in">
-                Sign in
-              </a>
-            ))}
-        </div>
+            {!isLoading &&
+              (user ? (
+                <button className="link" onClick={() => void logOut()}>
+                  {'Logout'}
+                </button>
+              ) : (
+                <a className="link" href="/users/sign_in">
+                  {'Sign in'}
+                </a>
+              ))}
+          </>
+        )}
       </div>
     </nav>
   );
