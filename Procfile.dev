@@ -1,3 +1,4 @@
 
 vite: bin/vite dev
+tailwind: yarn tailwind:watch
 web: bin/rails s

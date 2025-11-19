@@ -1,7 +1,7 @@
 /* Static background + CRT effects */
 
 /* Stronger CRT-style vignette around edges */
-.app::after {
+:root[data-bg='animated'] .app::after {
   content: '';
   position: fixed;
   inset: 0;
@@ -25,7 +25,11 @@
   /* Use normal blending so corners can go truly dark */
 }
 
-.tv-static {
+:root[data-bg='solid'] .app::after {
+  display: none;
+}
+
+:root[data-bg='animated'] .tv-static {
   position: fixed;
   inset: 0; /* cover viewport */
   width: 100%;
@@ -38,6 +42,20 @@
   animation:
     staticAnim 0.2s steps(10) infinite,
     flicker 0.3s infinite alternate;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+:root[data-bg='solid'] .tv-static {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100vh;
+  height: 100dvh;
+  background: hsl(var(--background));
+  filter: none;
+  animation: none;
   z-index: 0;
   pointer-events: none;
   overflow: hidden;
@@ -142,7 +160,7 @@
 }
 
 /* Scanlines overlay */
-.tv-static::after {
+:root[data-bg='animated'] .tv-static::after {
   content: '';
   position: absolute;
   inset: 0;
@@ -161,12 +179,23 @@
   z-index: 1;
 }
 
+:root[data-bg='solid'] .tv-static::after {
+  display: none;
+}
+
 /* Alternating tear overlays: single- then double-band */
-.tear-single,
-.tear-double,
-.tear-band {
+:root[data-bg='animated'] .tear-single,
+:root[data-bg='animated'] .tear-double,
+:root[data-bg='animated'] .tear-band {
   position: absolute;
   pointer-events: none;
+}
+
+:root[data-bg='solid'] .tear-single,
+:root[data-bg='solid'] .tear-double,
+:root[data-bg='solid'] .tear-band,
+:root[data-bg='solid'] .tv-on-effect {
+  display: none;
 }
 
 .tear-single {
