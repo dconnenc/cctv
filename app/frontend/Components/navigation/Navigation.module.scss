@@ -14,11 +14,12 @@
   margin: 0 auto;
   display: flex;
   flex-direction: row;
-  justify-content: center;
+  justify-content: flex-start;
   align-items: center;
-  gap: 12px;
-  padding: 0.75rem 1rem;
-  flex-wrap: wrap;
+  gap: 10px;
+  padding: 0 1rem;
+  height: var(--nav-h);
+  flex-wrap: nowrap;
 }
 
 .topnav__mobile {
@@ -113,8 +114,93 @@
   text-align: left;
 }
 
+.topnav__controlRow {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 0;
+}
+
+.switch {
+  border-color: transparent !important;
+  padding: 0 !important;
+  line-height: 0;
+  box-shadow: none !important;
+}
+
+.switchGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: flex-end;
+}
+
+.switchRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.switchLabel {
+  display: flex;
+  align-items: center;
+  height: 20px; /* match switch track height (h-5) */
+  font-size: 0.5rem;
+  line-height: 1;
+  opacity: 0.85;
+}
+
+/* Disable hover background effect for CCTV menu */
 .topnav:hover {
-  background-color: rgba(255, 255, 255, 0.5);
+  background-color: transparent;
+}
+
+.menuPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-radius: 9999px;
+  background: rgba(50, 17, 17, 0.1);
+  color: var(--white);
+  text-shadow: var(--tv-glow);
+  cursor: pointer;
+  user-select: none;
+}
+
+.recBtn {
+  width: 16px;
+  height: 16px;
+  border-radius: 9999px;
+  border: none;
+  box-shadow: var(--tv-glow);
+  background: var(--red);
+  display: inline-block;
+}
+
+.recBtnOpen {
+  background: var(--green);
+}
+
+/* Alignment refinements for consistent midline */
+.menuPill {
+  height: 28px;
+  padding: 0 12px;
+}
+
+.topnav__inner .link {
+  display: inline-flex;
+  align-items: center;
+  height: 28px;
+}
+
+.switchRow {
+  min-height: 28px;
+}
+
+.switchLabel {
+  height: auto;
 }
 
 /* Switch to mobile nav under tablet width */

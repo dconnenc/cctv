@@ -1,0 +1,21 @@
+{
+  "$schema": "https://ui.shadcn.com/schema.json",
+  "style": "new-york",
+  "rsc": false,
+  "tsx": true,
+  "tailwind": {
+    "config": "tailwind.config.ts",
+    "css": "app/frontend/tailwind.css",
+    "baseColor": "neutral",
+    "cssVariables": true,
+    "prefix": ""
+  },
+  "aliases": {
+    "components": "@cctv/components",
+    "utils": "@cctv/utils",
+    "ui": "@cctv/components/ui",
+    "lib": "@cctv/utils",
+    "hooks": "@cctv/hooks"
+  },
+  "iconLibrary": "lucide"
+}

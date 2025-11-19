@@ -12,6 +12,53 @@
     0.5px 0 1px rgba(255, 0, 0, 0.25), -0.5px 0 1px rgba(0, 255, 255, 0.25);
 }
 
+/* Shadcn theme tokens (HSL triplets) */
+:root[data-theme='light'] {
+  --background: 0 0% 100%;
+  --foreground: 240 10% 3.9%;
+  --card: 0 0% 100%;
+  --card-foreground: 240 10% 3.9%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 240 10% 3.9%;
+  --primary: 259 100% 50%; /* approx var(--blue) */
+  --primary-foreground: 0 0% 100%;
+  --secondary: 240 4.8% 95.9%;
+  --secondary-foreground: 240 5.9% 10%;
+  --muted: 240 4.8% 95.9%;
+  --muted-foreground: 240 3.8% 46.1%;
+  --accent: 300 100% 50%; /* approx var(--pink) */
+  --accent-foreground: 0 0% 100%;
+  --destructive: 13 100% 53%; /* approx var(--red) */
+  --destructive-foreground: 0 0% 100%;
+  --border: 240 5.9% 90%;
+  --input: 240 5.9% 90%;
+  --ring: 52 100% 50%; /* approx var(--yellow) */
+  --radius: 0.5rem;
+}
+
+:root[data-theme='dark'] {
+  --background: 0 0% 5%;
+  --foreground: 0 0% 98%;
+  --card: 0 0% 7.5%;
+  --card-foreground: 0 0% 98%;
+  --popover: 0 0% 7.5%;
+  --popover-foreground: 0 0% 98%;
+  --primary: 248 100% 53%; /* var(--blue) vibe */
+  --primary-foreground: 0 0% 100%;
+  --secondary: 240 3.7% 15.9%;
+  --secondary-foreground: 0 0% 98%;
+  --muted: 240 3.7% 15.9%;
+  --muted-foreground: 240 5% 64.9%;
+  --accent: 305 100% 50%; /* var(--pink) vibe */
+  --accent-foreground: 0 0% 100%;
+  --destructive: 13 100% 53%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 240 3.7% 22%;
+  --input: 240 3.7% 22%;
+  --ring: 52 100% 50%;
+  --radius: 0.5rem;
+}
+
 .app {
   top: 0;
   left: 0;
@@ -30,6 +77,62 @@ html,
 body {
   margin: 0;
   padding: 0;
+}
+
+/* Shadcn utility bindings if needed without Tailwind */
+.bg-background {
+  background-color: hsl(var(--background));
+}
+.text-foreground {
+  color: hsl(var(--foreground));
+}
+.border-border {
+  border-color: hsl(var(--border));
+}
+.ring-ring {
+  outline-color: hsl(var(--ring));
+}
+.bg-card {
+  background-color: hsl(var(--card));
+}
+.text-card-foreground {
+  color: hsl(var(--card-foreground));
+}
+.bg-popover {
+  background-color: hsl(var(--popover));
+}
+.text-popover-foreground {
+  color: hsl(var(--popover-foreground));
+}
+.bg-primary {
+  background-color: hsl(var(--primary));
+}
+.text-primary-foreground {
+  color: hsl(var(--primary-foreground));
+}
+.bg-secondary {
+  background-color: hsl(var(--secondary));
+}
+.text-secondary-foreground {
+  color: hsl(var(--secondary-foreground));
+}
+.bg-muted {
+  background-color: hsl(var(--muted));
+}
+.text-muted-foreground {
+  color: hsl(var(--muted-foreground));
+}
+.bg-accent {
+  background-color: hsl(var(--accent));
+}
+.text-accent-foreground {
+  color: hsl(var(--accent-foreground));
+}
+.bg-destructive {
+  background-color: hsl(var(--destructive));
+}
+.text-destructive-foreground {
+  color: hsl(var(--destructive-foreground));
 }
 
 .flex-centered {

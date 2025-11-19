@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
-import { useNavigate } from 'react-router-dom';
-
+import { Dialog, DialogContent } from '@cctv/components/ui/dialog';
 import { useExperience } from '@cctv/contexts';
 import { Panel } from '@cctv/core';
 import {
@@ -14,6 +13,7 @@ import { Block, BlockStatus, ParticipantSummary } from '@cctv/types';
 
 import ContextDetails from './ContextDetails/ContextDetails';
 import ContextView from './ContextView/ContextView';
+import CreateBlock from './CreateBlock/CreateBlock';
 import ExperienceControl from './ExperienceControl/ExperienceControl';
 import ParticipantsTab from './ParticipantsTab/ParticipantsTab';
 import ProgramTab from './ProgramTab/ProgramTab';
@@ -23,7 +23,6 @@ import styles from './Manage.module.scss';
 type Tab = 'program' | 'participants';
 
 export default function Manage() {
-  const navigate = useNavigate();
   const {
     experience,
     code,
@@ -42,6 +41,7 @@ export default function Manage() {
   const [activeTab, setActiveTab] = useState<Tab>('program');
   const [busyBlockId, setBusyBlockId] = useState<string>();
   const [viewMode, setViewMode] = useState<'monitor' | 'participant'>('monitor');
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
 
   const participantsCombined: ParticipantSummary[] = useMemo(
     () => [...(experience?.hosts || []), ...(experience?.participants || [])],
@@ -80,7 +80,7 @@ export default function Manage() {
   );
 
   const handleCreateBlock = () => {
-    navigate(`/experiences/${code}/manage/blocks/new`);
+    setIsCreateDialogOpen(true);
   };
 
   if (isLoading) {
@@ -103,97 +103,111 @@ export default function Manage() {
   const participant = participantsCombined.find((p) => p.id === impersonatedParticipantId);
 
   return (
-    <section className={styles.root}>
-      {errorMessage && <div className={styles.errorBanner}>{errorMessage}</div>}
+    <>
+      <section className={styles.root}>
+        {errorMessage && <div className={styles.errorBanner}>{errorMessage}</div>}
 
-      <div className={styles.topRow}>
-        <div className={styles.upNext}>
-          <ContextView
-            block={
-              viewMode === 'monitor'
-                ? (monitorView?.next_block ?? undefined)
-                : (participantView?.next_block ?? undefined)
-            }
-            participant={viewMode === 'participant' ? participant : undefined}
-            emptyMessage={
-              viewMode === 'monitor'
-                ? 'No upcoming block for Monitor'
-                : `No upcoming block for ${participant?.name || 'participant'}`
-            }
-            monitorView={undefined}
-            viewMode={viewMode}
-            title="Up Next"
-          />
+        <div className={styles.topRow}>
+          <div className={styles.upNext}>
+            <ContextView
+              block={
+                viewMode === 'monitor'
+                  ? (monitorView?.next_block ?? undefined)
+                  : (participantView?.next_block ?? undefined)
+              }
+              participant={viewMode === 'participant' ? participant : undefined}
+              emptyMessage={
+                viewMode === 'monitor'
+                  ? 'No upcoming block for Monitor'
+                  : `No upcoming block for ${participant?.name || 'participant'}`
+              }
+              monitorView={undefined}
+              viewMode={viewMode}
+              title="Up Next"
+            />
+          </div>
+
+          <div className={styles.contextDetails}>
+            <ContextDetails
+              monitorView={monitorView}
+              participantView={participantView}
+              participants={participantsCombined}
+              selectedParticipantId={impersonatedParticipantId}
+              setSelectedParticipantId={setImpersonatedParticipantId}
+              viewMode={viewMode}
+              setViewMode={setViewMode}
+            />
+          </div>
+
+          <div className={styles.contextView}>
+            <ContextView
+              block={currentBlock}
+              participant={viewMode === 'participant' ? participant : undefined}
+              emptyMessage={
+                viewMode === 'monitor' ? 'No block on Monitor' : 'No block for participant'
+              }
+              monitorView={monitorView}
+              viewMode={viewMode}
+              title="Current"
+            />
+          </div>
         </div>
 
-        <div className={styles.contextDetails}>
-          <ContextDetails
-            monitorView={monitorView}
-            participantView={participantView}
+        <div className={styles.bottomRow}>
+          <div className={styles.experienceInfo}>
+            <ExperienceControl
+              experience={experience}
+              onStart={startExperience}
+              onPause={pauseExperience}
+              onResume={resumeExperience}
+              isLoading={isChangingState}
+              onCreateBlock={handleCreateBlock}
+            />
+          </div>
+
+          <Panel className={styles.tableContainer}>
+            <div className={styles.tabs}>
+              <button
+                className={activeTab === 'program' ? styles.tabActive : styles.tab}
+                onClick={() => setActiveTab('program')}
+              >
+                Program
+              </button>
+              <button
+                className={activeTab === 'participants' ? styles.tabActive : styles.tab}
+                onClick={() => setActiveTab('participants')}
+              >
+                Participants
+              </button>
+            </div>
+
+            <div className={styles.tabContent}>
+              {activeTab === 'program' ? (
+                <ProgramTab
+                  blocks={experience?.blocks || []}
+                  participants={participantsCombined}
+                  onBlockStatusChange={onChangeBlockStatus}
+                  busyBlockId={busyBlockId}
+                />
+              ) : (
+                <ParticipantsTab participants={participantsCombined} />
+              )}
+            </div>
+          </Panel>
+        </div>
+      </section>
+      <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+        <DialogContent className="sm:max-w-3xl w-full">
+          <CreateBlock
+            onClose={() => setIsCreateDialogOpen(false)}
             participants={participantsCombined}
-            selectedParticipantId={impersonatedParticipantId}
-            setSelectedParticipantId={setImpersonatedParticipantId}
-            viewMode={viewMode}
-            setViewMode={setViewMode}
+            onEndCurrentBlock={async () => {
+              if (!currentBlock) return;
+              await changeStatus(currentBlock, 'closed');
+            }}
           />
-        </div>
-
-        <div className={styles.contextView}>
-          <ContextView
-            block={currentBlock}
-            participant={viewMode === 'participant' ? participant : undefined}
-            emptyMessage={
-              viewMode === 'monitor' ? 'No block on Monitor' : 'No block for participant'
-            }
-            monitorView={monitorView}
-            viewMode={viewMode}
-            title="Current"
-          />
-        </div>
-      </div>
-
-      <div className={styles.bottomRow}>
-        <div className={styles.experienceInfo}>
-          <ExperienceControl
-            experience={experience}
-            onStart={startExperience}
-            onPause={pauseExperience}
-            onResume={resumeExperience}
-            isLoading={isChangingState}
-            onCreateBlock={handleCreateBlock}
-          />
-        </div>
-
-        <Panel className={styles.tableContainer}>
-          <div className={styles.tabs}>
-            <button
-              className={activeTab === 'program' ? styles.tabActive : styles.tab}
-              onClick={() => setActiveTab('program')}
-            >
-              Program
-            </button>
-            <button
-              className={activeTab === 'participants' ? styles.tabActive : styles.tab}
-              onClick={() => setActiveTab('participants')}
-            >
-              Participants
-            </button>
-          </div>
-
-          <div className={styles.tabContent}>
-            {activeTab === 'program' ? (
-              <ProgramTab
-                blocks={experience?.blocks || []}
-                participants={participantsCombined}
-                onBlockStatusChange={onChangeBlockStatus}
-                busyBlockId={busyBlockId}
-              />
-            ) : (
-              <ParticipantsTab participants={participantsCombined} />
-            )}
-          </div>
-        </Panel>
-      </div>
-    </section>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }

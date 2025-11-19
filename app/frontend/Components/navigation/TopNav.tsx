@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 
 import { NavLink } from 'react-router-dom';
 
+import { Switch } from '@cctv/components/ui/switch';
+import { useTheme } from '@cctv/contexts';
 import { useUser } from '@cctv/contexts/UserContext';
 
 import styles from './Navigation.module.scss';
@@ -11,6 +13,7 @@ export const TopNav = () => {
   const navRef = useRef<HTMLElement | null>(null);
   const { user, logOut, isLoading } = useUser();
   const isAdmin = user?.role === 'admin' || user?.role === 'superadmin';
+  const { theme, setTheme, bgAnimated, setBgAnimated } = useTheme();
 
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
@@ -27,71 +30,39 @@ export const TopNav = () => {
   return (
     <nav className={styles.topnav} ref={navRef}>
       <div className={styles.topnav__inner}>
-        <NavLink to="/" end className={({ isActive }) => (isActive ? 'link link--active' : 'link')}>
-          Home
-        </NavLink>
-        <NavLink
-          to="/about"
-          className={({ isActive }) => (isActive ? 'link link--active' : 'link')}
-        >
-          About
-        </NavLink>
-        <NavLink to="/join" className={({ isActive }) => (isActive ? 'link link--active' : 'link')}>
-          Join
-        </NavLink>
-        {isAdmin && (
-          <NavLink
-            to="/create"
-            className={({ isActive }) => (isActive ? 'link link--active' : 'link')}
-          >
-            Create
-          </NavLink>
-        )}
-        <span style={{ marginLeft: 'auto' }} />
-        {!isLoading &&
-          (user ? (
-            <button className="link" onClick={() => void logOut()}>
-              Logout
-            </button>
-          ) : (
-            <a className="link" href="/users/sign_in">
-              Sign in
-            </a>
-          ))}
-      </div>
-      <div className={styles.topnav__mobile}>
         <button
-          className={`${styles.topnav__toggle} ${open ? styles.isOpen : ''}`}
+          className={`${styles.recBtn} ${open ? styles.recBtnOpen : ''}`}
+          aria-label={open ? 'Close menu' : 'Open menu'}
+          onClick={() => setOpen((v) => !v)}
+        />
+        <button
+          className={styles.menuPill}
           aria-expanded={open}
-          aria-controls="topnav-dropdown"
           aria-label={open ? 'Close menu' : 'Open menu'}
           onClick={() => setOpen((v) => !v)}
         >
-          <span className={styles.topnav__icon} aria-hidden="true" />
+          Menu
         </button>
-      </div>
-      {open && (
-        <div id="topnav-dropdown" className={styles.topnav__dropdown} role="menu">
-          <div className={styles.topnav__dropdownInner}>
+
+        {open && (
+          <>
+            <span style={{ width: 16 }} />
             <NavLink
               to="/"
               end
               className={({ isActive }) => (isActive ? 'link link--active' : 'link')}
-              onClick={() => setOpen(false)}
             >
               Home
             </NavLink>
             <NavLink
               to="/about"
               className={({ isActive }) => (isActive ? 'link link--active' : 'link')}
-              onClick={() => setOpen(false)}
             >
               About
             </NavLink>
             <NavLink
               to="/join"
               className={({ isActive }) => (isActive ? 'link link--active' : 'link')}
-              onClick={() => setOpen(false)}
             >
               Join
             </NavLink>
@@ -99,30 +70,49 @@ export const TopNav = () => {
               <NavLink
                 to="/create"
                 className={({ isActive }) => (isActive ? 'link link--active' : 'link')}
-                onClick={() => setOpen(false)}
               >
                 Create
               </NavLink>
             )}
-            {isLoading &&
+
+            <span style={{ marginLeft: 'auto' }} />
+            <div className={styles.switchGroup}>
+              <div className={styles.switchRow}>
+                <span className={styles.switchLabel}>Background</span>
+                <Switch
+                  className={styles.switch}
+                  checked={bgAnimated}
+                  onCheckedChange={(checked) => setBgAnimated(!!checked)}
+                  aria-label={bgAnimated ? 'Animated background' : 'Solid background'}
+                  title={bgAnimated ? 'Animated background' : 'Solid background'}
+                />
+              </div>
+              <div className={styles.switchRow}>
+                <span className={styles.switchLabel}>Theme</span>
+                <Switch
+                  withIcons
+                  className={styles.switch}
+                  checked={theme === 'dark'}
+                  onCheckedChange={(checked) => (checked ? setTheme('dark') : setTheme('light'))}
+                  aria-label={theme === 'dark' ? 'Dark mode' : 'Light mode'}
+                  title={theme === 'dark' ? 'Dark mode' : 'Light mode'}
+                />
+              </div>
+            </div>
+
+            {!isLoading &&
               (user ? (
-                <button
-                  className="link"
-                  onClick={() => {
-                    setOpen(false);
-                    void logOut();
-                  }}
-                >
+                <button className="link" onClick={() => void logOut()}>
                   Logout
                 </button>
               ) : (
-                <a className="link" href="/users/sign_in" onClick={() => setOpen(false)}>
+                <a className="link" href="/users/sign_in">
                   Sign in
                 </a>
               ))}
-          </div>
-        </div>
-      )}
+          </>
+        )}
+      </div>
     </nav>
   );
 };

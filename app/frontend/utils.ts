@@ -1,3 +1,6 @@
+import { type ClassValue, clsx } from 'clsx';
+import { twMerge } from 'tailwind-merge';
+
 export function getFormData<T>(form: HTMLFormElement): Partial<T> {
   const formData = new FormData(form);
   return Object.fromEntries(formData.entries()) as Partial<T>;
@@ -51,6 +54,9 @@ export const clearAllExperienceJWTs = () => {
   keysToRemove.forEach((key) => localStorage.removeItem(key));
 };
 
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs));
+}
 export const fmtDate = (s?: string | null) => (s ? new Date(s).toLocaleString() : '—');
 
 export const capitalize = (s?: string | null) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : '');
