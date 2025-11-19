@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { Routes, useLocation } from 'react-router-dom';
 
@@ -10,27 +10,16 @@ type WinkRoutesProps = {
 export const RouteWink: React.FC<WinkRoutesProps> = ({ children }) => {
   const location = useLocation();
   const [displayedLocation, setDisplayedLocation] = useState(location);
-  const pendingLocationRef = useRef(location);
-  const [phase, setPhase] = useState<'idle' | 'out' | 'in'>('idle');
 
+  // Only animate on first load via .app--booting styles.
+  // For route changes, swap immediately without wink animations.
   useEffect(() => {
     if (location.pathname !== displayedLocation.pathname) {
-      pendingLocationRef.current = location;
-      setPhase('out');
-      const outT = setTimeout(() => {
-        // Swap to the new route after wink-out completes
-        setDisplayedLocation(pendingLocationRef.current);
-        setPhase('in');
-        const inT = setTimeout(() => setPhase('idle'), 220); // wink-in duration
-        return () => clearTimeout(inT);
-      }, 160); // wink-out duration
-      return () => clearTimeout(outT);
+      setDisplayedLocation(location);
     }
   }, [location, displayedLocation.pathname]);
 
-  const cls = `wink-container${phase === 'out' ? ' is-wink-out' : ''}${
-    phase === 'in' ? ' is-wink-in' : ''
-  }`;
+  const cls = 'wink-container';
 
   return (
     <div className={cls}>

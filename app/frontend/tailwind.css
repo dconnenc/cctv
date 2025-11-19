@@ -21,3 +21,15 @@
   --color-input: hsl(var(--input));
   --color-ring: hsl(var(--ring));
 }
+
+/* Force light-mode thumb to red when checked; keep background visible */
+:root[data-theme='light'] .switchThumb[data-state='checked'] {
+  background-color: hsl(var(--destructive)) !important;
+}
+
+/* Remove any hover effects in settings dropdown switches */
+.dropdownMenu .switch:hover,
+.dropdownMenu .switchThumb:hover {
+  filter: none !important;
+  box-shadow: none !important;
+}
