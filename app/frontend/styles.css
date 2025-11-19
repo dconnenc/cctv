@@ -219,6 +219,15 @@ body {
   font-weight: 800;
 }
 
+/* Theme-aware global link color */
+:root[data-theme='light'] .link {
+  color: hsl(var(--foreground));
+  text-shadow: none;
+}
+:root[data-theme='dark'] .link {
+  color: var(--yellow);
+}
+
 /* Route wink (content-only) transition: out then in */
 .wink-container {
   width: 100%;
@@ -298,7 +307,7 @@ input:focus {
 }
 
 button {
-  margin-top: 12px;
+  margin: 0;
   padding: 8px 16px;
   font-size: 16px;
   font-weight: 600;

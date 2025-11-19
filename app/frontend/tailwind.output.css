@@ -762,9 +762,9 @@
       translate: var(--tw-translate-x) var(--tw-translate-y);
     }
   }
-  .data-\[state\=checked\]\:bg-primary {
+  .data-\[state\=checked\]\:bg-\[hsl\(var\(--ring\)\)\] {
     &[data-state="checked"] {
-      background-color: var(--color-primary);
+      background-color: hsl(var(--ring));
     }
   }
   .data-\[state\=open\]\:bg-accent {
@@ -783,9 +783,9 @@
       translate: var(--tw-translate-x) var(--tw-translate-y);
     }
   }
-  .data-\[state\=unchecked\]\:bg-input {
+  .data-\[state\=unchecked\]\:bg-background {
     &[data-state="unchecked"] {
-      background-color: var(--color-input);
+      background-color: var(--color-background);
     }
   }
   .sm\:max-w-3xl {
@@ -838,6 +838,13 @@
       flex-shrink: 0;
     }
   }
+}
+:root[data-theme='light'] .switchThumb[data-state='checked'] {
+  background-color: hsl(var(--destructive)) !important;
+}
+.dropdownMenu .switch:hover, .dropdownMenu .switchThumb:hover {
+  filter: none !important;
+  box-shadow: none !important;
 }
 @property --tw-translate-x {
   syntax: "*";

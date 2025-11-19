@@ -119,7 +119,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 4px 0;
+  padding: 8px 0;
 }
 
 .switch {
@@ -151,9 +151,111 @@
   opacity: 0.85;
 }
 
+.dropdown {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.dropdown::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 100%;
+  height: 10px; /* extend hover area without affecting layout */
+}
+
+.dropdownTrigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 28px;
+  line-height: 1;
+  padding: 0;
+  margin: 0;
+  vertical-align: middle;
+}
+
+.dropdownMenu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: max-content;
+  min-width: max-content;
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(6px);
+  border-radius: 8px;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
+  z-index: 2000;
+  display: none;
+}
+
+.dropdown:hover .dropdownMenu {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.dropdownMenu .topnav__controlRow {
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
+  gap: 6px;
+  padding: 6px 0;
+}
+.dropdownMenu .switchLabel {
+  height: auto;
+  text-align: left;
+}
+
+.dropdownItem {
+  display: block;
+  padding: 6px 8px;
+  color: var(--white);
+  text-decoration: none;
+  border-radius: 6px;
+  white-space: nowrap;
+  font-size: 14px; /* slightly smaller than primary nav */
+}
+
+.dropdownItem:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
 /* Disable hover background effect for CCTV menu */
 .topnav:hover {
   background-color: transparent;
+}
+
+.menuCluster {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
+}
+
+.drawer {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1 1 auto;
+  min-width: 0;
+  width: 100%;
+  opacity: 0;
+  pointer-events: none;
+  transform-origin: left center;
+  transform: scaleX(0);
+  transition:
+    transform 220ms ease,
+    opacity 160ms ease;
+}
+
+.drawer.isOpen {
+  transform: scaleX(1);
+  opacity: 1;
+  pointer-events: auto;
 }
 
 .menuPill {
@@ -167,9 +269,11 @@
   text-shadow: var(--tv-glow);
   cursor: pointer;
   user-select: none;
+  border: none;
 }
 
 .recBtn {
+  padding: 8px 8px;
   width: 16px;
   height: 16px;
   border-radius: 9999px;
@@ -183,16 +287,40 @@
   background: var(--green);
 }
 
+/* Shared hover states: hovering either triggers both */
+.menuCluster:hover .menuPill,
+.menuPill:hover,
+.recBtn:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+.menuCluster:hover .recBtn,
+.recBtn:hover {
+  transform: scale(1.05);
+}
+
 /* Alignment refinements for consistent midline */
 .menuPill {
   height: 28px;
   padding: 0 12px;
+  margin: 0 !important;
+  line-height: 1;
 }
 
 .topnav__inner .link {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   height: 28px;
+  line-height: 1;
+  vertical-align: middle;
+  padding: 0;
+  margin: 0;
+  border-bottom: 0;
+}
+.topnav__inner .link.link--active {
+  padding-bottom: 0 !important;
+  margin-bottom: 0 !important;
+  border-bottom: 0 !important;
 }
 
 .switchRow {
@@ -201,6 +329,12 @@
 
 .switchLabel {
   height: auto;
+}
+
+/* Force-remove global top margin from header controls */
+.menuPill,
+.recBtn {
+  margin-top: 0 !important;
 }
 
 /* Switch to mobile nav under tablet width */
@@ -218,4 +352,17 @@
   .topnav:hover {
     background-color: transparent;
   }
+}
+
+/* Theme-aware navigation colors */
+:root[data-theme='light'] .topnav .link {
+  color: hsl(var(--foreground));
+  text-shadow: none;
+}
+:root[data-theme='light'] .topnav .dropdownItem {
+  color: hsl(var(--foreground));
+}
+:root[data-theme='light'] .topnav .menuPill {
+  color: hsl(var(--foreground));
+  text-shadow: none;
 }

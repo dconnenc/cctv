@@ -8,5 +8,26 @@
 .label {
   font-size: 20px;
   font-weight: 600;
-  color: var(--white);
+  color: hsl(var(--foreground));
+  text-align: left;
+  align-self: flex-start;
+}
+
+.input input {
+  padding: 8px 12px;
+  font-size: 16px;
+  border: 1px solid hsl(var(--border));
+  border-radius: 6px;
+  background: hsl(var(--input));
+  color: hsl(var(--foreground));
+}
+
+.input input::placeholder {
+  color: hsl(var(--muted-foreground));
+}
+
+.input input:focus {
+  outline: none;
+  border-color: hsl(var(--ring));
+  box-shadow: 0 0 0 2px hsl(var(--ring) / 0.3);
 }
