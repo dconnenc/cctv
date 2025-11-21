@@ -1,15 +1,15 @@
 import { useParams } from 'react-router-dom';
 
 import { useExperience } from '@cctv/contexts';
+import { BlockKind } from '@cctv/types';
+
+import FamilyFeudManager from './FamilyFeudManager/FamilyFeudManager';
 
 import styles from './Block.module.scss';
 
 export default function Block() {
   const { blockId } = useParams<{ blockId: string }>();
   const { experience, isLoading } = useExperience();
-
-  console.log(experience);
-  console.log(isLoading);
 
   if (isLoading) {
     return (
@@ -38,6 +38,16 @@ export default function Block() {
     );
   }
 
+  // Render family feud manager for family_feud blocks
+  if (block.kind === BlockKind.FAMILY_FEUD) {
+    return (
+      <section className="page">
+        <FamilyFeudManager block={block} />
+      </section>
+    );
+  }
+
+  // Default view for other block types
   return (
     <section className="page">
       <div className={styles.root}>

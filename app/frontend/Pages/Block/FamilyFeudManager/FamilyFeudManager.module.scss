@@ -1,0 +1,224 @@
+.root {
+  padding: var(--spacing-lg);
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.title {
+  font-size: var(--font-size-xxl);
+  font-weight: var(--font-weight-bold);
+  margin-bottom: var(--spacing-xl);
+  color: var(--color-text-primary);
+}
+
+.question {
+  margin-bottom: var(--spacing-xxl);
+  padding: var(--spacing-xl);
+  background-color: var(--color-background-secondary);
+  border-radius: var(--border-radius-lg);
+  border: 1px solid var(--color-border);
+}
+
+.questionTitle {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+  margin-bottom: var(--spacing-lg);
+  color: var(--color-text-primary);
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-xl);
+}
+
+.bucketsColumn,
+.answersColumn {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.columnHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-md);
+  background-color: var(--color-background-primary);
+  border-radius: var(--border-radius-md);
+  border: 1px solid var(--color-border);
+  font-weight: var(--font-weight-bold);
+  font-size: var(--font-size-md);
+}
+
+.addButton {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  font-size: var(--font-size-sm);
+}
+
+.bucketsList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.bucket {
+  background-color: var(--color-background-primary);
+  border: 2px solid var(--color-border);
+  border-radius: var(--border-radius-md);
+  overflow: hidden;
+}
+
+.bucketHeader {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
+  background-color: var(--color-background-secondary);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.collapseButton {
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  padding: 0;
+  color: var(--color-text-secondary);
+}
+
+.collapseButton:hover {
+  color: var(--color-text-primary);
+}
+
+.bucketNameInput {
+  flex: 1;
+  border: none;
+  background: transparent;
+  font-weight: var(--font-weight-bold);
+  font-size: var(--font-size-md);
+  padding: var(--spacing-xs);
+  color: var(--color-text-primary);
+}
+
+.bucketNameInput:focus {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+  border-radius: var(--border-radius-sm);
+}
+
+.bucketCount {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-normal);
+}
+
+.deleteButton {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: var(--spacing-xs);
+  color: var(--color-text-secondary);
+  display: flex;
+  align-items: center;
+  border-radius: var(--border-radius-sm);
+}
+
+.deleteButton:hover {
+  color: #ef4444;
+  background-color: rgba(239, 68, 68, 0.1);
+}
+
+.bucketDropZone {
+  padding: var(--spacing-md);
+  min-height: 60px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.emptyBucket {
+  padding: var(--spacing-lg);
+  text-align: center;
+  color: var(--color-text-secondary);
+  font-style: italic;
+  border: 2px dashed var(--color-border);
+  border-radius: var(--border-radius-md);
+  background-color: var(--color-background-secondary);
+}
+
+.answersList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md);
+  background-color: var(--color-background-primary);
+  border: 2px solid var(--color-border);
+  border-radius: var(--border-radius-md);
+  min-height: 200px;
+}
+
+.answer {
+  padding: var(--spacing-md);
+  background-color: var(--color-background-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius-md);
+  cursor: move;
+  user-select: none;
+  transition:
+    transform 0.1s ease,
+    box-shadow 0.1s ease;
+}
+
+.answer:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.answer:active {
+  cursor: grabbing;
+  transform: scale(1.02);
+  opacity: 0.8;
+}
+
+.answer.isDragging {
+  opacity: 0.5;
+  transform: rotate(2deg);
+}
+
+.bucketDropZone.isDraggingOver {
+  background-color: rgba(59, 130, 246, 0.1);
+  border: 2px dashed var(--color-primary);
+}
+
+.answersList.isDraggingOver {
+  background-color: rgba(59, 130, 246, 0.1);
+  border: 2px dashed var(--color-primary);
+}
+
+.noBuckets,
+.noAnswers {
+  padding: var(--spacing-xl);
+  text-align: center;
+  color: var(--color-text-secondary);
+  background-color: var(--color-background-secondary);
+  border: 1px dashed var(--color-border);
+  border-radius: var(--border-radius-md);
+}
+
+.empty {
+  padding: var(--spacing-xxl);
+  text-align: center;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-lg);
+}
+
+@media (max-width: 1024px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+}

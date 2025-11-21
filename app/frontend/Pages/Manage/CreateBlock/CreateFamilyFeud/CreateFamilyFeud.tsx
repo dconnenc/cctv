@@ -46,9 +46,11 @@ export const buildFamilyFeudPayload = (data: FamilyFeudData) => {
 export const buildFamilyFeudQuestions = (data: FamilyFeudData) => {
   return data.questions
     .filter((q) => q.question.trim())
-    .map((q) => ({
+    .map((q, index) => ({
       payload: {
         question: q.question.trim(),
+        formKey: `answer_${index}`,
+        inputType: 'text',
       },
     }));
 };

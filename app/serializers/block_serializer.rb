@@ -255,8 +255,10 @@ class BlockSerializer
 
     # Include full child block data for moderators/hosts
     if block.children.any?
+      # Use :user context for moderators/hosts to include all_responses
+      child_context = (mod_or_host?(participant_role) || user_admin?(user)) ? :user : :stream
       metadata[:children] = block.children.map do |child|
-        serialize_block(child, participant_role: participant_role, context: :stream, user: user)
+        serialize_block(child, participant_role: participant_role, context: child_context, user: user)
       end
     end
 

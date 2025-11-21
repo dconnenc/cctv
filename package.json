@@ -12,6 +12,7 @@
     ]
   },
   "dependencies": {
+    "@hello-pangea/dnd": "^18.0.1",
     "@radix-ui/react-dropdown-menu": "^2.1.16",
     "classnames": "^2.5.1",
     "lucide-react": "^0.545.0",
