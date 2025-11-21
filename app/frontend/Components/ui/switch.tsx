@@ -1,0 +1,40 @@
+import * as React from 'react';
+
+import * as SwitchPrimitives from '@radix-ui/react-switch';
+import { Moon, Sun } from 'lucide-react';
+
+import { cn } from '@cctv/utils';
+
+type SwitchProps = React.ComponentPropsWithoutRef<typeof SwitchPrimitives.Root> & {
+  withIcons?: boolean;
+};
+
+const Switch = React.forwardRef<React.ElementRef<typeof SwitchPrimitives.Root>, SwitchProps>(
+  ({ className, withIcons = false, ...props }, ref) => (
+    <SwitchPrimitives.Root
+      className={cn(
+        'relative peer inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full border border-border shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50 bg-muted',
+        className,
+      )}
+      {...props}
+      ref={ref}
+    >
+      {withIcons && (
+        <>
+          <Sun className="pointer-events-none absolute left-1 top-1/2 size-3 -translate-y-1/2 text-foreground/70" />
+          <Moon className="pointer-events-none absolute right-1 top-1/2 size-3 -translate-y-1/2 text-foreground/70" />
+        </>
+      )}
+      <SwitchPrimitives.Thumb
+        className={cn(
+          'switchThumb pointer-events-none z-10 block h-4 w-4 rounded-full shadow-lg ring-0 transition-transform',
+          'data-[state=checked]:translate-x-4 data-[state=unchecked]:translate-x-0',
+          'data-[state=checked]:bg-[hsl(var(--ring))] data-[state=unchecked]:bg-background',
+        )}
+      />
+    </SwitchPrimitives.Root>
+  ),
+);
+Switch.displayName = SwitchPrimitives.Root.displayName;
+
+export { Switch };

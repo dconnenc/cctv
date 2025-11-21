@@ -1,3 +1,6 @@
+import { type ClassValue, clsx } from 'clsx';
+import { twMerge } from 'tailwind-merge';
+
 export function getFormData<T>(form: HTMLFormElement): Partial<T> {
   const formData = new FormData(form);
   return Object.fromEntries(formData.entries()) as Partial<T>;
@@ -51,6 +54,32 @@ export const clearAllExperienceJWTs = () => {
   keysToRemove.forEach((key) => localStorage.removeItem(key));
 };
 
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs));
+}
 export const fmtDate = (s?: string | null) => (s ? new Date(s).toLocaleString() : '—');
 
 export const capitalize = (s?: string | null) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : '');
+
+// Session-scoped tracking for experiences created in this browser session
+const SESSION_CREATED_EXPERIENCES_KEY = 'created_experiences';
+export type CreatedExperience = { code: string; name: string };
+
+export function getSessionCreatedExperiences(): CreatedExperience[] {
+  try {
+    const raw = sessionStorage.getItem(SESSION_CREATED_EXPERIENCES_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw) as CreatedExperience[];
+    if (Array.isArray(parsed)) return parsed.filter((e) => e && e.code && e.name);
+    return [];
+  } catch {
+    return [];
+  }
+}
+
+export function addSessionCreatedExperience(exp: CreatedExperience) {
+  const existing = getSessionCreatedExperiences();
+  const deduped = existing.filter((e) => e.code !== exp.code);
+  deduped.unshift(exp);
+  sessionStorage.setItem(SESSION_CREATED_EXPERIENCES_KEY, JSON.stringify(deduped.slice(0, 20)));
+}

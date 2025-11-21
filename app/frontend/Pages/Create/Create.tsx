@@ -1,9 +1,9 @@
 import { FormEvent, useMemo, useRef, useState } from 'react';
 
-import { Button, TextInput } from '@cctv/core';
+import { Button, Panel, TextInput } from '@cctv/core';
 import { usePost } from '@cctv/hooks';
 import { CreateExperienceApiResponse } from '@cctv/types';
-import { getFormData } from '@cctv/utils';
+import { addSessionCreatedExperience, getFormData } from '@cctv/utils';
 
 import styles from './Create.module.scss';
 
@@ -43,6 +43,9 @@ export default function Create() {
 
     if (response && response.type === 'success') {
       setExperienceUrl(response.experience.url);
+      if (name && code) {
+        addSessionCreatedExperience({ code: code.trim(), name: name.trim() });
+      }
     } else if (response && response.type === 'error') {
       setError(response.error || 'Failed to create experience');
     }
@@ -59,26 +62,30 @@ export default function Create() {
   if (qrCode) {
     return (
       <section className="page flex-centered">
-        <h1 className={styles.title}>Exprience: {nameRef.current?.value}</h1>
-        <img src={qrCode} alt={`QR code for joining an experience`} />
-        <a href={experienceUrl} className={styles.link}>
-          Go to lobby
-        </a>
+        <Panel className={styles.container}>
+          <h1 className={styles.title}>{`Experience: ${nameRef.current?.value}`}</h1>
+          <img src={qrCode} alt={`QR code for joining an experience`} />
+          <a href={experienceUrl} className={styles.link}>
+            {'Go to lobby'}
+          </a>
+        </Panel>
       </section>
     );
   }
 
   return (
     <section className="page flex-centered">
-      <h1 className={styles.title}>Create experience</h1>
-      <form className={styles.form} onSubmit={handleCreate}>
-        <TextInput ref={nameRef} label="Name" name="name" type="text" />
-        <TextInput label="Code" name="code" type="text" />
-        {error && <p className={styles.error}>{error}</p>}
-        <Button type="submit" loading={isLoading} loadingText="Creating...">
-          Create
-        </Button>
-      </form>
+      <Panel className={styles.container}>
+        <h1 className={styles.title}>{'Create Experience'}</h1>
+        <form className={styles.form} onSubmit={handleCreate}>
+          <TextInput ref={nameRef} label="Name" name="name" type="text" />
+          <TextInput label="Code" name="code" type="text" />
+          {error && <p className={styles.error}>{error}</p>}
+          <Button type="submit" loading={isLoading} loadingText="Creating...">
+            {'Create'}
+          </Button>
+        </form>
+      </Panel>
     </section>
   );
 }
