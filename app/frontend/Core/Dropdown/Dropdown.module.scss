@@ -2,11 +2,11 @@
   z-index: 10;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 0.75rem;
   align-items: center;
   width: 100%;
 
-  font-size: 20px;
+  font-size: 1.25rem;
   font-weight: 600;
   color: hsl(var(--foreground));
 }
@@ -14,12 +14,12 @@
 .input {
   z-index: 3;
   position: relative;
-  font-size: 16px;
+  font-size: 1rem;
   color: hsl(var(--foreground));
   background: hsl(var(--background));
   border: 1px solid hsl(var(--border));
-  padding: 4px;
-  border-radius: 12px;
+  padding: 0.25rem;
+  border-radius: 0.75rem;
   cursor: pointer;
   transition: border-color 0.2s ease;
 }
