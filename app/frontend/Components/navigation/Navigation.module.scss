@@ -95,6 +95,7 @@
   top: 100%;
   left: 0;
   width: 100%;
+  z-index: 1002;
 }
 
 .topnav__dropdownInner {
@@ -107,6 +108,22 @@
   gap: 10px;
   background: hsl(var(--popover));
   backdrop-filter: blur(6px);
+  border: 1px solid hsl(var(--border));
+  border-radius: 0.75rem;
+  box-shadow: var(--shadow-1, 0 8px 16px rgba(0, 0, 0, 0.15));
+}
+
+/* Stronger separation on solid background */
+:root[data-bg='solid'] .topnav__dropdownInner {
+  box-shadow: 0 12px 28px hsl(var(--foreground) / 0.18);
+}
+
+.mobileBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1001;
+  background: hsl(var(--foreground) / 0.18);
+  backdrop-filter: blur(2px);
 }
 
 .topnav__dropdownInner .link {
