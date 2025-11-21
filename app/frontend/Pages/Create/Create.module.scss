@@ -20,7 +20,7 @@
 
 .link {
   font-weight: 400;
-  font-size: clamp(1rem, 4vw, 1.25rem);
+  font-size: clamp(16px, 4vw, 20px);
   color: hsl(var(--primary));
   text-decoration: none;
   padding-top: 1.5rem;

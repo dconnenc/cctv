@@ -154,7 +154,7 @@ h4,
 h5,
 h6 {
   margin: 0;
-  font-size: clamp(4rem, 9vw, 12.5rem);
+  font-size: clamp(4rem, 9vw, 200px);
   position: relative;
   z-index: 10;
   font-weight: 800;
@@ -165,22 +165,22 @@ h6 {
 }
 
 h2 {
-  font-size: clamp(3rem, 8vw, 12.5rem);
+  font-size: clamp(3rem, 8vw, 200px);
 }
 
 h3 {
-  font-size: clamp(2.5rem, 7vw, 9.375rem);
+  font-size: clamp(2.5rem, 7vw, 150px);
 }
 
 h4 {
-  font-size: clamp(2rem, 6vw, 9.375rem);
+  font-size: clamp(2rem, 6vw, 150px);
 }
 
 h5 {
-  font-size: clamp(1.75rem, 5vw, 9.375rem);
+  font-size: clamp(1.75rem, 5vw, 150px);
 }
 h6 {
-  font-size: clamp(1.5rem, 4vw, 9.375rem);
+  font-size: clamp(1.5rem, 4vw, 150px);
 }
 
 p,
@@ -224,7 +224,7 @@ body {
 
 .link {
   font-weight: 400;
-  font-size: clamp(1rem, 4vw, 1.25rem);
+  font-size: clamp(16px, 4vw, 20px);
   color: var(--yellow);
   text-decoration: none;
 }
@@ -284,7 +284,7 @@ body {
 }
 
 /* Mobile adjustments */
-@media (max-width: 30rem) {
+@media (max-width: 480px) {
   /* Standard mobile content width */
   .page {
     max-width: 20rem;
