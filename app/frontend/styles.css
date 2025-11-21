@@ -6,10 +6,19 @@
   --green: #2fff2f;
   --pink: #ff00f5;
   --teal: #7df9ff;
+  --font-primary: 'VCR OSD Mono', 'Poppins', sans-serif;
   --nav-h: 3.5rem;
   --tv-glow:
     0 0 4px rgba(255, 255, 255, 0.45), 0 0 10px rgba(255, 255, 255, 0.3),
     0.5px 0 1px rgba(255, 0, 0, 0.25), -0.5px 0 1px rgba(0, 255, 255, 0.25);
+}
+
+@font-face {
+  font-family: 'VCR OSD Mono';
+  src: url('/fonts/VCR_OSD_MONO.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
 }
 
 /* Shadcn theme tokens (HSL triplets) */
@@ -160,6 +169,7 @@ h6 {
   font-weight: 800;
   text-align: center;
   line-height: 1;
+  font-family: var(--font-primary);
   color: hsl(var(--foreground));
   text-shadow: none;
 }
@@ -186,7 +196,7 @@ h6 {
 p,
 label,
 body {
-  font-family: 'Poppins', sans-serif;
+  font-family: var(--font-primary);
   margin: 0;
   text-align: center;
   font-size: clamp(1rem, 4vw, 24px);
