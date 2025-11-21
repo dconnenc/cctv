@@ -8,6 +8,9 @@ class WebsocketMessageService
     EXPERIENCE_UPDATED: 'experience_updated', 
     STREAM_CHANGED: 'stream_changed',
     
+    # Block-specific updates
+    FAMILY_FEUD_UPDATED: 'family_feud_updated',
+    
     # Subscription management
     RESUBSCRIBE_REQUIRED: 'resubscribe_required',
     
@@ -86,6 +89,17 @@ class WebsocketMessageService
       type: MESSAGE_TYPES[:RESUBSCRIBE_REQUIRED],
       reason: reason,
       participant_id: participant_id,
+      timestamp: Time.current.to_f
+    }
+  end
+
+  # Build family feud operation message
+  def self.family_feud_updated(block_id:, operation:, data:)
+    {
+      type: MESSAGE_TYPES[:FAMILY_FEUD_UPDATED],
+      block_id: block_id,
+      operation: operation,
+      data: data,
       timestamp: Time.current.to_f
     }
   end

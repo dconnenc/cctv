@@ -1,56 +1,38 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useReducer, useRef, useState } from 'react';
 
 import { DragDropContext, Draggable, Droppable } from '@hello-pangea/dnd';
 import { ChevronDown, ChevronRight, Plus, Trash2 } from 'lucide-react';
 
 import { Button } from '@cctv/components/ui/button';
 import { Panel } from '@cctv/core';
+import { useFamilyFeudBuckets } from '@cctv/hooks';
 import { Block } from '@cctv/types';
+
+import { FamilyFeudAction, QuestionWithBuckets, familyFeudReducer } from './familyFeudReducer';
 
 import styles from './FamilyFeudManager.module.scss';
 
-interface Answer {
-  id: string;
-  text: string;
-  userId: string;
-  userName: string;
-  questionId: string;
-}
-
-interface Bucket {
-  id: string;
-  name: string;
-  answers: Answer[];
-  isCollapsed: boolean;
-}
-
-interface QuestionWithBuckets {
-  questionId: string;
-  questionText: string;
-  buckets: Bucket[];
-  unassignedAnswers: Answer[];
-  isCollapsed: boolean;
-}
-
 interface FamilyFeudManagerProps {
   block: Block;
+  onBucketOperation?: (action: FamilyFeudAction) => void;
 }
 
-export default function FamilyFeudManager({ block }: FamilyFeudManagerProps) {
-  // Get child question blocks
+export default function FamilyFeudManager({ block, onBucketOperation }: FamilyFeudManagerProps) {
+  const { addBucket, renameBucket, deleteBucket, assignAnswer } = useFamilyFeudBuckets();
   const childQuestions = (block as any).children || [];
 
-  // Initialize state for each question with buckets
-  const [questionsState, setQuestionsState] = useState<QuestionWithBuckets[]>([]);
+  const [questionsState, dispatch] = useReducer(familyFeudReducer, []);
+  const [editingBucketNames, setEditingBucketNames] = useState<Record<string, string>>({});
+  const renameTimeoutRef = useRef<Record<string, NodeJS.Timeout>>({});
 
-  // Update questionsState when block data changes (websocket updates)
+  // Initialize state from block data on mount and when block changes
   useEffect(() => {
-    const newQuestionsState = childQuestions.map((childBlock: Block) => {
-      // Get responses for this question
+    const bucketConfig = (block as any).payload?.bucket_configuration?.buckets || [];
+
+    const newQuestionsState: QuestionWithBuckets[] = childQuestions.map((childBlock: Block) => {
       const responses = (childBlock.responses as any)?.all_responses || [];
 
-      const unassignedAnswers: Answer[] = responses.map((response: any) => {
-        // Handle answer being either a string or an object with a value property
+      const allAnswers = responses.map((response: any) => {
         const answerText =
           typeof response.answer === 'string'
             ? response.answer
@@ -65,151 +47,92 @@ export default function FamilyFeudManager({ block }: FamilyFeudManagerProps) {
         };
       });
 
+      const savedBuckets = bucketConfig.map((b: any) => ({
+        id: b.id,
+        name: b.name,
+        answers: allAnswers.filter((a: any) => b.answer_ids?.includes(a.id)),
+        isCollapsed: false,
+      }));
+
+      const assignedAnswerIds = new Set(
+        savedBuckets.flatMap((bucket: any) => bucket.answers.map((a: any) => a.id)),
+      );
+      const unassignedAnswers = allAnswers.filter((a: any) => !assignedAnswerIds.has(a.id));
+
       return {
         questionId: childBlock.id,
         questionText: (childBlock as any).payload?.question || 'Question',
-        buckets: [],
+        buckets: savedBuckets,
         unassignedAnswers,
         isCollapsed: false,
       };
     });
 
-    setQuestionsState(newQuestionsState);
+    dispatch({ type: 'INIT', payload: newQuestionsState });
   }, [childQuestions.length, block]);
 
-  const addBucket = (questionId: string) => {
-    setQuestionsState((prev) =>
-      prev.map((q) => {
-        if (q.questionId === questionId) {
-          const newBucket: Bucket = {
-            id: `bucket-${Date.now()}`,
-            name: `Bucket ${q.buckets.length + 1}`,
-            answers: [],
-            isCollapsed: false,
-          };
-          return { ...q, buckets: [...q.buckets, newBucket] };
-        }
-        return q;
-      }),
-    );
-  };
-
-  const deleteBucket = (questionId: string, bucketId: string) => {
-    setQuestionsState((prev) =>
-      prev.map((q) => {
-        if (q.questionId === questionId) {
-          const bucketToDelete = q.buckets.find((b) => b.id === bucketId);
-          if (!bucketToDelete) return q;
-
-          const newUnassigned = [...q.unassignedAnswers, ...bucketToDelete.answers];
-          const newBuckets = q.buckets.filter((b) => b.id !== bucketId);
-
-          return {
-            ...q,
-            buckets: newBuckets,
-            unassignedAnswers: newUnassigned,
-          };
-        }
-        return q;
-      }),
-    );
-  };
-
-  const toggleBucketCollapse = (questionId: string, bucketId: string) => {
-    setQuestionsState((prev) =>
-      prev.map((q) => {
-        if (q.questionId === questionId) {
-          return {
-            ...q,
-            buckets: q.buckets.map((b) =>
-              b.id === bucketId ? { ...b, isCollapsed: !b.isCollapsed } : b,
-            ),
-          };
-        }
-        return q;
-      }),
-    );
-  };
-
-  const toggleQuestionCollapse = (questionId: string) => {
-    setQuestionsState((prev) =>
-      prev.map((q) => (q.questionId === questionId ? { ...q, isCollapsed: !q.isCollapsed } : q)),
-    );
-  };
-
-  const renameBucket = (questionId: string, bucketId: string, newName: string) => {
-    setQuestionsState((prev) =>
-      prev.map((q) => {
-        if (q.questionId === questionId) {
-          return {
-            ...q,
-            buckets: q.buckets.map((b) => (b.id === bucketId ? { ...b, name: newName } : b)),
-          };
-        }
-        return q;
-      }),
-    );
-  };
-
-  const handleDragEnd = (result: any, questionId: string) => {
-    const { source, destination } = result;
-
-    // Dropped outside a valid droppable
-    if (!destination) {
-      return;
+  // Expose dispatch for websocket updates
+  useEffect(() => {
+    if (onBucketOperation) {
+      (window as any).__familyFeudDispatch = dispatch;
     }
+    return () => {
+      delete (window as any).__familyFeudDispatch;
+    };
+  }, [onBucketOperation]);
 
-    // Didn't move
+  const handleAddBucket = async (questionId: string) => {
+    const bucket = await addBucket(
+      block.id,
+      `Bucket ${questionsState[0]?.buckets.length + 1 || 1}`,
+    );
+    if (bucket) {
+      dispatch({ type: 'BUCKET_ADDED', payload: { questionId, bucket } });
+    }
+  };
+
+  const handleRenameBucket = useCallback(
+    (bucketId: string, name: string) => {
+      // Update local editing state immediately
+      setEditingBucketNames((prev) => ({ ...prev, [bucketId]: name }));
+
+      // Debounce the API call
+      if (renameTimeoutRef.current[bucketId]) {
+        clearTimeout(renameTimeoutRef.current[bucketId]);
+      }
+
+      renameTimeoutRef.current[bucketId] = setTimeout(async () => {
+        const success = await renameBucket(block.id, bucketId, name);
+        if (success) {
+          dispatch({ type: 'BUCKET_RENAMED', payload: { bucketId, name } });
+        }
+      }, 500);
+    },
+    [block.id, renameBucket],
+  );
+
+  const handleDeleteBucket = async (bucketId: string) => {
+    const success = await deleteBucket(block.id, bucketId);
+    if (success) {
+      dispatch({ type: 'BUCKET_DELETED', payload: { bucketId } });
+    }
+  };
+
+  const handleDragEnd = async (result: any, questionId: string) => {
+    const { source, destination, draggableId: answerId } = result;
+
+    if (!destination) return;
     if (source.droppableId === destination.droppableId && source.index === destination.index) {
       return;
     }
 
-    setQuestionsState((prev) =>
-      prev.map((q) => {
-        if (q.questionId !== questionId) return q;
+    const bucketId = destination.droppableId === 'unassigned' ? null : destination.droppableId;
 
-        let newQ = { ...q };
-        let movedAnswer: Answer | null = null;
+    // Optimistic update
+    dispatch({ type: 'ANSWER_ASSIGNED', payload: { answerId, bucketId } });
 
-        // Remove from source
-        if (source.droppableId === 'unassigned') {
-          movedAnswer = newQ.unassignedAnswers[source.index];
-          newQ.unassignedAnswers = newQ.unassignedAnswers.filter((_, idx) => idx !== source.index);
-        } else {
-          const sourceBucket = newQ.buckets.find((b) => b.id === source.droppableId);
-          if (sourceBucket) {
-            movedAnswer = sourceBucket.answers[source.index];
-            newQ.buckets = newQ.buckets.map((b) =>
-              b.id === source.droppableId
-                ? { ...b, answers: b.answers.filter((_, idx) => idx !== source.index) }
-                : b,
-            );
-          }
-        }
-
-        if (!movedAnswer) return q;
-
-        // Add to destination
-        if (destination.droppableId === 'unassigned') {
-          newQ.unassignedAnswers.splice(destination.index, 0, movedAnswer);
-        } else {
-          newQ.buckets = newQ.buckets.map((b) =>
-            b.id === destination.droppableId
-              ? {
-                  ...b,
-                  answers: [
-                    ...b.answers.slice(0, destination.index),
-                    movedAnswer!,
-                    ...b.answers.slice(destination.index),
-                  ],
-                }
-              : b,
-          );
-        }
-
-        return newQ;
-      }),
-    );
+    // API call
+    await assignAnswer(block.id, answerId, bucketId);
   };
 
   if (childQuestions.length === 0) {
@@ -231,7 +154,9 @@ export default function FamilyFeudManager({ block }: FamilyFeudManagerProps) {
           <div key={question.questionId} className={styles.question}>
             <button
               className={styles.questionHeader}
-              onClick={() => toggleQuestionCollapse(question.questionId)}
+              onClick={() =>
+                dispatch({ type: 'TOGGLE_QUESTION', payload: { questionId: question.questionId } })
+              }
             >
               {question.isCollapsed ? <ChevronRight size={20} /> : <ChevronDown size={20} />}
               <h3 className={styles.questionTitle}>{question.questionText}</h3>
@@ -243,14 +168,13 @@ export default function FamilyFeudManager({ block }: FamilyFeudManagerProps) {
             {!question.isCollapsed && (
               <DragDropContext onDragEnd={(result) => handleDragEnd(result, question.questionId)}>
                 <div className={styles.layout}>
-                  {/* Left side: Buckets */}
                   <div className={styles.bucketsColumn}>
                     <div className={styles.columnHeader}>
                       <span>Buckets</span>
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => addBucket(question.questionId)}
+                        onClick={() => handleAddBucket(question.questionId)}
                       >
                         <Plus size={16} />
                         Add Bucket
@@ -263,7 +187,12 @@ export default function FamilyFeudManager({ block }: FamilyFeudManagerProps) {
                           <div className={styles.bucketHeader}>
                             <button
                               className={styles.collapseButton}
-                              onClick={() => toggleBucketCollapse(question.questionId, bucket.id)}
+                              onClick={() =>
+                                dispatch({
+                                  type: 'TOGGLE_BUCKET',
+                                  payload: { questionId: question.questionId, bucketId: bucket.id },
+                                })
+                              }
                             >
                               {bucket.isCollapsed ? (
                                 <ChevronRight size={16} />
@@ -273,16 +202,14 @@ export default function FamilyFeudManager({ block }: FamilyFeudManagerProps) {
                             </button>
                             <input
                               type="text"
-                              value={bucket.name}
-                              onChange={(e) =>
-                                renameBucket(question.questionId, bucket.id, e.target.value)
-                              }
+                              value={editingBucketNames[bucket.id] ?? bucket.name}
+                              onChange={(e) => handleRenameBucket(bucket.id, e.target.value)}
                               className={styles.bucketNameInput}
                             />
                             <span className={styles.bucketCount}>({bucket.answers.length})</span>
                             <button
                               className={styles.deleteButton}
-                              onClick={() => deleteBucket(question.questionId, bucket.id)}
+                              onClick={() => handleDeleteBucket(bucket.id)}
                             >
                               <Trash2 size={14} />
                             </button>
@@ -338,7 +265,6 @@ export default function FamilyFeudManager({ block }: FamilyFeudManagerProps) {
                     </div>
                   </div>
 
-                  {/* Right side: Unassigned Answers */}
                   <div className={styles.answersColumn}>
                     <div className={styles.columnHeader}>
                       <span>Answers ({question.unassignedAnswers.length})</span>

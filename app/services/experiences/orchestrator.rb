@@ -191,6 +191,95 @@ module Experiences
       end
     end
 
+    def add_family_feud_bucket!(block_id:, name:)
+      actor_action do
+        block = experience.experience_blocks.find(block_id)
+        authorize! experience, to: :manage_blocks?, with: ExperiencePolicy
+
+        transaction do
+          current_payload = block.payload || {}
+          current_payload["bucket_configuration"] ||= { "buckets" => [] }
+          
+          new_bucket = {
+            "id" => "bucket-#{Time.now.to_i}-#{SecureRandom.hex(4)}",
+            "name" => name,
+            "answer_ids" => []
+          }
+          
+          current_payload["bucket_configuration"]["buckets"] << new_bucket
+          block.update!(payload: current_payload)
+          
+          new_bucket
+        end
+      end
+    end
+
+    def rename_family_feud_bucket!(block_id:, bucket_id:, name:)
+      actor_action do
+        block = experience.experience_blocks.find(block_id)
+        authorize! experience, to: :manage_blocks?, with: ExperiencePolicy
+
+        transaction do
+          current_payload = block.payload || {}
+          buckets = current_payload.dig("bucket_configuration", "buckets") || []
+          
+          bucket = buckets.find { |b| b["id"] == bucket_id }
+          raise ActiveRecord::RecordNotFound, "Bucket not found" unless bucket
+          
+          bucket["name"] = name
+          block.update!(payload: current_payload)
+          
+          bucket
+        end
+      end
+    end
+
+    def delete_family_feud_bucket!(block_id:, bucket_id:)
+      actor_action do
+        block = experience.experience_blocks.find(block_id)
+        authorize! experience, to: :manage_blocks?, with: ExperiencePolicy
+
+        transaction do
+          current_payload = block.payload || {}
+          buckets = current_payload.dig("bucket_configuration", "buckets") || []
+          
+          current_payload["bucket_configuration"]["buckets"] = buckets.reject { |b| b["id"] == bucket_id }
+          block.update!(payload: current_payload)
+          
+          true
+        end
+      end
+    end
+
+    def assign_family_feud_answer!(block_id:, answer_id:, bucket_id:)
+      actor_action do
+        block = experience.experience_blocks.find(block_id)
+        authorize! experience, to: :manage_blocks?, with: ExperiencePolicy
+
+        transaction do
+          current_payload = block.payload || {}
+          buckets = current_payload.dig("bucket_configuration", "buckets") || []
+          
+          # Remove answer from all buckets first
+          buckets.each do |bucket|
+            bucket["answer_ids"]&.delete(answer_id)
+          end
+          
+          # Add to target bucket if specified
+          if bucket_id.present?
+            target_bucket = buckets.find { |b| b["id"] == bucket_id }
+            raise ActiveRecord::RecordNotFound, "Bucket not found" unless target_bucket
+            
+            target_bucket["answer_ids"] ||= []
+            target_bucket["answer_ids"] << answer_id unless target_bucket["answer_ids"].include?(answer_id)
+          end
+          
+          block.update!(payload: current_payload)
+          true
+        end
+      end
+    end
+
     def add_block_with_dependencies!(
       kind:,
       payload: {},

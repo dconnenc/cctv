@@ -22,6 +22,24 @@ class Experiences::Broadcaster
     broadcast_admin_view
   end
 
+  def broadcast_family_feud_update(block_id:, operation:, data:)
+    Rails.logger.info(
+      "[Broadcaster] Broadcasting family_feud_updated to experience #{experience.code}"
+    )
+
+    message = WebsocketMessageService.family_feud_updated(
+      block_id: block_id,
+      operation: operation,
+      data: data
+    )
+
+    # Broadcast to admin stream (hosts/moderators managing the experience)
+    send_broadcast(self.class.admin_stream_key(experience), message)
+    
+    # Note: We only broadcast to admin stream since bucket configuration
+    # is an admin-only feature. Participants don't need these updates.
+  end
+
   def self.trigger_resubscription_for_participant(participant)
     Rails.logger.info(
       "[Broadcaster] Triggering resubscription for participant " \

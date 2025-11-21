@@ -501,6 +501,21 @@ export function ExperienceProvider({ children }: ExperienceProviderProps) {
         setExperienceStatus(updatedExperience.status === 'live' ? 'live' : 'lobby');
         setError(undefined);
       }
+    } else if (messageType === 'family_feud_updated') {
+      qaLogger(`[ADMIN WS] Processing family_feud_updated: ${wsMessage.operation}`);
+      // Dispatch to FamilyFeudManager if it's listening
+      if ((window as any).__familyFeudDispatch) {
+        const { operation, data } = wsMessage as any;
+        if (operation === 'bucket_added') {
+          (window as any).__familyFeudDispatch({ type: 'BUCKET_ADDED', payload: data });
+        } else if (operation === 'bucket_renamed') {
+          (window as any).__familyFeudDispatch({ type: 'BUCKET_RENAMED', payload: data });
+        } else if (operation === 'bucket_deleted') {
+          (window as any).__familyFeudDispatch({ type: 'BUCKET_DELETED', payload: data });
+        } else if (operation === 'answer_assigned') {
+          (window as any).__familyFeudDispatch({ type: 'ANSWER_ASSIGNED', payload: data });
+        }
+      }
     }
   }, []);
 

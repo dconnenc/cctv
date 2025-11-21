@@ -11,3 +11,4 @@ export { useChangeBlockStatus } from './useChangeBlockStatus';
 export { useExperienceStart } from './useExperienceStart';
 export { useExperiencePause } from './useExperiencePause';
 export { useExperienceResume } from './useExperienceResume';
+export { useFamilyFeudBuckets } from './useFamilyFeudBuckets';
