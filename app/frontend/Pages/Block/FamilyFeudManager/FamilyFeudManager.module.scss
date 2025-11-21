@@ -1,84 +1,98 @@
 .root {
-  padding: var(--spacing-lg);
+  padding: 16px;
   max-width: 1400px;
   margin: 0 auto;
 }
 
 .title {
-  font-size: var(--font-size-xxl);
-  font-weight: var(--font-weight-bold);
-  margin-bottom: var(--spacing-xl);
-  color: var(--color-text-primary);
+  font-size: 24px;
+  font-weight: 700;
+  margin-bottom: 24px;
 }
 
 .question {
-  margin-bottom: var(--spacing-xxl);
-  padding: var(--spacing-xl);
-  background-color: var(--color-background-secondary);
-  border-radius: var(--border-radius-lg);
-  border: 1px solid var(--color-border);
+  margin-bottom: 32px;
+  padding: 24px;
+  background-color: hsl(var(--card));
+  border-radius: 8px;
+  border: 1px solid hsl(var(--border));
+}
+
+.questionHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  padding: 0;
+  color: hsl(var(--foreground));
+}
+
+.questionHeader:hover {
+  opacity: 0.8;
 }
 
 .questionTitle {
-  font-size: var(--font-size-xl);
-  font-weight: var(--font-weight-bold);
-  margin-bottom: var(--spacing-lg);
-  color: var(--color-text-primary);
+  font-size: 20px;
+  font-weight: 700;
+  margin: 0;
+  flex: 1;
+}
+
+.questionCount {
+  font-size: 14px;
+  font-weight: 400;
+  color: hsl(var(--muted-foreground));
 }
 
 .layout {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: var(--spacing-xl);
+  gap: 24px;
 }
 
 .bucketsColumn,
 .answersColumn {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-md);
+  gap: 12px;
 }
 
 .columnHeader {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: var(--spacing-md);
-  background-color: var(--color-background-primary);
-  border-radius: var(--border-radius-md);
-  border: 1px solid var(--color-border);
-  font-weight: var(--font-weight-bold);
-  font-size: var(--font-size-md);
-}
-
-.addButton {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-xs);
-  padding: var(--spacing-xs) var(--spacing-sm);
-  font-size: var(--font-size-sm);
+  padding: 16px;
+  background-color: hsl(var(--card));
+  border-radius: 8px;
+  border: 1px solid hsl(var(--border));
+  font-weight: 700;
+  font-size: 14px;
 }
 
 .bucketsList {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-md);
+  gap: 12px;
 }
 
 .bucket {
-  background-color: var(--color-background-primary);
-  border: 2px solid var(--color-border);
-  border-radius: var(--border-radius-md);
+  background-color: hsl(var(--card));
+  border: 2px solid hsl(var(--border));
+  border-radius: 8px;
   overflow: hidden;
 }
 
 .bucketHeader {
   display: flex;
   align-items: center;
-  gap: var(--spacing-sm);
-  padding: var(--spacing-sm) var(--spacing-md);
-  background-color: var(--color-background-secondary);
-  border-bottom: 1px solid var(--color-border);
+  gap: 8px;
+  padding: 8px 12px;
+  background-color: hsl(var(--secondary));
+  border-bottom: 1px solid hsl(var(--border));
 }
 
 .collapseButton {
@@ -88,85 +102,85 @@
   display: flex;
   align-items: center;
   padding: 0;
-  color: var(--color-text-secondary);
+  color: hsl(var(--muted-foreground));
 }
 
 .collapseButton:hover {
-  color: var(--color-text-primary);
+  color: hsl(var(--foreground));
 }
 
 .bucketNameInput {
   flex: 1;
   border: none;
   background: transparent;
-  font-weight: var(--font-weight-bold);
-  font-size: var(--font-size-md);
-  padding: var(--spacing-xs);
-  color: var(--color-text-primary);
+  font-weight: 700;
+  font-size: 14px;
+  padding: 4px;
+  color: hsl(var(--foreground));
 }
 
 .bucketNameInput:focus {
-  outline: 2px solid var(--color-primary);
+  outline: 2px solid hsl(var(--ring));
   outline-offset: 2px;
-  border-radius: var(--border-radius-sm);
+  border-radius: 4px;
 }
 
 .bucketCount {
-  color: var(--color-text-secondary);
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-normal);
+  color: hsl(var(--muted-foreground));
+  font-size: 12px;
+  font-weight: 400;
 }
 
 .deleteButton {
   background: none;
   border: none;
   cursor: pointer;
-  padding: var(--spacing-xs);
-  color: var(--color-text-secondary);
+  padding: 4px;
+  color: hsl(var(--muted-foreground));
   display: flex;
   align-items: center;
-  border-radius: var(--border-radius-sm);
+  border-radius: 4px;
 }
 
 .deleteButton:hover {
-  color: #ef4444;
-  background-color: rgba(239, 68, 68, 0.1);
+  color: hsl(var(--destructive));
+  background-color: hsl(var(--destructive) / 0.1);
 }
 
 .bucketDropZone {
-  padding: var(--spacing-md);
+  padding: 12px;
   min-height: 60px;
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-sm);
+  gap: 8px;
 }
 
 .emptyBucket {
-  padding: var(--spacing-lg);
+  padding: 16px;
   text-align: center;
-  color: var(--color-text-secondary);
+  color: hsl(var(--muted-foreground));
   font-style: italic;
-  border: 2px dashed var(--color-border);
-  border-radius: var(--border-radius-md);
-  background-color: var(--color-background-secondary);
+  border: 2px dashed hsl(var(--border));
+  border-radius: 8px;
+  background-color: hsl(var(--secondary));
 }
 
 .answersList {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-sm);
-  padding: var(--spacing-md);
-  background-color: var(--color-background-primary);
-  border: 2px solid var(--color-border);
-  border-radius: var(--border-radius-md);
+  gap: 8px;
+  padding: 12px;
+  background-color: hsl(var(--card));
+  border: 2px solid hsl(var(--border));
+  border-radius: 8px;
   min-height: 200px;
 }
 
 .answer {
-  padding: var(--spacing-md);
-  background-color: var(--color-background-secondary);
-  border: 1px solid var(--color-border);
-  border-radius: var(--border-radius-md);
+  padding: 12px;
+  background-color: hsl(var(--secondary));
+  border: 1px solid hsl(var(--border));
+  border-radius: 8px;
   cursor: move;
   user-select: none;
   transition:
@@ -191,30 +205,30 @@
 }
 
 .bucketDropZone.isDraggingOver {
-  background-color: rgba(59, 130, 246, 0.1);
-  border: 2px dashed var(--color-primary);
+  background-color: hsl(var(--primary) / 0.1);
+  border: 2px dashed hsl(var(--primary));
 }
 
 .answersList.isDraggingOver {
-  background-color: rgba(59, 130, 246, 0.1);
-  border: 2px dashed var(--color-primary);
+  background-color: hsl(var(--primary) / 0.1);
+  border: 2px dashed hsl(var(--primary));
 }
 
 .noBuckets,
 .noAnswers {
-  padding: var(--spacing-xl);
+  padding: 24px;
   text-align: center;
-  color: var(--color-text-secondary);
-  background-color: var(--color-background-secondary);
-  border: 1px dashed var(--color-border);
-  border-radius: var(--border-radius-md);
+  color: hsl(var(--muted-foreground));
+  background-color: hsl(var(--secondary));
+  border: 1px dashed hsl(var(--border));
+  border-radius: 8px;
 }
 
 .empty {
-  padding: var(--spacing-xxl);
+  padding: 32px;
   text-align: center;
-  color: var(--color-text-secondary);
-  font-size: var(--font-size-lg);
+  color: hsl(var(--muted-foreground));
+  font-size: 16px;
 }
 
 @media (max-width: 1024px) {

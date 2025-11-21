@@ -3,7 +3,8 @@ import { useEffect, useState } from 'react';
 import { DragDropContext, Draggable, Droppable } from '@hello-pangea/dnd';
 import { ChevronDown, ChevronRight, Plus, Trash2 } from 'lucide-react';
 
-import { Button } from '@cctv/core';
+import { Button } from '@cctv/components/ui/button';
+import { Panel } from '@cctv/core';
 import { Block } from '@cctv/types';
 
 import styles from './FamilyFeudManager.module.scss';
@@ -28,6 +29,7 @@ interface QuestionWithBuckets {
   questionText: string;
   buckets: Bucket[];
   unassignedAnswers: Answer[];
+  isCollapsed: boolean;
 }
 
 interface FamilyFeudManagerProps {
@@ -68,6 +70,7 @@ export default function FamilyFeudManager({ block }: FamilyFeudManagerProps) {
         questionText: (childBlock as any).payload?.question || 'Question',
         buckets: [],
         unassignedAnswers,
+        isCollapsed: false,
       };
     });
 
@@ -125,6 +128,12 @@ export default function FamilyFeudManager({ block }: FamilyFeudManagerProps) {
         }
         return q;
       }),
+    );
+  };
+
+  const toggleQuestionCollapse = (questionId: string) => {
+    setQuestionsState((prev) =>
+      prev.map((q) => (q.questionId === questionId ? { ...q, isCollapsed: !q.isCollapsed } : q)),
     );
   };
 
@@ -205,158 +214,178 @@ export default function FamilyFeudManager({ block }: FamilyFeudManagerProps) {
 
   if (childQuestions.length === 0) {
     return (
-      <div className={styles.empty}>
-        <p>No questions found for this Family Feud block.</p>
+      <div className={styles.root}>
+        <Panel title="Family Feud">
+          <div className={styles.empty}>
+            <p>No questions found for this Family Feud block.</p>
+          </div>
+        </Panel>
       </div>
     );
   }
 
   return (
     <div className={styles.root}>
-      <h2 className={styles.title}>{(block as any).payload?.title || 'Family Feud'}</h2>
+      <Panel title={(block as any).payload?.title || 'Family Feud'}>
+        {questionsState.map((question) => (
+          <div key={question.questionId} className={styles.question}>
+            <button
+              className={styles.questionHeader}
+              onClick={() => toggleQuestionCollapse(question.questionId)}
+            >
+              {question.isCollapsed ? <ChevronRight size={20} /> : <ChevronDown size={20} />}
+              <h3 className={styles.questionTitle}>{question.questionText}</h3>
+              <span className={styles.questionCount}>
+                ({question.unassignedAnswers.length} unassigned, {question.buckets.length} buckets)
+              </span>
+            </button>
 
-      {questionsState.map((question) => (
-        <div key={question.questionId} className={styles.question}>
-          <h3 className={styles.questionTitle}>{question.questionText}</h3>
+            {!question.isCollapsed && (
+              <DragDropContext onDragEnd={(result) => handleDragEnd(result, question.questionId)}>
+                <div className={styles.layout}>
+                  {/* Left side: Buckets */}
+                  <div className={styles.bucketsColumn}>
+                    <div className={styles.columnHeader}>
+                      <span>Buckets</span>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => addBucket(question.questionId)}
+                      >
+                        <Plus size={16} />
+                        Add Bucket
+                      </Button>
+                    </div>
 
-          <DragDropContext onDragEnd={(result) => handleDragEnd(result, question.questionId)}>
-            <div className={styles.layout}>
-              {/* Left side: Buckets */}
-              <div className={styles.bucketsColumn}>
-                <div className={styles.columnHeader}>
-                  <span>Buckets</span>
-                  <Button
-                    onClick={() => addBucket(question.questionId)}
-                    className={styles.addButton}
-                  >
-                    <Plus size={16} />
-                    Add Bucket
-                  </Button>
-                </div>
-
-                <div className={styles.bucketsList}>
-                  {question.buckets.map((bucket) => (
-                    <div key={bucket.id} className={styles.bucket}>
-                      <div className={styles.bucketHeader}>
-                        <button
-                          className={styles.collapseButton}
-                          onClick={() => toggleBucketCollapse(question.questionId, bucket.id)}
-                        >
-                          {bucket.isCollapsed ? (
-                            <ChevronRight size={16} />
-                          ) : (
-                            <ChevronDown size={16} />
-                          )}
-                        </button>
-                        <input
-                          type="text"
-                          value={bucket.name}
-                          onChange={(e) =>
-                            renameBucket(question.questionId, bucket.id, e.target.value)
-                          }
-                          className={styles.bucketNameInput}
-                        />
-                        <span className={styles.bucketCount}>({bucket.answers.length})</span>
-                        <button
-                          className={styles.deleteButton}
-                          onClick={() => deleteBucket(question.questionId, bucket.id)}
-                        >
-                          <Trash2 size={14} />
-                        </button>
-                      </div>
-
-                      {!bucket.isCollapsed && (
-                        <Droppable droppableId={bucket.id}>
-                          {(provided, snapshot) => (
-                            <div
-                              ref={provided.innerRef}
-                              {...provided.droppableProps}
-                              className={`${styles.bucketDropZone} ${
-                                snapshot.isDraggingOver ? styles.isDraggingOver : ''
-                              }`}
+                    <div className={styles.bucketsList}>
+                      {question.buckets.map((bucket) => (
+                        <div key={bucket.id} className={styles.bucket}>
+                          <div className={styles.bucketHeader}>
+                            <button
+                              className={styles.collapseButton}
+                              onClick={() => toggleBucketCollapse(question.questionId, bucket.id)}
                             >
-                              {bucket.answers.length === 0 ? (
-                                <div className={styles.emptyBucket}>Drop answers here</div>
+                              {bucket.isCollapsed ? (
+                                <ChevronRight size={16} />
                               ) : (
-                                bucket.answers.map((answer, index) => (
-                                  <Draggable key={answer.id} draggableId={answer.id} index={index}>
-                                    {(provided, snapshot) => (
-                                      <div
-                                        ref={provided.innerRef}
-                                        {...provided.draggableProps}
-                                        {...provided.dragHandleProps}
-                                        className={`${styles.answer} ${
-                                          snapshot.isDragging ? styles.isDragging : ''
-                                        }`}
-                                      >
-                                        {answer.text}
-                                      </div>
-                                    )}
-                                  </Draggable>
-                                ))
+                                <ChevronDown size={16} />
                               )}
-                              {provided.placeholder}
-                            </div>
+                            </button>
+                            <input
+                              type="text"
+                              value={bucket.name}
+                              onChange={(e) =>
+                                renameBucket(question.questionId, bucket.id, e.target.value)
+                              }
+                              className={styles.bucketNameInput}
+                            />
+                            <span className={styles.bucketCount}>({bucket.answers.length})</span>
+                            <button
+                              className={styles.deleteButton}
+                              onClick={() => deleteBucket(question.questionId, bucket.id)}
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
+
+                          {!bucket.isCollapsed && (
+                            <Droppable droppableId={bucket.id}>
+                              {(provided, snapshot) => (
+                                <div
+                                  ref={provided.innerRef}
+                                  {...provided.droppableProps}
+                                  className={`${styles.bucketDropZone} ${
+                                    snapshot.isDraggingOver ? styles.isDraggingOver : ''
+                                  }`}
+                                >
+                                  {bucket.answers.length === 0 ? (
+                                    <div className={styles.emptyBucket}>Drop answers here</div>
+                                  ) : (
+                                    bucket.answers.map((answer, index) => (
+                                      <Draggable
+                                        key={answer.id}
+                                        draggableId={answer.id}
+                                        index={index}
+                                      >
+                                        {(provided, snapshot) => (
+                                          <div
+                                            ref={provided.innerRef}
+                                            {...provided.draggableProps}
+                                            {...provided.dragHandleProps}
+                                            className={`${styles.answer} ${
+                                              snapshot.isDragging ? styles.isDragging : ''
+                                            }`}
+                                          >
+                                            {answer.text}
+                                          </div>
+                                        )}
+                                      </Draggable>
+                                    ))
+                                  )}
+                                  {provided.placeholder}
+                                </div>
+                              )}
+                            </Droppable>
                           )}
-                        </Droppable>
-                      )}
-                    </div>
-                  ))}
-
-                  {question.buckets.length === 0 && (
-                    <div className={styles.noBuckets}>
-                      <p>No buckets yet. Click "Add Bucket" to get started.</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Right side: Unassigned Answers */}
-              <div className={styles.answersColumn}>
-                <div className={styles.columnHeader}>
-                  <span>Answers ({question.unassignedAnswers.length})</span>
-                </div>
-
-                <Droppable droppableId="unassigned">
-                  {(provided, snapshot) => (
-                    <div
-                      ref={provided.innerRef}
-                      {...provided.droppableProps}
-                      className={`${styles.answersList} ${
-                        snapshot.isDraggingOver ? styles.isDraggingOver : ''
-                      }`}
-                    >
-                      {question.unassignedAnswers.length === 0 ? (
-                        <div className={styles.noAnswers}>
-                          <p>All answers have been assigned to buckets.</p>
                         </div>
-                      ) : (
-                        question.unassignedAnswers.map((answer, index) => (
-                          <Draggable key={answer.id} draggableId={answer.id} index={index}>
-                            {(provided, snapshot) => (
-                              <div
-                                ref={provided.innerRef}
-                                {...provided.draggableProps}
-                                {...provided.dragHandleProps}
-                                className={`${styles.answer} ${
-                                  snapshot.isDragging ? styles.isDragging : ''
-                                }`}
-                              >
-                                {answer.text}
-                              </div>
-                            )}
-                          </Draggable>
-                        ))
+                      ))}
+
+                      {question.buckets.length === 0 && (
+                        <div className={styles.noBuckets}>
+                          <p>No buckets yet. Click "Add Bucket" to get started.</p>
+                        </div>
                       )}
-                      {provided.placeholder}
                     </div>
-                  )}
-                </Droppable>
-              </div>
-            </div>
-          </DragDropContext>
-        </div>
-      ))}
+                  </div>
+
+                  {/* Right side: Unassigned Answers */}
+                  <div className={styles.answersColumn}>
+                    <div className={styles.columnHeader}>
+                      <span>Answers ({question.unassignedAnswers.length})</span>
+                    </div>
+
+                    <Droppable droppableId="unassigned">
+                      {(provided, snapshot) => (
+                        <div
+                          ref={provided.innerRef}
+                          {...provided.droppableProps}
+                          className={`${styles.answersList} ${
+                            snapshot.isDraggingOver ? styles.isDraggingOver : ''
+                          }`}
+                        >
+                          {question.unassignedAnswers.length === 0 ? (
+                            <div className={styles.noAnswers}>
+                              <p>All answers have been assigned to buckets.</p>
+                            </div>
+                          ) : (
+                            question.unassignedAnswers.map((answer, index) => (
+                              <Draggable key={answer.id} draggableId={answer.id} index={index}>
+                                {(provided, snapshot) => (
+                                  <div
+                                    ref={provided.innerRef}
+                                    {...provided.draggableProps}
+                                    {...provided.dragHandleProps}
+                                    className={`${styles.answer} ${
+                                      snapshot.isDragging ? styles.isDragging : ''
+                                    }`}
+                                  >
+                                    {answer.text}
+                                  </div>
+                                )}
+                              </Draggable>
+                            ))
+                          )}
+                          {provided.placeholder}
+                        </div>
+                      )}
+                    </Droppable>
+                  </div>
+                </div>
+              </DragDropContext>
+            )}
+          </div>
+        ))}
+      </Panel>
     </div>
   );
 }
