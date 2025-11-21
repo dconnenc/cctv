@@ -3,9 +3,11 @@
   flex-direction: column;
   gap: 16px;
   padding: 24px;
-  background: rgba(0, 0, 0, 0.5);
+  background: hsl(var(--card));
+  color: hsl(var(--card-foreground));
   border-radius: 12px;
-  box-shadow: var(--card-shadow, 0 8px 12px rgba(0, 0, 0, 0.4));
+  border: 1px solid hsl(var(--border));
+  box-shadow: var(--shadow-1, 0 8px 12px rgba(0, 0, 0, 0.12));
   position: relative;
   z-index: 3;
   height: 100%;

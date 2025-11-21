@@ -34,6 +34,7 @@
   --input: 240 5.9% 90%;
   --ring: 52 100% 50%; /* approx var(--yellow) */
   --radius: 0.5rem;
+  --shadow-1: 0 8px 16px hsl(var(--foreground) / 0.08);
 }
 
 :root[data-theme='dark'] {
@@ -57,6 +58,7 @@
   --input: 240 3.7% 22%;
   --ring: 52 100% 50%;
   --radius: 0.5rem;
+  --shadow-1: 0 8px 16px hsl(var(--foreground) / 0.18);
 }
 
 .app {
@@ -158,8 +160,8 @@ h6 {
   font-weight: 800;
   text-align: center;
   line-height: 1;
-  color: var(--white);
-  text-shadow: var(--tv-glow);
+  color: hsl(var(--foreground));
+  text-shadow: none;
 }
 
 h2 {
@@ -188,7 +190,22 @@ body {
   margin: 0;
   text-align: center;
   font-size: clamp(1rem, 4vw, 24px);
-  color: var(--white);
+  color: hsl(var(--foreground));
+  text-shadow: none;
+}
+
+:root[data-theme='dark'] h1,
+:root[data-theme='dark'] h2,
+:root[data-theme='dark'] h3,
+:root[data-theme='dark'] h4,
+:root[data-theme='dark'] h5,
+:root[data-theme='dark'] h6 {
+  text-shadow: var(--tv-glow);
+}
+
+:root[data-theme='dark'] p,
+:root[data-theme='dark'] label,
+:root[data-theme='dark'] body {
   text-shadow: var(--tv-glow);
 }
 
@@ -291,19 +308,18 @@ input {
   margin-top: 12px;
   padding: 8px 12px;
   font-size: 16px;
-  border: 2px solid var(--white);
-  border-radius: 4px;
-  background-color: rgba(50, 17, 17, 0.1);
-  color: var(--white);
+  border: 1px solid hsl(var(--border));
+  border-radius: 6px;
+  background-color: hsl(var(--input));
+  color: hsl(var(--foreground));
 }
 input::placeholder {
-  color: var(--white);
-  opacity: 0.7;
+  color: hsl(var(--muted-foreground));
 }
 input:focus {
   outline: none;
-  border-color: var(--yellow);
-  box-shadow: 0 0 6px rgba(255, 255, 255, 0.55);
+  border-color: hsl(var(--ring));
+  box-shadow: 0 0 0 2px hsl(var(--ring) / 0.3);
 }
 
 button {
@@ -311,15 +327,15 @@ button {
   padding: 8px 16px;
   font-size: 16px;
   font-weight: 600;
-  border: 2px solid var(--white);
-  border-radius: 4px;
-  background-color: rgba(50, 17, 17, 0.1);
-  color: var(--white);
+  border: 1px solid hsl(var(--border));
+  border-radius: 6px;
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
   cursor: pointer;
 }
 
 button:hover {
-  background-color: rgba(255, 255, 255, 0.1);
+  background-color: hsl(var(--muted));
 }
 
 .glitch {
@@ -529,4 +545,10 @@ button:hover {
   height: 100%;
   min-height: 100dvh;
   z-index: 10;
+}
+
+/* Theme-friendly error message utility */
+.error-message {
+  color: hsl(var(--destructive));
+  text-shadow: none;
 }

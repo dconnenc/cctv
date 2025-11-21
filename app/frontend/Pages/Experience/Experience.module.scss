@@ -9,12 +9,12 @@
 
 // Error states
 .error {
-  color: var(--yellow);
+  color: hsl(var(--destructive));
   margin-bottom: 1rem;
 }
 
 .invalidCode {
-  color: var(--yellow);
+  color: hsl(var(--destructive));
   margin-bottom: 0.75rem;
 }
 
@@ -22,7 +22,7 @@
 .link {
   font-weight: 400;
   font-size: clamp(16px, 4vw, 20px);
-  color: var(--yellow);
+  color: hsl(var(--primary));
   text-decoration: none;
 }
 
@@ -45,7 +45,7 @@
 .participantsContainer {
   width: 100%;
   max-width: 300px;
-  background-color: rgba(255, 255, 255, 0.1);
+  background-color: hsl(var(--muted));
   border-radius: 8px;
   padding: 1rem;
   margin-bottom: 1rem;
@@ -65,7 +65,7 @@
 
 .participantItem {
   padding: 0.5rem 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid hsl(var(--border));
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -78,7 +78,7 @@
 
   &.currentUser {
     font-weight: 600;
-    color: var(--green);
+    color: hsl(var(--accent));
   }
 }
 
@@ -99,7 +99,7 @@
   margin-bottom: 1rem;
   padding: 0.5rem;
   border-radius: 4px;
-  background-color: rgba(255, 255, 255, 0.1);
+  background-color: hsl(var(--muted));
   text-align: center;
   font-size: 0.9rem;
 }

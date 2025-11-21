@@ -53,7 +53,7 @@ export default function Join() {
       <form onSubmit={handleSubmit}>
         <TextInput defaultValue={code} id={id} name="code" disabled={isLoading} maxLength={50} />
         {error && (
-          <p className="error-message" style={{ color: 'red', marginTop: '8px' }}>
+          <p className="error-message" style={{ marginTop: '8px' }}>
             {error}
           </p>
         )}

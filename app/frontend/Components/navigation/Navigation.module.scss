@@ -33,11 +33,11 @@
 }
 
 .topnav__toggle {
-  border: 2px solid var(--white);
+  border: 1px solid hsl(var(--border));
   border-radius: 8px;
-  background: rgba(50, 17, 17, 0.1);
-  color: var(--white);
-  text-shadow: var(--tv-glow);
+  background: hsl(var(--muted));
+  color: hsl(var(--foreground));
+  text-shadow: none;
   width: 40px;
   height: 36px;
   padding: 0;
@@ -58,8 +58,8 @@
   display: block;
   width: 22px;
   height: 2px;
-  background: var(--white);
-  box-shadow: var(--tv-glow);
+  background: hsl(var(--foreground));
+  box-shadow: none;
   border-radius: 2px;
   transition: transform 160ms ease;
 }
@@ -105,7 +105,7 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
-  background: rgba(0, 0, 0, 0.6);
+  background: hsl(var(--popover));
   backdrop-filter: blur(6px);
 }
 
@@ -184,10 +184,10 @@
   width: max-content;
   min-width: max-content;
   padding: 12px;
-  background: rgba(0, 0, 0, 0.8);
+  background: hsl(var(--popover));
   backdrop-filter: blur(6px);
   border-radius: 8px;
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
+  box-shadow: var(--shadow-1, 0 8px 16px rgba(0, 0, 0, 0.1));
   z-index: 2000;
   display: none;
 }
@@ -196,6 +196,23 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
+}
+
+/* Re-introduce glow for dark theme only */
+:root[data-theme='dark'] .topnav__toggle {
+  text-shadow: var(--tv-glow);
+}
+:root[data-theme='dark'] .topnav__icon,
+:root[data-theme='dark'] .topnav__icon::before,
+:root[data-theme='dark'] .topnav__icon::after {
+  box-shadow: var(--tv-glow);
+}
+
+:root[data-theme='dark'] .menuPill {
+  text-shadow: var(--tv-glow);
+}
+:root[data-theme='dark'] .recBtn {
+  box-shadow: var(--tv-glow);
 }
 
 .dropdownMenu .topnav__controlRow {
@@ -213,7 +230,7 @@
 .dropdownItem {
   display: block;
   padding: 6px 8px;
-  color: var(--white);
+  color: hsl(var(--foreground));
   text-decoration: none;
   border-radius: 6px;
   white-space: nowrap;
@@ -221,7 +238,7 @@
 }
 
 .dropdownItem:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: hsl(var(--muted));
 }
 
 /* Disable hover background effect for CCTV menu */
@@ -264,9 +281,9 @@
   gap: 8px;
   padding: 6px 12px;
   border-radius: 9999px;
-  background: rgba(50, 17, 17, 0.1);
-  color: var(--white);
-  text-shadow: var(--tv-glow);
+  background: hsl(var(--muted));
+  color: hsl(var(--foreground));
+  text-shadow: none;
   cursor: pointer;
   user-select: none;
   border: none;
@@ -278,7 +295,7 @@
   height: 16px;
   border-radius: 9999px;
   border: none;
-  box-shadow: var(--tv-glow);
+  box-shadow: none;
   background: var(--red);
   display: inline-block;
 }
@@ -291,7 +308,7 @@
 .menuCluster:hover .menuPill,
 .menuPill:hover,
 .recBtn:hover {
-  background: rgba(255, 255, 255, 0.15);
+  background: hsl(var(--muted));
 }
 .menuCluster:hover .recBtn,
 .recBtn:hover {
