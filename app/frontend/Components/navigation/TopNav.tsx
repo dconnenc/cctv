@@ -141,7 +141,14 @@ export const TopNav = () => {
         >
           <span className={styles.topnav__icon} />
         </button>
-        <span className="link">CCTV</span>
+        <NavLink
+          to="/"
+          end
+          className={({ isActive }) => (isActive ? 'link link--active' : 'link')}
+          onClick={() => setOpen(false)}
+        >
+          CCTV
+        </NavLink>
       </div>
 
       {open && (
