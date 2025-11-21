@@ -354,13 +354,12 @@
   margin-top: 0 !important;
 }
 
-/* Ensure navigation remains visible on mobile */
 @media (max-width: 768px) {
   .topnav__inner {
-    display: flex;
+    display: none;
   }
   .topnav__mobile {
-    display: none;
+    display: flex;
   }
 }
 
