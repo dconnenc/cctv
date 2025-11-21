@@ -99,7 +99,7 @@ export default function Register() {
           maxLength={100}
         />
         {error && (
-          <p className="error-message" style={{ color: 'red', marginTop: '8px' }}>
+          <p className="error-message" style={{ marginTop: '8px' }}>
             {error}
           </p>
         )}
