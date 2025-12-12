@@ -42,10 +42,9 @@ export function familyFeudReducer(
       return action.payload;
 
     case 'BUCKET_ADDED': {
-      const { bucket } = action.payload;
-      // Add bucket to first question (could be enhanced to specify questionId)
-      return state.map((q, index) =>
-        index === 0
+      const { bucket, questionId } = action.payload;
+      return state.map((q) =>
+        q.questionId === questionId
           ? {
               ...q,
               buckets: [...q.buckets, { ...bucket, answers: [], isCollapsed: false }],

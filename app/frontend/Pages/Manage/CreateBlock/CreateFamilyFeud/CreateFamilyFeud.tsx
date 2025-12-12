@@ -1,3 +1,5 @@
+import { X } from 'lucide-react';
+
 import { Button, TextInput } from '@cctv/core';
 import { BlockComponentProps, FamilyFeudData } from '@cctv/types';
 
@@ -77,13 +79,15 @@ export default function CreateFamilyFeud({ data, onChange }: BlockComponentProps
 
   return (
     <div className={sharedStyles.container}>
-      <TextInput
-        label="Title"
-        placeholder="Enter the Family Feud game title"
-        value={data.title}
-        onChange={(e) => onChange?.({ title: e.target.value })}
-        required
-      />
+      <div className={styles.titleInput}>
+        <TextInput
+          label="Title"
+          placeholder="Enter the Family Feud game title"
+          value={data.title}
+          onChange={(e) => onChange?.({ title: e.target.value })}
+          required
+        />
+      </div>
 
       <div className={sharedStyles.sectionTitle}>Questions</div>
 
@@ -92,18 +96,19 @@ export default function CreateFamilyFeud({ data, onChange }: BlockComponentProps
           <div className={styles.questionNumber}>{index + 1}</div>
           <div className={styles.questionField}>
             <TextInput
-              label={`Question ${index + 1}`}
               placeholder="Enter question"
               value={question.question}
               onChange={(e) => updateQuestion(index, e.target.value)}
               required
             />
           </div>
-          <div className={styles.questionActions}>
-            <Button type="button" onClick={() => removeQuestion(index)}>
-              Remove
-            </Button>
-          </div>
+          <Button
+            type="button"
+            onClick={() => removeQuestion(index)}
+            className={styles.removeButton}
+          >
+            <X size={16} />
+          </Button>
         </div>
       ))}
 

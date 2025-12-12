@@ -65,7 +65,6 @@ Rails.application.routes.draw do
 
   get '/experiences/register', to: 'spa#index'
   get '/experiences/:code', to: 'spa#index'
-  get '/experiences/:code/manage/blocks/:block_id', to: 'spa#index'
 
   get '*path', to: 'spa#index', constraints: ->(request) do
     !request.xhr? && request.format.html?

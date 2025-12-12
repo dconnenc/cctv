@@ -1,5 +1,3 @@
-import { useParams } from 'react-router-dom';
-
 import { useExperience } from '@cctv/contexts';
 import { BlockKind } from '@cctv/types';
 
@@ -7,58 +5,66 @@ import FamilyFeudManager from './FamilyFeudManager/FamilyFeudManager';
 
 import styles from './Block.module.scss';
 
-export default function Block() {
-  const { blockId } = useParams<{ blockId: string }>();
+interface BlockProps {
+  blockId: string;
+}
+
+export default function Block({ blockId }: BlockProps) {
   const { experience, isLoading } = useExperience();
 
   if (isLoading) {
     return (
-      <section className="page flex-centered">
+      <div className="flex-centered">
         <p>Loading block...</p>
-      </section>
+      </div>
     );
   }
 
   if (!experience) {
     return (
-      <section className="page flex-centered">
+      <div className="flex-centered">
         <p>Experience not found</p>
-      </section>
+      </div>
     );
   }
 
-  const block = experience.blocks.find((b) => b.id === blockId);
+  // Find block in top level or nested children
+  let block = experience.blocks.find((b) => b.id === blockId);
+
+  if (!block) {
+    // Search in children of all blocks
+    for (const parentBlock of experience.blocks) {
+      if ((parentBlock as any).children) {
+        block = (parentBlock as any).children.find((child: any) => child.id === blockId);
+        if (block) break;
+      }
+    }
+  }
 
   if (!block) {
     return (
-      <section className="page flex-centered">
+      <div className="flex-centered">
         <h1>Block not found</h1>
         <p>The block you're looking for doesn't exist.</p>
-      </section>
+      </div>
     );
   }
 
   // Render family feud manager for family_feud blocks
   if (block.kind === BlockKind.FAMILY_FEUD) {
-    return (
-      <section className="page">
-        <FamilyFeudManager block={block} />
-      </section>
-    );
+    return <FamilyFeudManager block={block} />;
   }
 
   // Default view for other block types
   return (
-    <section className="page">
-      <div className={styles.root}>
-        <h1 className={styles.title}>Block Details</h1>
-        <div className={styles.content}>
-          <div className={styles.field}>
-            <span className={styles.label}>Kind:</span>
-            <span className={styles.value}>{block.kind}</span>
-          </div>
+    <div className={styles.root}>
+      <h1 className={styles.title}>Block Details</h1>
+      <div className={styles.content}>
+        <div className={styles.field}>
+          <span className={styles.label}>Kind:</span>
+          <span className={styles.value}>{block.kind}</span>
         </div>
       </div>
-    </section>
+    </div>
   );
 }

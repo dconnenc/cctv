@@ -11,6 +11,7 @@ import {
 } from '@cctv/hooks';
 import { Block, BlockStatus, ParticipantSummary } from '@cctv/types';
 
+import BlockShow from '../Block/Block';
 import ContextDetails from './ContextDetails/ContextDetails';
 import ContextView from './ContextView/ContextView';
 import CreateBlock from './CreateBlock/CreateBlock';
@@ -42,6 +43,7 @@ export default function Manage() {
   const [busyBlockId, setBusyBlockId] = useState<string>();
   const [viewMode, setViewMode] = useState<'monitor' | 'participant'>('monitor');
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [showBlockId, setShowBlockId] = useState<string | null>(null);
 
   const participantsCombined: ParticipantSummary[] = useMemo(
     () => [...(experience?.hosts || []), ...(experience?.participants || [])],
@@ -188,6 +190,7 @@ export default function Manage() {
                   participants={participantsCombined}
                   onBlockStatusChange={onChangeBlockStatus}
                   busyBlockId={busyBlockId}
+                  onBlockClick={setShowBlockId}
                 />
               ) : (
                 <ParticipantsTab participants={participantsCombined} />
@@ -206,6 +209,11 @@ export default function Manage() {
               await changeStatus(currentBlock, 'closed');
             }}
           />
+        </DialogContent>
+      </Dialog>
+      <Dialog open={!!showBlockId} onOpenChange={(open) => !open && setShowBlockId(null)}>
+        <DialogContent className="sm:max-w-6xl w-full max-h-[90vh] overflow-y-auto">
+          {showBlockId && <BlockShow blockId={showBlockId} />}
         </DialogContent>
       </Dialog>
     </>

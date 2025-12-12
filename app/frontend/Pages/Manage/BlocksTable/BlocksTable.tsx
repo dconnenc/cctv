@@ -1,7 +1,5 @@
 import { useMemo } from 'react';
 
-import { Link } from 'react-router-dom';
-
 import { MoreHorizontal } from 'lucide-react';
 
 import { useExperience } from '@cctv/contexts';
@@ -30,13 +28,14 @@ export function BlocksTable({
   onChange,
   busyId,
   participants,
+  onBlockClick,
 }: {
   blocks: Block[];
   onChange: (b: Block, s: BlockStatus) => void;
   busyId?: string | null;
   participants?: ParticipantSummary[];
+  onBlockClick?: (blockId: string) => void;
 }) {
-  const { code } = useExperience();
   const totalParticipants = participants?.length || 0;
 
   // Flatten blocks into hierarchical rows
@@ -77,12 +76,9 @@ export function BlocksTable({
         Cell: (row) => (
           <span style={{ paddingLeft: `${row.depth * 24}px` }}>
             {row.isChild && <span className={styles.childIndicator}>└─ </span>}
-            <Link
-              to={`/experiences/${code}/manage/blocks/${row.block.id}`}
-              className={styles.kindLink}
-            >
+            <button onClick={() => onBlockClick?.(row.block.id)} className={styles.kindLink}>
               {row.block.kind}
-            </Link>
+            </button>
           </span>
         ),
       },
