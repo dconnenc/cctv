@@ -1,11 +1,13 @@
 .panel {
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  padding: 24px;
-  background: rgba(0, 0, 0, 0.5);
-  border-radius: 12px;
-  box-shadow: var(--card-shadow, 0 8px 12px rgba(0, 0, 0, 0.4));
+  gap: 1rem;
+  padding: 1.5rem;
+  background: hsl(var(--card));
+  color: hsl(var(--card-foreground));
+  border-radius: 0.75rem;
+  border: 1px solid hsl(var(--border));
+  box-shadow: var(--shadow-1, 0 8px 12px rgba(0, 0, 0, 0.12));
   position: relative;
   z-index: 3;
   height: 100%;
@@ -16,14 +18,14 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
+  gap: 1rem;
   flex-wrap: wrap;
   position: relative;
   z-index: 3;
 }
 
 .title {
-  font-size: 20px;
+  font-size: 1.25rem;
   font-weight: 600;
   margin: 0;
   position: relative;
@@ -33,7 +35,7 @@
 .content {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 1rem;
   position: relative;
   z-index: 3;
   flex: 1 1 auto;
@@ -42,10 +44,10 @@
 
 @media (max-width: 768px) {
   .panel {
-    padding: 16px;
+    padding: 1rem;
   }
 
   .title {
-    font-size: 18px;
+    font-size: 1.125rem;
   }
 }

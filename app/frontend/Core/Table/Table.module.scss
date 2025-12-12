@@ -14,19 +14,19 @@
   font-weight: 600;
   font-size: 0.825rem;
   padding: 0.5rem 0.75rem;
-  border-bottom: 1px solid var(--card-border, #e5e7eb);
+  border-bottom: 1px solid hsl(var(--border));
   white-space: nowrap;
 }
 
 .table tbody td {
   padding: 0.5rem 0.75rem;
-  border-bottom: 1px solid var(--row-border, #f1f5f9);
+  border-bottom: 1px solid hsl(var(--border));
   vertical-align: top;
 }
 
 .table tbody tr:hover {
-  background: var(--row-hover, #fafafa);
-  color: black;
+  background: hsl(var(--muted));
+  color: hsl(var(--foreground));
 }
 
 .table tbody tr td {
@@ -44,8 +44,6 @@
   width: 1%;
   white-space: nowrap;
   text-align: left;
-  color: white;
-  background: black;
 }
 
 .menu {
@@ -57,11 +55,11 @@
 .menuButton {
   list-style: none;
   cursor: pointer;
-  width: 28px;
-  height: 28px;
-  border-radius: 8px;
-  border: 1px solid var(--btn-border, #e5e7eb);
-  background: var(--btn-bg, #fff);
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 0.5rem;
+  border: 1px solid hsl(var(--border));
+  background: hsl(var(--background));
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -75,32 +73,33 @@
 }
 
 .menuButton:focus-visible {
-  outline: 2px solid var(--focus, #2563eb);
-  outline-offset: 2px;
+  outline: 0.125rem solid hsl(var(--ring));
+  outline-offset: 0.125rem;
 }
 
 /* Kebab icon */
 .menuButton::after {
   content: '⋮';
-  font-size: 16px;
+  font-size: 1rem;
   line-height: 1;
-  color: var(--btn-fg, #374151);
+  color: hsl(var(--muted-foreground));
 }
 
 .menu[open] .menuButton {
-  background: var(--btn-hover, #f9fafb);
+  background: hsl(var(--muted));
 }
 
 .menuList {
   position: absolute;
-  color: black;
+  color: hsl(var(--popover-foreground));
   top: calc(100% + 6px);
   right: 0;
-  min-width: 160px;
-  border: 1px solid var(--menu-border, #e5e7eb);
-  border-radius: 10px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
-  padding: 6px;
+  min-width: 10rem;
+  border: 1px solid hsl(var(--border));
+  border-radius: 0.625rem;
+  box-shadow: var(--shadow-1, 0 8px 24px rgba(0, 0, 0, 0.08));
+  background: hsl(var(--popover));
+  padding: 0.375rem;
   z-index: 20;
 }
 
@@ -108,8 +107,8 @@
   display: block;
   width: 100%;
   text-align: left;
-  padding: 8px 10px;
-  border-radius: 8px;
+  padding: 0.5rem 0.625rem;
+  border-radius: 0.5rem;
   background: transparent;
   border: 0;
   cursor: pointer;
@@ -117,7 +116,7 @@
 }
 
 .menuItem:hover:not(:disabled) {
-  background: var(--row-hover, #f3f4f6);
+  background: hsl(var(--muted));
 }
 
 .menuItem:disabled {

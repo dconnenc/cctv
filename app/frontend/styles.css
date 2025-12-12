@@ -6,10 +6,19 @@
   --green: #2fff2f;
   --pink: #ff00f5;
   --teal: #7df9ff;
-  --nav-h: 56px;
+  --font-primary: 'VCR OSD Mono', 'Poppins', sans-serif;
+  --nav-h: 3.5rem;
   --tv-glow:
     0 0 4px rgba(255, 255, 255, 0.45), 0 0 10px rgba(255, 255, 255, 0.3),
     0.5px 0 1px rgba(255, 0, 0, 0.25), -0.5px 0 1px rgba(0, 255, 255, 0.25);
+}
+
+@font-face {
+  font-family: 'VCR OSD Mono';
+  src: url('/fonts/VCR_OSD_MONO.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
 }
 
 /* Shadcn theme tokens (HSL triplets) */
@@ -34,6 +43,7 @@
   --input: 240 5.9% 90%;
   --ring: 52 100% 50%; /* approx var(--yellow) */
   --radius: 0.5rem;
+  --shadow-1: 0 8px 16px hsl(var(--foreground) / 0.08);
 }
 
 :root[data-theme='dark'] {
@@ -57,6 +67,7 @@
   --input: 240 3.7% 22%;
   --ring: 52 100% 50%;
   --radius: 0.5rem;
+  --shadow-1: 0 8px 16px hsl(var(--foreground) / 0.18);
 }
 
 .app {
@@ -158,8 +169,9 @@ h6 {
   font-weight: 800;
   text-align: center;
   line-height: 1;
-  color: var(--white);
-  text-shadow: var(--tv-glow);
+  font-family: var(--font-primary);
+  color: hsl(var(--foreground));
+  text-shadow: none;
 }
 
 h2 {
@@ -184,11 +196,26 @@ h6 {
 p,
 label,
 body {
-  font-family: 'Poppins', sans-serif;
+  font-family: var(--font-primary);
   margin: 0;
   text-align: center;
   font-size: clamp(1rem, 4vw, 24px);
-  color: var(--white);
+  color: hsl(var(--foreground));
+  text-shadow: none;
+}
+
+:root[data-theme='dark'] h1,
+:root[data-theme='dark'] h2,
+:root[data-theme='dark'] h3,
+:root[data-theme='dark'] h4,
+:root[data-theme='dark'] h5,
+:root[data-theme='dark'] h6 {
+  text-shadow: var(--tv-glow);
+}
+
+:root[data-theme='dark'] p,
+:root[data-theme='dark'] label,
+:root[data-theme='dark'] body {
   text-shadow: var(--tv-glow);
 }
 
@@ -198,9 +225,9 @@ body {
 .page {
   width: 100%;
   height: 100%;
-  max-width: 1260px;
+  max-width: 78.75rem;
   margin: 0 auto;
-  padding: 16px;
+  padding: 1rem;
   position: relative;
   z-index: 10;
 }
@@ -270,15 +297,15 @@ body {
 @media (max-width: 480px) {
   /* Standard mobile content width */
   .page {
-    max-width: 320px;
-    padding-left: 12px;
-    padding-right: 12px;
+    max-width: 20rem;
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
   }
 
   /* Ensure paragraphs don't overflow horizontally */
   .hero-subtitle,
   .page p {
-    max-width: 320px;
+    max-width: 20rem;
     overflow-wrap: anywhere;
     word-break: break-word;
     margin-left: auto;
@@ -288,38 +315,37 @@ body {
 }
 
 input {
-  margin-top: 12px;
-  padding: 8px 12px;
-  font-size: 16px;
-  border: 2px solid var(--white);
-  border-radius: 4px;
-  background-color: rgba(50, 17, 17, 0.1);
-  color: var(--white);
+  margin-top: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 1rem;
+  border: 1px solid hsl(var(--border));
+  border-radius: 0.375rem;
+  background-color: hsl(var(--input));
+  color: hsl(var(--foreground));
 }
 input::placeholder {
-  color: var(--white);
-  opacity: 0.7;
+  color: hsl(var(--muted-foreground));
 }
 input:focus {
   outline: none;
-  border-color: var(--yellow);
-  box-shadow: 0 0 6px rgba(255, 255, 255, 0.55);
+  border-color: hsl(var(--ring));
+  box-shadow: 0 0 0 0.125rem hsl(var(--ring) / 0.3);
 }
 
 button {
   margin: 0;
-  padding: 8px 16px;
-  font-size: 16px;
+  padding: 0.5rem 1rem;
+  font-size: 1rem;
   font-weight: 600;
-  border: 2px solid var(--white);
-  border-radius: 4px;
-  background-color: rgba(50, 17, 17, 0.1);
-  color: var(--white);
+  border: 1px solid hsl(var(--border));
+  border-radius: 0.375rem;
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
   cursor: pointer;
 }
 
 button:hover {
-  background-color: rgba(255, 255, 255, 0.1);
+  background-color: hsl(var(--muted));
 }
 
 .glitch {
@@ -511,13 +537,13 @@ button:hover {
 /* Responsive adjustments */
 @media (max-width: 768px) {
   .glitch {
-    font-size: 60px;
+    font-size: 3.75rem;
   }
 }
 
 @media (max-width: 480px) {
   .glitch {
-    font-size: 40px;
+    font-size: 2.5rem;
   }
 }
 
@@ -529,4 +555,10 @@ button:hover {
   height: 100%;
   min-height: 100dvh;
   z-index: 10;
+}
+
+/* Theme-friendly error message utility */
+.error-message {
+  color: hsl(var(--destructive));
+  text-shadow: none;
 }

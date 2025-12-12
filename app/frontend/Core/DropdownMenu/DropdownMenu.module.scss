@@ -3,11 +3,11 @@
   z-index: 50;
   min-width: 8rem;
   overflow: hidden;
-  border-radius: 8px;
-  background: rgba(0, 0, 0, 0.9);
-  padding: 4px;
-  box-shadow: 0 8px 12px rgba(0, 0, 0, 0.6);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 0.5rem;
+  background: hsl(var(--popover));
+  padding: 0.25rem;
+  box-shadow: var(--shadow-1, 0 8px 12px rgba(0, 0, 0, 0.12));
+  border: 1px solid hsl(var(--border));
 
   &[data-state='open'] {
     animation: fadeIn 150ms ease-out;
@@ -24,12 +24,12 @@
   cursor: pointer;
   user-select: none;
   align-items: center;
-  border-radius: 4px;
-  padding: 8px 12px;
-  font-size: 14px;
+  border-radius: 0.25rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
   outline: none;
   transition: background-color 100ms ease;
-  color: var(--white);
+  color: hsl(var(--popover-foreground));
 
   &[data-disabled] {
     pointer-events: none;
@@ -38,7 +38,7 @@
 
   &:hover,
   &[data-highlighted] {
-    background: rgba(255, 255, 255, 0.1);
+    background: hsl(var(--muted));
   }
 
   &:active {
@@ -47,18 +47,18 @@
 }
 
 .label {
-  padding: 8px 12px 4px;
-  font-size: 12px;
+  padding: 0.5rem 0.75rem 0.25rem;
+  font-size: 0.75rem;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.7);
+  color: hsl(var(--muted-foreground));
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
 
 .separator {
-  margin: 4px 0;
+  margin: 0.25rem 0;
   height: 1px;
-  background: rgba(255, 255, 255, 0.2);
+  background: hsl(var(--border));
 }
 
 @keyframes fadeIn {
