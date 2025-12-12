@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useReducer, useRef, useState } from 'react';
 
 import { DragDropContext, Draggable, Droppable } from '@hello-pangea/dnd';
-import { ChevronDown, ChevronRight, Plus, Trash2 } from 'lucide-react';
+import { ChevronDown, ChevronRight, Loader2, Plus, Trash2 } from 'lucide-react';
 
 import { Button } from '@cctv/components/ui/button';
 import { Panel } from '@cctv/core';
@@ -24,6 +24,8 @@ export default function FamilyFeudManager({ block, onBucketOperation }: FamilyFe
   const [questionsState, dispatch] = useReducer(familyFeudReducer, []);
   const [editingBucketNames, setEditingBucketNames] = useState<Record<string, string>>({});
   const renameTimeoutRef = useRef<Record<string, NodeJS.Timeout>>({});
+  const [isAddingBucket, setIsAddingBucket] = useState(false);
+  const [deletingBucketId, setDeletingBucketId] = useState<string | null>(null);
 
   // Initialize state from block data on mount and when block changes
   useEffect(() => {
@@ -82,12 +84,17 @@ export default function FamilyFeudManager({ block, onBucketOperation }: FamilyFe
   }, [onBucketOperation]);
 
   const handleAddBucket = async (questionId: string) => {
-    const bucket = await addBucket(
-      block.id,
-      `Bucket ${questionsState[0]?.buckets.length + 1 || 1}`,
-    );
-    if (bucket) {
-      dispatch({ type: 'BUCKET_ADDED', payload: { questionId, bucket } });
+    setIsAddingBucket(true);
+    try {
+      const bucket = await addBucket(
+        block.id,
+        `Bucket ${questionsState[0]?.buckets.length + 1 || 1}`,
+      );
+      if (bucket) {
+        dispatch({ type: 'BUCKET_ADDED', payload: { questionId, bucket } });
+      }
+    } finally {
+      setIsAddingBucket(false);
     }
   };
 
@@ -112,9 +119,14 @@ export default function FamilyFeudManager({ block, onBucketOperation }: FamilyFe
   );
 
   const handleDeleteBucket = async (bucketId: string) => {
-    const success = await deleteBucket(block.id, bucketId);
-    if (success) {
-      dispatch({ type: 'BUCKET_DELETED', payload: { bucketId } });
+    setDeletingBucketId(bucketId);
+    try {
+      const success = await deleteBucket(block.id, bucketId);
+      if (success) {
+        dispatch({ type: 'BUCKET_DELETED', payload: { bucketId } });
+      }
+    } finally {
+      setDeletingBucketId(null);
     }
   };
 
@@ -128,11 +140,11 @@ export default function FamilyFeudManager({ block, onBucketOperation }: FamilyFe
 
     const bucketId = destination.droppableId === 'unassigned' ? null : destination.droppableId;
 
-    // Optimistic update
+    // Optimistic update - instant UI feedback
     dispatch({ type: 'ANSWER_ASSIGNED', payload: { answerId, bucketId } });
 
-    // API call
-    await assignAnswer(block.id, answerId, bucketId);
+    // API call in background - don't await, fire and forget
+    assignAnswer(block.id, answerId, bucketId);
   };
 
   if (childQuestions.length === 0) {
@@ -175,9 +187,10 @@ export default function FamilyFeudManager({ block, onBucketOperation }: FamilyFe
                         variant="outline"
                         size="sm"
                         onClick={() => handleAddBucket(question.questionId)}
+                        disabled={isAddingBucket}
                       >
                         <Plus size={16} />
-                        Add Bucket
+                        {isAddingBucket ? 'Adding...' : 'Add Bucket'}
                       </Button>
                     </div>
 
@@ -210,8 +223,13 @@ export default function FamilyFeudManager({ block, onBucketOperation }: FamilyFe
                             <button
                               className={styles.deleteButton}
                               onClick={() => handleDeleteBucket(bucket.id)}
+                              disabled={deletingBucketId === bucket.id}
                             >
-                              <Trash2 size={14} />
+                              {deletingBucketId === bucket.id ? (
+                                <Loader2 size={14} className={styles.spinner} />
+                              ) : (
+                                <Trash2 size={14} />
+                              )}
                             </button>
                           </div>
 
