@@ -192,49 +192,54 @@ export default function FamilyFeudManager({ block, onBucketOperation }: FamilyFe
 
                   <div className={styles.bucketsList}>
                     {question.buckets.map((bucket) => (
-                      <div key={bucket.id} className={styles.bucket}>
-                        <div className={styles.bucketHeader}>
-                          <button
-                            className={styles.collapseButton}
-                            onClick={() =>
-                              dispatch({
-                                type: 'TOGGLE_BUCKET',
-                                payload: { questionId: question.questionId, bucketId: bucket.id },
-                              })
-                            }
+                      <Droppable key={bucket.id} droppableId={bucket.id}>
+                        {(provided, snapshot) => (
+                          <div
+                            ref={provided.innerRef}
+                            {...provided.droppableProps}
+                            className={`${styles.bucket} ${snapshot.isDraggingOver ? styles.isDraggingOver : ''}`}
                           >
-                            {bucket.isCollapsed ? (
-                              <ChevronRight size={16} />
-                            ) : (
-                              <ChevronDown size={16} />
-                            )}
-                          </button>
-                          <input
-                            type="text"
-                            value={editingBucketNames[bucket.id] ?? bucket.name}
-                            onChange={(e) => handleRenameBucket(bucket.id, e.target.value)}
-                            className={styles.bucketNameInput}
-                          />
-                          <span className={styles.bucketCount}>({bucket.answers.length})</span>
-                          <button
-                            className={styles.deleteButton}
-                            onClick={() => handleDeleteBucket(bucket.id)}
-                            disabled={deletingBucketId === bucket.id}
-                          >
-                            {deletingBucketId === bucket.id ? (
-                              <Loader2 size={14} className={styles.spinner} />
-                            ) : (
-                              <Trash2 size={14} />
-                            )}
-                          </button>
-                        </div>
+                            <div className={styles.bucketHeader}>
+                              <button
+                                className={styles.collapseButton}
+                                onClick={() =>
+                                  dispatch({
+                                    type: 'TOGGLE_BUCKET',
+                                    payload: {
+                                      questionId: question.questionId,
+                                      bucketId: bucket.id,
+                                    },
+                                  })
+                                }
+                              >
+                                {bucket.isCollapsed ? (
+                                  <ChevronRight size={16} />
+                                ) : (
+                                  <ChevronDown size={16} />
+                                )}
+                              </button>
+                              <input
+                                type="text"
+                                value={editingBucketNames[bucket.id] ?? bucket.name}
+                                onChange={(e) => handleRenameBucket(bucket.id, e.target.value)}
+                                className={styles.bucketNameInput}
+                              />
+                              <span className={styles.bucketCount}>({bucket.answers.length})</span>
+                              <button
+                                className={styles.deleteButton}
+                                onClick={() => handleDeleteBucket(bucket.id)}
+                                disabled={deletingBucketId === bucket.id}
+                              >
+                                {deletingBucketId === bucket.id ? (
+                                  <Loader2 size={14} className={styles.spinner} />
+                                ) : (
+                                  <Trash2 size={14} />
+                                )}
+                              </button>
+                            </div>
 
-                        {!bucket.isCollapsed && (
-                          <Droppable droppableId={bucket.id}>
-                            {(provided, snapshot) => (
+                            {!bucket.isCollapsed && (
                               <div
-                                ref={provided.innerRef}
-                                {...provided.droppableProps}
                                 className={`${styles.bucketDropZone} ${
                                   snapshot.isDraggingOver ? styles.isDraggingOver : ''
                                 }`}
@@ -263,12 +268,12 @@ export default function FamilyFeudManager({ block, onBucketOperation }: FamilyFe
                                     </Draggable>
                                   ))
                                 )}
-                                {provided.placeholder}
                               </div>
                             )}
-                          </Droppable>
+                            {provided.placeholder}
+                          </div>
                         )}
-                      </div>
+                      </Droppable>
                     ))}
 
                     {question.buckets.length === 0 && (
