@@ -21,27 +21,43 @@ export interface QuestionWithBuckets {
   isCollapsed: boolean;
 }
 
+export enum FamilyFeudActionType {
+  INIT = 'INIT',
+  BUCKET_ADDED = 'BUCKET_ADDED',
+  BUCKET_RENAMED = 'BUCKET_RENAMED',
+  BUCKET_DELETED = 'BUCKET_DELETED',
+  ANSWER_ASSIGNED = 'ANSWER_ASSIGNED',
+  TOGGLE_QUESTION = 'TOGGLE_QUESTION',
+  TOGGLE_BUCKET = 'TOGGLE_BUCKET',
+}
+
 export type FamilyFeudAction =
-  | { type: 'INIT'; payload: QuestionWithBuckets[] }
-  | { type: 'BUCKET_ADDED'; payload: { questionId?: string; bucket: { id: string; name: string } } }
-  | { type: 'BUCKET_RENAMED'; payload: { bucketId: string; name: string } }
-  | { type: 'BUCKET_DELETED'; payload: { bucketId: string } }
+  | { type: FamilyFeudActionType.INIT; payload: QuestionWithBuckets[] }
   | {
-      type: 'ANSWER_ASSIGNED';
+      type: FamilyFeudActionType.BUCKET_ADDED;
+      payload: { questionId?: string; bucket: { id: string; name: string } };
+    }
+  | { type: FamilyFeudActionType.BUCKET_RENAMED; payload: { bucketId: string; name: string } }
+  | { type: FamilyFeudActionType.BUCKET_DELETED; payload: { bucketId: string } }
+  | {
+      type: FamilyFeudActionType.ANSWER_ASSIGNED;
       payload: { answerId: string; bucketId: string | null };
     }
-  | { type: 'TOGGLE_QUESTION'; payload: { questionId: string } }
-  | { type: 'TOGGLE_BUCKET'; payload: { questionId: string; bucketId: string } };
+  | { type: FamilyFeudActionType.TOGGLE_QUESTION; payload: { questionId: string } }
+  | {
+      type: FamilyFeudActionType.TOGGLE_BUCKET;
+      payload: { questionId: string; bucketId: string };
+    };
 
 export function familyFeudReducer(
   state: QuestionWithBuckets[],
   action: FamilyFeudAction,
 ): QuestionWithBuckets[] {
   switch (action.type) {
-    case 'INIT':
+    case FamilyFeudActionType.INIT:
       return action.payload;
 
-    case 'BUCKET_ADDED': {
+    case FamilyFeudActionType.BUCKET_ADDED: {
       const { bucket, questionId } = action.payload;
       return state.map((q) =>
         q.questionId === questionId
@@ -53,7 +69,7 @@ export function familyFeudReducer(
       );
     }
 
-    case 'BUCKET_RENAMED': {
+    case FamilyFeudActionType.BUCKET_RENAMED: {
       const { bucketId, name } = action.payload;
       return state.map((q) => ({
         ...q,
@@ -61,7 +77,7 @@ export function familyFeudReducer(
       }));
     }
 
-    case 'BUCKET_DELETED': {
+    case FamilyFeudActionType.BUCKET_DELETED: {
       const { bucketId } = action.payload;
       return state.map((q) => {
         const bucketToDelete = q.buckets.find((b) => b.id === bucketId);
@@ -75,7 +91,7 @@ export function familyFeudReducer(
       });
     }
 
-    case 'ANSWER_ASSIGNED': {
+    case FamilyFeudActionType.ANSWER_ASSIGNED: {
       const { answerId, bucketId } = action.payload;
       return state.map((q) => {
         // Find the answer across all buckets and unassigned
@@ -121,14 +137,14 @@ export function familyFeudReducer(
       });
     }
 
-    case 'TOGGLE_QUESTION': {
+    case FamilyFeudActionType.TOGGLE_QUESTION: {
       const { questionId } = action.payload;
       return state.map((q) =>
         q.questionId === questionId ? { ...q, isCollapsed: !q.isCollapsed } : q,
       );
     }
 
-    case 'TOGGLE_BUCKET': {
+    case FamilyFeudActionType.TOGGLE_BUCKET: {
       const { questionId, bucketId } = action.payload;
       return state.map((q) =>
         q.questionId === questionId

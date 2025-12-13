@@ -1,11 +1,22 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 import { useExperience } from '@cctv/contexts';
 
-export function useFamilyFeudBuckets() {
-  const { code, experienceFetch } = useExperience();
+export function useFamilyFeudBuckets(blockId?: string, dispatch?: (action: any) => void) {
+  const { code, experienceFetch, registerFamilyFeudDispatch, unregisterFamilyFeudDispatch } =
+    useExperience();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Register dispatch handler for this specific block
+  useEffect(() => {
+    if (blockId && dispatch) {
+      registerFamilyFeudDispatch?.(blockId, dispatch);
+      return () => {
+        unregisterFamilyFeudDispatch?.(blockId);
+      };
+    }
+  }, [blockId, dispatch, registerFamilyFeudDispatch, unregisterFamilyFeudDispatch]);
 
   const addBucket = useCallback(
     async (blockId: string, name: string = 'New Bucket') => {

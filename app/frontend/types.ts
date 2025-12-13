@@ -631,4 +631,8 @@ export interface ExperienceContextType {
   participantView?: Experience;
   impersonatedParticipantId?: string;
   setImpersonatedParticipantId: (id: string | undefined) => void;
+
+  // Family Feud block-scoped dispatch registration
+  registerFamilyFeudDispatch?: (blockId: string, dispatch: (action: any) => void) => void;
+  unregisterFamilyFeudDispatch?: (blockId: string) => void;
 }

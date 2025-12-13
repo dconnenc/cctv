@@ -19,6 +19,11 @@
  *    - Avoids complex CRDT or operational transform logic for concurrent reordering
  *    - Simpler conflict resolution: last write wins for bucket assignment only
  *    - Trade-off: dragging answer to specific position appends to end instead
+ *
+ * TODO: Handle websocket updates that aren't currently supported:
+ *   - New answers arriving from other users (need ANSWER_RECEIVED action)
+ *   - New child questions added (need QUESTION_ADDED action)
+ *   - Questions deleted (need QUESTION_DELETED action)
  */
 import { useCallback, useEffect, useReducer, useRef, useState } from 'react';
 
@@ -29,7 +34,12 @@ import { Button } from '@cctv/components/ui/button';
 import { useFamilyFeudBuckets, useScrollFade } from '@cctv/hooks';
 import { Block } from '@cctv/types';
 
-import { FamilyFeudAction, QuestionWithBuckets, familyFeudReducer } from './familyFeudReducer';
+import {
+  FamilyFeudAction,
+  FamilyFeudActionType,
+  QuestionWithBuckets,
+  familyFeudReducer,
+} from './familyFeudReducer';
 
 import styles from './FamilyFeudManager.module.scss';
 
@@ -39,18 +49,20 @@ interface FamilyFeudManagerProps {
 }
 
 export default function FamilyFeudManager({ block, onBucketOperation }: FamilyFeudManagerProps) {
-  const { addBucket, renameBucket, deleteBucket, assignAnswer } = useFamilyFeudBuckets();
-  const childQuestions = (block as any).children || [];
-
   const [questionsState, dispatch] = useReducer(familyFeudReducer, []);
+  const { addBucket, renameBucket, deleteBucket, assignAnswer } = useFamilyFeudBuckets(
+    block.id,
+    dispatch,
+  );
+  const childQuestions = (block as any).children || [];
   const [editingBucketNames, setEditingBucketNames] = useState<Record<string, string>>({});
   const renameTimeoutRef = useRef<Record<string, NodeJS.Timeout>>({});
   const [addingBucketForQuestion, setAddingBucketForQuestion] = useState<string | null>(null);
   const [deletingBucketId, setDeletingBucketId] = useState<string | null>(null);
 
-  // Initialize state from block data on mount and when block changes
-  // TODO: Should we not re-initialize here? The childQuestion length and block
-  // should have specific ws messages that cause a change
+  // Initialize state from block data on mount only
+  // Subsequent updates come via websocket broadcasts -> reducer actions
+  // This preserves UI state (collapsed states, optimistic updates)
   useEffect(() => {
     const bucketConfig = (block as any).payload?.bucket_configuration?.buckets || [];
 
@@ -93,20 +105,9 @@ export default function FamilyFeudManager({ block, onBucketOperation }: FamilyFe
       };
     });
 
-    dispatch({ type: 'INIT', payload: newQuestionsState });
-  }, [childQuestions.length, block]);
-
-  // Expose dispatch for websocket updates
-  // TODO: Scope this by the actual family feud instance. Multiple may be
-  // managed by a single client
-  useEffect(() => {
-    if (onBucketOperation) {
-      (window as any).__familyFeudDispatch = dispatch;
-    }
-    return () => {
-      delete (window as any).__familyFeudDispatch;
-    };
-  }, [onBucketOperation]);
+    dispatch({ type: FamilyFeudActionType.INIT, payload: newQuestionsState });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleAddBucket = useCallback(
     async (questionId: string) => {
@@ -116,7 +117,7 @@ export default function FamilyFeudManager({ block, onBucketOperation }: FamilyFe
         const bucketCount = question?.buckets.length || 0;
         const bucket = await addBucket(block.id, `Bucket ${bucketCount + 1}`);
         if (bucket) {
-          dispatch({ type: 'BUCKET_ADDED', payload: { questionId, bucket } });
+          dispatch({ type: FamilyFeudActionType.BUCKET_ADDED, payload: { questionId, bucket } });
         }
       } finally {
         setAddingBucketForQuestion(null);
@@ -138,7 +139,7 @@ export default function FamilyFeudManager({ block, onBucketOperation }: FamilyFe
       renameTimeoutRef.current[bucketId] = setTimeout(async () => {
         const success = await renameBucket(block.id, bucketId, name);
         if (success) {
-          dispatch({ type: 'BUCKET_RENAMED', payload: { bucketId, name } });
+          dispatch({ type: FamilyFeudActionType.BUCKET_RENAMED, payload: { bucketId, name } });
         }
       }, 500);
     },
@@ -151,7 +152,7 @@ export default function FamilyFeudManager({ block, onBucketOperation }: FamilyFe
       try {
         const success = await deleteBucket(block.id, bucketId);
         if (success) {
-          dispatch({ type: 'BUCKET_DELETED', payload: { bucketId } });
+          dispatch({ type: FamilyFeudActionType.BUCKET_DELETED, payload: { bucketId } });
         }
       } finally {
         setDeletingBucketId(null);
@@ -172,7 +173,7 @@ export default function FamilyFeudManager({ block, onBucketOperation }: FamilyFe
       const bucketId = destination.droppableId === 'unassigned' ? null : destination.droppableId;
 
       // Optimistic update - instant UI feedback
-      dispatch({ type: 'ANSWER_ASSIGNED', payload: { answerId, bucketId } });
+      dispatch({ type: FamilyFeudActionType.ANSWER_ASSIGNED, payload: { answerId, bucketId } });
 
       // API call in background - don't await, fire and forget
       assignAnswer(block.id, answerId, bucketId);
@@ -198,7 +199,10 @@ export default function FamilyFeudManager({ block, onBucketOperation }: FamilyFe
           <button
             className={styles.questionHeader}
             onClick={() =>
-              dispatch({ type: 'TOGGLE_QUESTION', payload: { questionId: question.questionId } })
+              dispatch({
+                type: FamilyFeudActionType.TOGGLE_QUESTION,
+                payload: { questionId: question.questionId },
+              })
             }
           >
             {question.isCollapsed ? <ChevronRight size={20} /> : <ChevronDown size={20} />}
@@ -221,7 +225,7 @@ export default function FamilyFeudManager({ block, onBucketOperation }: FamilyFe
                   onDeleteBucket={handleDeleteBucket}
                   onToggleBucket={(bucketId) =>
                     dispatch({
-                      type: 'TOGGLE_BUCKET',
+                      type: FamilyFeudActionType.TOGGLE_BUCKET,
                       payload: {
                         questionId: question.questionId,
                         bucketId,

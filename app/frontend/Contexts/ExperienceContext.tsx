@@ -62,6 +62,9 @@ export function ExperienceProvider({ children }: ExperienceProviderProps) {
   const monitorWsRef = useRef<WebSocket>();
   const impersonationWsRef = useRef<WebSocket>();
 
+  // Family Feud dispatch registry (keyed by blockId)
+  const familyFeudDispatchRegistry = useRef<Map<string, (action: any) => void>>(new Map());
+
   const currentCode = code || '';
   const isManagePage = location.pathname.includes('/manage');
   const isMonitorPage = location.pathname.includes('/monitor');
@@ -502,19 +505,23 @@ export function ExperienceProvider({ children }: ExperienceProviderProps) {
         setError(undefined);
       }
     } else if (messageType === 'family_feud_updated') {
-      // TODO: This isn't scoped by eperience. Two experiences could be managed and the window level scope would only track 1
       qaLogger(`[ADMIN WS] Processing family_feud_updated: ${wsMessage.operation}`);
-      // Dispatch to FamilyFeudManager if it's listening
-      if ((window as any).__familyFeudDispatch) {
-        const { operation, data } = wsMessage as any;
-        if (operation === 'bucket_added') {
-          (window as any).__familyFeudDispatch({ type: 'BUCKET_ADDED', payload: data });
-        } else if (operation === 'bucket_renamed') {
-          (window as any).__familyFeudDispatch({ type: 'BUCKET_RENAMED', payload: data });
-        } else if (operation === 'bucket_deleted') {
-          (window as any).__familyFeudDispatch({ type: 'BUCKET_DELETED', payload: data });
-        } else if (operation === 'answer_assigned') {
-          (window as any).__familyFeudDispatch({ type: 'ANSWER_ASSIGNED', payload: data });
+      const { block_id, operation, data } = wsMessage as any;
+
+      // Dispatch to the specific FamilyFeudManager instance registered for this block
+      const dispatch = familyFeudDispatchRegistry.current.get(block_id);
+      if (dispatch) {
+        // Map websocket operation strings to typed actions
+        const actionTypeMap: Record<string, string> = {
+          bucket_added: 'BUCKET_ADDED',
+          bucket_renamed: 'BUCKET_RENAMED',
+          bucket_deleted: 'BUCKET_DELETED',
+          answer_assigned: 'ANSWER_ASSIGNED',
+        };
+
+        const actionType = actionTypeMap[operation];
+        if (actionType) {
+          dispatch({ type: actionType as any, payload: data });
         }
       }
     }
@@ -654,6 +661,14 @@ export function ExperienceProvider({ children }: ExperienceProviderProps) {
     participantView,
     impersonatedParticipantId,
     setImpersonatedParticipantId,
+
+    // Family Feud dispatch registration
+    registerFamilyFeudDispatch: useCallback((blockId: string, dispatch: (action: any) => void) => {
+      familyFeudDispatchRegistry.current.set(blockId, dispatch);
+    }, []),
+    unregisterFamilyFeudDispatch: useCallback((blockId: string) => {
+      familyFeudDispatchRegistry.current.delete(blockId);
+    }, []),
   };
 
   return <ExperienceContext.Provider value={value}>{children}</ExperienceContext.Provider>;
