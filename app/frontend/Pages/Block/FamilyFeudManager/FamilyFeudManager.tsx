@@ -1,13 +1,25 @@
-// General feedback: Optimistic updates aren't explicitly modelled
-//
-// The overall architecture needs documentation and clarity as the state
-// management is very intentional:
-// * Reducer pattern for multi agent and supporting optimistic, rapid updates
-// * Why loading indicator on some operations not others (optimisitc fast vs waiting)
-// * No list ordering, append only (simplification for avoidoing state sync issues)
-// * Function style (prefer () => vs function()
-// * Inconsintent abstractions. Question list vs bucket list (1 has componenet, one doesnt')
-// * There are inline styles
+/**
+ * Family Feud Manager - Organizes survey responses into categorized buckets
+ *
+ * Architecture decisions:
+ *
+ * 1. Reducer Pattern with Optimistic Updates
+ *    - Multiple users may edit simultaneously via websockets
+ *    - Reducer centralizes state updates from both local actions and remote broadcasts
+ *    - UI updates immediately on user action, API call fires in background
+ *    - If API fails, websocket broadcast won't arrive and state stays inconsistent (acceptable trade-off)
+ *
+ * 2. Selective Loading Indicators
+ *    - Slow operations (add/delete bucket): Show loading to prevent duplicate clicks during API round-trip
+ *    - Fast operations (drag-drop, rename): No loading state, instant UI feedback feels more responsive
+ *    - Rename uses debouncing (500ms) to batch rapid typing into single API call
+ *
+ * 3. Append-Only Bucket Answers
+ *    - No position/order tracking for answers within buckets
+ *    - Avoids complex CRDT or operational transform logic for concurrent reordering
+ *    - Simpler conflict resolution: last write wins for bucket assignment only
+ *    - Trade-off: dragging answer to specific position appends to end instead
+ */
 import { useCallback, useEffect, useReducer, useRef, useState } from 'react';
 
 import { DragDropContext, Draggable, Droppable } from '@hello-pangea/dnd';
@@ -96,20 +108,22 @@ export default function FamilyFeudManager({ block, onBucketOperation }: FamilyFe
     };
   }, [onBucketOperation]);
 
-  // TODO: Why not useCallback here
-  const handleAddBucket = async (questionId: string) => {
-    setAddingBucketForQuestion(questionId);
-    try {
-      const question = questionsState.find((q) => q.questionId === questionId);
-      const bucketCount = question?.buckets.length || 0;
-      const bucket = await addBucket(block.id, `Bucket ${bucketCount + 1}`);
-      if (bucket) {
-        dispatch({ type: 'BUCKET_ADDED', payload: { questionId, bucket } });
+  const handleAddBucket = useCallback(
+    async (questionId: string) => {
+      setAddingBucketForQuestion(questionId);
+      try {
+        const question = questionsState.find((q) => q.questionId === questionId);
+        const bucketCount = question?.buckets.length || 0;
+        const bucket = await addBucket(block.id, `Bucket ${bucketCount + 1}`);
+        if (bucket) {
+          dispatch({ type: 'BUCKET_ADDED', payload: { questionId, bucket } });
+        }
+      } finally {
+        setAddingBucketForQuestion(null);
       }
-    } finally {
-      setAddingBucketForQuestion(null);
-    }
-  };
+    },
+    [addBucket, block.id, questionsState],
+  );
 
   const handleRenameBucket = useCallback(
     (bucketId: string, name: string) => {
@@ -131,34 +145,40 @@ export default function FamilyFeudManager({ block, onBucketOperation }: FamilyFe
     [block.id, renameBucket],
   );
 
-  const handleDeleteBucket = async (bucketId: string) => {
-    setDeletingBucketId(bucketId);
-    try {
-      const success = await deleteBucket(block.id, bucketId);
-      if (success) {
-        dispatch({ type: 'BUCKET_DELETED', payload: { bucketId } });
+  const handleDeleteBucket = useCallback(
+    async (bucketId: string) => {
+      setDeletingBucketId(bucketId);
+      try {
+        const success = await deleteBucket(block.id, bucketId);
+        if (success) {
+          dispatch({ type: 'BUCKET_DELETED', payload: { bucketId } });
+        }
+      } finally {
+        setDeletingBucketId(null);
       }
-    } finally {
-      setDeletingBucketId(null);
-    }
-  };
+    },
+    [deleteBucket, block.id],
+  );
 
-  const handleDragEnd = async (result: any, questionId: string) => {
-    const { source, destination, draggableId: answerId } = result;
+  const handleDragEnd = useCallback(
+    async (result: any, questionId: string) => {
+      const { source, destination, draggableId: answerId } = result;
 
-    if (!destination) return;
-    if (source.droppableId === destination.droppableId && source.index === destination.index) {
-      return;
-    }
+      if (!destination) return;
+      if (source.droppableId === destination.droppableId && source.index === destination.index) {
+        return;
+      }
 
-    const bucketId = destination.droppableId === 'unassigned' ? null : destination.droppableId;
+      const bucketId = destination.droppableId === 'unassigned' ? null : destination.droppableId;
 
-    // Optimistic update - instant UI feedback
-    dispatch({ type: 'ANSWER_ASSIGNED', payload: { answerId, bucketId } });
+      // Optimistic update - instant UI feedback
+      dispatch({ type: 'ANSWER_ASSIGNED', payload: { answerId, bucketId } });
 
-    // API call in background - don't await, fire and forget
-    assignAnswer(block.id, answerId, bucketId);
-  };
+      // API call in background - don't await, fire and forget
+      assignAnswer(block.id, answerId, bucketId);
+    },
+    [assignAnswer, block.id],
+  );
 
   if (childQuestions.length === 0) {
     return (
@@ -191,100 +211,25 @@ export default function FamilyFeudManager({ block, onBucketOperation }: FamilyFe
           {!question.isCollapsed && (
             <DragDropContext onDragEnd={(result) => handleDragEnd(result, question.questionId)}>
               <div className={styles.layout}>
-                <div className={styles.bucketsColumn}>
-                  <div className={styles.columnHeader}>
-                    <span>Buckets</span>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleAddBucket(question.questionId)}
-                      disabled={addingBucketForQuestion === question.questionId}
-                    >
-                      <Plus size={16} />
-                      {addingBucketForQuestion === question.questionId ? 'Adding...' : 'Add Bucket'}
-                    </Button>
-                  </div>
-
-                  <div className={styles.bucketsList}>
-                    {question.buckets.map((bucket) => (
-                      <Droppable key={bucket.id} droppableId={bucket.id}>
-                        {(provided, snapshot) => (
-                          <div
-                            ref={provided.innerRef}
-                            {...provided.droppableProps}
-                            className={`${styles.bucket} ${snapshot.isDraggingOver ? styles.isDraggingOver : ''}`}
-                          >
-                            <div className={styles.bucketHeader}>
-                              <button
-                                className={styles.collapseButton}
-                                onClick={() =>
-                                  dispatch({
-                                    type: 'TOGGLE_BUCKET',
-                                    payload: {
-                                      questionId: question.questionId,
-                                      bucketId: bucket.id,
-                                    },
-                                  })
-                                }
-                              >
-                                {bucket.isCollapsed ? (
-                                  <ChevronRight size={16} />
-                                ) : (
-                                  <ChevronDown size={16} />
-                                )}
-                              </button>
-                              <input
-                                type="text"
-                                value={editingBucketNames[bucket.id] ?? bucket.name}
-                                onChange={(e) => handleRenameBucket(bucket.id, e.target.value)}
-                                className={styles.bucketNameInput}
-                              />
-                              <span className={styles.bucketCount}>({bucket.answers.length})</span>
-                              <button
-                                className={styles.deleteButton}
-                                onClick={() => handleDeleteBucket(bucket.id)}
-                                disabled={deletingBucketId === bucket.id}
-                              >
-                                {deletingBucketId === bucket.id ? (
-                                  <Loader2 size={14} className={styles.spinner} />
-                                ) : (
-                                  <Trash2 size={14} />
-                                )}
-                              </button>
-                            </div>
-
-                            {!bucket.isCollapsed && (
-                              <BucketDropZone bucket={bucket} snapshot={snapshot} />
-                            )}
-                            {provided.placeholder}
-                          </div>
-                        )}
-                      </Droppable>
-                    ))}
-
-                    {question.buckets.length === 0 && (
-                      <div className={styles.noBuckets}>
-                        <p>Click "Add Bucket" to get started.</p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                <div className={styles.answersColumn}>
-                  <div className={styles.columnHeader}>
-                    <span>Answers ({question.unassignedAnswers.length})</span>
-                  </div>
-
-                  <Droppable droppableId="unassigned">
-                    {(provided, snapshot) => (
-                      <UnassignedAnswersList
-                        provided={provided}
-                        snapshot={snapshot}
-                        answers={question.unassignedAnswers}
-                      />
-                    )}
-                  </Droppable>
-                </div>
+                <BucketsColumn
+                  question={question}
+                  addingBucketForQuestion={addingBucketForQuestion}
+                  editingBucketNames={editingBucketNames}
+                  deletingBucketId={deletingBucketId}
+                  onAddBucket={handleAddBucket}
+                  onRenameBucket={handleRenameBucket}
+                  onDeleteBucket={handleDeleteBucket}
+                  onToggleBucket={(bucketId) =>
+                    dispatch({
+                      type: 'TOGGLE_BUCKET',
+                      payload: {
+                        questionId: question.questionId,
+                        bucketId,
+                      },
+                    })
+                  }
+                />
+                <AnswersColumn answers={question.unassignedAnswers} />
               </div>
             </DragDropContext>
           )}
@@ -294,7 +239,115 @@ export default function FamilyFeudManager({ block, onBucketOperation }: FamilyFe
   );
 }
 
-function BucketDropZone({ bucket, snapshot }: { bucket: any; snapshot: any }) {
+const BucketsColumn = ({
+  question,
+  addingBucketForQuestion,
+  editingBucketNames,
+  deletingBucketId,
+  onAddBucket,
+  onRenameBucket,
+  onDeleteBucket,
+  onToggleBucket,
+}: {
+  question: QuestionWithBuckets;
+  addingBucketForQuestion: string | null;
+  editingBucketNames: Record<string, string>;
+  deletingBucketId: string | null;
+  onAddBucket: (questionId: string) => void;
+  onRenameBucket: (bucketId: string, name: string) => void;
+  onDeleteBucket: (bucketId: string) => void;
+  onToggleBucket: (bucketId: string) => void;
+}) => (
+  <div className={styles.bucketsColumn}>
+    <div className={styles.columnHeader}>
+      <span>Buckets</span>
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={() => onAddBucket(question.questionId)}
+        disabled={addingBucketForQuestion === question.questionId}
+      >
+        <Plus size={16} />
+        {addingBucketForQuestion === question.questionId ? 'Adding...' : 'Add Bucket'}
+      </Button>
+    </div>
+
+    <div className={styles.bucketsList}>
+      {question.buckets.map((bucket) => (
+        <BucketItem
+          key={bucket.id}
+          bucket={bucket}
+          editingBucketNames={editingBucketNames}
+          deletingBucketId={deletingBucketId}
+          onRenameBucket={onRenameBucket}
+          onDeleteBucket={onDeleteBucket}
+          onToggleBucket={() => onToggleBucket(bucket.id)}
+        />
+      ))}
+
+      {question.buckets.length === 0 && (
+        <div className={styles.noBuckets}>
+          <p>Click "Add Bucket" to get started.</p>
+        </div>
+      )}
+    </div>
+  </div>
+);
+
+const BucketItem = ({
+  bucket,
+  editingBucketNames,
+  deletingBucketId,
+  onRenameBucket,
+  onDeleteBucket,
+  onToggleBucket,
+}: {
+  bucket: any;
+  editingBucketNames: Record<string, string>;
+  deletingBucketId: string | null;
+  onRenameBucket: (bucketId: string, name: string) => void;
+  onDeleteBucket: (bucketId: string) => void;
+  onToggleBucket: () => void;
+}) => (
+  <Droppable droppableId={bucket.id}>
+    {(provided, snapshot) => (
+      <div
+        ref={provided.innerRef}
+        {...provided.droppableProps}
+        className={`${styles.bucket} ${snapshot.isDraggingOver ? styles.isDraggingOver : ''}`}
+      >
+        <div className={styles.bucketHeader}>
+          <button className={styles.collapseButton} onClick={onToggleBucket}>
+            {bucket.isCollapsed ? <ChevronRight size={16} /> : <ChevronDown size={16} />}
+          </button>
+          <input
+            type="text"
+            value={editingBucketNames[bucket.id] ?? bucket.name}
+            onChange={(e) => onRenameBucket(bucket.id, e.target.value)}
+            className={styles.bucketNameInput}
+          />
+          <span className={styles.bucketCount}>({bucket.answers.length})</span>
+          <button
+            className={styles.deleteButton}
+            onClick={() => onDeleteBucket(bucket.id)}
+            disabled={deletingBucketId === bucket.id}
+          >
+            {deletingBucketId === bucket.id ? (
+              <Loader2 size={14} className={styles.spinner} />
+            ) : (
+              <Trash2 size={14} />
+            )}
+          </button>
+        </div>
+
+        {!bucket.isCollapsed && <BucketDropZone bucket={bucket} snapshot={snapshot} />}
+        {provided.placeholder}
+      </div>
+    )}
+  </Droppable>
+);
+
+const BucketDropZone = ({ bucket, snapshot }: { bucket: any; snapshot: any }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
   useScrollFade(scrollRef);
 
@@ -303,7 +356,7 @@ function BucketDropZone({ bucket, snapshot }: { bucket: any; snapshot: any }) {
       ref={scrollRef}
       className={`${styles.bucketDropZone} ${snapshot.isDraggingOver ? styles.isDraggingOver : ''}`}
     >
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '12px' }}>
+      <div className={styles.bucketDropZoneInner}>
         {bucket.answers.length === 0 ? (
           <div className={styles.emptyBucket}>Drop answers here</div>
         ) : (
@@ -325,58 +378,51 @@ function BucketDropZone({ bucket, snapshot }: { bucket: any; snapshot: any }) {
       </div>
     </div>
   );
-}
+};
 
-const UnassignedAnswersList = ({
-  provided,
-  snapshot,
-  answers,
-}: {
-  provided: any;
-  snapshot: any;
-  answers: any[];
-}) => {
+const AnswersColumn = ({ answers }: { answers: any[] }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
   useScrollFade(scrollRef);
 
   return (
-    <div
-      ref={scrollRef}
-      {...provided.droppableProps}
-      className={`${styles.answersList} ${snapshot.isDraggingOver ? styles.isDraggingOver : ''}`}
-    >
-      <div
-        ref={provided.innerRef}
-        style={{
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '8px',
-          width: '100%',
-          padding: '12px',
-        }}
-      >
-        {answers.length === 0 ? (
-          <div className={styles.noAnswers}>
-            <p>All answers have been assigned to buckets.</p>
-          </div>
-        ) : (
-          answers.map((answer, index) => (
-            <Draggable key={answer.id} draggableId={answer.id} index={index}>
-              {(provided, snapshot) => (
-                <div
-                  ref={provided.innerRef}
-                  {...provided.draggableProps}
-                  {...provided.dragHandleProps}
-                  className={`${styles.answer} ${snapshot.isDragging ? styles.isDragging : ''}`}
-                >
-                  {answer.text}
-                </div>
-              )}
-            </Draggable>
-          ))
-        )}
-        {provided.placeholder}
+    <div className={styles.answersColumn}>
+      <div className={styles.columnHeader}>
+        <span>Answers ({answers.length})</span>
       </div>
+
+      <Droppable droppableId="unassigned">
+        {(provided, snapshot) => (
+          <div
+            ref={scrollRef}
+            {...provided.droppableProps}
+            className={`${styles.answersList} ${snapshot.isDraggingOver ? styles.isDraggingOver : ''}`}
+          >
+            <div ref={provided.innerRef} className={styles.answersListInner}>
+              {answers.length === 0 ? (
+                <div className={styles.noAnswers}>
+                  <p>All answers have been assigned to buckets.</p>
+                </div>
+              ) : (
+                answers.map((answer, index) => (
+                  <Draggable key={answer.id} draggableId={answer.id} index={index}>
+                    {(provided, snapshot) => (
+                      <div
+                        ref={provided.innerRef}
+                        {...provided.draggableProps}
+                        {...provided.dragHandleProps}
+                        className={`${styles.answer} ${snapshot.isDragging ? styles.isDragging : ''}`}
+                      >
+                        {answer.text}
+                      </div>
+                    )}
+                  </Draggable>
+                ))
+              )}
+              {provided.placeholder}
+            </div>
+          </div>
+        )}
+      </Droppable>
     </div>
   );
 };
