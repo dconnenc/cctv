@@ -26,7 +26,6 @@
   cursor: pointer;
   text-align: left;
   padding: 0;
-  padding-bottom: 16px;
   color: hsl(var(--foreground));
 }
 
@@ -52,6 +51,7 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 24px;
+  padding-top: 16px;
 }
 
 .bucketsColumn,
@@ -170,13 +170,40 @@
 }
 
 .bucketDropZone {
-  padding: 12px;
   min-height: 60px;
   max-height: 300px;
   overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+  position: relative;
+}
+
+.bucketDropZone::before,
+.bucketDropZone::after {
+  content: '';
+  display: none;
+  position: sticky;
+  left: 0;
+  right: 0;
+  height: 40px;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.bucketDropZone::before {
+  top: 0;
+  background: linear-gradient(to bottom, hsl(var(--card)) 0%, transparent 100%);
+}
+
+.bucketDropZone::after {
+  bottom: 0;
+  background: linear-gradient(to top, hsl(var(--card)) 0%, transparent 100%);
+}
+
+.bucketDropZone:not([data-at-top])::before {
+  display: block;
+}
+
+.bucketDropZone:not([data-at-bottom])::after {
+  display: block;
 }
 
 .emptyBucket {
@@ -190,16 +217,43 @@
 }
 
 .answersList {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 12px;
   background-color: hsl(var(--card));
   border: 2px solid hsl(var(--border));
   border-radius: 8px;
   min-height: 200px;
   max-height: 400px;
   overflow-y: auto;
+  position: relative;
+}
+
+.answersList::before,
+.answersList::after {
+  content: '';
+  display: none;
+  position: sticky;
+  left: 0;
+  right: 0;
+  height: 50px;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.answersList::before {
+  top: 0;
+  background: linear-gradient(to bottom, hsl(var(--card)) 0%, transparent 100%);
+}
+
+.answersList::after {
+  bottom: 0;
+  background: linear-gradient(to top, hsl(var(--card)) 0%, transparent 100%);
+}
+
+.answersList:not([data-at-top])::before {
+  display: block;
+}
+
+.answersList:not([data-at-bottom])::after {
+  display: block;
 }
 
 .answer {

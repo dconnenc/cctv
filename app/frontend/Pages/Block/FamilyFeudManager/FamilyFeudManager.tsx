@@ -1,10 +1,20 @@
+// General feedback: Optimistic updates aren't explicitly modelled
+//
+// The overall architecture needs documentation and clarity as the state
+// management is very intentional:
+// * Reducer pattern for multi agent and supporting optimistic, rapid updates
+// * Why loading indicator on some operations not others (optimisitc fast vs waiting)
+// * No list ordering, append only (simplification for avoidoing state sync issues)
+// * Function style (prefer () => vs function()
+// * Inconsintent abstractions. Question list vs bucket list (1 has componenet, one doesnt')
+// * There are inline styles
 import { useCallback, useEffect, useReducer, useRef, useState } from 'react';
 
 import { DragDropContext, Draggable, Droppable } from '@hello-pangea/dnd';
 import { ChevronDown, ChevronRight, Loader2, Plus, Trash2 } from 'lucide-react';
 
 import { Button } from '@cctv/components/ui/button';
-import { useFamilyFeudBuckets } from '@cctv/hooks';
+import { useFamilyFeudBuckets, useScrollFade } from '@cctv/hooks';
 import { Block } from '@cctv/types';
 
 import { FamilyFeudAction, QuestionWithBuckets, familyFeudReducer } from './familyFeudReducer';
@@ -27,6 +37,8 @@ export default function FamilyFeudManager({ block, onBucketOperation }: FamilyFe
   const [deletingBucketId, setDeletingBucketId] = useState<string | null>(null);
 
   // Initialize state from block data on mount and when block changes
+  // TODO: Should we not re-initialize here? The childQuestion length and block
+  // should have specific ws messages that cause a change
   useEffect(() => {
     const bucketConfig = (block as any).payload?.bucket_configuration?.buckets || [];
 
@@ -73,6 +85,8 @@ export default function FamilyFeudManager({ block, onBucketOperation }: FamilyFe
   }, [childQuestions.length, block]);
 
   // Expose dispatch for websocket updates
+  // TODO: Scope this by the actual family feud instance. Multiple may be
+  // managed by a single client
   useEffect(() => {
     if (onBucketOperation) {
       (window as any).__familyFeudDispatch = dispatch;
@@ -82,6 +96,7 @@ export default function FamilyFeudManager({ block, onBucketOperation }: FamilyFe
     };
   }, [onBucketOperation]);
 
+  // TODO: Why not useCallback here
   const handleAddBucket = async (questionId: string) => {
     setAddingBucketForQuestion(questionId);
     try {
@@ -239,36 +254,7 @@ export default function FamilyFeudManager({ block, onBucketOperation }: FamilyFe
                             </div>
 
                             {!bucket.isCollapsed && (
-                              <div
-                                className={`${styles.bucketDropZone} ${
-                                  snapshot.isDraggingOver ? styles.isDraggingOver : ''
-                                }`}
-                              >
-                                {bucket.answers.length === 0 ? (
-                                  <div className={styles.emptyBucket}>Drop answers here</div>
-                                ) : (
-                                  bucket.answers.map((answer, index) => (
-                                    <Draggable
-                                      key={answer.id}
-                                      draggableId={answer.id}
-                                      index={index}
-                                    >
-                                      {(provided, snapshot) => (
-                                        <div
-                                          ref={provided.innerRef}
-                                          {...provided.draggableProps}
-                                          {...provided.dragHandleProps}
-                                          className={`${styles.answer} ${
-                                            snapshot.isDragging ? styles.isDragging : ''
-                                          }`}
-                                        >
-                                          {answer.text}
-                                        </div>
-                                      )}
-                                    </Draggable>
-                                  ))
-                                )}
-                              </div>
+                              <BucketDropZone bucket={bucket} snapshot={snapshot} />
                             )}
                             {provided.placeholder}
                           </div>
@@ -278,7 +264,7 @@ export default function FamilyFeudManager({ block, onBucketOperation }: FamilyFe
 
                     {question.buckets.length === 0 && (
                       <div className={styles.noBuckets}>
-                        <p>No buckets yet. Click "Add Bucket" to get started.</p>
+                        <p>Click "Add Bucket" to get started.</p>
                       </div>
                     )}
                   </div>
@@ -291,37 +277,11 @@ export default function FamilyFeudManager({ block, onBucketOperation }: FamilyFe
 
                   <Droppable droppableId="unassigned">
                     {(provided, snapshot) => (
-                      <div
-                        ref={provided.innerRef}
-                        {...provided.droppableProps}
-                        className={`${styles.answersList} ${
-                          snapshot.isDraggingOver ? styles.isDraggingOver : ''
-                        }`}
-                      >
-                        {question.unassignedAnswers.length === 0 ? (
-                          <div className={styles.noAnswers}>
-                            <p>All answers have been assigned to buckets.</p>
-                          </div>
-                        ) : (
-                          question.unassignedAnswers.map((answer, index) => (
-                            <Draggable key={answer.id} draggableId={answer.id} index={index}>
-                              {(provided, snapshot) => (
-                                <div
-                                  ref={provided.innerRef}
-                                  {...provided.draggableProps}
-                                  {...provided.dragHandleProps}
-                                  className={`${styles.answer} ${
-                                    snapshot.isDragging ? styles.isDragging : ''
-                                  }`}
-                                >
-                                  {answer.text}
-                                </div>
-                              )}
-                            </Draggable>
-                          ))
-                        )}
-                        {provided.placeholder}
-                      </div>
+                      <UnassignedAnswersList
+                        provided={provided}
+                        snapshot={snapshot}
+                        answers={question.unassignedAnswers}
+                      />
                     )}
                   </Droppable>
                 </div>
@@ -333,3 +293,90 @@ export default function FamilyFeudManager({ block, onBucketOperation }: FamilyFe
     </div>
   );
 }
+
+function BucketDropZone({ bucket, snapshot }: { bucket: any; snapshot: any }) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  useScrollFade(scrollRef);
+
+  return (
+    <div
+      ref={scrollRef}
+      className={`${styles.bucketDropZone} ${snapshot.isDraggingOver ? styles.isDraggingOver : ''}`}
+    >
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '12px' }}>
+        {bucket.answers.length === 0 ? (
+          <div className={styles.emptyBucket}>Drop answers here</div>
+        ) : (
+          bucket.answers.map((answer: any, index: number) => (
+            <Draggable key={answer.id} draggableId={answer.id} index={index}>
+              {(provided, snapshot) => (
+                <div
+                  ref={provided.innerRef}
+                  {...provided.draggableProps}
+                  {...provided.dragHandleProps}
+                  className={`${styles.answer} ${snapshot.isDragging ? styles.isDragging : ''}`}
+                >
+                  {answer.text}
+                </div>
+              )}
+            </Draggable>
+          ))
+        )}
+      </div>
+    </div>
+  );
+}
+
+const UnassignedAnswersList = ({
+  provided,
+  snapshot,
+  answers,
+}: {
+  provided: any;
+  snapshot: any;
+  answers: any[];
+}) => {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  useScrollFade(scrollRef);
+
+  return (
+    <div
+      ref={scrollRef}
+      {...provided.droppableProps}
+      className={`${styles.answersList} ${snapshot.isDraggingOver ? styles.isDraggingOver : ''}`}
+    >
+      <div
+        ref={provided.innerRef}
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '8px',
+          width: '100%',
+          padding: '12px',
+        }}
+      >
+        {answers.length === 0 ? (
+          <div className={styles.noAnswers}>
+            <p>All answers have been assigned to buckets.</p>
+          </div>
+        ) : (
+          answers.map((answer, index) => (
+            <Draggable key={answer.id} draggableId={answer.id} index={index}>
+              {(provided, snapshot) => (
+                <div
+                  ref={provided.innerRef}
+                  {...provided.draggableProps}
+                  {...provided.dragHandleProps}
+                  className={`${styles.answer} ${snapshot.isDragging ? styles.isDragging : ''}`}
+                >
+                  {answer.text}
+                </div>
+              )}
+            </Draggable>
+          ))
+        )}
+        {provided.placeholder}
+      </div>
+    </div>
+  );
+};
