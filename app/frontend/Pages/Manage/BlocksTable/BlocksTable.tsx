@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 
 import { MoreHorizontal } from 'lucide-react';
 
+import { useExperience } from '@cctv/contexts';
 import {
   Button,
   Column,
@@ -12,7 +13,7 @@ import {
   Pill,
   Table,
 } from '@cctv/core';
-import { Block, BlockKind, BlockStatus, ParticipantSummary } from '@cctv/types';
+import { Block, BlockStatus, ParticipantSummary } from '@cctv/types';
 
 import styles from './BlocksTable.module.scss';
 
@@ -27,11 +28,13 @@ export function BlocksTable({
   onChange,
   busyId,
   participants,
+  onBlockClick,
 }: {
   blocks: Block[];
   onChange: (b: Block, s: BlockStatus) => void;
   busyId?: string | null;
   participants?: ParticipantSummary[];
+  onBlockClick?: (blockId: string) => void;
 }) {
   const totalParticipants = participants?.length || 0;
 
@@ -73,7 +76,9 @@ export function BlocksTable({
         Cell: (row) => (
           <span style={{ paddingLeft: `${row.depth * 24}px` }}>
             {row.isChild && <span className={styles.childIndicator}>└─ </span>}
-            {row.block.kind}
+            <button onClick={() => onBlockClick?.(row.block.id)} className={styles.kindLink}>
+              {row.block.kind}
+            </button>
           </span>
         ),
       },

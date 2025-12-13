@@ -9,7 +9,7 @@ class Api::ExperienceBlocksController < Api::BaseController
         experience: @experience, actor: @user
       )
 
-      block = if create_params[:variables].present?
+      block = if create_params[:variables].present? || create_params[:questions].present?
         orchestrator.add_block_with_dependencies!(
           kind: create_params[:kind],
           payload: create_params[:payload] || {},
@@ -17,7 +17,8 @@ class Api::ExperienceBlocksController < Api::BaseController
           visible_to_segments: create_params[:visible_to_segments] || [],
           target_user_ids: create_params[:target_user_ids] || [],
           status: create_params[:status] || :hidden,
-          variables: create_params[:variables] || []
+          variables: create_params[:variables] || [],
+          questions: create_params[:questions] || []
         )
       else
         orchestrator.add_block!(
@@ -220,6 +221,99 @@ class Api::ExperienceBlocksController < Api::BaseController
     end
   end
 
+  # POST /api/experiences/:experience_id/blocks/:id/family_feud/add_bucket
+  def add_bucket
+    with_experience_orchestration do
+      block = @experience.experience_blocks.find(params[:id])
+
+      bucket = Experiences::Orchestrator.new(
+        experience: @experience, actor: @user
+      ).add_family_feud_bucket!(
+        block_id: params[:id],
+        name: params[:name] || "New Bucket"
+      )
+
+      Experiences::Broadcaster.new(@experience).broadcast_family_feud_update(
+        block_id: params[:id],
+        operation: 'bucket_added',
+        data: { bucket: bucket }
+      )
+
+      render json: { success: true, data: { bucket: bucket } }, status: 200
+    end
+  end
+
+  # PATCH /api/experiences/:experience_id/blocks/:id/family_feud/buckets/:bucket_id
+  def rename_bucket
+    with_experience_orchestration do
+      block = @experience.experience_blocks.find(params[:id])
+
+      Experiences::Orchestrator.new(
+        experience: @experience, actor: @user
+      ).rename_family_feud_bucket!(
+        block_id: params[:id],
+        bucket_id: params[:bucket_id],
+        name: params[:name]
+      )
+
+      Experiences::Broadcaster.new(@experience).broadcast_family_feud_update(
+        block_id: params[:id],
+        operation: 'bucket_renamed',
+        data: { bucket_id: params[:bucket_id], name: params[:name] }
+      )
+
+      render json: { success: true }, status: 200
+    end
+  end
+
+  # DELETE /api/experiences/:experience_id/blocks/:id/family_feud/buckets/:bucket_id
+  def delete_bucket
+    with_experience_orchestration do
+      block = @experience.experience_blocks.find(params[:id])
+
+      Experiences::Orchestrator.new(
+        experience: @experience, actor: @user
+      ).delete_family_feud_bucket!(
+        block_id: params[:id],
+        bucket_id: params[:bucket_id]
+      )
+
+      Experiences::Broadcaster.new(@experience).broadcast_family_feud_update(
+        block_id: params[:id],
+        operation: 'bucket_deleted',
+        data: { bucket_id: params[:bucket_id] }
+      )
+
+      render json: { success: true }, status: 200
+    end
+  end
+
+  # PATCH /api/experiences/:experience_id/blocks/:id/family_feud/answers/:answer_id/bucket
+  def assign_answer
+    with_experience_orchestration do
+      block = @experience.experience_blocks.find(params[:id])
+
+      Experiences::Orchestrator.new(
+        experience: @experience, actor: @user
+      ).assign_family_feud_answer!(
+        block_id: params[:id],
+        answer_id: params[:answer_id],
+        bucket_id: params[:bucket_id]
+      )
+
+      Experiences::Broadcaster.new(@experience).broadcast_family_feud_update(
+        block_id: params[:id],
+        operation: 'answer_assigned',
+        data: { 
+          answer_id: params[:answer_id],
+          bucket_id: params[:bucket_id]
+        }
+      )
+
+      render json: { success: true }, status: 200
+    end
+  end
+
   private
 
   def create_params
@@ -235,6 +329,7 @@ class Api::ExperienceBlocksController < Api::BaseController
 
     permitted[:payload] = params[:block][:payload] if params[:block][:payload]
     permitted[:variables] = params[:block][:variables] if params[:block][:variables]
+    permitted[:questions] = params[:block][:questions] if params[:block][:questions]
 
     permitted
   end

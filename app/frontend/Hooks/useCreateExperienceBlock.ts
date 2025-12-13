@@ -27,6 +27,11 @@ export interface CreateExperienceBlockParams {
       | { type: 'participant'; participant_id: string }
       | { kind: 'question'; question: string; input_type: string };
   }>;
+  questions?: Array<{
+    payload: {
+      question: string;
+    };
+  }>;
 }
 
 export function useCreateExperienceBlock() {
@@ -44,6 +49,7 @@ export function useCreateExperienceBlock() {
       status = 'hidden',
       open_immediately = false,
       variables,
+      questions,
     }: CreateExperienceBlockParams): Promise<CreateExperienceApiResponse | null> => {
       if (!code) {
         setError('Missing experience code');
@@ -72,6 +78,7 @@ export function useCreateExperienceBlock() {
         status,
         open_immediately,
         ...(variables && { variables }),
+        ...(questions && questions.length > 0 && { questions }),
       };
 
       try {

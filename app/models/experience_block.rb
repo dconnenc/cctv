@@ -6,7 +6,8 @@ class ExperienceBlock < ApplicationRecord
     QUESTION = "question",
     MULTISTEP_FORM = "multistep_form",
     ANNOUNCEMENT = "announcement",
-    MAD_LIB = "mad_lib"
+    MAD_LIB = "mad_lib",
+    FAMILY_FEUD = "family_feud"
   ]
 
   belongs_to :experience

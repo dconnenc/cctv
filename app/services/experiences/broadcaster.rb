@@ -22,6 +22,22 @@ class Experiences::Broadcaster
     broadcast_admin_view
   end
 
+  def broadcast_family_feud_update(block_id:, operation:, data:)
+    sleep(rand(0.5..2.0))
+    
+    Rails.logger.info(
+      "[Broadcaster] Broadcasting family_feud_updated to experience #{experience.code}"
+    )
+
+    message = WebsocketMessageService.family_feud_updated(
+      block_id: block_id,
+      operation: operation,
+      data: data
+    )
+
+    send_broadcast(self.class.admin_stream_key(experience), message)
+  end
+
   def self.trigger_resubscription_for_participant(participant)
     Rails.logger.info(
       "[Broadcaster] Triggering resubscription for participant " \

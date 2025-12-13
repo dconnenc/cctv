@@ -9,6 +9,7 @@ interface ProgramTabProps {
   participants: ParticipantSummary[];
   onBlockStatusChange: (block: Block, status: BlockStatus) => void;
   busyBlockId?: string;
+  onBlockClick?: (blockId: string) => void;
 }
 
 export default function ProgramTab({
@@ -16,6 +17,7 @@ export default function ProgramTab({
   participants,
   onBlockStatusChange,
   busyBlockId,
+  onBlockClick,
 }: ProgramTabProps) {
   return (
     <div className={styles.root}>
@@ -25,6 +27,7 @@ export default function ProgramTab({
           onChange={onBlockStatusChange}
           busyId={busyBlockId}
           participants={participants}
+          onBlockClick={onBlockClick}
         />
       </div>
     </div>

@@ -49,6 +49,11 @@ Rails.application.routes.draw do
           post :submit_question_response
           post :submit_multistep_form_response
           post :submit_mad_lib_response
+          
+          post 'family_feud/add_bucket', action: :add_bucket
+          patch 'family_feud/buckets/:bucket_id', action: :rename_bucket
+          delete 'family_feud/buckets/:bucket_id', action: :delete_bucket
+          patch 'family_feud/answers/:answer_id/bucket', action: :assign_answer
         end
 
         # collection do

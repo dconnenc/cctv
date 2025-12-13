@@ -17,6 +17,14 @@ import {
   processAnnouncementBeforeSubmit,
   validateAnnouncement,
 } from './CreateAnnouncement/CreateAnnouncement';
+import {
+  buildFamilyFeudPayload,
+  buildFamilyFeudQuestions,
+  canFamilyFeudOpenImmediately,
+  getDefaultFamilyFeudState,
+  processFamilyFeudBeforeSubmit,
+  validateFamilyFeud,
+} from './CreateFamilyFeud/CreateFamilyFeud';
 import { getDefaultMadLibState, validateMadLib } from './CreateMadLib/CreateMadLib';
 import {
   buildMultistepFormPayload,
@@ -78,6 +86,8 @@ export function CreateBlockProvider({
         return { kind: BlockKind.ANNOUNCEMENT, data: getDefaultAnnouncementState() };
       case BlockKind.MAD_LIB:
         return { kind: BlockKind.MAD_LIB, data: getDefaultMadLibState() };
+      case BlockKind.FAMILY_FEUD:
+        return { kind: BlockKind.FAMILY_FEUD, data: getDefaultFamilyFeudState() };
       default:
         const exhaustiveCheck: never = blockKind;
         throw new Error(`Unknown block kind: ${exhaustiveCheck}`);
@@ -130,6 +140,9 @@ export function CreateBlockProvider({
         case BlockKind.MAD_LIB:
           validationError = validateMadLib(blockData.data);
           break;
+        case BlockKind.FAMILY_FEUD:
+          validationError = validateFamilyFeud(blockData.data);
+          break;
         default:
           // This should never be reached due to exhaustive checking
           validationError = `Unknown block kind: ${(blockData as any).kind}`;
@@ -156,6 +169,9 @@ export function CreateBlockProvider({
           break;
         case BlockKind.MAD_LIB:
           canOpenImmediately = true;
+          break;
+        case BlockKind.FAMILY_FEUD:
+          canOpenImmediately = canFamilyFeudOpenImmediately();
           break;
         default:
           // This should never be reached due to exhaustive checking
@@ -204,6 +220,12 @@ export function CreateBlockProvider({
             data: blockData.data,
           };
           break;
+        case BlockKind.FAMILY_FEUD:
+          processedFormData = {
+            kind: BlockKind.FAMILY_FEUD,
+            data: processFamilyFeudBeforeSubmit(blockData.data),
+          };
+          break;
         default:
           // This should never be reached due to exhaustive checking
           processedFormData = blockData as any;
@@ -229,6 +251,9 @@ export function CreateBlockProvider({
             type: BlockKind.MAD_LIB,
             parts: processedFormData.data.parts,
           };
+          break;
+        case BlockKind.FAMILY_FEUD:
+          payload = buildFamilyFeudPayload(processedFormData.data);
           break;
         default:
           // This should never be reached due to exhaustive checking
@@ -275,6 +300,13 @@ export function CreateBlockProvider({
         }));
 
         submitPayload.variables = variables;
+      }
+
+      if (
+        blockData.kind === BlockKind.FAMILY_FEUD &&
+        processedFormData.kind === BlockKind.FAMILY_FEUD
+      ) {
+        submitPayload.questions = buildFamilyFeudQuestions(processedFormData.data);
       }
 
       await createExperienceBlock(submitPayload);

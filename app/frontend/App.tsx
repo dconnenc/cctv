@@ -6,6 +6,7 @@ import { BackgroundStatic, RouteWink, TopNav } from '@cctv/components';
 import { ExperienceProvider, UserProvider } from '@cctv/contexts';
 import {
   About,
+  Block,
   Create,
   Experience,
   Home,
@@ -70,6 +71,7 @@ function App() {
                 <Route element={<RequireExperienceHostOrAdmin />}>
                   <Route path="manage" element={<Manage />} />
                   <Route path="manage/blocks/new" element={<ManageCreateBlock />} />
+                  <Route path="manage/blocks/:blockId" element={<Block />} />
                   <Route path="monitor " element={<Monitor />} />
                 </Route>
               </Route>
