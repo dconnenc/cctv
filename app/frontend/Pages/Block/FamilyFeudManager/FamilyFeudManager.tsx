@@ -20,10 +20,22 @@
  *    - Simpler conflict resolution: last write wins for bucket assignment only
  *    - Trade-off: dragging answer to specific position appends to end instead
  *
- * TODO: Handle websocket updates that aren't currently supported:
- *   - New answers arriving from other users (need ANSWER_RECEIVED action)
- *   - New child questions added (need QUESTION_ADDED action)
- *   - Questions deleted (need QUESTION_DELETED action)
+ * Real-time answer/question updates:
+ *   The reducer handles ANSWER_RECEIVED, QUESTION_ADDED, and QUESTION_DELETED actions from
+ *   `family_feud_updated` websocket broadcasts. Backend detects when answers are submitted to
+ *   Family Feud child questions or when child questions are added/deleted, and broadcasts
+ *   granular actions to the admin stream. This keeps answer lists and questions in sync across
+ *   multiple admins while preserving local UI state.
+ *
+ * State Architecture:
+ *   - Domain state (questions, buckets, answers): Managed by reducer, synced via websockets
+ *   - UI state (collapsed questions/buckets): Local useState, resets on page reload
+ *   This separation keeps sync logic simple - only domain changes propagate across clients.
+ *
+ *   Note: Two sources of truth exist temporarily - global experience.blocks (updated by
+ *   experience_updated) and local reducer state (updated by family_feud_updated). The component
+ *   initializes from props on mount, then only updates via reducer actions. This isolation
+ *   prevents other block updates from resetting Family Feud state.
  */
 import { useCallback, useEffect, useReducer, useRef, useState } from 'react';
 
@@ -31,6 +43,7 @@ import { DragDropContext, Draggable, Droppable } from '@hello-pangea/dnd';
 import { ChevronDown, ChevronRight, Loader2, Plus, Trash2 } from 'lucide-react';
 
 import { Button } from '@cctv/components/ui/button';
+import { DialogDescription, DialogTitle } from '@cctv/components/ui/dialog';
 import { useFamilyFeudBuckets, useScrollFade } from '@cctv/hooks';
 import { Block } from '@cctv/types';
 
@@ -59,6 +72,10 @@ export default function FamilyFeudManager({ block, onBucketOperation }: FamilyFe
   const renameTimeoutRef = useRef<Record<string, NodeJS.Timeout>>({});
   const [addingBucketForQuestion, setAddingBucketForQuestion] = useState<string | null>(null);
   const [deletingBucketId, setDeletingBucketId] = useState<string | null>(null);
+
+  // UI-only state (not synced, resets on page load)
+  const [collapsedQuestions, setCollapsedQuestions] = useState<Set<string>>(new Set());
+  const [collapsedBuckets, setCollapsedBuckets] = useState<Set<string>>(new Set());
 
   // Initialize state from block data on mount only
   // Subsequent updates come via websocket broadcasts -> reducer actions
@@ -101,11 +118,16 @@ export default function FamilyFeudManager({ block, onBucketOperation }: FamilyFe
         questionText: (childBlock as any).payload?.question || 'Question',
         buckets: savedBuckets,
         unassignedAnswers,
-        isCollapsed: false,
       };
     });
 
     dispatch({ type: FamilyFeudActionType.INIT, payload: newQuestionsState });
+
+    // Initialize collapsed state: collapse all questions and all buckets by default
+    const allQuestionIds = new Set(childQuestions.map((q: Block) => q.id));
+    const allBucketIds = new Set(bucketConfig.map((b: any) => b.id));
+    setCollapsedQuestions(allQuestionIds);
+    setCollapsedBuckets(allBucketIds);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -181,6 +203,30 @@ export default function FamilyFeudManager({ block, onBucketOperation }: FamilyFe
     [assignAnswer, block.id],
   );
 
+  const toggleQuestion = useCallback((questionId: string) => {
+    setCollapsedQuestions((prev) => {
+      const next = new Set(prev);
+      if (next.has(questionId)) {
+        next.delete(questionId);
+      } else {
+        next.add(questionId);
+      }
+      return next;
+    });
+  }, []);
+
+  const toggleBucket = useCallback((bucketId: string) => {
+    setCollapsedBuckets((prev) => {
+      const next = new Set(prev);
+      if (next.has(bucketId)) {
+        next.delete(bucketId);
+      } else {
+        next.add(bucketId);
+      }
+      return next;
+    });
+  }, []);
+
   if (childQuestions.length === 0) {
     return (
       <div className={styles.root}>
@@ -193,52 +239,48 @@ export default function FamilyFeudManager({ block, onBucketOperation }: FamilyFe
 
   return (
     <div className={styles.root}>
-      <h2 className={styles.title}>{(block as any).payload?.title || 'Family Feud'}</h2>
-      {questionsState.map((question) => (
-        <div key={question.questionId} className={styles.question}>
-          <button
-            className={styles.questionHeader}
-            onClick={() =>
-              dispatch({
-                type: FamilyFeudActionType.TOGGLE_QUESTION,
-                payload: { questionId: question.questionId },
-              })
-            }
-          >
-            {question.isCollapsed ? <ChevronRight size={20} /> : <ChevronDown size={20} />}
-            <h3 className={styles.questionTitle}>{question.questionText}</h3>
-            <span className={styles.questionCount}>
-              ({question.unassignedAnswers.length} unassigned, {question.buckets.length} buckets)
-            </span>
-          </button>
+      <DialogTitle className={styles.title}>
+        {(block as any).payload?.title || 'Family Feud'}
+      </DialogTitle>
+      <DialogDescription className="sr-only">
+        Organize survey responses into categorized buckets
+      </DialogDescription>
+      {questionsState.map((question) => {
+        const isQuestionCollapsed = collapsedQuestions.has(question.questionId);
+        return (
+          <div key={question.questionId} className={styles.question}>
+            <button
+              className={styles.questionHeader}
+              onClick={() => toggleQuestion(question.questionId)}
+            >
+              {isQuestionCollapsed ? <ChevronRight size={20} /> : <ChevronDown size={20} />}
+              <h3 className={styles.questionTitle}>{question.questionText}</h3>
+              <span className={styles.questionCount}>
+                ({question.unassignedAnswers.length} unassigned, {question.buckets.length} buckets)
+              </span>
+            </button>
 
-          {!question.isCollapsed && (
-            <DragDropContext onDragEnd={(result) => handleDragEnd(result, question.questionId)}>
-              <div className={styles.layout}>
-                <BucketsColumn
-                  question={question}
-                  addingBucketForQuestion={addingBucketForQuestion}
-                  editingBucketNames={editingBucketNames}
-                  deletingBucketId={deletingBucketId}
-                  onAddBucket={handleAddBucket}
-                  onRenameBucket={handleRenameBucket}
-                  onDeleteBucket={handleDeleteBucket}
-                  onToggleBucket={(bucketId) =>
-                    dispatch({
-                      type: FamilyFeudActionType.TOGGLE_BUCKET,
-                      payload: {
-                        questionId: question.questionId,
-                        bucketId,
-                      },
-                    })
-                  }
-                />
-                <AnswersColumn answers={question.unassignedAnswers} />
-              </div>
-            </DragDropContext>
-          )}
-        </div>
-      ))}
+            {!isQuestionCollapsed && (
+              <DragDropContext onDragEnd={(result) => handleDragEnd(result, question.questionId)}>
+                <div className={styles.layout}>
+                  <BucketsColumn
+                    question={question}
+                    addingBucketForQuestion={addingBucketForQuestion}
+                    editingBucketNames={editingBucketNames}
+                    deletingBucketId={deletingBucketId}
+                    collapsedBuckets={collapsedBuckets}
+                    onAddBucket={handleAddBucket}
+                    onRenameBucket={handleRenameBucket}
+                    onDeleteBucket={handleDeleteBucket}
+                    onToggleBucket={toggleBucket}
+                  />
+                  <AnswersColumn answers={question.unassignedAnswers} />
+                </div>
+              </DragDropContext>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -248,6 +290,7 @@ const BucketsColumn = ({
   addingBucketForQuestion,
   editingBucketNames,
   deletingBucketId,
+  collapsedBuckets,
   onAddBucket,
   onRenameBucket,
   onDeleteBucket,
@@ -257,6 +300,7 @@ const BucketsColumn = ({
   addingBucketForQuestion: string | null;
   editingBucketNames: Record<string, string>;
   deletingBucketId: string | null;
+  collapsedBuckets: Set<string>;
   onAddBucket: (questionId: string) => void;
   onRenameBucket: (bucketId: string, name: string) => void;
   onDeleteBucket: (bucketId: string) => void;
@@ -281,6 +325,7 @@ const BucketsColumn = ({
         <BucketItem
           key={bucket.id}
           bucket={bucket}
+          isCollapsed={collapsedBuckets.has(bucket.id)}
           editingBucketNames={editingBucketNames}
           deletingBucketId={deletingBucketId}
           onRenameBucket={onRenameBucket}
@@ -300,6 +345,7 @@ const BucketsColumn = ({
 
 const BucketItem = ({
   bucket,
+  isCollapsed,
   editingBucketNames,
   deletingBucketId,
   onRenameBucket,
@@ -307,6 +353,7 @@ const BucketItem = ({
   onToggleBucket,
 }: {
   bucket: any;
+  isCollapsed: boolean;
   editingBucketNames: Record<string, string>;
   deletingBucketId: string | null;
   onRenameBucket: (bucketId: string, name: string) => void;
@@ -322,7 +369,7 @@ const BucketItem = ({
       >
         <div className={styles.bucketHeader}>
           <button className={styles.collapseButton} onClick={onToggleBucket}>
-            {bucket.isCollapsed ? <ChevronRight size={16} /> : <ChevronDown size={16} />}
+            {isCollapsed ? <ChevronRight size={16} /> : <ChevronDown size={16} />}
           </button>
           <input
             type="text"
@@ -344,7 +391,7 @@ const BucketItem = ({
           </button>
         </div>
 
-        {!bucket.isCollapsed && <BucketDropZone bucket={bucket} snapshot={snapshot} />}
+        {!isCollapsed && <BucketDropZone bucket={bucket} snapshot={snapshot} />}
         {provided.placeholder}
       </div>
     )}

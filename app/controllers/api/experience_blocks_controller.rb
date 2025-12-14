@@ -33,6 +33,29 @@ class Api::ExperienceBlocksController < Api::BaseController
         )
       end
 
+      # If this is a child block being added to a Family Feud parent, broadcast granular update
+      if create_params[:parent_block_id].present?
+        parent_block = @experience.experience_blocks.find_by(id: create_params[:parent_block_id])
+        if parent_block&.kind == 'family_feud'
+          bucket_config = parent_block.payload['bucket_configuration']&.dig('buckets') || []
+          
+          Experiences::Broadcaster.new(@experience).broadcast_family_feud_update(
+            block_id: parent_block.id,
+            operation: 'question_added',
+            data: {
+              question: {
+                questionId: block.id,
+                questionText: block.payload['question'] || 'Question',
+                buckets: bucket_config.map { |b| 
+                  { id: b['id'], name: b['name'], answers: [] }
+                },
+                unassignedAnswers: []
+              }
+            }
+          )
+        end
+      end
+
       @experience.reload
       Experiences::Broadcaster.new(@experience).broadcast_experience_update
 
@@ -141,6 +164,24 @@ class Api::ExperienceBlocksController < Api::BaseController
         block_id: params[:id],
         answer: params[:answer]
       )
+
+      # If this is a Family Feud child question, broadcast granular update
+      parent_block = block.parent_block
+      if parent_block&.kind == 'family_feud'
+        Experiences::Broadcaster.new(@experience).broadcast_family_feud_update(
+          block_id: parent_block.id,
+          operation: 'answer_received',
+          data: {
+            questionId: block.id,
+            answer: {
+              id: submission.id,
+              text: params[:answer].is_a?(String) ? params[:answer] : params[:answer].to_s,
+              userId: @user.id,
+              userName: @user.name || 'User'
+            }
+          }
+        )
+      end
 
       # Get updated block with response data
       updated_block = Experiences::Visibility.serialize_block_for_user(

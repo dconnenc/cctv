@@ -6,6 +6,7 @@ module Experiences
 
     def self.payload_for_admin(experience:)
       visible_blocks = admin_visible_blocks(experience)
+      
       blocks = visible_blocks.reject(&:child_block?).map do |block|
         BlockSerializer.serialize_for_stream(block, participant_role: "host")
       end

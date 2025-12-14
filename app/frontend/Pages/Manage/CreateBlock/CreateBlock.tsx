@@ -1,3 +1,4 @@
+import { DialogDescription, DialogTitle } from '@cctv/components/ui/dialog';
 import { Button, TextInput } from '@cctv/core';
 import { Dropdown } from '@cctv/core/Dropdown/Dropdown';
 import { BlockKind, ParticipantSummary } from '@cctv/types';
@@ -43,6 +44,10 @@ function CreateBlockForm({ onClose }: CreateBlockFormProps) {
 
   return (
     <div className={styles.root}>
+      <DialogTitle className={styles.title}>Create Block</DialogTitle>
+      <DialogDescription className="sr-only">
+        Create a new block for your experience
+      </DialogDescription>
       {error && <div className={styles.error}>{error}</div>}
 
       <Dropdown

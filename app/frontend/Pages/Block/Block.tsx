@@ -1,3 +1,4 @@
+import { DialogDescription, DialogTitle } from '@cctv/components/ui/dialog';
 import { useExperience } from '@cctv/contexts';
 import { BlockKind } from '@cctv/types';
 
@@ -58,7 +59,8 @@ export default function Block({ blockId }: BlockProps) {
   // Default view for other block types
   return (
     <div className={styles.root}>
-      <h1 className={styles.title}>Block Details</h1>
+      <DialogTitle className={styles.title}>Block Details</DialogTitle>
+      <DialogDescription className="sr-only">View block information</DialogDescription>
       <div className={styles.content}>
         <div className={styles.field}>
           <span className={styles.label}>Kind:</span>

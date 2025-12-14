@@ -10,7 +10,6 @@ interface Bucket {
   id: string;
   name: string;
   answers: Answer[];
-  isCollapsed: boolean;
 }
 
 export interface QuestionWithBuckets {
@@ -18,7 +17,6 @@ export interface QuestionWithBuckets {
   questionText: string;
   buckets: Bucket[];
   unassignedAnswers: Answer[];
-  isCollapsed: boolean;
 }
 
 export enum FamilyFeudActionType {
@@ -27,8 +25,9 @@ export enum FamilyFeudActionType {
   BUCKET_RENAMED = 'BUCKET_RENAMED',
   BUCKET_DELETED = 'BUCKET_DELETED',
   ANSWER_ASSIGNED = 'ANSWER_ASSIGNED',
-  TOGGLE_QUESTION = 'TOGGLE_QUESTION',
-  TOGGLE_BUCKET = 'TOGGLE_BUCKET',
+  ANSWER_RECEIVED = 'ANSWER_RECEIVED',
+  QUESTION_ADDED = 'QUESTION_ADDED',
+  QUESTION_DELETED = 'QUESTION_DELETED',
 }
 
 export type FamilyFeudAction =
@@ -43,11 +42,15 @@ export type FamilyFeudAction =
       type: FamilyFeudActionType.ANSWER_ASSIGNED;
       payload: { answerId: string; bucketId: string | null };
     }
-  | { type: FamilyFeudActionType.TOGGLE_QUESTION; payload: { questionId: string } }
   | {
-      type: FamilyFeudActionType.TOGGLE_BUCKET;
-      payload: { questionId: string; bucketId: string };
-    };
+      type: FamilyFeudActionType.ANSWER_RECEIVED;
+      payload: { questionId: string; answer: Answer };
+    }
+  | {
+      type: FamilyFeudActionType.QUESTION_ADDED;
+      payload: { question: QuestionWithBuckets };
+    }
+  | { type: FamilyFeudActionType.QUESTION_DELETED; payload: { questionId: string } };
 
 export function familyFeudReducer(
   state: QuestionWithBuckets[],
@@ -63,7 +66,7 @@ export function familyFeudReducer(
         q.questionId === questionId
           ? {
               ...q,
-              buckets: [...q.buckets, { ...bucket, answers: [], isCollapsed: false }],
+              buckets: [...q.buckets, { ...bucket, answers: [] }],
             }
           : q,
       );
@@ -137,25 +140,29 @@ export function familyFeudReducer(
       });
     }
 
-    case FamilyFeudActionType.TOGGLE_QUESTION: {
-      const { questionId } = action.payload;
-      return state.map((q) =>
-        q.questionId === questionId ? { ...q, isCollapsed: !q.isCollapsed } : q,
-      );
-    }
-
-    case FamilyFeudActionType.TOGGLE_BUCKET: {
-      const { questionId, bucketId } = action.payload;
+    case FamilyFeudActionType.ANSWER_RECEIVED: {
+      const { questionId, answer } = action.payload;
       return state.map((q) =>
         q.questionId === questionId
           ? {
               ...q,
-              buckets: q.buckets.map((b) =>
-                b.id === bucketId ? { ...b, isCollapsed: !b.isCollapsed } : b,
-              ),
+              // Idempotent - only add if not already present
+              unassignedAnswers: q.unassignedAnswers.find((a) => a.id === answer.id)
+                ? q.unassignedAnswers
+                : [...q.unassignedAnswers, answer],
             }
           : q,
       );
+    }
+
+    case FamilyFeudActionType.QUESTION_ADDED: {
+      const { question } = action.payload;
+      return [...state, question];
+    }
+
+    case FamilyFeudActionType.QUESTION_DELETED: {
+      const { questionId } = action.payload;
+      return state.filter((q) => q.questionId !== questionId);
     }
 
     default:

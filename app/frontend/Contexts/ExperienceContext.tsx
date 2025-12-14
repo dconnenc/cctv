@@ -517,6 +517,9 @@ export function ExperienceProvider({ children }: ExperienceProviderProps) {
           bucket_renamed: 'BUCKET_RENAMED',
           bucket_deleted: 'BUCKET_DELETED',
           answer_assigned: 'ANSWER_ASSIGNED',
+          answer_received: 'ANSWER_RECEIVED',
+          question_added: 'QUESTION_ADDED',
+          question_deleted: 'QUESTION_DELETED',
         };
 
         const actionType = actionTypeMap[operation];
