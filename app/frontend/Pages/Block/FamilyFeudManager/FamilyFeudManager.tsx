@@ -362,48 +362,79 @@ const BucketItem = ({
   onRenameBucket: (bucketId: string, name: string) => void;
   onDeleteBucket: (bucketId: string) => void;
   onToggleBucket: () => void;
-}) => (
-  <Droppable droppableId={bucket.id}>
-    {(provided, snapshot) => (
+}) => {
+  // renderClone fixes drag positioning when inside a dialog/modal with CSS transforms
+  const renderClone = (provided: any, snapshot: any, rubric: any) => {
+    const answer = bucket.answers[rubric.source.index];
+    return (
       <div
         ref={provided.innerRef}
-        {...provided.droppableProps}
-        className={`${styles.bucket} ${snapshot.isDraggingOver ? styles.isDraggingOver : ''}`}
+        {...provided.draggableProps}
+        {...provided.dragHandleProps}
+        className={`${styles.answer} ${snapshot.isDragging ? styles.isDragging : ''}`}
       >
-        <div className={styles.bucketHeader}>
-          <button className={styles.collapseButton} onClick={onToggleBucket}>
-            {isCollapsed ? <ChevronRight size={16} /> : <ChevronDown size={16} />}
-          </button>
-          <input
-            type="text"
-            value={editingBucketNames[bucket.id] ?? bucket.name}
-            onChange={(e) => onRenameBucket(bucket.id, e.target.value)}
-            className={styles.bucketNameInput}
-          />
-          <span className={styles.bucketCount}>({bucket.answers.length})</span>
-          <button
-            className={styles.deleteButton}
-            onClick={() => onDeleteBucket(bucket.id)}
-            disabled={deletingBucketId === bucket.id}
-          >
-            {deletingBucketId === bucket.id ? (
-              <Loader2 size={14} className={styles.spinner} />
-            ) : (
-              <Trash2 size={14} />
-            )}
-          </button>
-        </div>
-
-        {!isCollapsed && <BucketDropZone bucket={bucket} snapshot={snapshot} />}
-        {provided.placeholder}
+        {answer.text}
       </div>
-    )}
-  </Droppable>
-);
+    );
+  };
+
+  return (
+    <Droppable droppableId={bucket.id} renderClone={renderClone}>
+      {(provided, snapshot) => (
+        <div
+          ref={provided.innerRef}
+          {...provided.droppableProps}
+          className={`${styles.bucket} ${snapshot.isDraggingOver ? styles.isDraggingOver : ''}`}
+        >
+          <div className={styles.bucketHeader}>
+            <button className={styles.collapseButton} onClick={onToggleBucket}>
+              {isCollapsed ? <ChevronRight size={16} /> : <ChevronDown size={16} />}
+            </button>
+            <input
+              type="text"
+              value={editingBucketNames[bucket.id] ?? bucket.name}
+              onChange={(e) => onRenameBucket(bucket.id, e.target.value)}
+              className={styles.bucketNameInput}
+            />
+            <span className={styles.bucketCount}>({bucket.answers.length})</span>
+            <button
+              className={styles.deleteButton}
+              onClick={() => onDeleteBucket(bucket.id)}
+              disabled={deletingBucketId === bucket.id}
+            >
+              {deletingBucketId === bucket.id ? (
+                <Loader2 size={14} className={styles.spinner} />
+              ) : (
+                <Trash2 size={14} />
+              )}
+            </button>
+          </div>
+
+          {!isCollapsed && <BucketDropZone bucket={bucket} snapshot={snapshot} />}
+          {provided.placeholder}
+        </div>
+      )}
+    </Droppable>
+  );
+};
 
 const BucketDropZone = ({ bucket, snapshot }: { bucket: any; snapshot: any }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
   useScrollFade(scrollRef);
+
+  const renderClone = (provided: any, snapshot: any, rubric: any) => {
+    const answer = bucket.answers[rubric.source.index];
+    return (
+      <div
+        ref={provided.innerRef}
+        {...provided.draggableProps}
+        {...provided.dragHandleProps}
+        className={`${styles.answer} ${snapshot.isDragging ? styles.isDragging : ''}`}
+      >
+        {answer.text}
+      </div>
+    );
+  };
 
   return (
     <div
@@ -438,13 +469,28 @@ const AnswersColumn = ({ answers }: { answers: any[] }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
   useScrollFade(scrollRef);
 
+  // renderClone fixes drag positioning when inside a dialog/modal with CSS transforms
+  const renderClone = (provided: any, snapshot: any, rubric: any) => {
+    const answer = answers[rubric.source.index];
+    return (
+      <div
+        ref={provided.innerRef}
+        {...provided.draggableProps}
+        {...provided.dragHandleProps}
+        className={`${styles.answer} ${snapshot.isDragging ? styles.isDragging : ''}`}
+      >
+        {answer.text}
+      </div>
+    );
+  };
+
   return (
     <div className={styles.answersColumn}>
       <div className={styles.columnHeader}>
         <span>Answers ({answers.length})</span>
       </div>
 
-      <Droppable droppableId="unassigned">
+      <Droppable droppableId="unassigned" renderClone={renderClone}>
         {(provided, snapshot) => (
           <div
             ref={scrollRef}
