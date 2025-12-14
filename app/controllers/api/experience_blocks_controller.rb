@@ -274,11 +274,15 @@ class Api::ExperienceBlocksController < Api::BaseController
         name: params[:name] || "New Bucket"
       )
 
-      Experiences::Broadcaster.new(@experience).broadcast_family_feud_update(
+      broadcaster = Experiences::Broadcaster.new(@experience)
+      
+      broadcaster.broadcast_family_feud_update(
         block_id: params[:id],
         operation: 'bucket_added',
         data: { bucket: bucket }
       )
+      
+      broadcaster.broadcast_experience_update
 
       render json: { success: true, data: { bucket: bucket } }, status: 200
     end
@@ -297,11 +301,15 @@ class Api::ExperienceBlocksController < Api::BaseController
         name: params[:name]
       )
 
-      Experiences::Broadcaster.new(@experience).broadcast_family_feud_update(
+      broadcaster = Experiences::Broadcaster.new(@experience)
+      
+      broadcaster.broadcast_family_feud_update(
         block_id: params[:id],
         operation: 'bucket_renamed',
         data: { bucket_id: params[:bucket_id], name: params[:name] }
       )
+      
+      broadcaster.broadcast_experience_update
 
       render json: { success: true }, status: 200
     end
@@ -319,11 +327,15 @@ class Api::ExperienceBlocksController < Api::BaseController
         bucket_id: params[:bucket_id]
       )
 
-      Experiences::Broadcaster.new(@experience).broadcast_family_feud_update(
+      broadcaster = Experiences::Broadcaster.new(@experience)
+      
+      broadcaster.broadcast_family_feud_update(
         block_id: params[:id],
         operation: 'bucket_deleted',
         data: { bucket_id: params[:bucket_id] }
       )
+      
+      broadcaster.broadcast_experience_update
 
       render json: { success: true }, status: 200
     end
@@ -342,7 +354,9 @@ class Api::ExperienceBlocksController < Api::BaseController
         bucket_id: params[:bucket_id]
       )
 
-      Experiences::Broadcaster.new(@experience).broadcast_family_feud_update(
+      broadcaster = Experiences::Broadcaster.new(@experience)
+      
+      broadcaster.broadcast_family_feud_update(
         block_id: params[:id],
         operation: 'answer_assigned',
         data: { 
@@ -350,6 +364,8 @@ class Api::ExperienceBlocksController < Api::BaseController
           bucket_id: params[:bucket_id]
         }
       )
+      
+      broadcaster.broadcast_experience_update
 
       render json: { success: true }, status: 200
     end
