@@ -7,9 +7,8 @@
   margin-bottom: 24px;
 }
 
-.question {
+.questionContainer {
   margin-bottom: 32px;
-  padding: 24px;
   background-color: hsl(var(--card));
   border-radius: 8px;
   border: 1px solid hsl(var(--border));
@@ -25,12 +24,16 @@
   border: none;
   cursor: pointer;
   text-align: left;
-  padding: 0;
+  padding: 24px;
   color: hsl(var(--foreground));
 }
 
 .questionHeader:hover {
-  opacity: 0.8;
+  opacity: 0.95;
+}
+
+.questionContent {
+  padding: 0 24px 24px 24px;
 }
 
 .questionTitle {

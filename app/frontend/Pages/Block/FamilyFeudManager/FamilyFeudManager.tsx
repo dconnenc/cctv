@@ -248,10 +248,11 @@ export default function FamilyFeudManager({ block, onBucketOperation }: FamilyFe
       {questionsState.map((question) => {
         const isQuestionCollapsed = collapsedQuestions.has(question.questionId);
         return (
-          <div key={question.questionId} className={styles.question}>
+          <div key={question.questionId} className={styles.questionContainer}>
             <button
               className={styles.questionHeader}
               onClick={() => toggleQuestion(question.questionId)}
+              aria-expanded={!isQuestionCollapsed}
             >
               {isQuestionCollapsed ? <ChevronRight size={20} /> : <ChevronDown size={20} />}
               <h3 className={styles.questionTitle}>{question.questionText}</h3>
@@ -261,22 +262,24 @@ export default function FamilyFeudManager({ block, onBucketOperation }: FamilyFe
             </button>
 
             {!isQuestionCollapsed && (
-              <DragDropContext onDragEnd={(result) => handleDragEnd(result, question.questionId)}>
-                <div className={styles.layout}>
-                  <BucketsColumn
-                    question={question}
-                    addingBucketForQuestion={addingBucketForQuestion}
-                    editingBucketNames={editingBucketNames}
-                    deletingBucketId={deletingBucketId}
-                    collapsedBuckets={collapsedBuckets}
-                    onAddBucket={handleAddBucket}
-                    onRenameBucket={handleRenameBucket}
-                    onDeleteBucket={handleDeleteBucket}
-                    onToggleBucket={toggleBucket}
-                  />
-                  <AnswersColumn answers={question.unassignedAnswers} />
-                </div>
-              </DragDropContext>
+              <div className={styles.questionContent}>
+                <DragDropContext onDragEnd={(result) => handleDragEnd(result, question.questionId)}>
+                  <div className={styles.layout}>
+                    <BucketsColumn
+                      question={question}
+                      addingBucketForQuestion={addingBucketForQuestion}
+                      editingBucketNames={editingBucketNames}
+                      deletingBucketId={deletingBucketId}
+                      collapsedBuckets={collapsedBuckets}
+                      onAddBucket={handleAddBucket}
+                      onRenameBucket={handleRenameBucket}
+                      onDeleteBucket={handleDeleteBucket}
+                      onToggleBucket={toggleBucket}
+                    />
+                    <AnswersColumn answers={question.unassignedAnswers} />
+                  </div>
+                </DragDropContext>
+              </div>
             )}
           </div>
         );
