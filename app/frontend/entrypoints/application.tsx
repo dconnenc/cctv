@@ -8,7 +8,7 @@ import App from '../App';
 
 import '../static.css';
 import '../styles.css';
-import '../tailwind.output.css';
+import '../tailwind.css';
 
 const root = document.getElementById('root');
 if (!root) throw new Error('Root element #root not found');
