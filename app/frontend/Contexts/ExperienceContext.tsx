@@ -62,6 +62,9 @@ export function ExperienceProvider({ children }: ExperienceProviderProps) {
   const monitorWsRef = useRef<WebSocket>();
   const impersonationWsRef = useRef<WebSocket>();
 
+  // Family Feud dispatch registry (keyed by blockId)
+  const familyFeudDispatchRegistry = useRef<Map<string, (action: any) => void>>(new Map());
+
   const currentCode = code || '';
   const isManagePage = location.pathname.includes('/manage');
   const isMonitorPage = location.pathname.includes('/monitor');
@@ -501,6 +504,29 @@ export function ExperienceProvider({ children }: ExperienceProviderProps) {
         setExperienceStatus(updatedExperience.status === 'live' ? 'live' : 'lobby');
         setError(undefined);
       }
+    } else if (messageType === 'family_feud_updated') {
+      qaLogger(`[ADMIN WS] Processing family_feud_updated: ${wsMessage.operation}`);
+      const { block_id, operation, data } = wsMessage as any;
+
+      // Dispatch to the specific FamilyFeudManager instance registered for this block
+      const dispatch = familyFeudDispatchRegistry.current.get(block_id);
+      if (dispatch) {
+        // Map websocket operation strings to typed actions
+        const actionTypeMap: Record<string, string> = {
+          bucket_added: 'BUCKET_ADDED',
+          bucket_renamed: 'BUCKET_RENAMED',
+          bucket_deleted: 'BUCKET_DELETED',
+          answer_assigned: 'ANSWER_ASSIGNED',
+          answer_received: 'ANSWER_RECEIVED',
+          question_added: 'QUESTION_ADDED',
+          question_deleted: 'QUESTION_DELETED',
+        };
+
+        const actionType = actionTypeMap[operation];
+        if (actionType) {
+          dispatch({ type: actionType as any, payload: data });
+        }
+      }
     }
   }, []);
 
@@ -638,6 +664,14 @@ export function ExperienceProvider({ children }: ExperienceProviderProps) {
     participantView,
     impersonatedParticipantId,
     setImpersonatedParticipantId,
+
+    // Family Feud dispatch registration
+    registerFamilyFeudDispatch: useCallback((blockId: string, dispatch: (action: any) => void) => {
+      familyFeudDispatchRegistry.current.set(blockId, dispatch);
+    }, []),
+    unregisterFamilyFeudDispatch: useCallback((blockId: string) => {
+      familyFeudDispatchRegistry.current.delete(blockId);
+    }, []),
   };
 
   return <ExperienceContext.Provider value={value}>{children}</ExperienceContext.Provider>;

@@ -191,6 +191,95 @@ module Experiences
       end
     end
 
+    def add_family_feud_bucket!(block_id:, name:)
+      actor_action do
+        block = experience.experience_blocks.find(block_id)
+        authorize! experience, to: :manage_blocks?, with: ExperiencePolicy
+
+        transaction do
+          current_payload = block.payload || {}
+          current_payload["bucket_configuration"] ||= { "buckets" => [] }
+          
+          new_bucket = {
+            "id" => "bucket-#{Time.now.to_i}-#{SecureRandom.hex(4)}",
+            "name" => name,
+            "answer_ids" => []
+          }
+          
+          current_payload["bucket_configuration"]["buckets"] << new_bucket
+          block.update!(payload: current_payload)
+          
+          new_bucket
+        end
+      end
+    end
+
+    def rename_family_feud_bucket!(block_id:, bucket_id:, name:)
+      actor_action do
+        block = experience.experience_blocks.find(block_id)
+        authorize! experience, to: :manage_blocks?, with: ExperiencePolicy
+
+        transaction do
+          current_payload = block.payload || {}
+          buckets = current_payload.dig("bucket_configuration", "buckets") || []
+          
+          bucket = buckets.find { |b| b["id"] == bucket_id }
+          raise ActiveRecord::RecordNotFound, "Bucket not found" unless bucket
+          
+          bucket["name"] = name
+          block.update!(payload: current_payload)
+          
+          bucket
+        end
+      end
+    end
+
+    def delete_family_feud_bucket!(block_id:, bucket_id:)
+      actor_action do
+        block = experience.experience_blocks.find(block_id)
+        authorize! experience, to: :manage_blocks?, with: ExperiencePolicy
+
+        transaction do
+          current_payload = block.payload || {}
+          buckets = current_payload.dig("bucket_configuration", "buckets") || []
+          
+          current_payload["bucket_configuration"]["buckets"] = buckets.reject { |b| b["id"] == bucket_id }
+          block.update!(payload: current_payload)
+          
+          true
+        end
+      end
+    end
+
+    def assign_family_feud_answer!(block_id:, answer_id:, bucket_id:)
+      actor_action do
+        block = experience.experience_blocks.find(block_id)
+        authorize! experience, to: :manage_blocks?, with: ExperiencePolicy
+
+        transaction do
+          current_payload = block.payload || {}
+          buckets = current_payload.dig("bucket_configuration", "buckets") || []
+          
+          # Remove answer from all buckets first
+          buckets.each do |bucket|
+            bucket["answer_ids"]&.delete(answer_id)
+          end
+          
+          # Add to target bucket if specified
+          if bucket_id.present?
+            target_bucket = buckets.find { |b| b["id"] == bucket_id }
+            raise ActiveRecord::RecordNotFound, "Bucket not found" unless target_bucket
+            
+            target_bucket["answer_ids"] ||= []
+            target_bucket["answer_ids"] << answer_id unless target_bucket["answer_ids"].include?(answer_id)
+          end
+          
+          block.update!(payload: current_payload)
+          true
+        end
+      end
+    end
+
     def add_block_with_dependencies!(
       kind:,
       payload: {},
@@ -198,7 +287,8 @@ module Experiences
       visible_to_segments: [],
       target_user_ids: [],
       status: :hidden,
-      variables: []
+      variables: [],
+      questions: []
     )
       actor_action do
         authorize! experience, to: :manage_blocks?, with: ExperiencePolicy
@@ -209,41 +299,51 @@ module Experiences
           parent_block = experience.experience_blocks.create!(
             kind: kind,
             status: status,
-            payload: payload.except(:variables),
+            payload: payload.except(:variables, :questions),
             visible_to_roles: visible_to_roles,
             visible_to_segments: visible_to_segments,
             target_user_ids: target_user_ids,
             position: max_position + 1
           )
 
-          variables.each_with_index do |var_spec, index|
-            variable = parent_block.variables.create!(
-              key: var_spec["key"],
-              label: var_spec["label"],
-              datatype: var_spec["datatype"] || "string",
-              required: var_spec["required"].nil? ? true : var_spec["required"]
-            )
+          if kind == ExperienceBlock::FAMILY_FEUD && questions.present?
+            questions.each_with_index do |question_spec, index|
+              create_family_feud_question(
+                parent_block: parent_block,
+                question_spec: question_spec,
+                position: index
+              )
+            end
+          else
+            variables.each_with_index do |var_spec, index|
+              variable = parent_block.variables.create!(
+                key: var_spec["key"],
+                label: var_spec["label"],
+                datatype: var_spec["datatype"] || "string",
+                required: var_spec["required"].nil? ? true : var_spec["required"]
+              )
 
-            if var_spec["source"]
-              child_block = if var_spec["source"]["type"] == "participant"
-                create_participant_source_block(
-                  parent_block: parent_block,
+              if var_spec["source"]
+                child_block = if var_spec["source"]["type"] == "participant"
+                  create_participant_source_block(
+                    parent_block: parent_block,
+                    variable: variable,
+                    participant_id: var_spec["source"]["participant_id"],
+                    position: index
+                  )
+                else
+                  create_child_block(
+                    parent_block: parent_block,
+                    source_spec: var_spec["source"],
+                    position: index
+                  )
+                end
+
+                ExperienceBlockVariableBinding.create!(
                   variable: variable,
-                  participant_id: var_spec["source"]["participant_id"],
-                  position: index
-                )
-              else
-                create_child_block(
-                  parent_block: parent_block,
-                  source_spec: var_spec["source"],
-                  position: index
+                  source_block_id: child_block.id
                 )
               end
-
-              ExperienceBlockVariableBinding.create!(
-                variable: variable,
-                source_block_id: child_block.id
-              )
             end
           end
 
@@ -291,6 +391,28 @@ module Experiences
         target_user_ids: source_spec["target_user_ids"] || [],
         parent_block_id: parent_block.id,
         position: position
+      )
+
+      ExperienceBlockLink.create!(
+        parent_block: parent_block,
+        child_block: child_block,
+        relationship: :depends_on
+      )
+
+      child_block
+    end
+
+    def create_family_feud_question(parent_block:, question_spec:, position:)
+      child_block = experience.experience_blocks.create!(
+        kind: ExperienceBlock::QUESTION,
+        status: parent_block.status,
+        payload: question_spec["payload"] || {},
+        visible_to_roles: parent_block.visible_to_roles,
+        visible_to_segments: parent_block.visible_to_segments,
+        target_user_ids: [],
+        parent_block_id: parent_block.id,
+        position: position,
+        show_in_lobby: true
       )
 
       ExperienceBlockLink.create!(

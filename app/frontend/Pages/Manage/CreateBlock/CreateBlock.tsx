@@ -1,9 +1,11 @@
+import { DialogDescription, DialogTitle } from '@cctv/components/ui/dialog';
 import { Button, TextInput } from '@cctv/core';
 import { Dropdown } from '@cctv/core/Dropdown/Dropdown';
 import { BlockKind, ParticipantSummary } from '@cctv/types';
 
 import CreateAnnouncement from './CreateAnnouncement/CreateAnnouncement';
 import { CreateBlockProvider, useCreateBlockContext } from './CreateBlockContext';
+import CreateFamilyFeud from './CreateFamilyFeud/CreateFamilyFeud';
 import CreateMadLib from './CreateMadLib/CreateMadLib';
 import CreateMultistepForm from './CreateMultistepForm/CreateMultistepForm';
 import CreatePoll from './CreatePoll/CreatePoll';
@@ -42,6 +44,10 @@ function CreateBlockForm({ onClose }: CreateBlockFormProps) {
 
   return (
     <div className={styles.root}>
+      <DialogTitle className={styles.title}>Create Block</DialogTitle>
+      <DialogDescription className="sr-only">
+        Create a new block for your experience
+      </DialogDescription>
       {error && <div className={styles.error}>{error}</div>}
 
       <Dropdown
@@ -52,6 +58,7 @@ function CreateBlockForm({ onClose }: CreateBlockFormProps) {
           { label: 'Multistep Form', value: BlockKind.MULTISTEP_FORM },
           { label: 'Announcement', value: BlockKind.ANNOUNCEMENT },
           { label: 'Mad Lib', value: BlockKind.MAD_LIB },
+          { label: 'Family Feud', value: BlockKind.FAMILY_FEUD },
         ]}
         value={blockData.kind}
         onChange={setKind}
@@ -103,6 +110,8 @@ function BlockEditor() {
       return <CreateAnnouncement data={blockData.data} onChange={onChange} />;
     case BlockKind.MAD_LIB:
       return <CreateMadLib data={blockData.data} onChange={onChange} participants={participants} />;
+    case BlockKind.FAMILY_FEUD:
+      return <CreateFamilyFeud data={blockData.data} onChange={onChange} />;
     default:
       const exhaustiveCheck: never = blockData;
       return <div className={styles.details}>Unknown block type: {exhaustiveCheck}</div>;

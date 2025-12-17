@@ -1,0 +1,342 @@
+.root {
+}
+
+.title {
+  font-size: 24px;
+  font-weight: 700;
+  margin-bottom: 24px;
+}
+
+.questionContainer {
+  margin-bottom: 32px;
+  background-color: hsl(var(--card));
+  border-radius: 8px;
+  border: 1px solid hsl(var(--border));
+}
+
+.questionHeader {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  width: 100%;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  padding: 24px;
+  color: hsl(var(--foreground));
+  border-radius: 8px;
+}
+
+.questionHeader:hover {
+  opacity: 0.95;
+}
+
+.questionHeader[aria-expanded='true'] {
+  border-radius: 8px 8px 0 0;
+}
+
+.questionContent {
+  padding: 0 24px 24px 24px;
+}
+
+.questionTitle {
+  font-size: 20px;
+  font-weight: 700;
+  margin: 0;
+  flex: 1 1 300px;
+}
+
+.questionCount {
+  font-size: 14px;
+  font-weight: 400;
+  color: hsl(var(--muted-foreground));
+  white-space: nowrap;
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  padding-top: 16px;
+}
+
+.bucketsColumn,
+.answersColumn {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.columnHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  background-color: hsl(var(--card));
+  border-radius: 8px;
+  border: 1px solid hsl(var(--border));
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.bucketsList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.bucket {
+  background-color: hsl(var(--card));
+  border: 2px solid hsl(var(--border));
+  border-radius: 8px;
+  overflow: hidden;
+  transition:
+    border-color 0.2s ease,
+    background-color 0.2s ease;
+}
+
+.bucket.isDraggingOver {
+  background-color: hsl(var(--primary) / 0.1);
+  border-color: hsl(var(--primary));
+}
+
+.bucketHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background-color: hsl(var(--secondary));
+  border-bottom: 1px solid hsl(var(--border));
+}
+
+.collapseButton {
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  padding: 0;
+  color: hsl(var(--muted-foreground));
+}
+
+.collapseButton:hover {
+  color: hsl(var(--foreground));
+}
+
+.bucketNameInput {
+  flex: 1;
+  border: none;
+  background: transparent;
+  font-weight: 700;
+  font-size: 14px;
+  padding: 4px;
+  margin-top: 0;
+  color: hsl(var(--foreground));
+}
+
+.bucketNameInput:focus {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.bucketCount {
+  color: hsl(var(--muted-foreground));
+  font-size: 12px;
+  font-weight: 400;
+}
+
+.deleteButton {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  color: hsl(var(--muted-foreground));
+  display: flex;
+  align-items: center;
+  border-radius: 4px;
+}
+
+.deleteButton:hover {
+  color: hsl(var(--destructive));
+  background-color: hsl(var(--destructive) / 0.1);
+}
+
+.spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.bucketDropZone {
+  min-height: 60px;
+  max-height: 300px;
+  overflow-y: auto;
+  position: relative;
+}
+
+.bucketDropZone::before,
+.bucketDropZone::after {
+  content: '';
+  display: none;
+  position: sticky;
+  left: 0;
+  right: 0;
+  height: 40px;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.bucketDropZone::before {
+  top: 0;
+  background: linear-gradient(to bottom, hsl(var(--card)) 0%, transparent 100%);
+}
+
+.bucketDropZone::after {
+  bottom: 0;
+  background: linear-gradient(to top, hsl(var(--card)) 0%, transparent 100%);
+}
+
+.bucketDropZone:not([data-at-top])::before {
+  display: block;
+}
+
+.bucketDropZone:not([data-at-bottom])::after {
+  display: block;
+}
+
+.bucketDropZoneInner {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+}
+
+.emptyBucket {
+  padding: 16px;
+  text-align: center;
+  color: hsl(var(--muted-foreground));
+  font-style: italic;
+  border: 2px dashed hsl(var(--border));
+  border-radius: 8px;
+  background-color: hsl(var(--secondary));
+}
+
+.answersList {
+  background-color: hsl(var(--card));
+  border: 2px solid hsl(var(--border));
+  border-radius: 8px;
+  min-height: 200px;
+  max-height: 400px;
+  overflow-y: auto;
+  position: relative;
+}
+
+.answersList::before,
+.answersList::after {
+  content: '';
+  display: none;
+  position: sticky;
+  left: 0;
+  right: 0;
+  height: 50px;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.answersList::before {
+  top: 0;
+  background: linear-gradient(to bottom, hsl(var(--card)) 0%, transparent 100%);
+}
+
+.answersList::after {
+  bottom: 0;
+  background: linear-gradient(to top, hsl(var(--card)) 0%, transparent 100%);
+}
+
+.answersList:not([data-at-top])::before {
+  display: block;
+}
+
+.answersList:not([data-at-bottom])::after {
+  display: block;
+}
+
+.answersListInner {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  padding: 12px;
+}
+
+.answer {
+  padding: 6px 12px;
+  background-color: hsl(var(--secondary));
+  border: 1px solid hsl(var(--border));
+  border-radius: 8px;
+  cursor: move;
+  user-select: none;
+  font-size: 14px;
+  transition:
+    transform 0.1s ease,
+    box-shadow 0.1s ease;
+}
+
+.answer:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.answer:active {
+  cursor: grabbing;
+  transform: scale(1.02);
+  opacity: 0.8;
+}
+
+.answer.isDragging {
+  opacity: 0.5;
+  transform: rotate(2deg);
+}
+
+.bucketDropZone.isDraggingOver {
+  background-color: hsl(var(--primary) / 0.1);
+  border: 2px dashed hsl(var(--primary));
+}
+
+.answersList.isDraggingOver {
+  background-color: hsl(var(--primary) / 0.1);
+  border: 2px dashed hsl(var(--primary));
+}
+
+.noBuckets,
+.noAnswers {
+  padding: 24px;
+  text-align: center;
+  color: hsl(var(--muted-foreground));
+  background-color: hsl(var(--secondary));
+  border: 1px dashed hsl(var(--border));
+  border-radius: 8px;
+}
+
+.empty {
+  padding: 32px;
+  text-align: center;
+  color: hsl(var(--muted-foreground));
+  font-size: 16px;
+}
+
+@media (max-width: 1024px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+}

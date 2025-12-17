@@ -1,0 +1,38 @@
+.titleInput {
+  width: 100%;
+}
+
+.questionItem {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 16px;
+  align-items: center;
+  width: 100%;
+}
+
+.questionNumber {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background-color: var(--color-primary);
+  color: var(--color-text-inverse);
+  font-weight: var(--font-weight-bold);
+  font-size: var(--font-size-sm);
+  flex-shrink: 0;
+}
+
+.questionField {
+  width: 100%;
+
+  input {
+    margin-top: 0;
+  }
+}
+
+.removeButton {
+  padding: 8px;
+  min-width: auto;
+}
