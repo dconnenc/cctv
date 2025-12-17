@@ -2,6 +2,8 @@ import { useExperience } from '@cctv/contexts';
 import { ExperienceBlockContainer } from '@cctv/experiences';
 
 import QRCodeDisplay from '../Manage/QRCodeDisplay/QRCodeDisplay';
+import LobbyAvatars from './LobbyAvatars';
+import ParticipantsMenu from './ParticipantsMenu';
 
 import styles from './Monitor.module.scss';
 
@@ -37,16 +39,22 @@ export default function Monitor() {
 
   const currentBlock = monitorView.blocks[0];
 
+  const showProgramBlock = !!currentBlock;
+
   return (
     <section className={styles.root}>
-      {currentBlock ? (
+      {showProgramBlock ? (
         <div className={styles.blockContainer}>
           <ExperienceBlockContainer block={currentBlock} disabled />
         </div>
       ) : (
-        <div className={styles.qrContainer}>
-          <QRCodeDisplay experience={monitorView} />
-        </div>
+        <>
+          <ParticipantsMenu />
+          <LobbyAvatars />
+          <div className={styles.qrContainer}>
+            <QRCodeDisplay experience={monitorView} compact />
+          </div>
+        </>
       )}
     </section>
   );

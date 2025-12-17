@@ -34,6 +34,7 @@ Rails.application.routes.draw do
         post :start
         post :pause
         post :resume
+        post :clear_avatars
       end
 
       resources(
@@ -59,6 +60,12 @@ Rails.application.routes.draw do
         # collection do
         #   post :batch_open
         # end
+      end
+
+      resources :participants, controller: 'experience_participants', only: [] do
+        member do
+          post :avatar
+        end
       end
     end
   end

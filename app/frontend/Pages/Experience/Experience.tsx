@@ -1,8 +1,16 @@
+import { useState } from 'react';
+
+import { createPortal } from 'react-dom';
+
 import { Link, NavLink } from 'react-router-dom';
 
+import { LobbyAvatarEditor } from '@cctv/components';
+import { ParticipantsList } from '@cctv/components';
 import { useUser } from '@cctv/contexts';
 import { useExperience } from '@cctv/contexts';
+import { Button } from '@cctv/core';
 import { ExperienceBlockContainer } from '@cctv/experiences';
+import { useClearAvatars } from '@cctv/hooks';
 
 import AdminNotification from './AdminNotification/AdminNotification';
 
@@ -11,6 +19,8 @@ import styles from './Experience.module.scss';
 export default function Experience() {
   const { experience, participant, code, isLoading, experienceStatus, error } = useExperience();
   const { isAdmin } = useUser();
+  const [showAvatarEditor, setShowAvatarEditor] = useState(true);
+  const { clearAvatars, isLoading: clearing } = useClearAvatars();
 
   if (isLoading) {
     return (
@@ -36,6 +46,8 @@ export default function Experience() {
   }
 
   const participants = experience?.participants || [];
+  const currentFullParticipant = participants.find((p) => p.user_id === participant?.user_id);
+  const participantAvatar = currentFullParticipant?.avatar?.image;
   const currentBlock = experience?.blocks?.[0];
 
   if (experienceStatus === 'lobby') {
@@ -52,6 +64,12 @@ export default function Experience() {
                 <ExperienceBlockContainer block={currentBlock} participant={participant} />
               </div>
             </div>
+
+            <div className={styles.playbillCta}>
+              <Link to={`/experiences/${code}/playbill`}>
+                <Button>Open Playbill</Button>
+              </Link>
+            </div>
           </div>
         </section>
       );
@@ -59,8 +77,6 @@ export default function Experience() {
 
     return (
       <section className="page flex-centered">
-        <h1 className={styles.title}>{experience?.code || code}</h1>
-
         {experience && (
           <div className={styles.experienceInfo}>
             <h2 className={styles.experienceName}>{experience.name}</h2>
@@ -73,28 +89,33 @@ export default function Experience() {
         <div className={styles.participantsContainer}>
           <h4 className={styles.participantsTitle}>Players in Lobby:</h4>
           {experience && participants.length > 0 ? (
-            <ul className={styles.participantsList}>
-              {participants.map((p) => (
-                <li key={p.id} className={styles.participantItem}>
-                  <span
-                    className={`${styles.participantName} ${
-                      p.user_id === participant?.user_id ? styles.currentUser : ''
-                    }`}
-                  >
-                    {p.name || p.email}
-                  </span>
-                  {p.user_id === participant?.user_id && (
-                    <span className={styles.youIndicator}>(You)</span>
-                  )}
-                </li>
-              ))}
-            </ul>
+            <ParticipantsList
+              participants={participants}
+              highlightUserId={participant?.user_id}
+              showRole={false}
+            />
           ) : (
             <p className={styles.loadingParticipants}>
               {experience ? 'No participants yet...' : 'Loading participants...'}
             </p>
           )}
         </div>
+
+        {/* Admin/Host control: clear avatars (lobby view without a current block) */}
+        {(isAdmin || experience?.hosts?.some((h) => h.user_id === participant?.user_id)) && (
+          <div className={styles.adminControls}>
+            <Button
+              onClick={async () => {
+                if (confirm('Clear all participant avatars and drawings? This cannot be undone.')) {
+                  await clearAvatars();
+                }
+              }}
+              disabled={clearing}
+            >
+              {clearing ? 'Clearing…' : 'Clear Avatars'}
+            </Button>
+          </div>
+        )}
 
         {isAdmin && (
           <div className={styles.adminActions}>
@@ -105,6 +126,42 @@ export default function Experience() {
         )}
 
         <p className={styles.waitingMessage}>Waiting for the experience to start...</p>
+
+        {!isAdmin && showAvatarEditor && (
+          <div className={styles.avatarEditor}>
+            <LobbyAvatarEditor onFinalize={() => setShowAvatarEditor(false)} />
+          </div>
+        )}
+
+        {!isAdmin &&
+          !showAvatarEditor &&
+          (typeof document !== 'undefined'
+            ? createPortal(
+                <button
+                  className={styles.avatarToggleBtn}
+                  aria-label="Edit avatar"
+                  title="Edit avatar"
+                  onClick={() => setShowAvatarEditor(true)}
+                >
+                  {participantAvatar ? (
+                    <img
+                      className={styles.avatarToggleImg}
+                      src={participantAvatar}
+                      alt="Your avatar"
+                    />
+                  ) : (
+                    <span>✎</span>
+                  )}
+                </button>,
+                document.body,
+              )
+            : null)}
+
+        <div className={styles.playbillCta}>
+          <Link to={`/experiences/${code}/playbill`}>
+            <Button>Open Playbill</Button>
+          </Link>
+        </div>
       </section>
     );
   }

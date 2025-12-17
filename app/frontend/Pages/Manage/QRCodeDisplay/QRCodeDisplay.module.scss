@@ -18,3 +18,16 @@
   color: var(--yellow);
   font-weight: 400;
 }
+
+.compact {
+  gap: 8px;
+  padding: 8px;
+}
+
+.compact .title {
+  font-size: 14px;
+}
+
+.compact .code {
+  font-size: 12px;
+}

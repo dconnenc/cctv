@@ -18,6 +18,39 @@ class ExperienceSubscriptionChannel < ApplicationCable::Channel
     log_unsubscription
   end
 
+  # Live drawing events from participants during lobby
+  def drawing_event(data)
+    return unless @experience && @participant && !monitor_view_subscription? && !@is_admin
+
+    op = data["operation"]
+    payload = data["data"] || {}
+    ActionCable.server.broadcast(
+      Experiences::Broadcaster.monitor_stream_key(@experience),
+      {
+        type: 'drawing_update',
+        participant_id: @participant.id,
+        operation: op,
+        data: payload,
+      },
+    )
+  end
+
+  # Participant moved avatar position in lobby positioning mode (ephemeral)
+  def avatar_position(data)
+    return unless @experience && @participant && !monitor_view_subscription? && !@is_admin
+
+    pos = data["position"] || {}
+    ActionCable.server.broadcast(
+      Experiences::Broadcaster.monitor_stream_key(@experience),
+      {
+        type: 'drawing_update',
+        participant_id: @participant.id,
+        operation: 'avatar_position',
+        data: { position: pos },
+      },
+    )
+  end
+
   def resubscribe
     return reject unless valid_resubscription_request?
 

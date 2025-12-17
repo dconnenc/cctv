@@ -1,0 +1,13 @@
+.root {
+  width: 100%;
+  height: 100%;
+}
+
+.stageWrap {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
+  border-radius: 8px;
+  overflow: hidden;
+}

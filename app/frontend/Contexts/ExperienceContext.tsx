@@ -61,9 +61,13 @@ export function ExperienceProvider({ children }: ExperienceProviderProps) {
   const wsRef = useRef<WebSocket>();
   const monitorWsRef = useRef<WebSocket>();
   const impersonationWsRef = useRef<WebSocket>();
+  const wsIdentifierRef = useRef<string>();
+  const monitorIdentifierRef = useRef<string>();
+  const impersonationIdentifierRef = useRef<string>();
 
   // Family Feud dispatch registry (keyed by blockId)
   const familyFeudDispatchRegistry = useRef<Map<string, (action: any) => void>>(new Map());
+  const lobbyDrawingDispatchRef = useRef<((action: any) => void) | null>(null);
 
   const currentCode = code || '';
   const isManagePage = location.pathname.includes('/manage');
@@ -236,6 +240,12 @@ export function ExperienceProvider({ children }: ExperienceProviderProps) {
         }),
       };
 
+      const id = JSON.stringify({
+        channel: 'ExperienceSubscriptionChannel',
+        code: currentCode,
+        token: jwt,
+      });
+      wsIdentifierRef.current = id;
       wsRef.current?.send(JSON.stringify(subscription));
     };
 
@@ -280,6 +290,12 @@ export function ExperienceProvider({ children }: ExperienceProviderProps) {
       };
 
       qaLogger('[ADMIN WS] Sending subscription');
+      const id = JSON.stringify({
+        channel: 'ExperienceSubscriptionChannel',
+        code: currentCode,
+        token: jwt,
+      });
+      wsIdentifierRef.current = id;
       wsRef.current?.send(JSON.stringify(subscription));
     };
 
@@ -322,6 +338,13 @@ export function ExperienceProvider({ children }: ExperienceProviderProps) {
         }),
       };
 
+      const id = JSON.stringify({
+        channel: 'ExperienceSubscriptionChannel',
+        code: currentCode,
+        token: jwt,
+        view_type: 'monitor',
+      });
+      monitorIdentifierRef.current = id;
       monitorWsRef.current?.send(JSON.stringify(subscription));
     };
 
@@ -364,6 +387,13 @@ export function ExperienceProvider({ children }: ExperienceProviderProps) {
           }),
         };
 
+        const id = JSON.stringify({
+          channel: 'ExperienceSubscriptionChannel',
+          code: currentCode,
+          token: jwt,
+          as_participant_id: participantId,
+        });
+        impersonationIdentifierRef.current = id;
         impersonationWsRef.current?.send(JSON.stringify(subscription));
       };
 
@@ -570,6 +600,9 @@ export function ExperienceProvider({ children }: ExperienceProviderProps) {
         );
         setMonitorView(updatedExperience);
       }
+    } else if ((wsMessage as any).type === 'drawing_update') {
+      const dispatch = lobbyDrawingDispatchRef.current;
+      if (dispatch) dispatch(wsMessage as any);
     }
   }, []);
 
@@ -672,6 +705,35 @@ export function ExperienceProvider({ children }: ExperienceProviderProps) {
     unregisterFamilyFeudDispatch: useCallback((blockId: string) => {
       familyFeudDispatchRegistry.current.delete(blockId);
     }, []),
+    registerLobbyDrawingDispatch: useCallback((dispatch: (action: any) => void) => {
+      lobbyDrawingDispatchRef.current = dispatch;
+    }, []),
+    unregisterLobbyDrawingDispatch: useCallback(() => {
+      lobbyDrawingDispatchRef.current = null;
+    }, []),
+    experiencePerform: useCallback(
+      (
+        action: string,
+        payload?: Record<string, any>,
+        target: 'participant' | 'admin' | 'monitor' | 'impersonation' = 'participant',
+      ) => {
+        const frames = {
+          participant: { sock: wsRef.current, id: wsIdentifierRef.current },
+          admin: { sock: wsRef.current, id: wsIdentifierRef.current },
+          monitor: { sock: monitorWsRef.current, id: monitorIdentifierRef.current },
+          impersonation: {
+            sock: impersonationWsRef.current,
+            id: impersonationIdentifierRef.current,
+          },
+        } as const;
+        const f = frames[target];
+        if (!f.sock || !f.id) return;
+        const data = JSON.stringify({ action, ...(payload || {}) });
+        const msg = { command: 'message', identifier: f.id, data } as any;
+        f.sock.send(JSON.stringify(msg));
+      },
+      [],
+    ),
   };
 
   return <ExperienceContext.Provider value={value}>{children}</ExperienceContext.Provider>;

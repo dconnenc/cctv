@@ -1,7 +1,7 @@
 class Api::ExperiencesController < Api::BaseController
   authorize :user, through: :current_user
   before_action :authenticate_and_set_user_and_experience,
-    only: [:open_lobby, :start, :pause, :resume, :admin_token]
+    only: [:open_lobby, :start, :pause, :resume, :admin_token, :clear_avatars]
 
   # POST /api/experiences
   def create
@@ -108,6 +108,30 @@ class Api::ExperiencesController < Api::BaseController
         data: @experience,
       }, status: :ok
     end
+  end
+
+  # POST /api/experiences/:id/clear_avatars
+  def clear_avatars
+    is_system_admin = @user&.admin? || @user&.superadmin?
+    is_host_or_mod = @experience.experience_participants.where(user_id: @user&.id, role: %w[host moderator]).exists?
+
+    unless is_system_admin || is_host_or_mod
+      render json: { success: false, error: 'forbidden' }, status: :forbidden
+      return
+    end
+
+    ExperienceParticipant.where(experience_id: @experience.id).update_all(avatar: {})
+
+    # Broadcast full experience update so monitor/admin/participants refresh
+    Experiences::Broadcaster.new(@experience).broadcast_experience_update
+
+    # Also send a live drawing clear signal to monitor to drop ephemeral strokes
+    ActionCable.server.broadcast(
+      Experiences::Broadcaster.monitor_stream_key(@experience),
+      { type: 'drawing_update', participant_id: nil, operation: 'clear_all' },
+    )
+
+    render json: { success: true }
   end
 
   # POST /api/experiences/:id/admin_token
