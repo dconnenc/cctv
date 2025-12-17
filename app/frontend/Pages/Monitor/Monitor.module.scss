@@ -17,10 +17,18 @@
 }
 
 .qrContainer {
+  position: absolute;
+  right: 16px;
+  bottom: 16px;
+  z-index: 9;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 100%;
+  padding: 8px;
+  border: 1px solid hsl(var(--border));
+  border-radius: 8px;
+  background: hsl(var(--popover) / 0.7);
+  backdrop-filter: blur(6px);
 }
 
 .title {
@@ -35,4 +43,12 @@
 .error {
   color: var(--yellow);
   text-shadow: none;
+}
+.adminControls {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  z-index: 11;
+  display: flex;
+  gap: 8px;
 }

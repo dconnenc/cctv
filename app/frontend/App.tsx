@@ -14,6 +14,7 @@ import {
   Manage,
   ManageCreateBlock,
   Monitor,
+  Playbill,
   Register,
   Stylesheet,
 } from '@cctv/pages';
@@ -40,7 +41,7 @@ function App() {
     <UserProvider>
       <div className={`app${booting ? ' app--booting' : ''}`}>
         <BackgroundStatic />
-        {currentRoute.pathname !== '/monitor' && <TopNav />}
+        {!currentRoute.pathname.includes('/monitor') && <TopNav />}
         <div className={styles.root}>
           <RouteWink>
             <Route path="/" element={<Home />} />
@@ -67,12 +68,13 @@ function App() {
 
               <Route element={<RequireExperienceParticipantOrAdmin />}>
                 <Route index element={<Experience />} />
+                <Route path="playbill" element={<Playbill />} />
 
                 <Route element={<RequireExperienceHostOrAdmin />}>
                   <Route path="manage" element={<Manage />} />
                   <Route path="manage/blocks/new" element={<ManageCreateBlock />} />
                   <Route path="manage/blocks/:blockId" element={<Block />} />
-                  <Route path="monitor " element={<Monitor />} />
+                  <Route path="monitor" element={<Monitor />} />
                 </Route>
               </Route>
             </Route>

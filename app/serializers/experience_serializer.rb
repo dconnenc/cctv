@@ -76,7 +76,8 @@ class ExperienceSerializer
         joined_at: participant.joined_at,
         fingerprint: participant.fingerprint,
         created_at: participant.created_at,
-        updated_at: participant.updated_at
+        updated_at: participant.updated_at,
+        avatar: participant.avatar.presence
       }
     end
   end

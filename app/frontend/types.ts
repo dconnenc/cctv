@@ -154,6 +154,11 @@ export interface ExperienceParticipant {
   fingerprint: string | null;
   created_at: string;
   updated_at: string;
+  avatar?: {
+    image?: string;
+    position?: { x: number; y: number } | null;
+    updated_at?: string;
+  } | null;
 }
 
 // Discriminated union for blocks
@@ -635,4 +640,15 @@ export interface ExperienceContextType {
   // Family Feud block-scoped dispatch registration
   registerFamilyFeudDispatch?: (blockId: string, dispatch: (action: any) => void) => void;
   unregisterFamilyFeudDispatch?: (blockId: string) => void;
+
+  // Lobby drawing live updates
+  registerLobbyDrawingDispatch?: (dispatch: (action: any) => void) => void;
+  unregisterLobbyDrawingDispatch?: () => void;
+
+  // Perform ActionCable channel actions on current main socket
+  experiencePerform?: (
+    action: string,
+    payload?: Record<string, any>,
+    target?: 'participant' | 'admin' | 'monitor' | 'impersonation',
+  ) => void;
 }

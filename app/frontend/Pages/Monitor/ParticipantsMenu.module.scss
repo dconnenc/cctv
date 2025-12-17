@@ -1,0 +1,63 @@
+.container {
+  position: absolute;
+  top: 0.75rem;
+  left: 0.75rem;
+  z-index: 10;
+  max-height: 60vh;
+  width: 220px;
+  padding: 0.5rem 0.5rem;
+  border-radius: 0.5rem;
+  border: 1px solid hsl(var(--border));
+  background: hsl(var(--popover) / 0.7);
+  backdrop-filter: blur(6px);
+  overflow: hidden;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.25rem 0.25rem 0.5rem 0.25rem;
+  border-bottom: 1px solid hsl(var(--border));
+}
+
+.title {
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+.count {
+  font-size: 0.8rem;
+  opacity: 0.8;
+}
+
+.list {
+  margin: 0;
+  margin-top: 0.5rem;
+  padding: 0;
+  list-style: none;
+  overflow-y: auto;
+  max-height: calc(60vh - 2.5rem);
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.3rem 0.25rem;
+  border-bottom: 1px dashed hsl(var(--border));
+}
+
+.name {
+  font-size: 0.85rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.role {
+  font-size: 0.7rem;
+  opacity: 0.75;
+}

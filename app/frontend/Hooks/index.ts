@@ -13,3 +13,5 @@ export { useExperiencePause } from './useExperiencePause';
 export { useExperienceResume } from './useExperienceResume';
 export { useFamilyFeudBuckets } from './useFamilyFeudBuckets';
 export { useScrollFade } from './useScrollFade';
+export { useSaveAvatar } from './useSaveAvatar';
+export { useClearAvatars } from './useClearAvatars';

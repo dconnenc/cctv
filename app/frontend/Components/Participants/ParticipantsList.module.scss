@@ -1,0 +1,41 @@
+.list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid hsl(var(--border));
+}
+
+.name {
+  font-weight: 400;
+}
+
+.you {
+  font-size: 0.85rem;
+  opacity: 0.8;
+  margin-left: 0.25rem;
+}
+
+.current {
+  font-weight: 600;
+  color: hsl(var(--accent));
+}
+
+.role {
+  font-size: 0.8rem;
+  opacity: 0.75;
+}
+
+.compact .item {
+  padding: 0.35rem 0;
+}
+
+.compact .role {
+  font-size: 0.7rem;
+}
