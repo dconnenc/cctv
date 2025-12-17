@@ -108,6 +108,7 @@
   flex-direction: column;
   gap: 10px;
   background: hsl(var(--popover));
+  color: hsl(var(--popover-foreground));
   backdrop-filter: blur(6px);
   border: 1px solid hsl(var(--border));
   border-radius: 0.75rem;
@@ -130,6 +131,8 @@
 .topnav__dropdownInner .link {
   width: 100%;
   text-align: left;
+  color: hsl(var(--popover-foreground));
+  text-shadow: none;
 }
 
 .topnav__controlRow {
@@ -203,6 +206,7 @@
   min-width: max-content;
   padding: 0.75rem;
   background: hsl(var(--popover));
+  color: hsl(var(--popover-foreground));
   backdrop-filter: blur(6px);
   border-radius: 0.5rem;
   box-shadow: var(--shadow-1, 0 8px 16px rgba(0, 0, 0, 0.1));
@@ -248,7 +252,7 @@
 .dropdownItem {
   display: block;
   padding: 0.375rem 0.5rem;
-  color: hsl(var(--foreground));
+  color: hsl(var(--popover-foreground));
   text-decoration: none;
   border-radius: 0.375rem;
   white-space: nowrap;
@@ -378,6 +382,14 @@
   }
   .topnav__mobile {
     display: flex;
+  }
+}
+
+/* Hide mobile overlay elements on desktop */
+@media (min-width: 769px) {
+  .topnav__dropdown,
+  .mobileBackdrop {
+    display: none !important;
   }
 }
 
