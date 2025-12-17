@@ -1,3 +1,4 @@
+import tailwindcss from '@tailwindcss/vite';
 import ReactPlugin from '@vitejs/plugin-react';
 import { URL, fileURLToPath } from 'node:url';
 import path from 'path';
@@ -10,6 +11,7 @@ export default defineConfig({
       jsxRuntime: 'automatic',
     }),
     RubyPlugin(),
+    tailwindcss(),
   ],
   resolve: {
     alias: {
