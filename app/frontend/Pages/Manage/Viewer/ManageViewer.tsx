@@ -2,7 +2,17 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { Link } from 'react-router-dom';
 
-import { ChevronLeft, ChevronRight, Monitor, Pause, Play, Plus, User, X } from 'lucide-react';
+import {
+  ChevronLeft,
+  ChevronRight,
+  Monitor,
+  Pause,
+  Play,
+  Plus,
+  SkipForward,
+  User,
+  X,
+} from 'lucide-react';
 
 import { Dialog, DialogContent } from '@cctv/components/ui/dialog';
 import { useExperience } from '@cctv/contexts';
@@ -17,6 +27,8 @@ import { Block, BlockKind, ParticipantSummary } from '@cctv/types';
 
 import FamilyFeudManager from '../../Block/FamilyFeudManager/FamilyFeudManager';
 import BlockPreview from '../BlockPreview/BlockPreview';
+import ContextDetails from '../ContextDetails/ContextDetails';
+import ContextView from '../ContextView/ContextView';
 import CreateBlock from '../CreateBlock/CreateBlock';
 import ParticipantsTab from '../ParticipantsTab/ParticipantsTab';
 
@@ -52,6 +64,8 @@ export default function ManageViewer() {
     error: experienceError,
     impersonatedParticipantId,
     setImpersonatedParticipantId,
+    monitorView,
+    participantView,
   } = useExperience();
 
   const { startExperience, isLoading: starting, error: startError } = useExperienceStart();
@@ -75,13 +89,26 @@ export default function ManageViewer() {
     setError: setStatusError,
   } = useChangeBlockStatus();
 
-  const selectedBlock = useMemo(() => {
-    return experience?.blocks?.find((block) => block.id === selectedBlockId);
-  }, [experience, selectedBlockId]);
+  const flattenedBlocks = useMemo(() => {
+    const result: { block: Block; isChild: boolean; parentId?: string }[] = [];
+    for (const block of experience?.blocks || []) {
+      result.push({ block, isChild: false });
+      if (block.children && block.children.length > 0) {
+        for (const child of block.children) {
+          result.push({ block: child, isChild: true, parentId: block.id });
+        }
+      }
+    }
+    return result;
+  }, [experience]);
 
   const currentOpenBlock = useMemo(() => {
-    return experience?.blocks?.find((block) => block.status === 'open');
-  }, [experience]);
+    return flattenedBlocks.find(({ block }) => block.status === 'open')?.block;
+  }, [flattenedBlocks]);
+
+  const selectedBlock = useMemo(() => {
+    return flattenedBlocks.find(({ block }) => block.id === selectedBlockId)?.block;
+  }, [flattenedBlocks, selectedBlockId]);
 
   const handlePresent = useCallback(
     async (block: Block) => {
@@ -99,6 +126,13 @@ export default function ManageViewer() {
 
       if (block.status !== 'open') {
         await changeStatus(block, 'open');
+      }
+
+      if (block.kind === BlockKind.MAD_LIB && block.children && block.children.length > 0) {
+        const firstChild = block.children[0];
+        if (firstChild.status !== 'open') {
+          await changeStatus(firstChild, 'open');
+        }
       }
 
       setBusyBlockId(undefined);
@@ -119,6 +153,27 @@ export default function ManageViewer() {
     },
     [code, changeStatus, setStatusError],
   );
+
+  const handlePlayNext = useCallback(async () => {
+    if (!code || !selectedBlock) return;
+
+    const currentIndex = flattenedBlocks.findIndex(({ block }) => block.id === selectedBlock.id);
+    if (currentIndex === -1 || currentIndex >= flattenedBlocks.length - 1) return;
+
+    const nextBlock = flattenedBlocks[currentIndex + 1].block;
+
+    setBusyBlockId(selectedBlock.id);
+    setStatusError(null);
+
+    if (selectedBlock.status === 'open') {
+      await changeStatus(selectedBlock, 'closed');
+    }
+
+    await changeStatus(nextBlock, 'open');
+    setSelectedBlockId(nextBlock.id);
+
+    setBusyBlockId(undefined);
+  }, [code, selectedBlock, flattenedBlocks, changeStatus, setStatusError]);
 
   const handleCreateBlock = () => {
     setIsCreateDialogOpen(true);
@@ -223,7 +278,7 @@ export default function ManageViewer() {
           <div className="flex-1 overflow-y-auto">
             {sidebarCollapsed ? (
               <ul className="p-1 space-y-1">
-                {experience?.blocks?.map((block, index) => (
+                {flattenedBlocks.map(({ block, isChild }, index) => (
                   <li key={block.id}>
                     <button
                       className={`relative w-full h-10 flex items-center justify-center rounded-md cursor-pointer text-xs text-[hsl(var(--foreground))] hover:bg-[hsl(var(--muted))] transition-colors ${
@@ -232,7 +287,7 @@ export default function ManageViewer() {
                           : ''
                       } ${block.status === 'hidden' ? 'opacity-50' : ''}`}
                       onClick={() => setSelectedBlockId(block.id)}
-                      title={`${block.kind} - ${block.status}`}
+                      title={`${isChild ? '↳ ' : ''}${block.kind} - ${block.status}`}
                     >
                       <span
                         className={`flex items-center justify-center gap-2 w-4 h-4 rounded-full ${getStatusColor(block.status)}`}
@@ -257,14 +312,14 @@ export default function ManageViewer() {
               </ul>
             ) : (
               <ul className="p-2 space-y-1">
-                {experience?.blocks?.map((block, index) => (
+                {flattenedBlocks.map(({ block, isChild }, index) => (
                   <li key={block.id}>
                     <button
                       className={`relative w-full h-16 px-3 py-2 rounded-md cursor-pointer text-sm text-left text-[hsl(var(--foreground))] hover:bg-[hsl(var(--muted))] transition-colors flex flex-col justify-center ${
                         selectedBlockId === block.id
                           ? 'bg-[hsl(var(--muted))] ring-2 ring-green-500'
                           : ''
-                      } ${block.status === 'hidden' ? 'opacity-50' : ''}`}
+                      } ${block.status === 'hidden' ? 'opacity-50' : ''} ${isChild ? '!ml-6 !w-[calc(100%-1.5rem)] !pl-2 border-l-2 border-[hsl(var(--muted-foreground))]' : ''}`}
                       onClick={() => setSelectedBlockId(block.id)}
                     >
                       <div className="flex items-center gap-2">
@@ -351,17 +406,28 @@ export default function ManageViewer() {
                       </span>
                     </div>
                   </div>
-                  <div>
+                  <div className="flex items-center gap-2">
                     {selectedBlock.status === 'open' ? (
-                      <Button
-                        onClick={() => handleStopPresenting(selectedBlock)}
-                        loading={busyBlockId === selectedBlock.id}
-                        loadingText="Stopping..."
-                      >
-                        <span className="flex items-center gap-2">
-                          <Pause size={16} /> <span> Stop Presenting</span>
-                        </span>
-                      </Button>
+                      <>
+                        <Button
+                          onClick={() => handleStopPresenting(selectedBlock)}
+                          loading={busyBlockId === selectedBlock.id}
+                          loadingText="Stopping..."
+                        >
+                          <span className="flex items-center gap-2">
+                            <Pause size={16} /> <span>Stop Presenting</span>
+                          </span>
+                        </Button>
+                        <Button
+                          onClick={handlePlayNext}
+                          loading={busyBlockId === selectedBlock.id}
+                          loadingText="Next..."
+                        >
+                          <span className="flex items-center gap-2">
+                            <SkipForward size={16} /> <span>Play Next</span>
+                          </span>
+                        </Button>
+                      </>
                     ) : (
                       <Button
                         onClick={() => handlePresent(selectedBlock)}
@@ -428,14 +494,37 @@ export default function ManageViewer() {
                       </span>
                     </div>
                     <div className="p-4 bg-[hsl(var(--card))]">
-                      <BlockPreview
-                        block={selectedBlock}
-                        participant={
-                          viewMode === 'participant'
-                            ? participantsCombined.find((p) => p.id === impersonatedParticipantId)
-                            : undefined
-                        }
-                      />
+                      {selectedBlockId === currentOpenBlock?.id ? (
+                        <ContextView
+                          block={
+                            viewMode === 'monitor'
+                              ? (monitorView?.next_block ?? undefined)
+                              : (participantView?.next_block ?? undefined)
+                          }
+                          participant={
+                            viewMode === 'participant'
+                              ? participantsCombined.find((p) => p.id === impersonatedParticipantId)
+                              : undefined
+                          }
+                          emptyMessage={
+                            viewMode === 'monitor'
+                              ? 'No block on Monitor'
+                              : 'No block for participant'
+                          }
+                          monitorView={monitorView}
+                          viewMode={viewMode}
+                          title="Current"
+                        />
+                      ) : (
+                        <BlockPreview
+                          block={selectedBlock}
+                          participant={
+                            viewMode === 'participant'
+                              ? participantsCombined.find((p) => p.id === impersonatedParticipantId)
+                              : undefined
+                          }
+                        />
+                      )}
                     </div>
                   </div>
                 </div>
