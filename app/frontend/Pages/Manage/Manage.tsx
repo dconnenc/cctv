@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
+import { Link } from 'react-router-dom';
+
 import { Dialog, DialogContent } from '@cctv/components/ui/dialog';
 import { useExperience } from '@cctv/contexts';
 import { Panel } from '@cctv/core';
@@ -11,7 +13,7 @@ import {
 } from '@cctv/hooks';
 import { Block, BlockStatus, ParticipantSummary } from '@cctv/types';
 
-import BlockShow from '../Block/Block';
+import BlockViewer from '../Block/Block';
 import ContextDetails from './ContextDetails/ContextDetails';
 import ContextView from './ContextView/ContextView';
 import CreateBlock from './CreateBlock/CreateBlock';
@@ -108,6 +110,9 @@ export default function Manage() {
     <>
       <section className={styles.root}>
         {errorMessage && <div className={styles.errorBanner}>{errorMessage}</div>}
+        <Link className="text-lg text-yellow-500 z-10" to={location.pathname.replace('/old', '')}>
+          Go to new view
+        </Link>
 
         <div className={styles.topRow}>
           <div className={styles.upNext}>
@@ -213,7 +218,7 @@ export default function Manage() {
       </Dialog>
       <Dialog open={!!showBlockId} onOpenChange={(open) => !open && setShowBlockId(null)}>
         <DialogContent className="sm:max-w-6xl w-full max-h-[90vh] overflow-y-auto">
-          {showBlockId && <BlockShow blockId={showBlockId} />}
+          {showBlockId && <BlockViewer blockId={showBlockId} />}
         </DialogContent>
       </Dialog>
     </>

@@ -1,3 +1,5 @@
+import { Params, useParams } from 'react-router-dom';
+
 import { DialogDescription, DialogTitle } from '@cctv/components/ui/dialog';
 import { useExperience } from '@cctv/contexts';
 import { BlockKind } from '@cctv/types';
@@ -67,6 +69,23 @@ export default function Block({ blockId }: BlockProps) {
           <span className={styles.value}>{block.kind}</span>
         </div>
       </div>
+    </div>
+  );
+}
+
+export function BlockPage() {
+  const { blockId } = useParams<{ blockId: string }>();
+
+  if (!blockId) {
+    return (
+      <div className="flex-centered">
+        <p>Block ID not found</p>
+      </div>
+    );
+  }
+  return (
+    <div className={styles.root}>
+      <Block blockId={blockId} />
     </div>
   );
 }

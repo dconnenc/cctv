@@ -43,7 +43,6 @@ import { DragDropContext, Draggable, Droppable } from '@hello-pangea/dnd';
 import { ChevronDown, ChevronRight, Loader2, Plus, Trash2 } from 'lucide-react';
 
 import { Button } from '@cctv/components/ui/button';
-import { DialogDescription, DialogTitle } from '@cctv/components/ui/dialog';
 import { useFamilyFeudBuckets, useScrollFade } from '@cctv/hooks';
 import { Block } from '@cctv/types';
 
@@ -239,12 +238,7 @@ export default function FamilyFeudManager({ block, onBucketOperation }: FamilyFe
 
   return (
     <div className={styles.root}>
-      <DialogTitle className={styles.title}>
-        {(block as any).payload?.title || 'Family Feud'}
-      </DialogTitle>
-      <DialogDescription className="sr-only">
-        Organize survey responses into categorized buckets
-      </DialogDescription>
+      <h2 className={styles.title}>{(block as any).payload?.title || 'Family Feud'}</h2>
       {questionsState.map((question) => {
         const isQuestionCollapsed = collapsedQuestions.has(question.questionId);
         return (

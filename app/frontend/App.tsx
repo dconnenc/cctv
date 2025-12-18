@@ -19,6 +19,8 @@ import {
   Stylesheet,
 } from '@cctv/pages';
 
+import { BlockPage } from './Pages/Block/Block';
+import ManageViewer from './Pages/Manage/Viewer/ManageViewer';
 import {
   AllowRegisterRoute,
   RequireAdmin,
@@ -71,9 +73,10 @@ function App() {
                 <Route path="playbill" element={<Playbill />} />
 
                 <Route element={<RequireExperienceHostOrAdmin />}>
-                  <Route path="manage" element={<Manage />} />
+                  <Route path="manage" element={<ManageViewer />} />
+                  <Route path="manage/old" element={<Manage />} />
                   <Route path="manage/blocks/new" element={<ManageCreateBlock />} />
-                  <Route path="manage/blocks/:blockId" element={<Block />} />
+                  <Route path="manage/blocks/:blockId" element={<BlockPage />} />
                   <Route path="monitor" element={<Monitor />} />
                 </Route>
               </Route>

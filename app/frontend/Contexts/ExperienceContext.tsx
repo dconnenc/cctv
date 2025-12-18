@@ -58,12 +58,12 @@ export function ExperienceProvider({ children }: ExperienceProviderProps) {
   // WebSocket state
   const [wsConnected, setWsConnected] = useState(false);
   const [wsError, setWsError] = useState<string>();
-  const wsRef = useRef<WebSocket>();
-  const monitorWsRef = useRef<WebSocket>();
-  const impersonationWsRef = useRef<WebSocket>();
-  const wsIdentifierRef = useRef<string>();
-  const monitorIdentifierRef = useRef<string>();
-  const impersonationIdentifierRef = useRef<string>();
+  const wsRef = useRef<WebSocket>(undefined);
+  const monitorWsRef = useRef<WebSocket>(undefined);
+  const impersonationWsRef = useRef<WebSocket>(undefined);
+  const wsIdentifierRef = useRef<string>(undefined);
+  const monitorIdentifierRef = useRef<string>(undefined);
+  const impersonationIdentifierRef = useRef<string>(undefined);
 
   // Family Feud dispatch registry (keyed by blockId)
   const familyFeudDispatchRegistry = useRef<Map<string, (action: any) => void>>(new Map());
@@ -534,7 +534,7 @@ export function ExperienceProvider({ children }: ExperienceProviderProps) {
         setExperienceStatus(updatedExperience.status === 'live' ? 'live' : 'lobby');
         setError(undefined);
       }
-    } else if (messageType === 'family_feud_updated') {
+    } else if (wsMessage.type === WebSocketMessageTypes.FAMILY_FEUD_UPDATED) {
       qaLogger(`[ADMIN WS] Processing family_feud_updated: ${wsMessage.operation}`);
       const { block_id, operation, data } = wsMessage as any;
 

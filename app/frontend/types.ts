@@ -446,10 +446,17 @@ export const WebSocketMessageTypes = {
   RESUBSCRIBE_REQUIRED: 'resubscribe_required',
   CONFIRM_SUBSCRIPTION: 'confirm_subscription',
   PING: 'ping',
+  FAMILY_FEUD_UPDATED: 'family_feud_updated',
 } as const;
 
 export type WebSocketMessageType =
   (typeof WebSocketMessageTypes)[keyof typeof WebSocketMessageTypes];
+
+export interface FamilyFeudUpdatedMessageMetadata extends WebSocketMessageMetadata {
+  block_id: string;
+  operation: string;
+  data: any;
+}
 
 export type StreamType = 'role' | 'role_segments' | 'targeted';
 
@@ -513,6 +520,13 @@ export interface ResubscribeRequiredMessage
   reason: string;
 }
 
+export interface FamilyFeudUpdatedMessage
+  extends BaseWebSocketMessage<'family_feud_updated', FamilyFeudUpdatedMessageMetadata> {
+  block_id: string;
+  operation: string;
+  data: any;
+}
+
 export interface ConfirmSubscriptionMessage extends BaseWebSocketMessage<'confirm_subscription'> {}
 
 export interface PingMessage extends BaseWebSocketMessage<'ping'> {}
@@ -524,7 +538,8 @@ export type WebSocketMessage =
   | StreamChangedMessage
   | ResubscribeRequiredMessage
   | ConfirmSubscriptionMessage
-  | PingMessage;
+  | PingMessage
+  | FamilyFeudUpdatedMessage;
 
 // ===== CREATE EXPERIENCE FORM TYPES =====
 
