@@ -3,8 +3,10 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 
 import {
+  Bug,
   ChevronLeft,
   ChevronRight,
+  MessageSquare,
   Monitor,
   Pause,
   Play,
@@ -27,18 +29,19 @@ import { Block, BlockKind, ParticipantSummary } from '@cctv/types';
 
 import FamilyFeudManager from '../../Block/FamilyFeudManager/FamilyFeudManager';
 import BlockPreview from '../BlockPreview/BlockPreview';
-import ContextDetails from '../ContextDetails/ContextDetails';
 import ContextView from '../ContextView/ContextView';
 import CreateBlock from '../CreateBlock/CreateBlock';
 import ParticipantsTab from '../ParticipantsTab/ParticipantsTab';
+import DebugPanel from './DebugPanel/DebugPanel';
 
 export default function ManageViewer() {
   const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
   const [showParticipantDetails, setShowParticipantDetails] = useState(false);
+  const [showDebugPanel, setShowDebugPanel] = useState(false);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [busyBlockId, setBusyBlockId] = useState<string>();
   const [dismissedError, setDismissedError] = useState(false);
-  const [viewMode, setViewMode] = useState<'monitor' | 'participant'>('monitor');
+  const [viewMode, setViewMode] = useState<'monitor' | 'participant' | 'responses'>('monitor');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
     if (typeof window !== 'undefined') {
       return window.innerWidth < 768;
@@ -110,6 +113,16 @@ export default function ManageViewer() {
     return flattenedBlocks.find(({ block }) => block.id === selectedBlockId)?.block;
   }, [flattenedBlocks, selectedBlockId]);
 
+  // Helper to find parent block for a child block
+  const findParentBlock = useCallback(
+    (childBlock: Block): Block | undefined => {
+      if (!experience || !childBlock.parent_block_ids?.length) return undefined;
+      const parentId = childBlock.parent_block_ids[0];
+      return experience.blocks.find((b) => b.id === parentId);
+    },
+    [experience],
+  );
+
   const handlePresent = useCallback(
     async (block: Block) => {
       if (!code) return;
@@ -117,27 +130,84 @@ export default function ManageViewer() {
       setBusyBlockId(block.id);
       setStatusError(null);
 
-      const openBlocks = experience?.blocks?.filter((b) => b.status === 'open') || [];
-      for (const openBlock of openBlocks) {
-        if (openBlock.id !== block.id) {
-          await changeStatus(openBlock, 'closed');
+      // Check if this is a child block (has parent)
+      const parentBlock = findParentBlock(block);
+
+      if (parentBlock) {
+        // This is a child block - ensure parent is open first
+        if (parentBlock.status !== 'open') {
+          await changeStatus(parentBlock, 'open');
         }
-      }
 
-      if (block.status !== 'open') {
-        await changeStatus(block, 'open');
-      }
+        // Close any other open children of the same parent (only one child can be active)
+        const openSiblings =
+          parentBlock.children?.filter((c) => c.id !== block.id && c.status === 'open') || [];
+        for (const sibling of openSiblings) {
+          await changeStatus(sibling, 'closed');
+        }
 
-      if (block.kind === BlockKind.MAD_LIB && block.children && block.children.length > 0) {
+        // Open the target child block
+        if (block.status !== 'open') {
+          await changeStatus(block, 'open');
+        }
+      } else if (block.children?.length) {
+        // This is a parent block with children
+        // First, close any other open parent blocks and their children
+        const otherOpenParents =
+          experience?.blocks?.filter(
+            (b) => b.id !== block.id && b.status === 'open' && !b.parent_block_ids?.length,
+          ) || [];
+
+        for (const otherParent of otherOpenParents) {
+          // Close children first
+          if (otherParent.children) {
+            for (const child of otherParent.children) {
+              if (child.status === 'open') {
+                await changeStatus(child, 'closed');
+              }
+            }
+          }
+          // Close the parent
+          await changeStatus(otherParent, 'closed');
+        }
+
+        // Open the parent block
+        if (block.status !== 'open') {
+          await changeStatus(block, 'open');
+        }
+
+        // Open the first child
         const firstChild = block.children[0];
-        if (firstChild.status !== 'open') {
+        if (firstChild && firstChild.status !== 'open') {
           await changeStatus(firstChild, 'open');
+        }
+      } else {
+        // Simple block with no parent/children
+        // Close all open blocks first
+        const openBlocks = experience?.blocks?.filter((b) => b.status === 'open') || [];
+        for (const openBlock of openBlocks) {
+          if (openBlock.id !== block.id) {
+            // If it's a parent with children, close children first
+            if (openBlock.children) {
+              for (const child of openBlock.children) {
+                if (child.status === 'open') {
+                  await changeStatus(child, 'closed');
+                }
+              }
+            }
+            await changeStatus(openBlock, 'closed');
+          }
+        }
+
+        // Open the block
+        if (block.status !== 'open') {
+          await changeStatus(block, 'open');
         }
       }
 
       setBusyBlockId(undefined);
     },
-    [code, experience, changeStatus, setStatusError],
+    [code, experience, changeStatus, setStatusError, findParentBlock],
   );
 
   const handleStopPresenting = useCallback(
@@ -147,11 +217,32 @@ export default function ManageViewer() {
       setBusyBlockId(block.id);
       setStatusError(null);
 
-      await changeStatus(block, 'closed');
+      // Check if this is a child block
+      const parentBlock = findParentBlock(block);
+
+      if (parentBlock) {
+        // This is a child block - close the child, then close the parent
+        await changeStatus(block, 'closed');
+        // Also close the parent when stopping a child
+        if (parentBlock.status === 'open') {
+          await changeStatus(parentBlock, 'closed');
+        }
+      } else if (block.children?.length) {
+        // This is a parent block - close all children first, then close parent
+        for (const child of block.children) {
+          if (child.status === 'open') {
+            await changeStatus(child, 'closed');
+          }
+        }
+        await changeStatus(block, 'closed');
+      } else {
+        // Simple block - just close it
+        await changeStatus(block, 'closed');
+      }
 
       setBusyBlockId(undefined);
     },
-    [code, changeStatus, setStatusError],
+    [code, changeStatus, setStatusError, findParentBlock],
   );
 
   const handlePlayNext = useCallback(async () => {
@@ -162,18 +253,79 @@ export default function ManageViewer() {
 
     const nextBlock = flattenedBlocks[currentIndex + 1].block;
 
+    // Check if we're moving to a different parent
+    const currentParent = findParentBlock(selectedBlock);
+    const nextParent = findParentBlock(nextBlock);
+
     setBusyBlockId(selectedBlock.id);
     setStatusError(null);
 
-    if (selectedBlock.status === 'open') {
-      await changeStatus(selectedBlock, 'closed');
+    // If next block has the same parent as current, just switch children
+    if (currentParent && nextParent && currentParent.id === nextParent.id) {
+      // Close current child
+      if (selectedBlock.status === 'open') {
+        await changeStatus(selectedBlock, 'closed');
+      }
+      // Open next child
+      if (nextBlock.status !== 'open') {
+        await changeStatus(nextBlock, 'open');
+      }
+    } else {
+      // Different parents or moving between parent/child - use full handlePresent logic
+      // Close current block properly (with parent/children handling)
+      const currentBlockParent = findParentBlock(selectedBlock);
+      if (currentBlockParent) {
+        // Current is a child - close it and parent
+        if (selectedBlock.status === 'open') {
+          await changeStatus(selectedBlock, 'closed');
+        }
+        if (currentBlockParent.status === 'open') {
+          await changeStatus(currentBlockParent, 'closed');
+        }
+      } else if (selectedBlock.children?.length) {
+        // Current is a parent - close children first
+        for (const child of selectedBlock.children) {
+          if (child.status === 'open') {
+            await changeStatus(child, 'closed');
+          }
+        }
+        if (selectedBlock.status === 'open') {
+          await changeStatus(selectedBlock, 'closed');
+        }
+      } else if (selectedBlock.status === 'open') {
+        await changeStatus(selectedBlock, 'closed');
+      }
+
+      // Open next block with proper parent/child handling
+      const nextBlockParent = findParentBlock(nextBlock);
+      if (nextBlockParent) {
+        // Next is a child - open parent first, then child
+        if (nextBlockParent.status !== 'open') {
+          await changeStatus(nextBlockParent, 'open');
+        }
+        if (nextBlock.status !== 'open') {
+          await changeStatus(nextBlock, 'open');
+        }
+      } else if (nextBlock.children?.length) {
+        // Next is a parent - open it and first child
+        if (nextBlock.status !== 'open') {
+          await changeStatus(nextBlock, 'open');
+        }
+        const firstChild = nextBlock.children[0];
+        if (firstChild && firstChild.status !== 'open') {
+          await changeStatus(firstChild, 'open');
+        }
+      } else {
+        // Simple block
+        if (nextBlock.status !== 'open') {
+          await changeStatus(nextBlock, 'open');
+        }
+      }
     }
 
-    await changeStatus(nextBlock, 'open');
     setSelectedBlockId(nextBlock.id);
-
     setBusyBlockId(undefined);
-  }, [code, selectedBlock, flattenedBlocks, changeStatus, setStatusError]);
+  }, [code, selectedBlock, flattenedBlocks, changeStatus, setStatusError, findParentBlock]);
 
   const handleCreateBlock = () => {
     setIsCreateDialogOpen(true);
@@ -319,7 +471,7 @@ export default function ManageViewer() {
                         selectedBlockId === block.id
                           ? 'bg-[hsl(var(--muted))] ring-2 ring-green-500'
                           : ''
-                      } ${block.status === 'hidden' ? 'opacity-50' : ''} ${isChild ? '!ml-6 !w-[calc(100%-1.5rem)] !pl-2 border-l-2 border-[hsl(var(--muted-foreground))]' : ''}`}
+                      } ${block.status === 'hidden' ? 'opacity-50' : ''} ${isChild ? '!ml-6 !w-[calc(100%-1.5rem)] border-l-2 border-[hsl(var(--muted-foreground))]' : ''}`}
                       onClick={() => setSelectedBlockId(block.id)}
                     >
                       <div className="flex items-center gap-2">
@@ -367,6 +519,17 @@ export default function ManageViewer() {
             </div>
             <div className="flex items-center gap-2">
               {getExperienceActionButton()}
+              <button
+                onClick={() => setShowDebugPanel(!showDebugPanel)}
+                className={`px-3 py-1.5 text-sm rounded-md border transition-colors ${
+                  showDebugPanel
+                    ? 'border-yellow-500 bg-yellow-500/10 text-yellow-500'
+                    : 'border-[hsl(var(--border))] hover:bg-[hsl(var(--muted))]'
+                }`}
+                title="Debug Panel"
+              >
+                <Bug size={16} />
+              </button>
               <button
                 onClick={() => setShowParticipantDetails(!showParticipantDetails)}
                 className="px-3 py-1.5 text-sm rounded-md border border-[hsl(var(--border))] hover:bg-[hsl(var(--muted))] transition-colors"
@@ -469,6 +632,17 @@ export default function ManageViewer() {
                         <User size={14} />
                         Participant
                       </button>
+                      <button
+                        onClick={() => setViewMode('responses')}
+                        className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm transition-colors ${
+                          viewMode === 'responses'
+                            ? 'bg-[hsl(var(--background))] text-white'
+                            : 'text-[hsl(var(--muted-foreground))] hover:text-white'
+                        }`}
+                      >
+                        <MessageSquare size={14} />
+                        Responses ({selectedBlock?.responses?.total ?? 0})
+                      </button>
                     </div>
 
                     {viewMode === 'participant' && (
@@ -486,15 +660,67 @@ export default function ManageViewer() {
                     )}
                   </div>
 
-                  {/* Block Preview */}
+                  {/* Block Preview or Responses */}
                   <div className="border border-[hsl(var(--border))] rounded-lg overflow-hidden">
                     <div className="px-4 py-2 bg-[hsl(var(--muted))] border-b border-[hsl(var(--border))]">
                       <span className="text-sm font-medium text-white">
-                        {viewMode === 'monitor' ? 'Monitor Preview' : 'Participant Preview'}
+                        {viewMode === 'monitor'
+                          ? 'Monitor Preview'
+                          : viewMode === 'participant'
+                            ? 'Participant Preview'
+                            : `All Responses (${selectedBlock?.responses?.total ?? 0})`}
                       </span>
                     </div>
                     <div className="p-4 bg-[hsl(var(--card))]">
-                      {selectedBlockId === currentOpenBlock?.id ? (
+                      {viewMode === 'responses' ? (
+                        <div className="space-y-2 max-h-96 overflow-y-auto">
+                          {(() => {
+                            const responses = selectedBlock?.responses as
+                              | {
+                                  all_responses?: Array<{
+                                    id: string;
+                                    user_id: string;
+                                    answer: unknown;
+                                    created_at: string;
+                                  }>;
+                                }
+                              | undefined;
+                            const allResponses = responses?.all_responses;
+                            if (allResponses && allResponses.length > 0) {
+                              return allResponses.map((response, index) => {
+                                const participant = participantsCombined.find(
+                                  (p) => p.user_id === response.user_id,
+                                );
+                                return (
+                                  <div
+                                    key={response.id}
+                                    className="p-3 bg-[hsl(var(--background))] rounded-md border border-[hsl(var(--border))]"
+                                  >
+                                    <div className="flex items-center justify-between mb-1">
+                                      <span className="text-xs text-[hsl(var(--muted-foreground))]">
+                                        #{index + 1} • {participant?.name || 'Unknown'}
+                                      </span>
+                                      <span className="text-xs text-[hsl(var(--muted-foreground))]">
+                                        {new Date(response.created_at).toLocaleTimeString()}
+                                      </span>
+                                    </div>
+                                    <div className="text-sm text-white">
+                                      {typeof response.answer === 'object'
+                                        ? JSON.stringify(response.answer, null, 2)
+                                        : String(response.answer)}
+                                    </div>
+                                  </div>
+                                );
+                              });
+                            }
+                            return (
+                              <div className="text-center text-[hsl(var(--muted-foreground))] py-8">
+                                No responses yet
+                              </div>
+                            );
+                          })()}
+                        </div>
+                      ) : selectedBlockId === currentOpenBlock?.id ? (
                         <ContextView
                           block={
                             viewMode === 'monitor'
@@ -590,7 +816,7 @@ export default function ManageViewer() {
 
         {/* Participants panel - slides in from right */}
         <aside
-          className={`z-10 absolute h-full top-0 right-0 w-80 shrink-0 border-l border-[hsl(var(--border))] bg-[hsl(var(--card))] flex flex-col transition-all duration-300 ease-in-out ${
+          className={`z-10 absolute h-full top-0 right-0 w-[420px] shrink-0 border-l border-[hsl(var(--border))] bg-[hsl(var(--card))] flex flex-col transition-all duration-300 ease-in-out ${
             showParticipantDetails
               ? 'translate-x-0'
               : 'translate-x-full w-0 border-0 overflow-hidden'
@@ -622,6 +848,13 @@ export default function ManageViewer() {
               await changeStatus(currentOpenBlock, 'closed');
             }}
           />
+        </DialogContent>
+      </Dialog>
+
+      {/* Debug panel */}
+      <Dialog open={showDebugPanel} onOpenChange={setShowDebugPanel}>
+        <DialogContent className="sm:max-w-2xl w-full">
+          <DebugPanel selectedBlock={selectedBlock} />
         </DialogContent>
       </Dialog>
     </>

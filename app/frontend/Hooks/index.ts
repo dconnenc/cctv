@@ -15,3 +15,5 @@ export { useFamilyFeudBuckets } from './useFamilyFeudBuckets';
 export { useScrollFade } from './useScrollFade';
 export { useSaveAvatar } from './useSaveAvatar';
 export { useClearAvatars } from './useClearAvatars';
+export { useDebugParticipants } from './useDebugParticipants';
+export { useSimulateResponses } from './useSimulateResponses';

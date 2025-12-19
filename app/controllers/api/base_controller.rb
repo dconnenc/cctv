@@ -7,9 +7,9 @@ class Api::BaseController < ApplicationController
   class NotFoundError < StandardError; end
 
   def authenticate_and_set_user_and_experience
-    if session_admin_signed_in?
-      set_as_session_admin
-    elsif bearer_token
+    # JWT takes precedence over session auth when present
+    # This allows simulating requests as different users while logged in as admin
+    if bearer_token
       claims = Experiences::AuthService.decode!(bearer_token)
 
       case claims[:scope]
@@ -20,6 +20,8 @@ class Api::BaseController < ApplicationController
       else
         raise UnauthorizedError, "unknown or missing scope"
       end
+    elsif session_admin_signed_in?
+      set_as_session_admin
     else
       raise UnauthorizedError, "no credentials"
     end
@@ -45,6 +47,12 @@ class Api::BaseController < ApplicationController
     if experience_slug.present? && experience_slug != @experience.code_slug
       raise UnauthorizedError, "experience mismatch"
     end
+  end
+
+  def set_as_jwt_admin(claims)
+    @auth_source = :jwt_admin
+    @user = Experiences::AuthService.admin_from_claims!(claims)
+    @experience = find_experience_by_slug!(experience_slug)
   end
 
   def bearer_token

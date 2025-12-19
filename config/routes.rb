@@ -67,6 +67,11 @@ Rails.application.routes.draw do
           post :avatar
         end
       end
+
+      member do
+        post 'debug/create_participants', to: 'debug#create_participants'
+        post 'debug/get_participant_jwts', to: 'debug#get_participant_jwts'
+      end
     end
   end
 

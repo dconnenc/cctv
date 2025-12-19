@@ -57,6 +57,18 @@ class BlockSerializer
         response[:aggregate] = mod_or_host?(participant_role) ? {} : nil
       end
 
+      # Add all submissions for moderators/hosts/admins
+      if mod_or_host?(participant_role) || user_admin?(user)
+        response[:all_responses] = submissions.map do |submission|
+          {
+            id: submission.id,
+            user_id: submission.user_id,
+            answer: submission.answer,
+            created_at: submission.created_at
+          }
+        end
+      end
+
       response
 
     when ExperienceBlock::QUESTION
@@ -171,27 +183,67 @@ class BlockSerializer
         response[:aggregate] = mod_or_host?(participant_role) ? {} : nil
       end
 
+      # Add all submissions for moderators/hosts (admin stream)
+      if mod_or_host?(participant_role)
+        response[:all_responses] = submissions.map do |submission|
+          {
+            id: submission.id,
+            user_id: submission.user_id,
+            answer: submission.answer,
+            created_at: submission.created_at
+          }
+        end
+      end
+
       response
 
     when ExperienceBlock::QUESTION
       submissions = block.experience_question_submissions
       total = submissions.count
 
-      {
+      response = {
         total: total,
         user_response: nil, # Stream context doesn't include individual responses
         user_responded: false
       }
+
+      # Add all submissions for moderators/hosts (admin stream)
+      if mod_or_host?(participant_role)
+        response[:all_responses] = submissions.map do |submission|
+          {
+            id: submission.id,
+            user_id: submission.user_id,
+            answer: submission.answer,
+            created_at: submission.created_at
+          }
+        end
+      end
+
+      response
 
     when ExperienceBlock::MULTISTEP_FORM
       submissions = block.experience_multistep_form_submissions
       total = submissions.count
 
-      {
+      response = {
         total: total,
         user_response: nil, # Stream context doesn't include individual responses
         user_responded: false
       }
+
+      # Add all submissions for moderators/hosts (admin stream)
+      if mod_or_host?(participant_role)
+        response[:all_responses] = submissions.map do |submission|
+          {
+            id: submission.id,
+            user_id: submission.user_id,
+            answer: submission.answer,
+            created_at: submission.created_at
+          }
+        end
+      end
+
+      response
 
     when ExperienceBlock::ANNOUNCEMENT
       {} # Announcements don't have responses
