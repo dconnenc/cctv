@@ -19,6 +19,7 @@ interface QuestionProps extends QuestionPayload {
   };
   buttonText?: string;
   disabled?: boolean;
+  viewContext?: 'participant' | 'monitor' | 'manage';
 }
 
 export default function Question({
@@ -29,6 +30,7 @@ export default function Question({
   responses,
   buttonText = 'Submit',
   disabled = false,
+  viewContext = 'participant',
 }: QuestionProps) {
   const [submittedValue, setSubmittedValue] = useState<string>('');
   const { submitQuestionResponse, isLoading, error } = useSubmitQuestionResponse();
@@ -70,6 +72,14 @@ export default function Question({
       <div className={styles.submittedValue}>
         <p className={styles.legend}>{question}</p>
         <p className={styles.value}>{displayValue}</p>
+      </div>
+    );
+  }
+
+  if (viewContext === 'monitor') {
+    return (
+      <div className={styles.submittedValue}>
+        <p className={styles.legend}>{question}</p>
       </div>
     );
   }
