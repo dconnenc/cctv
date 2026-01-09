@@ -36,8 +36,36 @@ export interface AnnouncementPayload {
   message: string;
 }
 
+export interface FamilyFeudBucket {
+  bucket_id: string;
+  bucket_name: string;
+  percentage: number;
+  revealed: boolean;
+}
+
+export interface FamilyFeudQuestion {
+  question_id: string;
+  question_text: string;
+  buckets: FamilyFeudBucket[];
+}
+
+export interface FamilyFeudGameState {
+  phase: 'gathering' | 'playing';
+  current_question_index: number;
+  questions: FamilyFeudQuestion[];
+  show_x: boolean;
+}
+
 export interface FamilyFeudPayload {
   title: string;
+  bucket_configuration?: {
+    buckets: Array<{
+      id: string;
+      name: string;
+      answer_ids: string[];
+    }>;
+  };
+  game_state?: FamilyFeudGameState;
 }
 
 export interface BlockLink {

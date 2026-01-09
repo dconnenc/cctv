@@ -36,8 +36,14 @@ export type FamilyFeudAction =
       type: FamilyFeudActionType.BUCKET_ADDED;
       payload: { questionId?: string; bucket: { id: string; name: string } };
     }
-  | { type: FamilyFeudActionType.BUCKET_RENAMED; payload: { bucketId: string; name: string } }
-  | { type: FamilyFeudActionType.BUCKET_DELETED; payload: { bucketId: string } }
+  | {
+      type: FamilyFeudActionType.BUCKET_RENAMED;
+      payload: { bucketId: string; name: string; questionId: string };
+    }
+  | {
+      type: FamilyFeudActionType.BUCKET_DELETED;
+      payload: { bucketId: string; questionId?: string };
+    }
   | {
       type: FamilyFeudActionType.ANSWER_ASSIGNED;
       payload: { answerId: string; bucketId: string | null };
@@ -73,16 +79,23 @@ export function familyFeudReducer(
     }
 
     case FamilyFeudActionType.BUCKET_RENAMED: {
-      const { bucketId, name } = action.payload;
-      return state.map((q) => ({
-        ...q,
-        buckets: q.buckets.map((b) => (b.id === bucketId ? { ...b, name } : b)),
-      }));
+      const { bucketId, name, questionId } = action.payload;
+      return state.map((q) =>
+        q.questionId === questionId
+          ? {
+              ...q,
+              buckets: q.buckets.map((b) => (b.id === bucketId ? { ...b, name } : b)),
+            }
+          : q,
+      );
     }
 
     case FamilyFeudActionType.BUCKET_DELETED: {
-      const { bucketId } = action.payload;
+      const { bucketId, questionId } = action.payload;
       return state.map((q) => {
+        // If questionId is provided, only delete from that question
+        if (questionId && q.questionId !== questionId) return q;
+
         const bucketToDelete = q.buckets.find((b) => b.id === bucketId);
         if (!bucketToDelete) return q;
 

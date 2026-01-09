@@ -4,11 +4,11 @@ module Experiences
       :experience, :user_role, :participant_role, :segments, :target_user_ids
     )
 
-    def self.payload_for_admin(experience:)
-      visible_blocks = admin_visible_blocks(experience)
+    def self.payload_for_admin(experience:, blocks: nil, submissions_cache: nil)
+      visible_blocks = blocks || admin_visible_blocks(experience)
       
-      blocks = visible_blocks.reject(&:child_block?).map do |block|
-        BlockSerializer.serialize_for_stream(block, participant_role: "host")
+      serialized_blocks = visible_blocks.reject(&:child_block?).map do |block|
+        BlockSerializer.serialize_for_stream(block, participant_role: "host", submissions_cache: submissions_cache)
       end
 
       current_block = resolve_block_for_admin(experience: experience, blocks: visible_blocks)
@@ -16,7 +16,7 @@ module Experiences
       next_block = resolve_block_for_admin(experience: experience, blocks: blocks_without_current)
 
       serialized_next = if next_block
-        BlockSerializer.serialize_for_stream(next_block, participant_role: "host")
+        BlockSerializer.serialize_for_stream(next_block, participant_role: "host", submissions_cache: submissions_cache)
       else
         nil
       end
@@ -24,7 +24,7 @@ module Experiences
       {
         experience: experience_structure(
           experience,
-          blocks,
+          serialized_blocks,
           next_block: serialized_next
         )
       }
@@ -68,8 +68,8 @@ module Experiences
       nil
     end
 
-    def self.payload_for_user(experience:, user:)
-      participant_record = experience
+    def self.payload_for_user(experience:, user:, participant: nil, blocks: nil, submissions_cache: nil, participants_by_user_id: nil)
+      participant_record = participant || (participants_by_user_id&.dig(user.id)) || experience
         .experience_participants
         .find_by(user_id: user.id)
 
@@ -80,7 +80,11 @@ module Experiences
           user_role: user.role,
           participant_role: participant_record&.role,
           segments: participant_record&.segments || [],
-          target_user_ids: [user.id]
+          target_user_ids: [user.id],
+          preloaded_blocks: blocks,
+          submissions_cache: submissions_cache,
+          participant: participant_record,
+          participants_by_user_id: participants_by_user_id
         ).payload_for_user(user)
       end
 
@@ -93,7 +97,11 @@ module Experiences
         user_role: user.role,
         participant_role: participant_record.role,
         segments: participant_record.segments,
-        target_user_ids: [user.id]
+        target_user_ids: [user.id],
+        preloaded_blocks: blocks,
+        submissions_cache: submissions_cache,
+        participant: participant_record,
+        participants_by_user_id: participants_by_user_id
       ).payload_for_user(user)
     end
 
@@ -108,19 +116,19 @@ module Experiences
       ).payload
     end
 
-    def self.payload_for_monitor(experience:)
-      visible_blocks = monitor_visible_blocks(experience)
+    def self.payload_for_monitor(experience:, blocks: nil, participants: nil, submissions_cache: nil)
+      visible_blocks = blocks ? monitor_visible_blocks_from_preloaded(experience, blocks) : monitor_visible_blocks(experience)
 
       current_block = visible_blocks.first
-      blocks = if current_block
-        [serialize_block_for_monitor(experience: experience, block: current_block)]
+      serialized_blocks = if current_block
+        [serialize_block_for_monitor(experience: experience, block: current_block, participants: participants, submissions_cache: submissions_cache)]
       else
         []
       end
 
       next_block = visible_blocks.second
       serialized_next = if next_block
-        serialize_block_for_monitor(experience: experience, block: next_block)
+        serialize_block_for_monitor(experience: experience, block: next_block, participants: participants, submissions_cache: submissions_cache)
       else
         nil
       end
@@ -128,7 +136,7 @@ module Experiences
       {
         experience: experience_structure(
           experience,
-          blocks,
+          serialized_blocks,
           next_block: serialized_next
         )
       }
@@ -150,11 +158,57 @@ module Experiences
       result = []
       parent_blocks.each do |parent|
         if parent.has_dependencies?
-          first_child = parent.child_blocks.order(position: :asc).first
-          if first_child && !has_visibility_rules?(first_child)
-            result << first_child
-          else
+          if parent.kind == ExperienceBlock::FAMILY_FEUD
             result << parent
+          else
+            first_child = parent.child_blocks.order(position: :asc).first
+            if first_child && !has_visibility_rules?(first_child)
+              result << first_child
+            else
+              result << parent
+            end
+          end
+        else
+          result << parent
+        end
+      end
+
+      result
+    end
+
+    def self.monitor_visible_blocks_from_preloaded(experience, blocks)
+      parent_blocks = blocks.select(&:parent_block?)
+
+      parent_blocks = if experience.status == 'lobby'
+        parent_blocks.select do |block|
+          block.show_in_lobby? &&
+            block.visible_to_roles.empty? &&
+            block.visible_to_segments.empty? &&
+            block.target_user_ids.empty?
+        end
+      else
+        parent_blocks.select do |block|
+          block.status == 'open' &&
+            block.visible_to_roles.empty? &&
+            block.visible_to_segments.empty? &&
+            block.target_user_ids.empty?
+        end
+      end
+
+      parent_blocks = parent_blocks.sort_by(&:position)
+
+      result = []
+      parent_blocks.each do |parent|
+        if parent.has_dependencies?
+          if parent.kind == ExperienceBlock::FAMILY_FEUD
+            result << parent
+          else
+            first_child = parent.children.min_by(&:position)
+            if first_child && !has_visibility_rules?(first_child)
+              result << first_child
+            else
+              result << parent
+            end
           end
         else
           result << parent
@@ -170,19 +224,22 @@ module Experiences
         block.target_user_ids.present?
     end
 
-    def self.serialize_block_for_monitor(experience:, block:)
+    def self.serialize_block_for_monitor(experience:, block:, participants: nil, submissions_cache: nil)
       serialized = BlockSerializer.serialize_for_stream(
         block,
-        participant_role: "host"
+        participant_role: "host",
+        submissions_cache: submissions_cache
       )
 
       if block.kind == ExperienceBlock::MAD_LIB
         all_resolved_variables = {}
 
-        experience.experience_participants.each do |participant|
+        participant_list = participants || experience.experience_participants
+        participant_list.each do |participant|
           participant_vars = Experiences::BlockResolver.resolve_variables(
             block: block,
-            participant: participant
+            participant: participant,
+            submissions_cache: submissions_cache
           )
           all_resolved_variables.merge!(participant_vars)
         end
@@ -239,13 +296,21 @@ module Experiences
       user_role: nil,
       participant_role: nil,
       segments: [],
-      target_user_ids: []
+      target_user_ids: [],
+      preloaded_blocks: nil,
+      submissions_cache: nil,
+      participant: nil,
+      participants_by_user_id: nil
     )
       @experience = experience
       @user_role = user_role
       @participant_role = participant_role
       @segments = segments || []
       @target_user_ids = target_user_ids || []
+      @preloaded_blocks = preloaded_blocks
+      @submissions_cache = submissions_cache
+      @participant = participant
+      @participants_by_user_id = participants_by_user_id
     end
 
     def payload_for_user(user)
@@ -294,7 +359,7 @@ module Experiences
 
       parent_blocks = blocks.reject(&:child_block?)
 
-      participant_record = experience
+      participant_record = @participant || (@participants_by_user_id&.dig(user.id)) || experience
         .experience_participants
         .find_by(user_id: user.id)
       return nil unless participant_record
@@ -303,7 +368,8 @@ module Experiences
         if block.has_dependencies?
           unresolved_child = BlockResolver.next_unresolved_child(
             block: block,
-            participant: participant_record
+            participant: participant_record,
+            submissions_cache: @submissions_cache
           )
 
           return unresolved_child if unresolved_child
@@ -329,7 +395,7 @@ module Experiences
 
     def visible_blocks
       @visible_blocks ||= begin
-        blocks = experience.experience_blocks.order(position: :asc)
+        blocks = @preloaded_blocks || experience.experience_blocks.order(position: :asc)
 
         return blocks if user_admin?
         return [] if participant_role.nil?
@@ -385,13 +451,13 @@ module Experiences
 
     def serialize_block_for_user(block, user)
       BlockSerializer.serialize_for_user(
-        block, participant_role: participant_role, user: user
+        block, participant_role: participant_role, user: user, submissions_cache: @submissions_cache
       )
     end
 
     def serialize_block_for_stream(block)
       BlockSerializer.serialize_for_stream(
-        block, participant_role: participant_role
+        block, participant_role: participant_role, submissions_cache: @submissions_cache
       )
     end
 
