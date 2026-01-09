@@ -1,18 +1,19 @@
 module Experiences
   class BlockResolver
-    attr_reader :block, :participant
+    attr_reader :block, :participant, :submissions_cache
 
-    def initialize(block:, participant:)
+    def initialize(block:, participant:, submissions_cache: nil)
       @block = block
       @participant = participant
+      @submissions_cache = submissions_cache
     end
 
-    def self.resolve_variables(block:, participant:)
-      new(block: block, participant: participant).resolve_variables
+    def self.resolve_variables(block:, participant:, submissions_cache: nil)
+      new(block: block, participant: participant, submissions_cache: submissions_cache).resolve_variables
     end
 
-    def self.next_unresolved_child(block:, participant:)
-      new(block: block, participant: participant).next_unresolved_child
+    def self.next_unresolved_child(block:, participant:, submissions_cache: nil)
+      new(block: block, participant: participant, submissions_cache: submissions_cache).next_unresolved_child
     end
 
     def resolve_variables
@@ -42,10 +43,49 @@ module Experiences
     private
 
     def child_visible?(child)
-      Experiences::Visibility.block_visible_to_user?(
-        block: child,
-        user: participant.user
-      )
+      return true if moderator_or_host? || user_admin?
+      return false unless block_visible_by_status?(child)
+      rules_allow_block?(child)
+    end
+
+    def user_admin?
+      participant.user.role == "admin" || participant.user.role == "superadmin"
+    end
+
+    def moderator_or_host?
+      ["moderator", "host"].include?(participant.role.to_s)
+    end
+
+    def block_visible_by_status?(block)
+      return true if block.open?
+      return true if block.experience.status == "lobby" && block.show_in_lobby?
+      false
+    end
+
+    def rules_allow_block?(block)
+      return true if moderator_or_host?
+
+      targeting_rules_exist = block.visible_to_roles.present? ||
+        block.visible_to_segments.present? ||
+        block.target_user_ids.present?
+
+      return true unless targeting_rules_exist
+
+      allowed_from_roles?(block) ||
+        allowed_from_segments?(block) ||
+        allowed_from_user_target?(block)
+    end
+
+    def allowed_from_roles?(block)
+      block.visible_to_roles.include?(participant.role.to_s)
+    end
+
+    def allowed_from_segments?(block)
+      (block.visible_to_segments & participant.segments).any?
+    end
+
+    def allowed_from_user_target?(block)
+      (block.target_user_ids.map(&:to_s) & [participant.user_id.to_s]).any?
     end
 
     def extract_value_from_block(source_block)
@@ -63,29 +103,33 @@ module Experiences
     end
 
     def find_submission(source_block)
-      case source_block.kind
-      when ExperienceBlock::QUESTION
-        ExperienceQuestionSubmission.find_by(
-          experience_block_id: source_block.id,
-          user_id: participant.user_id
-        )
-      when ExperienceBlock::POLL
-        ExperiencePollSubmission.find_by(
-          experience_block_id: source_block.id,
-          user_id: participant.user_id
-        )
-      when ExperienceBlock::MAD_LIB
-        ExperienceMadLibSubmission.find_by(
-          experience_block_id: source_block.id,
-          user_id: participant.user_id
-        )
-      when ExperienceBlock::MULTISTEP_FORM
-        ExperienceMultistepFormSubmission.find_by(
-          experience_block_id: source_block.id,
-          user_id: participant.user_id
-        )
+      if submissions_cache
+        submissions_cache.dig(source_block.id, participant.user_id)
       else
-        nil
+        case source_block.kind
+        when ExperienceBlock::QUESTION
+          ExperienceQuestionSubmission.find_by(
+            experience_block_id: source_block.id,
+            user_id: participant.user_id
+          )
+        when ExperienceBlock::POLL
+          ExperiencePollSubmission.find_by(
+            experience_block_id: source_block.id,
+            user_id: participant.user_id
+          )
+        when ExperienceBlock::MAD_LIB
+          ExperienceMadLibSubmission.find_by(
+            experience_block_id: source_block.id,
+            user_id: participant.user_id
+          )
+        when ExperienceBlock::MULTISTEP_FORM
+          ExperienceMultistepFormSubmission.find_by(
+            experience_block_id: source_block.id,
+            user_id: participant.user_id
+          )
+        else
+          nil
+        end
       end
     end
 

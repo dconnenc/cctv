@@ -40,12 +40,14 @@
 import { useCallback, useEffect, useReducer, useRef, useState } from 'react';
 
 import { DragDropContext, Draggable, Droppable } from '@hello-pangea/dnd';
-import { ChevronDown, ChevronRight, Loader2, Plus, Trash2 } from 'lucide-react';
+import { ChevronDown, ChevronRight, Loader2, Play, Plus, Trash2 } from 'lucide-react';
 
 import { Button } from '@cctv/components/ui/button';
+import { useExperience } from '@cctv/contexts';
 import { useFamilyFeudBuckets, useScrollFade } from '@cctv/hooks';
-import { Block } from '@cctv/types';
+import { Block, FamilyFeudPayload } from '@cctv/types';
 
+import FamilyFeudPlayingControls from './FamilyFeudPlayingControls';
 import {
   FamilyFeudAction,
   FamilyFeudActionType,
@@ -61,6 +63,7 @@ interface FamilyFeudManagerProps {
 }
 
 export default function FamilyFeudManager({ block, onBucketOperation }: FamilyFeudManagerProps) {
+  const { code } = useExperience();
   const [questionsState, dispatch] = useReducer(familyFeudReducer, []);
   const { addBucket, renameBucket, deleteBucket, assignAnswer } = useFamilyFeudBuckets(
     block.id,
@@ -71,19 +74,23 @@ export default function FamilyFeudManager({ block, onBucketOperation }: FamilyFe
   const renameTimeoutRef = useRef<Record<string, NodeJS.Timeout>>({});
   const [addingBucketForQuestion, setAddingBucketForQuestion] = useState<string | null>(null);
   const [deletingBucketId, setDeletingBucketId] = useState<string | null>(null);
+  const [startingPlaying, setStartingPlaying] = useState(false);
 
   // UI-only state (not synced, resets on page load)
   const [collapsedQuestions, setCollapsedQuestions] = useState<Set<string>>(new Set());
   const [collapsedBuckets, setCollapsedBuckets] = useState<Set<string>>(new Set());
 
+  const payload = block.payload as FamilyFeudPayload;
+  const gameState = payload?.game_state;
+  const isPlaying = gameState?.phase === 'playing';
+
   // Initialize state from block data on mount only
   // Subsequent updates come via websocket broadcasts -> reducer actions
   // This preserves UI state (collapsed states, optimistic updates)
   useEffect(() => {
-    const bucketConfig = (block as any).payload?.bucket_configuration?.buckets || [];
-
     const newQuestionsState: QuestionWithBuckets[] = childQuestions.map((childBlock: Block) => {
       const responses = (childBlock.responses as any)?.all_responses || [];
+      const questionBuckets = (childBlock as any).payload?.buckets || [];
 
       const allAnswers = responses.map((response: any) => {
         const answerText =
@@ -100,7 +107,7 @@ export default function FamilyFeudManager({ block, onBucketOperation }: FamilyFe
         };
       });
 
-      const savedBuckets = bucketConfig.map((b: any) => ({
+      const savedBuckets = questionBuckets.map((b: any) => ({
         id: b.id,
         name: b.name,
         answers: allAnswers.filter((a: any) => b.answer_ids?.includes(a.id)),
@@ -124,7 +131,7 @@ export default function FamilyFeudManager({ block, onBucketOperation }: FamilyFe
 
     // Initialize collapsed state: collapse all questions and all buckets by default
     const allQuestionIds = new Set(childQuestions.map((q: Block) => q.id));
-    const allBucketIds = new Set(bucketConfig.map((b: any) => b.id));
+    const allBucketIds = new Set(newQuestionsState.flatMap((q) => q.buckets.map((b) => b.id)));
     setCollapsedQuestions(allQuestionIds);
     setCollapsedBuckets(allBucketIds);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -136,10 +143,8 @@ export default function FamilyFeudManager({ block, onBucketOperation }: FamilyFe
       try {
         const question = questionsState.find((q) => q.questionId === questionId);
         const bucketCount = question?.buckets.length || 0;
-        const bucket = await addBucket(block.id, `Bucket ${bucketCount + 1}`);
-        if (bucket) {
-          dispatch({ type: FamilyFeudActionType.BUCKET_ADDED, payload: { questionId, bucket } });
-        }
+        await addBucket(block.id, questionId, `Bucket ${bucketCount + 1}`);
+        // Websocket broadcast will update the state
       } finally {
         setAddingBucketForQuestion(null);
       }
@@ -148,7 +153,7 @@ export default function FamilyFeudManager({ block, onBucketOperation }: FamilyFe
   );
 
   const handleRenameBucket = useCallback(
-    (bucketId: string, name: string) => {
+    (questionId: string, bucketId: string, name: string) => {
       // Update local editing state immediately
       setEditingBucketNames((prev) => ({ ...prev, [bucketId]: name }));
 
@@ -158,23 +163,19 @@ export default function FamilyFeudManager({ block, onBucketOperation }: FamilyFe
       }
 
       renameTimeoutRef.current[bucketId] = setTimeout(async () => {
-        const success = await renameBucket(block.id, bucketId, name);
-        if (success) {
-          dispatch({ type: FamilyFeudActionType.BUCKET_RENAMED, payload: { bucketId, name } });
-        }
+        await renameBucket(block.id, questionId, bucketId, name);
+        // Websocket broadcast will update the state
       }, 500);
     },
     [block.id, renameBucket],
   );
 
   const handleDeleteBucket = useCallback(
-    async (bucketId: string) => {
+    async (questionId: string, bucketId: string) => {
       setDeletingBucketId(bucketId);
       try {
-        const success = await deleteBucket(block.id, bucketId);
-        if (success) {
-          dispatch({ type: FamilyFeudActionType.BUCKET_DELETED, payload: { bucketId } });
-        }
+        await deleteBucket(block.id, questionId, bucketId);
+        // Websocket broadcast will update the state
       } finally {
         setDeletingBucketId(null);
       }
@@ -197,7 +198,7 @@ export default function FamilyFeudManager({ block, onBucketOperation }: FamilyFe
       dispatch({ type: FamilyFeudActionType.ANSWER_ASSIGNED, payload: { answerId, bucketId } });
 
       // API call in background - don't await, fire and forget
-      assignAnswer(block.id, answerId, bucketId);
+      assignAnswer(block.id, questionId, answerId, bucketId);
     },
     [assignAnswer, block.id],
   );
@@ -226,6 +227,125 @@ export default function FamilyFeudManager({ block, onBucketOperation }: FamilyFe
     });
   }, []);
 
+  const handleStartPlaying = useCallback(async () => {
+    if (!code) return;
+    setStartingPlaying(true);
+    try {
+      const response = await fetch(
+        `/api/experiences/${code}/blocks/${block.id}/family_feud/start_playing`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+        },
+      );
+      if (!response.ok) throw new Error('Failed to start playing');
+    } catch (error) {
+      console.error('Error starting playing:', error);
+    } finally {
+      setStartingPlaying(false);
+    }
+  }, [code, block.id]);
+
+  const handleRevealBucket = useCallback(
+    async (questionIndex: number, bucketIndex: number) => {
+      if (!code) return;
+      try {
+        const response = await fetch(
+          `/api/experiences/${code}/blocks/${block.id}/family_feud/reveal_bucket`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ question_index: questionIndex, bucket_index: bucketIndex }),
+          },
+        );
+        if (!response.ok) throw new Error('Failed to reveal bucket');
+      } catch (error) {
+        console.error('Error revealing bucket:', error);
+      }
+    },
+    [code, block.id],
+  );
+
+  const handleShowX = useCallback(async () => {
+    if (!code) return;
+    try {
+      const response = await fetch(
+        `/api/experiences/${code}/blocks/${block.id}/family_feud/show_x`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+        },
+      );
+      if (!response.ok) throw new Error('Failed to show X');
+    } catch (error) {
+      console.error('Error showing X:', error);
+    }
+  }, [code, block.id]);
+
+  const handleNextQuestion = useCallback(async () => {
+    if (!code) return;
+    try {
+      const response = await fetch(
+        `/api/experiences/${code}/blocks/${block.id}/family_feud/next_question`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+        },
+      );
+      if (!response.ok) throw new Error('Failed to advance question');
+    } catch (error) {
+      console.error('Error advancing question:', error);
+    }
+  }, [code, block.id]);
+
+  const handleRestartPlaying = useCallback(async () => {
+    if (!code) return;
+    try {
+      const response = await fetch(
+        `/api/experiences/${code}/blocks/${block.id}/family_feud/restart_playing`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+        },
+      );
+      if (!response.ok) throw new Error('Failed to restart playing');
+    } catch (error) {
+      console.error('Error restarting playing:', error);
+    }
+  }, [code, block.id]);
+
+  const handleRestartCategorizing = useCallback(async () => {
+    if (!code) return;
+    try {
+      const response = await fetch(
+        `/api/experiences/${code}/blocks/${block.id}/family_feud/restart_categorizing`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+        },
+      );
+      if (!response.ok) throw new Error('Failed to restart categorizing');
+    } catch (error) {
+      console.error('Error restarting categorizing:', error);
+    }
+  }, [code, block.id]);
+
+  const handleRestartEverything = useCallback(async () => {
+    if (!code) return;
+    try {
+      const response = await fetch(
+        `/api/experiences/${code}/blocks/${block.id}/family_feud/restart_everything`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+        },
+      );
+      if (!response.ok) throw new Error('Failed to reset everything');
+    } catch (error) {
+      console.error('Error resetting everything:', error);
+    }
+  }, [code, block.id]);
+
   if (childQuestions.length === 0) {
     return (
       <div className={styles.root}>
@@ -236,9 +356,33 @@ export default function FamilyFeudManager({ block, onBucketOperation }: FamilyFe
     );
   }
 
+  if (isPlaying && gameState) {
+    return (
+      <div className={styles.root}>
+        <h2 className={styles.title}>{payload?.title || 'Family Feud'}</h2>
+        <FamilyFeudPlayingControls
+          block={block}
+          gameState={gameState}
+          onRevealBucket={handleRevealBucket}
+          onShowX={handleShowX}
+          onNextQuestion={handleNextQuestion}
+          onRestartPlaying={handleRestartPlaying}
+          onRestartCategorizing={handleRestartCategorizing}
+          onRestartEverything={handleRestartEverything}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className={styles.root}>
-      <h2 className={styles.title}>{(block as any).payload?.title || 'Family Feud'}</h2>
+      <div className={styles.headerRow}>
+        <h2 className={styles.title}>{(block as any).payload?.title || 'Family Feud'}</h2>
+        <Button variant="default" size="lg" onClick={handleStartPlaying} disabled={startingPlaying}>
+          <Play size={20} />
+          {startingPlaying ? 'Starting...' : 'Start Playing'}
+        </Button>
+      </div>
       {questionsState.map((question) => {
         const isQuestionCollapsed = collapsedQuestions.has(question.questionId);
         return (
@@ -299,8 +443,8 @@ const BucketsColumn = ({
   deletingBucketId: string | null;
   collapsedBuckets: Set<string>;
   onAddBucket: (questionId: string) => void;
-  onRenameBucket: (bucketId: string, name: string) => void;
-  onDeleteBucket: (bucketId: string) => void;
+  onRenameBucket: (questionId: string, bucketId: string, name: string) => void;
+  onDeleteBucket: (questionId: string, bucketId: string) => void;
   onToggleBucket: (bucketId: string) => void;
 }) => (
   <div className={styles.bucketsColumn}>
@@ -321,6 +465,7 @@ const BucketsColumn = ({
       {question.buckets.map((bucket) => (
         <BucketItem
           key={bucket.id}
+          questionId={question.questionId}
           bucket={bucket}
           isCollapsed={collapsedBuckets.has(bucket.id)}
           editingBucketNames={editingBucketNames}
@@ -341,6 +486,7 @@ const BucketsColumn = ({
 );
 
 const BucketItem = ({
+  questionId,
   bucket,
   isCollapsed,
   editingBucketNames,
@@ -349,12 +495,13 @@ const BucketItem = ({
   onDeleteBucket,
   onToggleBucket,
 }: {
+  questionId: string;
   bucket: any;
   isCollapsed: boolean;
   editingBucketNames: Record<string, string>;
   deletingBucketId: string | null;
-  onRenameBucket: (bucketId: string, name: string) => void;
-  onDeleteBucket: (bucketId: string) => void;
+  onRenameBucket: (questionId: string, bucketId: string, name: string) => void;
+  onDeleteBucket: (questionId: string, bucketId: string) => void;
   onToggleBucket: () => void;
 }) => {
   // renderClone fixes drag positioning when inside a dialog/modal with CSS transforms
@@ -387,13 +534,13 @@ const BucketItem = ({
             <input
               type="text"
               value={editingBucketNames[bucket.id] ?? bucket.name}
-              onChange={(e) => onRenameBucket(bucket.id, e.target.value)}
+              onChange={(e) => onRenameBucket(questionId, bucket.id, e.target.value)}
               className={styles.bucketNameInput}
             />
             <span className={styles.bucketCount}>({bucket.answers.length})</span>
             <button
               className={styles.deleteButton}
-              onClick={() => onDeleteBucket(bucket.id)}
+              onClick={() => onDeleteBucket(questionId, bucket.id)}
               disabled={deletingBucketId === bucket.id}
             >
               {deletingBucketId === bucket.id ? (

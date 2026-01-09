@@ -1,10 +1,18 @@
 .root {
 }
 
+.headerRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
 .title {
   font-size: 24px;
   font-weight: 700;
-  margin-bottom: 24px;
+  margin: 0;
 }
 
 .questionContainer {

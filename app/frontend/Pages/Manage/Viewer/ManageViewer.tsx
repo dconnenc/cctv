@@ -660,6 +660,14 @@ export default function ManageViewer() {
                     )}
                   </div>
 
+                  {/* Family Feud Playing Controls - shown above preview when in playing mode */}
+                  {selectedBlock.kind === BlockKind.FAMILY_FEUD &&
+                    (selectedBlock.payload as any)?.game_state?.phase === 'playing' && (
+                      <div className="mb-6">
+                        <FamilyFeudManager block={selectedBlock} />
+                      </div>
+                    )}
+
                   {/* Block Preview or Responses */}
                   <div className="border border-[hsl(var(--border))] rounded-lg overflow-hidden">
                     <div className="px-4 py-2 bg-[hsl(var(--muted))] border-b border-[hsl(var(--border))]">
@@ -799,12 +807,13 @@ export default function ManageViewer() {
                   </div>
                 </div>
 
-                {/* Family Feud Manager for family_feud blocks */}
-                {selectedBlock.kind === BlockKind.FAMILY_FEUD && (
-                  <div className="mt-6 border-t border-[hsl(var(--border))] pt-6">
-                    <FamilyFeudManager block={selectedBlock} />
-                  </div>
-                )}
+                {/* Family Feud Manager for family_feud blocks - moved above preview if playing */}
+                {selectedBlock.kind === BlockKind.FAMILY_FEUD &&
+                  (selectedBlock.payload as any)?.game_state?.phase !== 'playing' && (
+                    <div className="mt-6 border-t border-[hsl(var(--border))] pt-6">
+                      <FamilyFeudManager block={selectedBlock} />
+                    </div>
+                  )}
               </div>
             ) : (
               <div className="flex items-center justify-center h-full text-[hsl(var(--muted-foreground))]">

@@ -65,7 +65,7 @@ class ExperienceBlock < ApplicationRecord
   scope :ordered, -> { order(position: :asc) }
 
   def has_dependencies?
-    children.exists?
+    children.loaded? ? children.any? : children.exists?
   end
 
   def depth
@@ -100,6 +100,31 @@ class ExperienceBlock < ApplicationRecord
 
   def previous_sibling
     siblings.where("position < ?", position).order(position: :desc).first
+  end
+
+  # Family Feud specific methods
+  def clear_family_feud_bucket_assignments!
+    return unless kind == FAMILY_FEUD
+    
+    child_blocks.each do |child_block|
+      child_payload = child_block.payload || {}
+      if child_payload["buckets"]
+        child_payload["buckets"].each do |bucket|
+          bucket["answer_ids"] = []
+        end
+        child_block.update!(payload: child_payload)
+      end
+    end
+  end
+
+  def clear_all_family_feud_buckets!
+    return unless kind == FAMILY_FEUD
+    
+    child_blocks.each do |child_block|
+      child_payload = child_block.payload || {}
+      child_payload["buckets"] = []
+      child_block.update!(payload: child_payload)
+    end
   end
 
   private
