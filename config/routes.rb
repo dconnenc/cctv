@@ -8,6 +8,8 @@ Rails.application.routes.draw do
 
   passwordless_for :users
 
+  post '/admin/sign_in', to: 'admin_sessions#create', as: :admin_sign_in
+
   # Reveal health status on /up that returns 200 if the app boots with no exceptions, otherwise 500.
   # Can be used by load balancers and uptime monitors to verify that the app is live.
   get "up" => "rails/health#show", as: :rails_health_check
