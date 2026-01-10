@@ -8,6 +8,21 @@
   opacity: 0.85;
 }
 
+/* Active block wrapper (participant view): center block content vertically */
+.experienceContent {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100dvh - var(--nav-h) - calc(var(--space-sm) * 2));
+}
+
+.activeBlock {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 // Error states
 .error {
   color: hsl(var(--destructive));

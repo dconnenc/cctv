@@ -75,7 +75,7 @@ export default function Question({
   }
 
   return (
-    <form onSubmit={onSubmit}>
+    <form className={styles.form} onSubmit={onSubmit}>
       <fieldset className={styles.fieldset}>
         <legend className={styles.legend}>{question}</legend>
         {error && <p className={styles.error}>{error}</p>}
