@@ -19,9 +19,9 @@
 .errorBanner {
   background: hsl(var(--destructive));
   color: hsl(var(--destructive-foreground));
-  padding: 12px 16px;
+  padding: 0.75rem 1rem;
   border-radius: 8px;
-  margin-bottom: 16px;
+  margin-bottom: 1rem;
 }
 
 .topRow {
@@ -92,7 +92,7 @@
 
 .tabs {
   display: flex;
-  gap: 8px;
+  gap: 0.5rem;
   border-bottom: 1px solid hsl(var(--border));
 }
 

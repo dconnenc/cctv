@@ -103,17 +103,17 @@
 
 .adminControls {
   position: absolute;
-  top: 16px;
-  right: 16px;
+  top: 1rem;
+  right: 1rem;
   z-index: 11;
   display: flex;
-  gap: 8px;
+  gap: 0.5rem;
 }
 
 .avatarToggleBtn {
   position: fixed;
-  top: calc((var(--nav-h) - 44px) / 2);
-  right: calc(16px + env(safe-area-inset-right));
+  top: calc((var(--nav-h) - 2.75rem) / 2);
+  right: calc(1rem + env(safe-area-inset-right));
   z-index: 10000;
   width: 44px;
   height: 44px;

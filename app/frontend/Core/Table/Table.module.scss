@@ -92,7 +92,7 @@
 .menuList {
   position: absolute;
   color: hsl(var(--popover-foreground));
-  top: calc(100% + 6px);
+  top: calc(100% + 0.375rem);
   right: 0;
   min-width: 10rem;
   border: 1px solid hsl(var(--border));

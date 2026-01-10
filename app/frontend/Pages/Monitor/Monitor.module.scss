@@ -3,7 +3,7 @@
   align-items: center;
   justify-content: center;
   min-height: 100vh;
-  padding: 24px;
+  padding: 1.5rem;
   z-index: 3;
   position: relative;
 }
@@ -18,13 +18,13 @@
 
 .qrContainer {
   position: absolute;
-  right: 16px;
-  bottom: 16px;
+  right: 1rem;
+  bottom: 1rem;
   z-index: 9;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 8px;
+  padding: 0.5rem;
   border: 1px solid hsl(var(--border));
   border-radius: 8px;
   background: hsl(var(--popover) / 0.7);
@@ -33,7 +33,7 @@
 
 .title {
   font-size: 24px;
-  padding-bottom: 24px;
+  padding-bottom: 1.5rem;
 }
 
 .subtitle {
@@ -46,9 +46,9 @@
 }
 .adminControls {
   position: absolute;
-  top: 16px;
-  right: 16px;
+  top: 1rem;
+  right: 1rem;
   z-index: 11;
   display: flex;
-  gap: 8px;
+  gap: 0.5rem;
 }

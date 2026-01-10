@@ -7,7 +7,7 @@
   max-width: 400px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 0.75rem;
   opacity: 1;
   transition: opacity 0.3s ease-in-out;
   pointer-events: auto;
@@ -20,7 +20,7 @@
 .error {
   text-shadow: none;
   color: var(--yellow);
-  padding-top: 12px;
+  padding-top: 0.75rem;
   font-size: 16px;
   position: relative;
   z-index: 3;
@@ -28,7 +28,7 @@
 .form {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 0.75rem;
   align-items: center;
   justify-content: center;
 }
@@ -42,7 +42,7 @@
 }
 .buttons {
   display: flex;
-  gap: 12px;
+  gap: 0.75rem;
 }
 .legend,
 .value {
@@ -57,10 +57,10 @@
   color: white;
 }
 .value {
-  padding: 12px 0;
+  padding: 0.75rem 0;
 }
 .submittedValue {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 0.75rem;
 }

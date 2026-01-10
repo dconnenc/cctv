@@ -8,7 +8,7 @@
   background: #f8f9fa;
   border: 2px solid #e9ecef;
   border-radius: 8px;
-  padding: 24px;
+  padding: 1.5rem;
   text-align: center;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
@@ -24,8 +24,8 @@
 // Responsive design
 @media (max-width: 768px) {
   .content {
-    padding: 16px;
-    margin: 0 16px;
+    padding: 1rem;
+    margin: 0 1rem;
   }
 
   .message {
