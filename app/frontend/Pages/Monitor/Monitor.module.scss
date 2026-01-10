@@ -2,18 +2,39 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 100vh;
-  padding: 1.5rem;
+  height: 100dvh;
+  width: 100vw;
+  padding: var(--space-sm);
   z-index: 3;
   position: relative;
+  overflow: hidden;
 }
 
 .blockContainer {
   width: 100%;
-  max-width: 1200px;
+  height: calc(100% - var(--space-sm) * 0); /* ensure full height minus internal gaps if any */
+  max-width: 100%;
+  max-height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
+  overflow: hidden;
+}
+
+/* Ensure any direct child fits without causing overflow */
+.blockContainer > * {
+  max-width: 100%;
+  max-height: 100%;
+}
+
+/* Common media scale rules inside monitor */
+.blockContainer img,
+.blockContainer video,
+.blockContainer canvas,
+.blockContainer svg {
+  max-width: 100%;
+  max-height: 100%;
+  height: auto;
 }
 
 .qrContainer {
@@ -29,6 +50,8 @@
   border-radius: 8px;
   background: hsl(var(--popover) / 0.7);
   backdrop-filter: blur(6px);
+  max-width: 35vw;
+  max-height: 35vh;
 }
 
 .title {

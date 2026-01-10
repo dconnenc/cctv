@@ -84,6 +84,16 @@ export default function DrawingCanvas({
   const [position, setPosition] = useState<{ x: number; y: number } | undefined>(initialPosition);
 
   const drawRef = useRef<any>(null);
+  const drawWrapRef = useRef<HTMLDivElement | null>(null);
+  const posWrapRef = useRef<HTMLDivElement | null>(null);
+  const [drawStageSize, setDrawStageSize] = useState<{ w: number; h: number }>({
+    w: drawSize.w,
+    h: drawSize.h,
+  });
+  const [posStageSize, setPosStageSize] = useState<{ w: number; h: number }>({
+    w: positionSize.w,
+    h: positionSize.h,
+  });
 
   const img = useHtmlImage(avatarDataUrl);
 
@@ -156,6 +166,25 @@ export default function DrawingCanvas({
     onFinalize?.();
   };
 
+  useEffect(() => {
+    const updateSizes = () => {
+      if (drawWrapRef.current) {
+        const rect = drawWrapRef.current.getBoundingClientRect();
+        const w = Math.floor(rect.width);
+        setDrawStageSize({ w, h: w });
+      }
+      if (posWrapRef.current) {
+        const rect = posWrapRef.current.getBoundingClientRect();
+        const w = Math.floor(rect.width);
+        const h = Math.floor(rect.height);
+        setPosStageSize({ w, h });
+      }
+    };
+    updateSizes();
+    window.addEventListener('resize', updateSizes);
+    return () => window.removeEventListener('resize', updateSizes);
+  }, []);
+
   return (
     <div className={styles.root}>
       <div className={styles.controls}>
@@ -203,11 +232,11 @@ export default function DrawingCanvas({
       )}
 
       {mode === 'draw' && (
-        <div className={styles.stageWrap}>
+        <div ref={drawWrapRef} className={`${styles.stageWrap} ${styles.square}`}>
           <Stage
             ref={drawRef}
-            width={drawSize.w}
-            height={drawSize.h}
+            width={drawStageSize.w}
+            height={drawStageSize.h}
             onMouseDown={onPointerDown}
             onMouseMove={onPointerMove}
             onMouseUp={onPointerUp}
@@ -245,8 +274,8 @@ export default function DrawingCanvas({
       )}
 
       {mode === 'position' && (
-        <div className={styles.stageWrap}>
-          <Stage width={positionSize.w} height={positionSize.h}>
+        <div ref={posWrapRef} className={`${styles.stageWrap} ${styles.wide}`}>
+          <Stage width={posStageSize.w} height={posStageSize.h}>
             <Layer>
               {img && (
                 <KonvaImage

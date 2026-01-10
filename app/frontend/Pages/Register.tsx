@@ -6,6 +6,8 @@ import { useUser } from '@cctv/contexts';
 import { Button } from '@cctv/core';
 import { useGet, useRegisterExperience } from '@cctv/hooks';
 
+import styles from './Register.module.scss';
+
 interface RegistrationInfoResponse {
   type: 'success' | 'error';
   experience?: {
@@ -64,17 +66,11 @@ export default function Register() {
 
   return (
     <section className="page flex-centered">
-      {registrationInfo?.experience?.name && (
-        <p style={{ marginBottom: '10px', opacity: 0.9, fontWeight: 500 }}>
-          {registrationInfo.experience.name}
-        </p>
-      )}
-      {registrationInfo?.experience?.code && (
-        <p style={{ marginBottom: '20px', opacity: 0.8 }}>
-          Code: {registrationInfo.experience.code}
-        </p>
-      )}
-      <form onSubmit={handleSubmit}>
+      <div className={styles.header}>
+        {registrationInfo?.experience?.name && <p>{registrationInfo.experience.name}</p>}
+        {registrationInfo?.experience?.code && <p>Code: {registrationInfo.experience.code}</p>}
+      </div>
+      <form className={styles.form} onSubmit={handleSubmit}>
         {!isAuthenticated && (
           <input
             className="join-input"
@@ -85,7 +81,6 @@ export default function Register() {
             onKeyPress={handleKeyPress}
             disabled={isLoading}
             maxLength={100}
-            style={{ marginBottom: 'var(--space-xs)' }}
           />
         )}
         <input
@@ -98,11 +93,7 @@ export default function Register() {
           disabled={isLoading}
           maxLength={100}
         />
-        {error && (
-          <p className="error-message" style={{ marginTop: '8px' }}>
-            {error}
-          </p>
-        )}
+        {error && <p className={`error-message ${styles.error}`}>{error}</p>}
         <Button
           className="join-submit"
           type="submit"

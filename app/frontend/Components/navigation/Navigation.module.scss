@@ -130,9 +130,16 @@
 
 .topnav__dropdownInner .link {
   width: 100%;
-  text-align: left;
+  text-align: center;
   color: hsl(var(--popover-foreground));
   text-shadow: none;
+}
+
+/* Ensure dropdown trigger line centers like other items in mobile menu */
+.topnav__dropdownInner .dropdown {
+  width: 100%;
+  display: flex;
+  justify-content: center;
 }
 
 .topnav__controlRow {

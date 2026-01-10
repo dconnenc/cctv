@@ -9,7 +9,6 @@
 .stageWrap {
   width: 100%;
   max-width: 480px;
-  aspect-ratio: 1 / 1;
   background: hsl(var(--muted));
   border: 1px solid hsl(var(--border));
   border-radius: 8px;
@@ -19,6 +18,14 @@
   overscroll-behavior: contain;
   user-select: none;
   -webkit-user-select: none;
+}
+
+.square {
+  aspect-ratio: 1 / 1;
+}
+
+.wide {
+  aspect-ratio: 16 / 9;
 }
 
 .controls {

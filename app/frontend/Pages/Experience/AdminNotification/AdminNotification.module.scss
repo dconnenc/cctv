@@ -24,3 +24,18 @@
     text-decoration: none;
   }
 }
+
+.ghostButton {
+  background: transparent !important;
+  color: var(--white) !important;
+  border: 1px solid var(--white) !important;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    color 0.2s ease;
+  &:hover,
+  &:focus-visible {
+    border-color: var(--yellow) !important;
+    box-shadow: var(--tv-glow);
+  }
+}

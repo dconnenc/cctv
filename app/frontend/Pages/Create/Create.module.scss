@@ -21,7 +21,7 @@
 .link {
   font-weight: 400;
   font-size: clamp(16px, 4vw, 20px);
-  color: hsl(var(--primary));
+  color: var(--yellow);
   text-decoration: none;
   padding-top: 1.5rem;
 }

@@ -19,7 +19,7 @@ export default function AdminNotification({ code }: AdminNotificationProps) {
           <Button>Register to Participate</Button>
         </Link>
         <Link to={`/experiences/${code}/manage`}>
-          <Button>Manage Experience</Button>
+          <Button className={styles.ghostButton}>Manage Experience</Button>
         </Link>
       </div>
     </div>

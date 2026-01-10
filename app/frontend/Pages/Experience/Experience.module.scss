@@ -1,5 +1,6 @@
 .title {
   margin-bottom: var(--space-xs);
+  font-size: 1.5rem;
 }
 
 // Subtitle and general text styles
@@ -48,7 +49,7 @@
   background-color: hsl(var(--muted));
   border-radius: 8px;
   padding: var(--space-sm);
-  margin-bottom: var(--space-sm);
+  margin: 0 auto var(--space-sm) auto;
 }
 
 .participantsTitle {
@@ -125,6 +126,10 @@
   justify-content: center;
   overflow: hidden;
   cursor: pointer;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.08s ease;
   pointer-events: auto;
 }
 
@@ -137,6 +142,16 @@
   min-height: 100%;
 }
 
+.avatarToggleBtn:hover,
+.avatarToggleBtn:focus-visible {
+  border-color: var(--yellow);
+  box-shadow: var(--tv-glow);
+}
+
+.avatarToggleBtn:active {
+  transform: scale(0.98);
+}
+
 // Mobile-only Playbill CTA
 .playbillCta {
   display: none;
@@ -147,6 +162,54 @@
   .playbillCta {
     display: flex;
     justify-content: center;
+  }
+
+  .adminControls {
+    display: none !important;
+  }
+
+  .experienceInfo {
+    margin-bottom: var(--space-xs);
+  }
+
+  .lobbyGrid {
+    display: grid;
+    grid-template-rows: 1fr 1fr 1fr;
+    min-height: calc(100dvh - var(--nav-h) - calc(var(--space-sm) * 2));
+    gap: var(--space-sm);
+  }
+
+  .topArea {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+  }
+
+  .bottomActions {
+    display: flex;
+    gap: var(--space-sm);
+    width: 100%;
+  }
+
+  .actionLink {
+    flex: 1 1 0;
+    display: block;
+  }
+
+  .actionButton {
+    width: 100%;
+  }
+
+  .middleArea {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .participantsContainer {
+    max-width: 100%;
+    flex: 1 1 auto;
+    overflow: auto;
   }
 }
 
@@ -166,4 +229,72 @@
 
 .disconnected {
   color: var(--yellow);
+}
+
+/* Ghost button global treatment */
+.ghostButton {
+  background: transparent !important;
+  color: var(--white) !important;
+  border: 1px solid var(--white) !important;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    color 0.2s ease;
+  &:hover,
+  &:focus-visible {
+    border-color: var(--yellow) !important;
+    box-shadow: var(--tv-glow);
+  }
+}
+
+// Admin manage link styling
+.adminActions {
+  margin-top: var(--space-sm);
+}
+
+.adminButton {
+  color: hsl(var(--primary));
+  text-decoration: underline;
+  font-weight: 500;
+}
+/* Desktop/default actions row */
+.bottomActions {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: var(--space-sm);
+  width: 100%;
+}
+/* Shared 3-row vertical layout for lobby view across breakpoints */
+.lobbyGrid {
+  display: grid;
+  grid-template-rows: 1fr 1fr 1fr;
+  height: calc(100dvh - var(--nav-h) - calc(var(--space-sm) * 2));
+  gap: var(--space-sm);
+}
+
+.topArea {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  min-height: 0;
+}
+
+.middleArea {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 0;
+}
+
+/* Allow the lobby list to expand/scroll within the middle area without creating page scroll */
+.middleArea .participantsContainer {
+  max-width: 100%;
+  flex: 1 1 auto;
+  overflow: auto;
+  margin: 0 0 var(--space-xs) 0;
+}
+
+.bottomActions {
+  min-height: 0;
 }
