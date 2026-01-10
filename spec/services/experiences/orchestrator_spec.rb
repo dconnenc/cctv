@@ -139,7 +139,157 @@ RSpec.describe Experiences::Orchestrator do
     end
   end
 
+  describe "#open_block!" do
+    let(:participant_role) { ExperienceParticipant.roles[:host] }
 
+    subject do
+      described_class.new(actor: user, experience: experience).open_block!(parent_block.id)
+    end
+
+    context "when opening a family feud block with child question blocks" do
+      let!(:parent_block) do
+        create(
+          :experience_block,
+          experience: experience,
+          kind: ExperienceBlock::FAMILY_FEUD,
+          status: :hidden,
+          position: 0
+        )
+      end
+
+      let!(:child_question_1) do
+        create(
+          :experience_block,
+          experience: experience,
+          kind: ExperienceBlock::QUESTION,
+          status: :hidden,
+          parent_block_id: parent_block.id,
+          position: 0,
+          payload: { question: "Question 1" }
+        )
+      end
+
+      let!(:child_question_2) do
+        create(
+          :experience_block,
+          experience: experience,
+          kind: ExperienceBlock::QUESTION,
+          status: :hidden,
+          parent_block_id: parent_block.id,
+          position: 1,
+          payload: { question: "Question 2" }
+        )
+      end
+
+      it "opens the parent block and all child question blocks" do
+        subject
+
+        expect(parent_block.reload.status).to eq("open")
+        expect(child_question_1.reload.status).to eq("open")
+        expect(child_question_2.reload.status).to eq("open")
+      end
+    end
+  end
+
+  describe "#close_block!" do
+    let(:participant_role) { ExperienceParticipant.roles[:host] }
+
+    subject do
+      described_class.new(actor: user, experience: experience).close_block!(parent_block.id)
+    end
+
+    context "when closing a parent block with children" do
+      let!(:parent_block) do
+        create(
+          :experience_block,
+          experience: experience,
+          kind: ExperienceBlock::POLL,
+          status: :open,
+          position: 0
+        )
+      end
+
+      let!(:child_block_1) do
+        create(
+          :experience_block,
+          experience: experience,
+          kind: ExperienceBlock::QUESTION,
+          status: :open,
+          parent_block_id: parent_block.id,
+          position: 0
+        )
+      end
+
+      let!(:child_block_2) do
+        create(
+          :experience_block,
+          experience: experience,
+          kind: ExperienceBlock::QUESTION,
+          status: :open,
+          parent_block_id: parent_block.id,
+          position: 1
+        )
+      end
+
+      it "closes the parent block and all child blocks" do
+        subject
+
+        expect(parent_block.reload.status).to eq("closed")
+        expect(child_block_1.reload.status).to eq("closed")
+        expect(child_block_2.reload.status).to eq("closed")
+      end
+    end
+  end
+
+  describe "#hide_block!" do
+    let(:participant_role) { ExperienceParticipant.roles[:host] }
+
+    subject do
+      described_class.new(actor: user, experience: experience).hide_block!(parent_block.id)
+    end
+
+    context "when hiding a parent block with children" do
+      let!(:parent_block) do
+        create(
+          :experience_block,
+          experience: experience,
+          kind: ExperienceBlock::POLL,
+          status: :open,
+          position: 0
+        )
+      end
+
+      let!(:child_block_1) do
+        create(
+          :experience_block,
+          experience: experience,
+          kind: ExperienceBlock::QUESTION,
+          status: :open,
+          parent_block_id: parent_block.id,
+          position: 0
+        )
+      end
+
+      let!(:child_block_2) do
+        create(
+          :experience_block,
+          experience: experience,
+          kind: ExperienceBlock::QUESTION,
+          status: :open,
+          parent_block_id: parent_block.id,
+          position: 1
+        )
+      end
+
+      it "hides the parent block and all child blocks" do
+        subject
+
+        expect(parent_block.reload.status).to eq("hidden")
+        expect(child_block_1.reload.status).to eq("hidden")
+        expect(child_block_2.reload.status).to eq("hidden")
+      end
+    end
+  end
 
   describe "#add_block!" do
     let(:kind) { "poll" }

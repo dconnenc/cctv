@@ -217,6 +217,8 @@ class Api::ExperienceBlocksController < Api::BaseController
         block: block
       )
 
+      # TODO: Potential bug: not broadcast call here
+
       render json: {
         success: true,
         data: {

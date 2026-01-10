@@ -152,49 +152,26 @@ export default function ManageViewer() {
         }
       } else if (block.children?.length) {
         // This is a parent block with children
-        // First, close any other open parent blocks and their children
+        // First, close any other open parent blocks (backend will close their children)
         const otherOpenParents =
           experience?.blocks?.filter(
             (b) => b.id !== block.id && b.status === 'open' && !b.parent_block_ids?.length,
           ) || [];
 
         for (const otherParent of otherOpenParents) {
-          // Close children first
-          if (otherParent.children) {
-            for (const child of otherParent.children) {
-              if (child.status === 'open') {
-                await changeStatus(child, 'closed');
-              }
-            }
-          }
-          // Close the parent
           await changeStatus(otherParent, 'closed');
         }
 
-        // Open the parent block
+        // Open the parent block (backend will handle opening children for family feud)
         if (block.status !== 'open') {
           await changeStatus(block, 'open');
         }
-
-        // Open the first child
-        const firstChild = block.children[0];
-        if (firstChild && firstChild.status !== 'open') {
-          await changeStatus(firstChild, 'open');
-        }
       } else {
         // Simple block with no parent/children
-        // Close all open blocks first
+        // Close all open blocks first (backend will close children if any)
         const openBlocks = experience?.blocks?.filter((b) => b.status === 'open') || [];
         for (const openBlock of openBlocks) {
           if (openBlock.id !== block.id) {
-            // If it's a parent with children, close children first
-            if (openBlock.children) {
-              for (const child of openBlock.children) {
-                if (child.status === 'open') {
-                  await changeStatus(child, 'closed');
-                }
-              }
-            }
             await changeStatus(openBlock, 'closed');
           }
         }
@@ -221,22 +198,10 @@ export default function ManageViewer() {
       const parentBlock = findParentBlock(block);
 
       if (parentBlock) {
-        // This is a child block - close the child, then close the parent
-        await changeStatus(block, 'closed');
-        // Also close the parent when stopping a child
-        if (parentBlock.status === 'open') {
-          await changeStatus(parentBlock, 'closed');
-        }
-      } else if (block.children?.length) {
-        // This is a parent block - close all children first, then close parent
-        for (const child of block.children) {
-          if (child.status === 'open') {
-            await changeStatus(child, 'closed');
-          }
-        }
-        await changeStatus(block, 'closed');
+        // This is a child block - close the parent (backend will close children)
+        await changeStatus(parentBlock, 'closed');
       } else {
-        // Simple block - just close it
+        // This is a parent or simple block - backend will close children if any
         await changeStatus(block, 'closed');
       }
 
@@ -271,32 +236,20 @@ export default function ManageViewer() {
         await changeStatus(nextBlock, 'open');
       }
     } else {
-      // Different parents or moving between parent/child - use full handlePresent logic
-      // Close current block properly (with parent/children handling)
+      // Different parents or moving between parent/child
+      // Close current block (backend will handle children)
       const currentBlockParent = findParentBlock(selectedBlock);
       if (currentBlockParent) {
-        // Current is a child - close it and parent
-        if (selectedBlock.status === 'open') {
-          await changeStatus(selectedBlock, 'closed');
-        }
+        // Current is a child - close the parent (backend will close children)
         if (currentBlockParent.status === 'open') {
           await changeStatus(currentBlockParent, 'closed');
         }
-      } else if (selectedBlock.children?.length) {
-        // Current is a parent - close children first
-        for (const child of selectedBlock.children) {
-          if (child.status === 'open') {
-            await changeStatus(child, 'closed');
-          }
-        }
-        if (selectedBlock.status === 'open') {
-          await changeStatus(selectedBlock, 'closed');
-        }
       } else if (selectedBlock.status === 'open') {
+        // Current is a parent or simple block (backend will close children if any)
         await changeStatus(selectedBlock, 'closed');
       }
 
-      // Open next block with proper parent/child handling
+      // Open next block (backend will handle children)
       const nextBlockParent = findParentBlock(nextBlock);
       if (nextBlockParent) {
         // Next is a child - open parent first, then child
@@ -306,17 +259,8 @@ export default function ManageViewer() {
         if (nextBlock.status !== 'open') {
           await changeStatus(nextBlock, 'open');
         }
-      } else if (nextBlock.children?.length) {
-        // Next is a parent - open it and first child
-        if (nextBlock.status !== 'open') {
-          await changeStatus(nextBlock, 'open');
-        }
-        const firstChild = nextBlock.children[0];
-        if (firstChild && firstChild.status !== 'open') {
-          await changeStatus(firstChild, 'open');
-        }
       } else {
-        // Simple block
+        // Next is a parent or simple block (backend will handle children)
         if (nextBlock.status !== 'open') {
           await changeStatus(nextBlock, 'open');
         }

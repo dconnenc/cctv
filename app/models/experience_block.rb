@@ -105,7 +105,7 @@ class ExperienceBlock < ApplicationRecord
   # Family Feud specific methods
   def clear_family_feud_bucket_assignments!
     return unless kind == FAMILY_FEUD
-    
+
     child_blocks.each do |child_block|
       child_payload = child_block.payload || {}
       if child_payload["buckets"]
@@ -119,11 +119,43 @@ class ExperienceBlock < ApplicationRecord
 
   def clear_all_family_feud_buckets!
     return unless kind == FAMILY_FEUD
-    
+
     child_blocks.each do |child_block|
       child_payload = child_block.payload || {}
       child_payload["buckets"] = []
       child_block.update!(payload: child_payload)
+    end
+  end
+
+  def open!
+    transaction do
+      self.update!(status: :open)
+
+      if kind == FAMILY_FEUD
+        self.child_blocks.each do |child|
+          child.update!(status: :open)
+        end
+      end
+    end
+  end
+
+  def close!
+    transaction do
+      self.child_blocks.each do |child|
+        child.update!(status: :closed)
+      end
+
+      self.update!(status: :closed)
+    end
+  end
+
+  def hide!
+    transaction do
+      self.child_blocks.each do |child|
+        child.update!(status: :hidden)
+      end
+
+      self.update!(status: :hidden)
     end
   end
 
