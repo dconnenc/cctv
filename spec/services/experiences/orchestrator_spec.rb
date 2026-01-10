@@ -143,50 +143,26 @@ RSpec.describe Experiences::Orchestrator do
     let(:participant_role) { ExperienceParticipant.roles[:host] }
 
     subject do
-      described_class.new(actor: user, experience: experience).open_block!(parent_block.id)
+      described_class.new(actor: user, experience: experience).open_block!(block.id)
     end
 
     context "when opening a family feud block with child question blocks" do
-      let!(:parent_block) do
+      let!(:block) do
         create(
           :experience_block,
+          :family_feud,
           experience: experience,
-          kind: ExperienceBlock::FAMILY_FEUD,
           status: :hidden,
-          position: 0
-        )
-      end
-
-      let!(:child_question_1) do
-        create(
-          :experience_block,
-          experience: experience,
-          kind: ExperienceBlock::QUESTION,
-          status: :hidden,
-          parent_block_id: parent_block.id,
-          position: 0,
-          payload: { question: "Question 1" }
-        )
-      end
-
-      let!(:child_question_2) do
-        create(
-          :experience_block,
-          experience: experience,
-          kind: ExperienceBlock::QUESTION,
-          status: :hidden,
-          parent_block_id: parent_block.id,
-          position: 1,
-          payload: { question: "Question 2" }
+          question_count: 2
         )
       end
 
       it "opens the parent block and all child question blocks" do
         subject
 
-        expect(parent_block.reload.status).to eq("open")
-        expect(child_question_1.reload.status).to eq("open")
-        expect(child_question_2.reload.status).to eq("open")
+        expect(block.reload.status).to eq("open")
+        expect(block.child_blocks.count).to eq(2)
+        expect(block.child_blocks.map(&:status)).to all(eq("open"))
       end
     end
   end
@@ -195,48 +171,26 @@ RSpec.describe Experiences::Orchestrator do
     let(:participant_role) { ExperienceParticipant.roles[:host] }
 
     subject do
-      described_class.new(actor: user, experience: experience).close_block!(parent_block.id)
+      described_class.new(actor: user, experience: experience).close_block!(block.id)
     end
 
     context "when closing a parent block with children" do
-      let!(:parent_block) do
+      let!(:block) do
         create(
           :experience_block,
+          :family_feud,
           experience: experience,
-          kind: ExperienceBlock::POLL,
           status: :open,
-          position: 0
-        )
-      end
-
-      let!(:child_block_1) do
-        create(
-          :experience_block,
-          experience: experience,
-          kind: ExperienceBlock::QUESTION,
-          status: :open,
-          parent_block_id: parent_block.id,
-          position: 0
-        )
-      end
-
-      let!(:child_block_2) do
-        create(
-          :experience_block,
-          experience: experience,
-          kind: ExperienceBlock::QUESTION,
-          status: :open,
-          parent_block_id: parent_block.id,
-          position: 1
+          question_count: 2
         )
       end
 
       it "closes the parent block and all child blocks" do
         subject
 
-        expect(parent_block.reload.status).to eq("closed")
-        expect(child_block_1.reload.status).to eq("closed")
-        expect(child_block_2.reload.status).to eq("closed")
+        expect(block.reload.status).to eq("closed")
+        expect(block.child_blocks.count).to eq(2)
+        expect(block.child_blocks.map(&:status)).to all(eq("closed"))
       end
     end
   end
@@ -245,48 +199,26 @@ RSpec.describe Experiences::Orchestrator do
     let(:participant_role) { ExperienceParticipant.roles[:host] }
 
     subject do
-      described_class.new(actor: user, experience: experience).hide_block!(parent_block.id)
+      described_class.new(actor: user, experience: experience).hide_block!(block.id)
     end
 
     context "when hiding a parent block with children" do
-      let!(:parent_block) do
+      let!(:block) do
         create(
           :experience_block,
+          :family_feud,
           experience: experience,
-          kind: ExperienceBlock::POLL,
           status: :open,
-          position: 0
-        )
-      end
-
-      let!(:child_block_1) do
-        create(
-          :experience_block,
-          experience: experience,
-          kind: ExperienceBlock::QUESTION,
-          status: :open,
-          parent_block_id: parent_block.id,
-          position: 0
-        )
-      end
-
-      let!(:child_block_2) do
-        create(
-          :experience_block,
-          experience: experience,
-          kind: ExperienceBlock::QUESTION,
-          status: :open,
-          parent_block_id: parent_block.id,
-          position: 1
+          question_count: 2
         )
       end
 
       it "hides the parent block and all child blocks" do
         subject
 
-        expect(parent_block.reload.status).to eq("hidden")
-        expect(child_block_1.reload.status).to eq("hidden")
-        expect(child_block_2.reload.status).to eq("hidden")
+        expect(block.reload.status).to eq("hidden")
+        expect(block.child_blocks.count).to eq(2)
+        expect(block.child_blocks.map(&:status)).to all(eq("hidden"))
       end
     end
   end

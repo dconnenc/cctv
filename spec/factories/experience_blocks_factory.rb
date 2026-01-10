@@ -7,6 +7,46 @@ FactoryBot.define do
     
     sequence(:position) { |n| n }
 
+    trait :family_feud do
+      kind { ExperienceBlock::FAMILY_FEUD }
+      
+      transient do
+        question_count { 2 }
+        questions { nil }
+      end
+
+      after(:create) do |block, evaluator|
+        questions_to_create = evaluator.questions || 
+          evaluator.question_count.times.map { |i| { question: "Question #{i + 1}" } }
+
+        questions_to_create.each_with_index do |question_spec, index|
+          child_block = create(
+            :experience_block,
+            experience: block.experience,
+            kind: ExperienceBlock::QUESTION,
+            status: block.status,
+            payload: { 
+              question: question_spec[:question] || question_spec["question"],
+              formKey: "answer_#{index}",
+              inputType: "text"
+            },
+            visible_to_roles: block.visible_to_roles,
+            visible_to_segments: block.visible_to_segments,
+            target_user_ids: [],
+            parent_block_id: block.id,
+            position: index,
+            show_in_lobby: true
+          )
+
+          ExperienceBlockLink.create!(
+            parent_block: block,
+            child_block: child_block,
+            relationship: :depends_on
+          )
+        end
+      end
+    end
+
     trait :mad_lib_sourced do
       kind { ExperienceBlock::MAD_LIB }
       payload do
