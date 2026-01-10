@@ -26,8 +26,6 @@ class Experiences::Broadcaster
   end
 
   def broadcast_family_feud_update(block_id:, operation:, data:)
-    sleep(rand(0.5..2.0))
-    
     Rails.logger.info(
       "[Broadcaster] Broadcasting family_feud_updated to experience #{experience.code}"
     )
