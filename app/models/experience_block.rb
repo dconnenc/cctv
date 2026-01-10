@@ -129,18 +129,17 @@ class ExperienceBlock < ApplicationRecord
 
   def open!
     transaction do
-      self.update!(status: :open)
+      descendant_ids = all_descendant_ids
 
-      if kind == FAMILY_FEUD && child_blocks.exists?
-        descendant_ids = all_descendant_ids
-        ExperienceBlock.where(id: descendant_ids).update_all(status: :open)
-      end
+      ExperienceBlock.where(id: descendant_ids).update_all(status: :open)
+      self.update!(status: :open)
     end
   end
 
   def close!
     transaction do
       descendant_ids = all_descendant_ids
+
       ExperienceBlock.where(id: descendant_ids).update_all(status: :closed) if descendant_ids.any?
       self.update!(status: :closed)
     end
@@ -149,6 +148,7 @@ class ExperienceBlock < ApplicationRecord
   def hide!
     transaction do
       descendant_ids = all_descendant_ids
+
       ExperienceBlock.where(id: descendant_ids).update_all(status: :hidden) if descendant_ids.any?
       self.update!(status: :hidden)
     end

@@ -168,12 +168,12 @@ RSpec.describe ExperienceBlock do
   end
 
   describe "#open!" do
-    context "when opening a family feud block with nested children" do
+    context "when opening a block with deeply nested children" do
       let!(:parent) do
         create(
           :experience_block,
           experience: experience,
-          kind: ExperienceBlock::FAMILY_FEUD,
+          kind: ExperienceBlock::POLL,
           status: :hidden
         )
       end
@@ -220,7 +220,7 @@ RSpec.describe ExperienceBlock do
   end
 
   describe "#close!" do
-    context "when closing a block with nested children" do
+    context "when closing a block with deeply nested children" do
       let!(:parent) do
         create(
           :experience_block,
@@ -272,7 +272,7 @@ RSpec.describe ExperienceBlock do
   end
 
   describe "#hide!" do
-    context "when hiding a block with nested children" do
+    context "when hiding a block with deeply nested children" do
       let!(:parent) do
         create(
           :experience_block,
