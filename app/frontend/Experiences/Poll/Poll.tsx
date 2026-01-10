@@ -19,6 +19,7 @@ interface PollProps extends PollPayload {
     aggregate?: Record<string, number>;
   };
   disabled?: boolean;
+  viewContext?: 'participant' | 'monitor' | 'manage';
 }
 
 export default function Poll({
@@ -28,6 +29,7 @@ export default function Poll({
   blockId,
   responses,
   disabled = false,
+  viewContext = 'participant',
 }: PollProps) {
   const [submittedValue, setSubmittedValue] = useState<string[]>([]);
   const { submitPollResponse, isLoading, error } = useSubmitPollResponse();
@@ -75,6 +77,14 @@ export default function Poll({
       <div className={styles.submittedValue}>
         <p className={styles.legend}>{question}</p>
         <p className={styles.value}>{displayValue}</p>
+      </div>
+    );
+  }
+
+  if (viewContext === 'monitor') {
+    return (
+      <div className={styles.submittedValue}>
+        <p className={styles.legend}>{question}</p>
       </div>
     );
   }

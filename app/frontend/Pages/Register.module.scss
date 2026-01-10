@@ -1,0 +1,15 @@
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  width: 100%;
+  max-width: 400px;
+}
+
+.input {
+  margin: 0;
+}
+
+.errorMessage {
+  margin: 0;
+}

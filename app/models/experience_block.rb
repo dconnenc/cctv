@@ -105,7 +105,7 @@ class ExperienceBlock < ApplicationRecord
   # Family Feud specific methods
   def clear_family_feud_bucket_assignments!
     return unless kind == FAMILY_FEUD
-    
+
     child_blocks.each do |child_block|
       child_payload = child_block.payload || {}
       if child_payload["buckets"]
@@ -119,12 +119,64 @@ class ExperienceBlock < ApplicationRecord
 
   def clear_all_family_feud_buckets!
     return unless kind == FAMILY_FEUD
-    
+
     child_blocks.each do |child_block|
       child_payload = child_block.payload || {}
       child_payload["buckets"] = []
       child_block.update!(payload: child_payload)
     end
+  end
+
+  def open!
+    transaction do
+      descendant_ids = all_descendant_ids
+
+      ExperienceBlock.where(id: descendant_ids).update_all(status: :open)
+      self.update!(status: :open)
+    end
+  end
+
+  def close!
+    transaction do
+      descendant_ids = all_descendant_ids
+
+      ExperienceBlock.where(id: descendant_ids).update_all(status: :closed) if descendant_ids.any?
+      self.update!(status: :closed)
+    end
+  end
+
+  def hide!
+    transaction do
+      descendant_ids = all_descendant_ids
+
+      ExperienceBlock.where(id: descendant_ids).update_all(status: :hidden) if descendant_ids.any?
+      self.update!(status: :hidden)
+    end
+  end
+
+  def all_descendant_ids
+    return [] unless child_blocks.exists?
+
+    sql = <<~SQL
+      WITH RECURSIVE descendants(id) AS (
+        SELECT id
+        FROM experience_blocks
+        WHERE parent_block_id = :block_id
+
+        UNION
+
+        SELECT eb.id
+        FROM experience_blocks eb
+        JOIN descendants d ON eb.parent_block_id = d.id
+      )
+      SELECT id FROM descendants
+    SQL
+
+    result = self.class.connection.execute(
+      self.class.sanitize_sql([sql, { block_id: id }])
+    )
+
+    result.map { |row| row['id'] }
   end
 
   private

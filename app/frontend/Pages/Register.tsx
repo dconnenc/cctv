@@ -6,6 +6,8 @@ import { useUser } from '@cctv/contexts';
 import { Button } from '@cctv/core';
 import { useGet, useRegisterExperience } from '@cctv/hooks';
 
+import styles from './Register.module.scss';
+
 interface RegistrationInfoResponse {
   type: 'success' | 'error';
   experience?: {
@@ -74,10 +76,10 @@ export default function Register() {
           Code: {registrationInfo.experience.code}
         </p>
       )}
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmit} className={styles.form}>
         {!isAuthenticated && (
           <input
-            className="join-input"
+            className={styles.input}
             type="email"
             placeholder="Your Email"
             value={email}
@@ -85,11 +87,10 @@ export default function Register() {
             onKeyPress={handleKeyPress}
             disabled={isLoading}
             maxLength={100}
-            style={{ marginBottom: '0.5rem' }}
           />
         )}
         <input
-          className="join-input"
+          className={styles.input}
           type="text"
           placeholder="Your Name"
           value={participantName}
@@ -98,11 +99,7 @@ export default function Register() {
           disabled={isLoading}
           maxLength={100}
         />
-        {error && (
-          <p className="error-message" style={{ marginTop: '8px' }}>
-            {error}
-          </p>
-        )}
+        {error && <p className={`error-message ${styles.errorMessage}`}>{error}</p>}
         <Button
           className="join-submit"
           type="submit"
