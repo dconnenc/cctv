@@ -7,7 +7,7 @@ RSpec.describe Api::ExperienceBlocksController, type: :controller do
     post(
       :create,
       params: {
-        experience_id: experience.code,
+        experience_id: experience.code_slug,
         block: block_params,
       },
       format: :json
@@ -120,7 +120,7 @@ RSpec.describe Api::ExperienceBlocksController, type: :controller do
               required: true,
               source: {
                 type: "participant",
-                participant_id: participant.id
+                participant_id: participant.user_id
               }
             },
             {
