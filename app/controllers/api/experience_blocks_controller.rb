@@ -37,7 +37,6 @@ class Api::ExperienceBlocksController < Api::BaseController
       if create_params[:parent_block_id].present?
         parent_block = @experience.experience_blocks.find_by(id: create_params[:parent_block_id])
         if parent_block&.kind == 'family_feud'
-          # New questions start with no buckets (buckets are per-question now)
           Experiences::Broadcaster.new(@experience).broadcast_family_feud_update(
             block_id: parent_block.id,
             operation: 'question_added',
@@ -273,13 +272,13 @@ class Api::ExperienceBlocksController < Api::BaseController
       )
 
       broadcaster = Experiences::Broadcaster.new(@experience)
-      
+
       broadcaster.broadcast_family_feud_update(
         block_id: params[:id],
         operation: 'bucket_added',
         data: { questionId: params[:question_id], bucket: bucket }
       )
-      
+
       broadcaster.broadcast_experience_update
 
       render json: { success: true, data: { bucket: bucket } }, status: 200
@@ -301,13 +300,13 @@ class Api::ExperienceBlocksController < Api::BaseController
       )
 
       broadcaster = Experiences::Broadcaster.new(@experience)
-      
+
       broadcaster.broadcast_family_feud_update(
         block_id: params[:id],
         operation: 'bucket_renamed',
         data: { bucketId: params[:bucket_id], name: params[:name], questionId: params[:question_id] }
       )
-      
+
       broadcaster.broadcast_experience_update
 
       render json: { success: true }, status: 200
@@ -328,13 +327,13 @@ class Api::ExperienceBlocksController < Api::BaseController
       )
 
       broadcaster = Experiences::Broadcaster.new(@experience)
-      
+
       broadcaster.broadcast_family_feud_update(
         block_id: params[:id],
         operation: 'bucket_deleted',
         data: { bucketId: params[:bucket_id], questionId: params[:question_id] }
       )
-      
+
       broadcaster.broadcast_experience_update
 
       render json: { success: true }, status: 200
@@ -356,17 +355,17 @@ class Api::ExperienceBlocksController < Api::BaseController
       )
 
       broadcaster = Experiences::Broadcaster.new(@experience)
-      
+
       broadcaster.broadcast_family_feud_update(
         block_id: params[:id],
         operation: 'answer_assigned',
-        data: { 
+        data: {
           answerId: params[:answer_id],
           bucketId: params[:bucket_id],
           questionId: params[:question_id]
         }
       )
-      
+
       broadcaster.broadcast_experience_update
 
       render json: { success: true }, status: 200
