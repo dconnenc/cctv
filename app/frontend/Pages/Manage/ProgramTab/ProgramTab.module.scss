@@ -1,14 +1,14 @@
 .root {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: var(--space-sm);
 }
 
 .header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 1rem;
+  gap: var(--space-sm);
   flex-wrap: wrap;
 }
 

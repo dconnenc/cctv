@@ -1,7 +1,7 @@
 .form {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: var(--space-xs);
   align-items: center;
   justify-content: center;
 }
@@ -17,7 +17,7 @@
   font-size: 28px;
   width: 100%;
   color: var(--yellow);
-  padding-top: 0.75rem;
+  padding-top: var(--space-xs);
 }
 
 .legend {

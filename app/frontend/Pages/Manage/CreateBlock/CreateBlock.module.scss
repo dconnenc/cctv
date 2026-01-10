@@ -35,7 +35,7 @@
   max-width: 1200px;
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 2rem;
+  gap: var(--space-md);
   align-items: start;
 }
 
@@ -57,7 +57,7 @@
 .list {
   display: flex;
   flex-direction: column;
-  gap: 2rem;
+  gap: var(--space-md);
   align-items: center;
   overflow-y: auto;
   max-height: 400px;

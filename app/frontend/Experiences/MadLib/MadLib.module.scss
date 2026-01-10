@@ -19,14 +19,14 @@
 
 .template strong {
   color: var(--yellow);
-  padding: 0.25rem 0.5rem;
+  padding: 0.25rem var(--space-xs);
   border-radius: 6px;
   font-weight: 600;
 }
 
 .template em {
   color: var(--muted-fg, #6b7280);
-  padding: 0.25rem 0.5rem;
+  padding: 0.25rem var(--space-xs);
   border-radius: 6px;
   font-style: normal;
   border: 2px dashed var(--border-muted, #d1d5db);
@@ -40,7 +40,7 @@
 }
 
 .inputSection h3 {
-  margin: 0 0 0.5rem 0;
+  margin: 0 0 var(--space-xs) 0;
   color: var(--text-primary, #1f2937);
   font-size: 1.25rem;
 }
@@ -52,7 +52,7 @@
 
 .inputGroup {
   display: flex;
-  gap: 0.75rem;
+  gap: var(--space-xs);
   align-items: flex-end;
 }
 
@@ -73,11 +73,11 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.5rem;
+  gap: var(--space-xs);
 }
 
 .submitted strong {
-  padding: 0.25rem 0.5rem;
+  padding: 0.25rem var(--space-xs);
   border-radius: 6px;
 }
 
@@ -90,7 +90,7 @@
 }
 
 .waiting p {
-  margin: 0 0 0.5rem 0;
+  margin: 0 0 var(--space-xs) 0;
 }
 
 .waiting p:last-child {
@@ -115,9 +115,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.5rem;
+  gap: var(--space-xs);
   margin-top: 1rem;
-  padding: 0.75rem;
+  padding: var(--space-xs);
   border-radius: 8px;
   border: 1px solid var(--border-light, #f1f3f4);
 }
@@ -133,7 +133,7 @@
 
 @media (max-width: 640px) {
   .madLib {
-    padding: 0.5rem;
+    padding: var(--space-xs);
   }
 
   .template {
@@ -147,7 +147,7 @@
 
   .inputGroup {
     flex-direction: column;
-    gap: 0.5rem;
+    gap: var(--space-xs);
   }
 
   .inputGroup > div {

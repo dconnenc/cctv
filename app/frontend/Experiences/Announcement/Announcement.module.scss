@@ -24,8 +24,8 @@
 // Responsive design
 @media (max-width: 768px) {
   .content {
-    padding: 1rem;
-    margin: 0 1rem;
+    padding: var(--space-sm);
+    margin: 0 var(--space-sm);
   }
 
   .message {

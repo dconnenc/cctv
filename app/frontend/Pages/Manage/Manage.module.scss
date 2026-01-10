@@ -19,7 +19,7 @@
 .errorBanner {
   background: hsl(var(--destructive));
   color: hsl(var(--destructive-foreground));
-  padding: 0.75rem 1rem;
+  padding: var(--space-xs) var(--space-sm);
   border-radius: 8px;
   margin-bottom: 1rem;
 }
@@ -92,13 +92,13 @@
 
 .tabs {
   display: flex;
-  gap: 0.5rem;
+  gap: var(--space-xs);
   border-bottom: 1px solid hsl(var(--border));
 }
 
 .tab,
 .tabActive {
-  padding: 0.75rem 1.5rem;
+  padding: var(--space-xs) 1.5rem;
   background: transparent;
   border: none;
   border-bottom: 2px solid transparent;
@@ -120,22 +120,22 @@
 }
 
 .tabContent {
-  padding: 1rem 0;
+  padding: var(--space-sm) 0;
   min-height: 18.75rem;
 }
 
 @media (max-width: 768px) {
   .root {
-    padding: 1rem;
-    gap: 1rem;
+    padding: var(--space-sm);
+    gap: var(--space-sm);
   }
 
   .topRow {
-    gap: 1rem;
+    gap: var(--space-sm);
   }
 
   .bottomRow {
-    padding: 1rem;
+    padding: var(--space-sm);
   }
 
   .tabs {
@@ -146,7 +146,7 @@
   .tabActive {
     flex: 1;
     min-width: 7.5rem;
-    padding: 0.625rem 1rem;
+    padding: 0.625rem var(--space-sm);
     font-size: 0.875rem;
   }
 }

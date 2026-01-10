@@ -7,7 +7,7 @@
 }
 
 .emptyState {
-  padding: 2rem;
+  padding: var(--space-md);
   text-align: center;
   opacity: 0.6;
 }

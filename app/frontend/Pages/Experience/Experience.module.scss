@@ -1,5 +1,5 @@
 .title {
-  margin-bottom: 0.5rem;
+  margin-bottom: var(--space-xs);
 }
 
 // Subtitle and general text styles
@@ -10,12 +10,12 @@
 // Error states
 .error {
   color: hsl(var(--destructive));
-  margin-bottom: 1rem;
+  margin-bottom: var(--space-sm);
 }
 
 .invalidCode {
   color: hsl(var(--destructive));
-  margin-bottom: 0.75rem;
+  margin-bottom: var(--space-xs);
 }
 
 // Link styles
@@ -32,12 +32,12 @@
 
 // Lobby state styles
 .participantsCount {
-  margin-bottom: 1rem;
+  margin-bottom: var(--space-sm);
   opacity: 0.85;
 }
 
 .loadingSpinner {
-  margin-left: 0.5rem;
+  margin-left: var(--space-xs);
   font-size: 0.8rem;
 }
 
@@ -47,12 +47,12 @@
   max-width: 300px;
   background-color: hsl(var(--muted));
   border-radius: 8px;
-  padding: 1rem;
-  margin-bottom: 1rem;
+  padding: var(--space-sm);
+  margin-bottom: var(--space-sm);
 }
 
 .participantsTitle {
-  margin: 0 0 0.75rem 0;
+  margin: 0 0 var(--space-xs) 0;
   font-size: 1rem;
   opacity: 0.9;
 }
@@ -64,7 +64,7 @@
 }
 
 .participantItem {
-  padding: 0.5rem 0;
+  padding: var(--space-xs) 0;
   border-bottom: 1px solid hsl(var(--border));
   display: flex;
   align-items: center;
@@ -89,13 +89,13 @@
 }
 
 .waitingMessage {
-  margin-top: 1rem;
+  margin-top: var(--space-sm);
   opacity: 0.75;
   font-size: 0.9rem;
 }
 
 .avatarEditor {
-  margin-top: 1rem;
+  margin-top: var(--space-sm);
   width: 100%;
   display: flex;
   justify-content: center;
@@ -103,17 +103,17 @@
 
 .adminControls {
   position: absolute;
-  top: 1rem;
-  right: 1rem;
+  top: var(--space-sm);
+  right: var(--space-sm);
   z-index: 11;
   display: flex;
-  gap: 0.5rem;
+  gap: var(--space-xs);
 }
 
 .avatarToggleBtn {
   position: fixed;
   top: calc((var(--nav-h) - 2.75rem) / 2);
-  right: calc(1rem + env(safe-area-inset-right));
+  right: calc(var(--space-sm) + env(safe-area-inset-right));
   z-index: 10000;
   width: 44px;
   height: 44px;
@@ -140,7 +140,7 @@
 // Mobile-only Playbill CTA
 .playbillCta {
   display: none;
-  margin-top: 1rem;
+  margin-top: var(--space-sm);
 }
 
 @media (max-width: 768px) {
@@ -152,8 +152,8 @@
 
 // WebSocket connection status
 .connectionStatus {
-  margin-bottom: 1rem;
-  padding: 0.5rem;
+  margin-bottom: var(--space-sm);
+  padding: var(--space-xs);
   border-radius: 4px;
   background-color: hsl(var(--muted));
   text-align: center;

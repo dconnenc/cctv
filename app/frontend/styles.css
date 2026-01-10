@@ -8,6 +8,10 @@
   --teal: #7df9ff;
   --font-primary: 'VCR OSD Mono', 'Poppins', sans-serif;
   --nav-h: 3.5rem;
+  --space-xs: 0.5rem;
+  --space-sm: 1rem;
+  --space-md: 2rem;
+  --space-lg: 4rem;
   --tv-glow:
     0 0 4px rgba(255, 255, 255, 0.45), 0 0 10px rgba(255, 255, 255, 0.3),
     0.5px 0 1px rgba(255, 0, 0, 0.25), -0.5px 0 1px rgba(0, 255, 255, 0.25);
@@ -227,7 +231,7 @@ body {
   height: 100%;
   max-width: 78.75rem;
   margin: 0 auto;
-  padding: 1rem;
+  padding: var(--space-sm);
   position: relative;
   z-index: 10;
 }
@@ -298,8 +302,8 @@ body {
   /* Standard mobile content width */
   .page {
     max-width: 20rem;
-    padding-left: 0.75rem;
-    padding-right: 0.75rem;
+    padding-left: var(--space-xs);
+    padding-right: var(--space-xs);
   }
 
   /* Ensure paragraphs don't overflow horizontally */
@@ -315,8 +319,8 @@ body {
 }
 
 input {
-  margin-top: 0.75rem;
-  padding: 0.5rem 0.75rem;
+  margin-top: var(--space-xs);
+  padding: var(--space-xs) var(--space-xs);
   font-size: 1rem;
   border: 1px solid hsl(var(--border));
   border-radius: 0.375rem;
@@ -334,7 +338,7 @@ input:focus {
 
 button {
   margin: 0;
-  padding: 0.5rem 1rem;
+  padding: var(--space-xs) var(--space-sm);
   font-size: 1rem;
   font-weight: 600;
   border: 1px solid hsl(var(--border));

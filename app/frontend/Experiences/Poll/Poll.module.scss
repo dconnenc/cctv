@@ -1,14 +1,14 @@
 .option {
   display: flex;
   align-items: center;
-  gap: 0.625rem;
+  gap: var(--space-xs);
 }
 
 .legend {
   position: relative;
   z-index: 3;
   font-size: 32px;
-  padding: 0.75rem;
+  padding: var(--space-xs);
   width: 100%;
 }
 
@@ -18,7 +18,7 @@
   font-size: 28px;
   width: 100%;
   color: var(--yellow);
-  padding: 0.75rem 0;
+  padding: var(--space-xs) 0;
 }
 
 .submit {
@@ -30,7 +30,7 @@
   border: none;
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: var(--space-xs);
   align-items: center;
   justify-content: center;
 }

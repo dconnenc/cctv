@@ -85,7 +85,7 @@ export default function Register() {
             onKeyPress={handleKeyPress}
             disabled={isLoading}
             maxLength={100}
-            style={{ marginBottom: '0.5rem' }}
+            style={{ marginBottom: 'var(--space-xs)' }}
           />
         )}
         <input

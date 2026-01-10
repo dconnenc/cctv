@@ -59,7 +59,7 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 1.5rem;
-  padding-top: 1rem;
+  padding-top: var(--space-sm);
 }
 
 .bucketsColumn,
@@ -73,7 +73,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1rem;
+  padding: var(--space-sm);
   background-color: hsl(var(--card));
   border-radius: 8px;
   border: 1px solid hsl(var(--border));
@@ -222,7 +222,7 @@
 }
 
 .emptyBucket {
-  padding: 1rem;
+  padding: var(--space-sm);
   text-align: center;
   color: hsl(var(--muted-foreground));
   font-style: italic;

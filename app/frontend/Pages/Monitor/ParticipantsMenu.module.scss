@@ -1,11 +1,11 @@
 .container {
   position: absolute;
-  top: 0.75rem;
-  left: 0.75rem;
+  top: var(--space-xs);
+  left: var(--space-xs);
   z-index: 10;
   max-height: 60vh;
   width: 220px;
-  padding: 0.5rem 0.5rem;
+  padding: var(--space-xs) var(--space-xs);
   border-radius: 0.5rem;
   border: 1px solid hsl(var(--border));
   background: hsl(var(--popover) / 0.7);
@@ -17,8 +17,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 0.5rem;
-  padding: 0.25rem 0.25rem 0.5rem 0.25rem;
+  gap: var(--space-xs);
+  padding: 0.25rem 0.25rem var(--space-xs) 0.25rem;
   border-bottom: 1px solid hsl(var(--border));
 }
 
@@ -34,7 +34,7 @@
 
 .list {
   margin: 0;
-  margin-top: 0.5rem;
+  margin-top: var(--space-xs);
   padding: 0;
   list-style: none;
   overflow-y: auto;
@@ -45,7 +45,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 0.5rem;
+  gap: var(--space-xs);
   padding: 0.3rem 0.25rem;
   border-bottom: 1px dashed hsl(var(--border));
 }
