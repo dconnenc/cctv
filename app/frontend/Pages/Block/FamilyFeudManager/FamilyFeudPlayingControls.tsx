@@ -1,8 +1,15 @@
 import { useState } from 'react';
 
-import { ChevronRight, Eye, RotateCcw, Trash2, X } from 'lucide-react';
+import { ChevronDown, ChevronRight, Eye, RotateCcw, Trash2, X } from 'lucide-react';
 
 import { Button } from '@cctv/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@cctv/core';
 import { Block, FamilyFeudGameState } from '@cctv/types';
 
 import styles from './FamilyFeudPlayingControls.module.scss';
@@ -101,116 +108,117 @@ export default function FamilyFeudPlayingControls({
   };
 
   return (
-    <div className={styles.root}>
+    <div className={styles.container}>
       <div className={styles.header}>
-        <h3 className={styles.title}>Playing Controls</h3>
-        <div className={styles.progress}>
+        <span className={styles.title}>Playing Controls</span>
+        <span className={styles.progress}>
           Question {gameState.current_question_index + 1} of {gameState.questions.length}
+        </span>
+      </div>
+
+      <div className={styles.content}>
+        <div className={styles.currentQuestion}>
+          <h4 className={styles.questionText}>{currentQuestion.question_text}</h4>
         </div>
-      </div>
 
-      <div className={styles.currentQuestion}>
-        <h4 className={styles.questionText}>{currentQuestion.question_text}</h4>
-      </div>
+        <div className={styles.buckets}>
+          {currentQuestion.buckets.map((bucket, index) => {
+            const key = `${gameState.current_question_index}-${index}`;
+            const isRevealing = revealingBucket === key;
 
-      <div className={styles.buckets}>
-        {currentQuestion.buckets.map((bucket, index) => {
-          const key = `${gameState.current_question_index}-${index}`;
-          const isRevealing = revealingBucket === key;
-
-          return (
-            <div key={bucket.bucket_id} className={styles.bucketRow}>
-              <div className={styles.bucketInfo}>
-                <span className={styles.bucketName}>{bucket.bucket_name}</span>
-                <span className={styles.percentage}>{bucket.percentage}%</span>
+            return (
+              <div key={bucket.bucket_id} className={styles.bucketRow}>
+                <div className={styles.bucketInfo}>
+                  <span className={styles.bucketName}>{bucket.bucket_name}</span>
+                  <span className={styles.percentage}>{bucket.percentage}%</span>
+                </div>
+                <Button
+                  variant={bucket.revealed ? 'outline' : 'default'}
+                  size="sm"
+                  onClick={() => handleRevealBucket(index)}
+                  disabled={bucket.revealed || isRevealing}
+                >
+                  <Eye size={16} />
+                  {bucket.revealed ? 'Revealed' : isRevealing ? 'Revealing...' : 'Reveal'}
+                </Button>
               </div>
-              <Button
-                variant={bucket.revealed ? 'outline' : 'default'}
-                size="sm"
-                onClick={() => handleRevealBucket(index)}
-                disabled={bucket.revealed || isRevealing}
+            );
+          })}
+        </div>
+
+        <div className={styles.actions}>
+          <button
+            onClick={handleShowX}
+            disabled={showingX}
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm transition-colors ${
+              showingX
+                ? 'bg-[hsl(var(--muted))] text-[hsl(var(--muted-foreground))] cursor-not-allowed'
+                : 'bg-red-500 text-white hover:bg-red-600'
+            }`}
+          >
+            <X size={16} />
+            {showingX ? 'Showing X...' : 'Show X'}
+          </button>
+
+          <button
+            onClick={handleNextQuestion}
+            disabled={advancing}
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm transition-colors ${
+              advancing
+                ? 'bg-[hsl(var(--muted))] text-[hsl(var(--muted-foreground))] cursor-not-allowed'
+                : 'bg-[hsl(var(--primary))] text-white hover:bg-[hsl(var(--primary))]/90'
+            }`}
+          >
+            {isLastQuestion ? (
+              'Close Game'
+            ) : (
+              <>
+                Next Question <ChevronRight size={16} />
+              </>
+            )}
+          </button>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                disabled={restarting !== null}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm transition-colors ${
+                  restarting !== null
+                    ? 'text-[hsl(var(--muted-foreground))] cursor-not-allowed'
+                    : 'text-white hover:text-white hover:bg-[hsl(var(--background))]'
+                }`}
               >
-                <Eye size={16} />
-                {bucket.revealed ? 'Revealed' : isRevealing ? 'Revealing...' : 'Reveal'}
-              </Button>
-            </div>
-          );
-        })}
-      </div>
-
-      <div className={styles.actions}>
-        <button
-          onClick={handleShowX}
-          disabled={showingX}
-          className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm transition-colors ${
-            showingX
-              ? 'bg-[hsl(var(--muted))] text-[hsl(var(--muted-foreground))] cursor-not-allowed'
-              : 'bg-red-500 text-white hover:bg-red-600'
-          }`}
-        >
-          <X size={16} />
-          {showingX ? 'Showing X...' : 'Show X'}
-        </button>
-
-        <button
-          onClick={handleNextQuestion}
-          disabled={advancing}
-          className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm transition-colors ${
-            advancing
-              ? 'bg-[hsl(var(--muted))] text-[hsl(var(--muted-foreground))] cursor-not-allowed'
-              : 'bg-[hsl(var(--primary))] text-white hover:bg-[hsl(var(--primary))]/90'
-          }`}
-        >
-          {isLastQuestion ? (
-            'Close Game'
-          ) : (
-            <>
-              Next Question <ChevronRight size={16} />
-            </>
-          )}
-        </button>
-      </div>
-
-      <div className={styles.restartSection}>
-        <div className={styles.restartActions}>
-          <button
-            onClick={() => handleRestart('playing')}
-            disabled={restarting !== null}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm transition-colors ${
-              restarting !== null
-                ? 'text-[hsl(var(--muted-foreground))] cursor-not-allowed'
-                : 'text-white hover:text-white hover:bg-[hsl(var(--muted))]'
-            }`}
-          >
-            <RotateCcw size={14} />
-            {restarting === 'playing' ? 'Restarting...' : 'Restart Playing'}
-          </button>
-
-          <button
-            onClick={() => handleRestart('categorizing')}
-            disabled={restarting !== null}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm transition-colors ${
-              restarting !== null
-                ? 'text-[hsl(var(--muted-foreground))] cursor-not-allowed'
-                : 'text-white hover:text-white hover:bg-[hsl(var(--muted))]'
-            }`}
-          >
-            <RotateCcw size={14} />
-            {restarting === 'categorizing' ? 'Restarting...' : 'Re-categorize'}
-          </button>
-
-          <button
-            onClick={() => handleRestart('everything')}
-            disabled={restarting !== null}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm transition-colors ${
-              restarting !== null
-                ? 'text-[hsl(var(--muted-foreground))] cursor-not-allowed'
-                : 'text-red-500 hover:text-red-400 hover:bg-red-500/10'
-            }`}
-          >
-            <Trash2 size={14} />
-            {restarting === 'everything' ? 'Resetting...' : 'Reset Everything'}
-          </button>
+                <RotateCcw size={16} />
+                Reset
+                <ChevronDown size={14} />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem
+                onClick={() => handleRestart('playing')}
+                disabled={restarting !== null}
+              >
+                <RotateCcw size={14} />
+                <span className="ml-2">Restart Playing</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => handleRestart('categorizing')}
+                disabled={restarting !== null}
+              >
+                <RotateCcw size={14} />
+                <span className="ml-2">Re-categorize</span>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onClick={() => handleRestart('everything')}
+                disabled={restarting !== null}
+                className="text-red-500 focus:text-red-400"
+              >
+                <Trash2 size={14} />
+                <span className="ml-2">Reset Everything</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
     </div>

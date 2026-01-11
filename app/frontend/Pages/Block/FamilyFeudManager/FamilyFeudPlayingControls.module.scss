@@ -1,38 +1,42 @@
-.root {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-md);
-  padding: var(--space-md);
-  background: hsl(var(--card));
-  border-radius: 8px;
+.container {
   border: 1px solid hsl(var(--border));
+  border-radius: 8px;
+  overflow: hidden;
 }
 
 .header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding-bottom: var(--space-sm);
+  padding: 0.5rem 1rem;
+  background: hsl(var(--muted));
   border-bottom: 1px solid hsl(var(--border));
 }
 
 .title {
-  margin: 0;
-  font-size: 1.125rem;
-  font-weight: 700;
+  font-size: 0.875rem;
+  font-weight: 500;
   color: hsl(var(--foreground));
 }
 
 .progress {
-  font-size: 0.875rem;
+  font-size: 0.75rem;
   color: hsl(var(--muted-foreground));
-  font-weight: 500;
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  background: hsl(var(--card));
 }
 
 .currentQuestion {
   padding: var(--space-sm);
+  margin: var(--space-sm);
   background: hsl(var(--background));
   border-radius: 6px;
+  border: 1px solid hsl(var(--border));
 }
 
 .questionText {
@@ -45,6 +49,7 @@
 .buckets {
   display: flex;
   flex-direction: column;
+  padding: 0 var(--space-sm);
   gap: var(--space-sm);
 }
 
@@ -82,6 +87,7 @@
   align-items: center;
   gap: 4px;
   padding: 4px;
+  margin: var(--space-sm);
   background-color: hsl(var(--muted));
   border-radius: 8px;
 }
@@ -94,22 +100,4 @@
   padding: var(--space-sm);
   color: hsl(var(--destructive));
   text-align: center;
-}
-
-.restartSection {
-  padding-top: var(--space-sm);
-  border-top: 1px solid hsl(var(--border));
-}
-
-.restartActions {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  padding: 4px;
-  background-color: hsl(var(--muted));
-  border-radius: 8px;
-}
-
-.restartActions button {
-  flex: 1;
 }
