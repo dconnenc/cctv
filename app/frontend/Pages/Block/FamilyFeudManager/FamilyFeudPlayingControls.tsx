@@ -139,54 +139,78 @@ export default function FamilyFeudPlayingControls({
       </div>
 
       <div className={styles.actions}>
-        <Button variant="destructive" size="lg" onClick={handleShowX} disabled={showingX}>
-          <X size={20} />
+        <button
+          onClick={handleShowX}
+          disabled={showingX}
+          className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm transition-colors ${
+            showingX
+              ? 'bg-[hsl(var(--muted))] text-[hsl(var(--muted-foreground))] cursor-not-allowed'
+              : 'bg-red-500 text-white hover:bg-red-600'
+          }`}
+        >
+          <X size={16} />
           {showingX ? 'Showing X...' : 'Show X'}
-        </Button>
+        </button>
 
-        <Button variant="default" size="lg" onClick={handleNextQuestion} disabled={advancing}>
+        <button
+          onClick={handleNextQuestion}
+          disabled={advancing}
+          className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm transition-colors ${
+            advancing
+              ? 'bg-[hsl(var(--muted))] text-[hsl(var(--muted-foreground))] cursor-not-allowed'
+              : 'bg-[hsl(var(--primary))] text-white hover:bg-[hsl(var(--primary))]/90'
+          }`}
+        >
           {isLastQuestion ? (
-            <>Close Game</>
+            'Close Game'
           ) : (
             <>
-              Next Question <ChevronRight size={20} />
+              Next Question <ChevronRight size={16} />
             </>
           )}
-        </Button>
+        </button>
       </div>
 
       <div className={styles.restartSection}>
-        <h4 className={styles.restartTitle}>Restart Options</h4>
         <div className={styles.restartActions}>
-          <Button
-            variant="outline"
-            size="sm"
+          <button
             onClick={() => handleRestart('playing')}
             disabled={restarting !== null}
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm transition-colors ${
+              restarting !== null
+                ? 'text-[hsl(var(--muted-foreground))] cursor-not-allowed'
+                : 'text-white hover:text-white hover:bg-[hsl(var(--muted))]'
+            }`}
           >
-            <RotateCcw size={16} />
+            <RotateCcw size={14} />
             {restarting === 'playing' ? 'Restarting...' : 'Restart Playing'}
-          </Button>
+          </button>
 
-          <Button
-            variant="outline"
-            size="sm"
+          <button
             onClick={() => handleRestart('categorizing')}
             disabled={restarting !== null}
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm transition-colors ${
+              restarting !== null
+                ? 'text-[hsl(var(--muted-foreground))] cursor-not-allowed'
+                : 'text-white hover:text-white hover:bg-[hsl(var(--muted))]'
+            }`}
           >
-            <RotateCcw size={16} />
+            <RotateCcw size={14} />
             {restarting === 'categorizing' ? 'Restarting...' : 'Re-categorize'}
-          </Button>
+          </button>
 
-          <Button
-            variant="destructive"
-            size="sm"
+          <button
             onClick={() => handleRestart('everything')}
             disabled={restarting !== null}
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm transition-colors ${
+              restarting !== null
+                ? 'text-[hsl(var(--muted-foreground))] cursor-not-allowed'
+                : 'text-red-500 hover:text-red-400 hover:bg-red-500/10'
+            }`}
           >
-            <Trash2 size={16} />
+            <Trash2 size={14} />
             {restarting === 'everything' ? 'Resetting...' : 'Reset Everything'}
-          </Button>
+          </button>
         </div>
       </div>
     </div>

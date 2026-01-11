@@ -1,87 +1,89 @@
 .root {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-lg);
-  padding: var(--spacing-lg);
-  background: var(--color-background-secondary);
-  border-radius: var(--border-radius-md);
-  border: 1px solid var(--color-border);
+  gap: var(--space-md);
+  padding: var(--space-md);
+  background: hsl(var(--card));
+  border-radius: 8px;
+  border: 1px solid hsl(var(--border));
 }
 
 .header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding-bottom: var(--spacing-md);
-  border-bottom: 1px solid var(--color-border);
+  padding-bottom: var(--space-sm);
+  border-bottom: 1px solid hsl(var(--border));
 }
 
 .title {
   margin: 0;
-  font-size: var(--font-size-lg);
-  font-weight: var(--font-weight-bold);
-  color: var(--color-text-primary);
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: hsl(var(--foreground));
 }
 
 .progress {
-  font-size: var(--font-size-sm);
-  color: var(--color-text-secondary);
-  font-weight: var(--font-weight-medium);
+  font-size: 0.875rem;
+  color: hsl(var(--muted-foreground));
+  font-weight: 500;
 }
 
 .currentQuestion {
-  padding: var(--spacing-md);
-  background: var(--color-background-primary);
-  border-radius: var(--border-radius-sm);
+  padding: var(--space-sm);
+  background: hsl(var(--background));
+  border-radius: 6px;
 }
 
 .questionText {
   margin: 0;
-  font-size: var(--font-size-lg);
-  font-weight: var(--font-weight-semibold);
-  color: var(--color-text-primary);
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: hsl(var(--foreground));
 }
 
 .buckets {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-sm);
+  gap: var(--space-sm);
 }
 
 .bucketRow {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: var(--spacing-md);
-  background: var(--color-background-primary);
-  border-radius: var(--border-radius-sm);
-  border: 1px solid var(--color-border);
+  padding: var(--space-sm);
+  background: hsl(var(--background));
+  border-radius: 6px;
+  border: 1px solid hsl(var(--border));
 }
 
 .bucketInfo {
   display: flex;
   align-items: center;
-  gap: var(--spacing-md);
+  gap: var(--space-sm);
   flex: 1;
 }
 
 .bucketName {
-  font-size: var(--font-size-md);
-  font-weight: var(--font-weight-medium);
-  color: var(--color-text-primary);
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: hsl(var(--foreground));
 }
 
 .percentage {
-  font-size: var(--font-size-md);
-  font-weight: var(--font-weight-bold);
-  color: var(--color-primary);
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: hsl(var(--primary));
 }
 
 .actions {
   display: flex;
-  gap: var(--spacing-md);
-  padding-top: var(--spacing-md);
-  border-top: 1px solid var(--color-border);
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  background-color: hsl(var(--muted));
+  border-radius: 8px;
 }
 
 .actions button {
@@ -89,32 +91,25 @@
 }
 
 .error {
-  padding: var(--spacing-md);
-  color: var(--color-error);
+  padding: var(--space-sm);
+  color: hsl(var(--destructive));
   text-align: center;
 }
 
 .restartSection {
-  padding-top: var(--spacing-lg);
-  border-top: 1px solid var(--color-border);
-}
-
-.restartTitle {
-  margin: 0 0 var(--spacing-sm) 0;
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-semibold);
-  color: var(--color-text-secondary);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  padding-top: var(--space-sm);
+  border-top: 1px solid hsl(var(--border));
 }
 
 .restartActions {
   display: flex;
-  gap: var(--spacing-sm);
-  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  background-color: hsl(var(--muted));
+  border-radius: 8px;
 }
 
 .restartActions button {
   flex: 1;
-  min-width: 150px;
 }
