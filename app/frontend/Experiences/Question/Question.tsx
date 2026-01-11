@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useState } from 'react';
+import { FormEvent, useEffect, useRef, useState } from 'react';
 
 import { Button, TextInput } from '@cctv/core';
 import { useSubmitQuestionResponse } from '@cctv/hooks';
@@ -35,8 +35,12 @@ export default function Question({
   const [submittedValue, setSubmittedValue] = useState<string>('');
   const { submitQuestionResponse, isLoading, error } = useSubmitQuestionResponse();
   const userAlreadyResponded = responses?.user_responded || false;
+  const currentBlockIdRef = useRef(blockId);
 
   useEffect(() => {
+    // Using http and ws causes weird submission race conditions if the rendered
+    // block is the same type.
+    currentBlockIdRef.current = blockId;
     setSubmittedValue('');
   }, [blockId]);
 
@@ -53,6 +57,8 @@ export default function Question({
       return;
     }
 
+    const submittedBlockId = actualBlockId;
+
     const response = await submitQuestionResponse({
       blockId: actualBlockId,
       answer: {
@@ -61,8 +67,10 @@ export default function Question({
       },
     });
 
-    if (response?.success) {
+    if (response?.success && currentBlockIdRef.current === submittedBlockId) {
       setSubmittedValue(value);
+    } else if (response?.success) {
+      console.log('[QA] Skipping setSubmittedValue - blockId changed during submission');
     }
   };
 
@@ -93,7 +101,7 @@ export default function Question({
       <fieldset className={styles.fieldset}>
         <legend className={styles.legend}>{question}</legend>
         {error && <p className={styles.error}>{error}</p>}
-        <TextInput name={formKey} type={inputType} required disabled={disabled} />
+        <TextInput key={blockId} name={formKey} type={inputType} required disabled={disabled} />
         <Button type="submit" loading={isLoading} loadingText="Submitting..." disabled={disabled}>
           {buttonText}
         </Button>
