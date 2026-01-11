@@ -26,7 +26,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: var(--space-lg);
+  padding: var(--space-sm);
   gap: var(--space-md);
   min-height: 100vh;
   width: 100%;
@@ -35,7 +35,7 @@
 }
 
 .questionTitle {
-  font-size: 48px;
+  font-size: 36px;
   font-weight: 800;
   color: hsl(var(--foreground));
   text-align: center;
