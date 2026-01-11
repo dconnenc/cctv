@@ -47,11 +47,14 @@ export default function Experience() {
   const participantAvatar = currentFullParticipant?.avatar?.image;
   const needsAvatar = !isAdmin && !participantAvatar;
 
+  // Wait for both experience AND participant data before checking avatar
+  const hasInitialData = !isAdmin ? experience && participant : experience;
+
   useEffect(() => {
-    if (experienceStatus === 'lobby' && needsAvatar && code) {
+    if (experienceStatus === 'lobby' && needsAvatar && code && !isLoading && hasInitialData) {
       navigate(`/experiences/${code}/avatar`, { replace: true });
     }
-  }, [experienceStatus, needsAvatar, code, navigate]);
+  }, [experienceStatus, needsAvatar, code, navigate, isLoading, hasInitialData]);
   const currentBlock = experience?.blocks?.[0];
 
   if (experienceStatus === 'lobby') {
