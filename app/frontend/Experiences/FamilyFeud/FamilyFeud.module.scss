@@ -3,22 +3,22 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: var(--spacing-xl);
+  padding: var(--space-lg);
   min-height: 200px;
 }
 
 .title {
-  font-size: var(--font-size-xxl);
-  font-weight: var(--font-weight-bold);
-  color: var(--color-text-primary);
+  font-size: 48px;
+  font-weight: 800;
+  color: hsl(var(--foreground));
   text-align: center;
   margin: 0;
 }
 
 .error {
-  color: var(--color-error);
+  color: hsl(var(--destructive));
   text-align: center;
-  margin-top: var(--spacing-md);
+  margin-top: var(--space-md);
 }
 
 .playingRoot {
@@ -26,8 +26,8 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: var(--spacing-xl);
-  gap: var(--spacing-xl);
+  padding: var(--space-lg);
+  gap: var(--space-md);
   min-height: 100vh;
   width: 100%;
   max-width: 1200px;
@@ -36,20 +36,18 @@
 
 .questionTitle {
   font-size: 48px;
-  font-weight: var(--font-weight-bold);
-  color: var(--color-text-primary);
+  font-weight: 800;
+  color: hsl(var(--foreground));
   text-align: center;
   margin: 0;
-  padding: var(--spacing-lg);
-  background: var(--color-background-secondary);
-  border-radius: var(--border-radius-lg);
+  padding: var(--space-md);
+  border-radius: var(--radius);
   width: 100%;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .bucketsGrid {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-md);
+  gap: var(--space-sm);
   width: 100%;
 }

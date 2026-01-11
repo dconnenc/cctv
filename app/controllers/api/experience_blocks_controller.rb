@@ -416,7 +416,7 @@ class Api::ExperienceBlocksController < Api::BaseController
       # Clear the X flag after a delay
       # Frontend will show animation for 5 seconds
       Thread.new do
-        sleep 5
+        sleep 3
         ActiveRecord::Base.connection_pool.with_connection do
           block.reload
           payload = block.payload || {}
