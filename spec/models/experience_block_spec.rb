@@ -166,4 +166,160 @@ RSpec.describe ExperienceBlock do
       end
     end
   end
+
+  describe "#open!" do
+    context "when opening a block with deeply nested children" do
+      let!(:parent) do
+        create(
+          :experience_block,
+          experience: experience,
+          kind: ExperienceBlock::POLL,
+          status: :hidden
+        )
+      end
+
+      let!(:child1) do
+        create(
+          :experience_block,
+          experience: experience,
+          kind: ExperienceBlock::QUESTION,
+          status: :hidden,
+          parent_block_id: parent.id
+        )
+      end
+
+      let!(:child2) do
+        create(
+          :experience_block,
+          experience: experience,
+          kind: ExperienceBlock::QUESTION,
+          status: :hidden,
+          parent_block_id: parent.id
+        )
+      end
+
+      let!(:grandchild) do
+        create(
+          :experience_block,
+          experience: experience,
+          kind: ExperienceBlock::POLL,
+          status: :hidden,
+          parent_block_id: child1.id
+        )
+      end
+
+      it "opens the parent and all descendants recursively" do
+        parent.open!
+
+        expect(parent.reload.status).to eq("open")
+        expect(child1.reload.status).to eq("open")
+        expect(child2.reload.status).to eq("open")
+        expect(grandchild.reload.status).to eq("open")
+      end
+    end
+  end
+
+  describe "#close!" do
+    context "when closing a block with deeply nested children" do
+      let!(:parent) do
+        create(
+          :experience_block,
+          experience: experience,
+          kind: ExperienceBlock::POLL,
+          status: :open
+        )
+      end
+
+      let!(:child1) do
+        create(
+          :experience_block,
+          experience: experience,
+          kind: ExperienceBlock::QUESTION,
+          status: :open,
+          parent_block_id: parent.id
+        )
+      end
+
+      let!(:child2) do
+        create(
+          :experience_block,
+          experience: experience,
+          kind: ExperienceBlock::QUESTION,
+          status: :open,
+          parent_block_id: parent.id
+        )
+      end
+
+      let!(:grandchild) do
+        create(
+          :experience_block,
+          experience: experience,
+          kind: ExperienceBlock::POLL,
+          status: :open,
+          parent_block_id: child1.id
+        )
+      end
+
+      it "closes the parent and all descendants recursively" do
+        parent.close!
+
+        expect(parent.reload.status).to eq("closed")
+        expect(child1.reload.status).to eq("closed")
+        expect(child2.reload.status).to eq("closed")
+        expect(grandchild.reload.status).to eq("closed")
+      end
+    end
+  end
+
+  describe "#hide!" do
+    context "when hiding a block with deeply nested children" do
+      let!(:parent) do
+        create(
+          :experience_block,
+          experience: experience,
+          kind: ExperienceBlock::POLL,
+          status: :open
+        )
+      end
+
+      let!(:child1) do
+        create(
+          :experience_block,
+          experience: experience,
+          kind: ExperienceBlock::QUESTION,
+          status: :open,
+          parent_block_id: parent.id
+        )
+      end
+
+      let!(:child2) do
+        create(
+          :experience_block,
+          experience: experience,
+          kind: ExperienceBlock::QUESTION,
+          status: :open,
+          parent_block_id: parent.id
+        )
+      end
+
+      let!(:grandchild) do
+        create(
+          :experience_block,
+          experience: experience,
+          kind: ExperienceBlock::POLL,
+          status: :open,
+          parent_block_id: child1.id
+        )
+      end
+
+      it "hides the parent and all descendants recursively" do
+        parent.hide!
+
+        expect(parent.reload.status).to eq("hidden")
+        expect(child1.reload.status).to eq("hidden")
+        expect(child2.reload.status).to eq("hidden")
+        expect(grandchild.reload.status).to eq("hidden")
+      end
+    end
+  end
 end

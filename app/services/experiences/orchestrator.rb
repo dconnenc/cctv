@@ -38,7 +38,9 @@ module Experiences
 
         block = experience.experience_blocks.find(block_id)
 
-        block.update(status: :closed)
+        block.close!
+
+        block
       end
     end
 
@@ -48,7 +50,9 @@ module Experiences
 
         block = experience.experience_blocks.find(block_id)
 
-        block.update(status: :open)
+        block.open!
+
+        block
       end
     end
 
@@ -58,7 +62,9 @@ module Experiences
 
         block = experience.experience_blocks.find(block_id)
 
-        block.update(status: :hidden)
+        block.hide!
+
+        block
       end
     end
 
@@ -191,91 +197,289 @@ module Experiences
       end
     end
 
-    def add_family_feud_bucket!(block_id:, name:)
+    def add_family_feud_bucket!(block_id:, question_id:, name:)
       actor_action do
         block = experience.experience_blocks.find(block_id)
+        question_block = experience.experience_blocks.find(question_id)
         authorize! experience, to: :manage_blocks?, with: ExperiencePolicy
 
         transaction do
-          current_payload = block.payload || {}
-          current_payload["bucket_configuration"] ||= { "buckets" => [] }
-          
+          question_payload = question_block.payload || {}
+          question_payload["buckets"] ||= []
+
           new_bucket = {
             "id" => "bucket-#{Time.now.to_i}-#{SecureRandom.hex(4)}",
             "name" => name,
             "answer_ids" => []
           }
-          
-          current_payload["bucket_configuration"]["buckets"] << new_bucket
-          block.update!(payload: current_payload)
-          
+
+          question_payload["buckets"] << new_bucket
+          question_block.update!(payload: question_payload)
+
           new_bucket
         end
       end
     end
 
-    def rename_family_feud_bucket!(block_id:, bucket_id:, name:)
+    def rename_family_feud_bucket!(block_id:, question_id:, bucket_id:, name:)
       actor_action do
         block = experience.experience_blocks.find(block_id)
+        question_block = experience.experience_blocks.find(question_id)
         authorize! experience, to: :manage_blocks?, with: ExperiencePolicy
 
         transaction do
-          current_payload = block.payload || {}
-          buckets = current_payload.dig("bucket_configuration", "buckets") || []
-          
+          question_payload = question_block.payload || {}
+          buckets = question_payload["buckets"] || []
+
           bucket = buckets.find { |b| b["id"] == bucket_id }
           raise ActiveRecord::RecordNotFound, "Bucket not found" unless bucket
-          
+
           bucket["name"] = name
-          block.update!(payload: current_payload)
-          
+          question_block.update!(payload: question_payload)
+
           bucket
         end
       end
     end
 
-    def delete_family_feud_bucket!(block_id:, bucket_id:)
+    def delete_family_feud_bucket!(block_id:, question_id:, bucket_id:)
       actor_action do
         block = experience.experience_blocks.find(block_id)
+        question_block = experience.experience_blocks.find(question_id)
         authorize! experience, to: :manage_blocks?, with: ExperiencePolicy
 
         transaction do
-          current_payload = block.payload || {}
-          buckets = current_payload.dig("bucket_configuration", "buckets") || []
-          
-          current_payload["bucket_configuration"]["buckets"] = buckets.reject { |b| b["id"] == bucket_id }
-          block.update!(payload: current_payload)
-          
+          question_payload = question_block.payload || {}
+          buckets = question_payload["buckets"] || []
+
+          question_payload["buckets"] = buckets.reject { |b| b["id"] == bucket_id }
+          question_block.update!(payload: question_payload)
+
           true
         end
       end
     end
 
-    def assign_family_feud_answer!(block_id:, answer_id:, bucket_id:)
+    def assign_family_feud_answer!(block_id:, question_id:, answer_id:, bucket_id:)
+      actor_action do
+        block = experience.experience_blocks.find(block_id)
+        question_block = experience.experience_blocks.find(question_id)
+        authorize! experience, to: :manage_blocks?, with: ExperiencePolicy
+
+        transaction do
+          question_payload = question_block.payload || {}
+          buckets = question_payload["buckets"] || []
+
+          # Remove answer from all buckets first
+          buckets.each do |bucket|
+            bucket["answer_ids"]&.delete(answer_id)
+          end
+
+          # Add to target bucket if specified
+          if bucket_id.present?
+            target_bucket = buckets.find { |b| b["id"] == bucket_id }
+            raise ActiveRecord::RecordNotFound, "Bucket not found" unless target_bucket
+
+            target_bucket["answer_ids"] ||= []
+            target_bucket["answer_ids"] << answer_id unless target_bucket["answer_ids"].include?(answer_id)
+          end
+
+          question_block.update!(payload: question_payload)
+          true
+        end
+      end
+    end
+
+    def start_family_feud_playing!(block_id:)
       actor_action do
         block = experience.experience_blocks.find(block_id)
         authorize! experience, to: :manage_blocks?, with: ExperiencePolicy
 
         transaction do
           current_payload = block.payload || {}
-          buckets = current_payload.dig("bucket_configuration", "buckets") || []
-          
-          # Remove answer from all buckets first
-          buckets.each do |bucket|
-            bucket["answer_ids"]&.delete(answer_id)
+
+          # Build game state for each child question
+          questions = block.child_blocks.map do |child_block|
+            # Get buckets from this question's payload
+            buckets = child_block.payload["buckets"] || []
+
+            # Get all submissions for this question
+            submissions = ExperienceQuestionSubmission.where(experience_block_id: child_block.id)
+            total_answers = submissions.count
+            submission_ids = submissions.pluck(:id).map(&:to_s)
+
+            # Calculate percentage for each bucket based on answers from this question only
+            question_buckets = buckets.map do |bucket|
+              question_answer_ids = (bucket["answer_ids"] || []) & submission_ids
+              answer_count = question_answer_ids.count
+              percentage = total_answers > 0 ? ((answer_count.to_f / total_answers) * 100).round(1) : 0
+
+              {
+                "bucket_id" => bucket["id"],
+                "bucket_name" => bucket["name"],
+                "percentage" => percentage,
+                "revealed" => false
+              }
+            end
+
+            # Sort by percentage descending
+            question_buckets.sort_by! { |b| -b["percentage"] }
+
+            {
+              "question_id" => child_block.id,
+              "question_text" => child_block.payload["question"] || "Question",
+              "buckets" => question_buckets
+            }
           end
-          
-          # Add to target bucket if specified
-          if bucket_id.present?
-            target_bucket = buckets.find { |b| b["id"] == bucket_id }
-            raise ActiveRecord::RecordNotFound, "Bucket not found" unless target_bucket
-            
-            target_bucket["answer_ids"] ||= []
-            target_bucket["answer_ids"] << answer_id unless target_bucket["answer_ids"].include?(answer_id)
-          end
-          
+
+          current_payload["game_state"] = {
+            "phase" => "playing",
+            "current_question_index" => 0,
+            "questions" => questions,
+            "show_x" => false
+          }
+
           block.update!(payload: current_payload)
-          true
+          block
+        end
+      end
+    end
+
+    def reveal_family_feud_bucket!(block_id:, question_index:, bucket_index:)
+      actor_action do
+        block = experience.experience_blocks.find(block_id)
+        authorize! experience, to: :manage_blocks?, with: ExperiencePolicy
+
+        transaction do
+          current_payload = block.payload || {}
+          game_state = current_payload["game_state"] || {}
+
+          question = game_state.dig("questions", question_index)
+          raise ActiveRecord::RecordNotFound, "Question not found" unless question
+
+          bucket = question.dig("buckets", bucket_index)
+          raise ActiveRecord::RecordNotFound, "Bucket not found" unless bucket
+
+          bucket["revealed"] = true
+          block.update!(payload: current_payload)
+
+          block
+        end
+      end
+    end
+
+    def show_family_feud_x!(block_id:)
+      actor_action do
+        block = experience.experience_blocks.find(block_id)
+        authorize! experience, to: :manage_blocks?, with: ExperiencePolicy
+
+        transaction do
+          current_payload = block.payload || {}
+          game_state = current_payload["game_state"] || {}
+
+          game_state["show_x"] = true
+          block.update!(payload: current_payload)
+
+          # Schedule clearing the X flag after broadcast
+          # This will be handled by controller after broadcast
+          block
+        end
+      end
+    end
+
+    def next_family_feud_question!(block_id:)
+      actor_action do
+        block = experience.experience_blocks.find(block_id)
+        authorize! experience, to: :manage_blocks?, with: ExperiencePolicy
+
+        transaction do
+          current_payload = block.payload || {}
+          game_state = current_payload["game_state"] || {}
+
+          current_index = game_state["current_question_index"] || 0
+          questions = game_state["questions"] || []
+
+          if current_index >= questions.length - 1
+            # Last question - close the block
+            block.update!(status: :closed)
+          else
+            # Move to next question
+            game_state["current_question_index"] = current_index + 1
+            block.update!(payload: current_payload)
+          end
+
+          block
+        end
+      end
+    end
+
+    def restart_family_feud_playing!(block_id:)
+      actor_action do
+        block = experience.experience_blocks.find(block_id)
+        authorize! experience, to: :manage_blocks?, with: ExperiencePolicy
+
+        transaction do
+          current_payload = block.payload || {}
+          game_state = current_payload["game_state"] || {}
+
+          # Reset to first question and hide all buckets
+          if game_state["questions"]
+            game_state["questions"].each do |question|
+              question["buckets"]&.each do |bucket|
+                bucket["revealed"] = false
+              end
+            end
+          end
+
+          game_state["current_question_index"] = 0
+          game_state["show_x"] = false
+
+          block.update!(payload: current_payload)
+          block
+        end
+      end
+    end
+
+    def restart_family_feud_categorizing!(block_id:)
+      actor_action do
+        block = experience.experience_blocks.find(block_id)
+        authorize! experience, to: :manage_blocks?, with: ExperiencePolicy
+
+        transaction do
+          # Clear all bucket assignments from each child question
+          block.clear_family_feud_bucket_assignments!
+
+          # Reset to gathering phase
+          current_payload = block.payload || {}
+          current_payload["game_state"] = {
+            "phase" => "gathering"
+          }
+
+          block.update!(payload: current_payload)
+          block
+        end
+      end
+    end
+
+    def restart_family_feud_everything!(block_id:)
+      actor_action do
+        block = experience.experience_blocks.find(block_id)
+        authorize! experience, to: :manage_blocks?, with: ExperiencePolicy
+
+        transaction do
+          # Delete all question submissions for all child blocks
+          child_block_ids = block.child_blocks.pluck(:id)
+          ExperienceQuestionSubmission.where(experience_block_id: child_block_ids).delete_all
+
+          # Clear all buckets from each child question
+          block.clear_all_family_feud_buckets!
+
+          # Reset payload to initial state
+          current_payload = block.payload || {}
+          current_payload["game_state"] = { "phase" => "gathering" }
+
+          block.update!(payload: current_payload)
+          block
         end
       end
     end

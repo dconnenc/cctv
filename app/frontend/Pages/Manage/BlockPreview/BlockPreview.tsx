@@ -9,10 +9,12 @@ export default function BlockPreview({
   className,
   block,
   participant,
+  viewContext = 'manage',
 }: {
   className?: string;
   block?: Block;
   participant?: ParticipantSummary;
+  viewContext?: 'participant' | 'monitor' | 'manage';
 }) {
   if (!block) {
     return <div>No open block found</div>;
@@ -20,7 +22,12 @@ export default function BlockPreview({
 
   return (
     <div className={classNames(styles.root, className)}>
-      <ExperienceBlockContainer block={block} participant={participant} disabled />
+      <ExperienceBlockContainer
+        block={block}
+        participant={participant}
+        disabled
+        viewContext={viewContext}
+      />
     </div>
   );
 }

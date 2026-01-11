@@ -8,6 +8,8 @@ Rails.application.routes.draw do
 
   passwordless_for :users
 
+  post '/admin/sign_in', to: 'admin_sessions#create', as: :admin_sign_in
+
   # Reveal health status on /up that returns 200 if the app boots with no exceptions, otherwise 500.
   # Can be used by load balancers and uptime monitors to verify that the app is live.
   get "up" => "rails/health#show", as: :rails_health_check
@@ -55,6 +57,13 @@ Rails.application.routes.draw do
           patch 'family_feud/buckets/:bucket_id', action: :rename_bucket
           delete 'family_feud/buckets/:bucket_id', action: :delete_bucket
           patch 'family_feud/answers/:answer_id/bucket', action: :assign_answer
+          post 'family_feud/start_playing', action: :start_playing
+          post 'family_feud/reveal_bucket', action: :reveal_bucket
+          post 'family_feud/show_x', action: :show_x
+          post 'family_feud/next_question', action: :next_question
+          post 'family_feud/restart_playing', action: :restart_playing
+          post 'family_feud/restart_categorizing', action: :restart_categorizing
+          post 'family_feud/restart_everything', action: :restart_everything
         end
 
         # collection do

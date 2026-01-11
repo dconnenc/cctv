@@ -45,7 +45,7 @@ export default function Monitor() {
     <section className={styles.root}>
       {showProgramBlock ? (
         <div className={styles.blockContainer}>
-          <ExperienceBlockContainer block={currentBlock} disabled />
+          <ExperienceBlockContainer block={currentBlock} disabled viewContext="monitor" />
         </div>
       ) : (
         <>

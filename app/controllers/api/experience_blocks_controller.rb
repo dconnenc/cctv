@@ -37,8 +37,6 @@ class Api::ExperienceBlocksController < Api::BaseController
       if create_params[:parent_block_id].present?
         parent_block = @experience.experience_blocks.find_by(id: create_params[:parent_block_id])
         if parent_block&.kind == 'family_feud'
-          bucket_config = parent_block.payload['bucket_configuration']&.dig('buckets') || []
-          
           Experiences::Broadcaster.new(@experience).broadcast_family_feud_update(
             block_id: parent_block.id,
             operation: 'question_added',
@@ -46,9 +44,7 @@ class Api::ExperienceBlocksController < Api::BaseController
               question: {
                 questionId: block.id,
                 questionText: block.payload['question'] || 'Question',
-                buckets: bucket_config.map { |b| 
-                  { id: b['id'], name: b['name'], answers: [] }
-                },
+                buckets: [],
                 unassignedAnswers: []
               }
             }
@@ -221,6 +217,8 @@ class Api::ExperienceBlocksController < Api::BaseController
         block: block
       )
 
+      # TODO: Potential bug: not broadcast call here
+
       render json: {
         success: true,
         data: {
@@ -271,17 +269,18 @@ class Api::ExperienceBlocksController < Api::BaseController
         experience: @experience, actor: @user
       ).add_family_feud_bucket!(
         block_id: params[:id],
+        question_id: params[:question_id],
         name: params[:name] || "New Bucket"
       )
 
       broadcaster = Experiences::Broadcaster.new(@experience)
-      
+
       broadcaster.broadcast_family_feud_update(
         block_id: params[:id],
         operation: 'bucket_added',
-        data: { bucket: bucket }
+        data: { questionId: params[:question_id], bucket: bucket }
       )
-      
+
       broadcaster.broadcast_experience_update
 
       render json: { success: true, data: { bucket: bucket } }, status: 200
@@ -297,18 +296,19 @@ class Api::ExperienceBlocksController < Api::BaseController
         experience: @experience, actor: @user
       ).rename_family_feud_bucket!(
         block_id: params[:id],
+        question_id: params[:question_id],
         bucket_id: params[:bucket_id],
         name: params[:name]
       )
 
       broadcaster = Experiences::Broadcaster.new(@experience)
-      
+
       broadcaster.broadcast_family_feud_update(
         block_id: params[:id],
         operation: 'bucket_renamed',
-        data: { bucket_id: params[:bucket_id], name: params[:name] }
+        data: { bucketId: params[:bucket_id], name: params[:name], questionId: params[:question_id] }
       )
-      
+
       broadcaster.broadcast_experience_update
 
       render json: { success: true }, status: 200
@@ -324,17 +324,18 @@ class Api::ExperienceBlocksController < Api::BaseController
         experience: @experience, actor: @user
       ).delete_family_feud_bucket!(
         block_id: params[:id],
+        question_id: params[:question_id],
         bucket_id: params[:bucket_id]
       )
 
       broadcaster = Experiences::Broadcaster.new(@experience)
-      
+
       broadcaster.broadcast_family_feud_update(
         block_id: params[:id],
         operation: 'bucket_deleted',
-        data: { bucket_id: params[:bucket_id] }
+        data: { bucketId: params[:bucket_id], questionId: params[:question_id] }
       )
-      
+
       broadcaster.broadcast_experience_update
 
       render json: { success: true }, status: 200
@@ -350,22 +351,134 @@ class Api::ExperienceBlocksController < Api::BaseController
         experience: @experience, actor: @user
       ).assign_family_feud_answer!(
         block_id: params[:id],
+        question_id: params[:question_id],
         answer_id: params[:answer_id],
         bucket_id: params[:bucket_id]
       )
 
       broadcaster = Experiences::Broadcaster.new(@experience)
-      
+
       broadcaster.broadcast_family_feud_update(
         block_id: params[:id],
         operation: 'answer_assigned',
-        data: { 
-          answer_id: params[:answer_id],
-          bucket_id: params[:bucket_id]
+        data: {
+          answerId: params[:answer_id],
+          bucketId: params[:bucket_id],
+          questionId: params[:question_id]
         }
       )
-      
+
       broadcaster.broadcast_experience_update
+
+      render json: { success: true }, status: 200
+    end
+  end
+
+  # POST /api/experiences/:experience_id/blocks/:id/family_feud/start_playing
+  def start_playing
+    with_experience_orchestration do
+      block = Experiences::Orchestrator.new(
+        experience: @experience, actor: @user
+      ).start_family_feud_playing!(block_id: params[:id])
+
+      Experiences::Broadcaster.new(@experience).broadcast_experience_update
+
+      render json: { success: true, data: { block: block } }, status: 200
+    end
+  end
+
+  # POST /api/experiences/:experience_id/blocks/:id/family_feud/reveal_bucket
+  def reveal_bucket
+    with_experience_orchestration do
+      block = Experiences::Orchestrator.new(
+        experience: @experience, actor: @user
+      ).reveal_family_feud_bucket!(
+        block_id: params[:id],
+        question_index: params[:question_index].to_i,
+        bucket_index: params[:bucket_index].to_i
+      )
+
+      Experiences::Broadcaster.new(@experience).broadcast_experience_update
+
+      render json: { success: true }, status: 200
+    end
+  end
+
+  # POST /api/experiences/:experience_id/blocks/:id/family_feud/show_x
+  def show_x
+    with_experience_orchestration do
+      block = Experiences::Orchestrator.new(
+        experience: @experience, actor: @user
+      ).show_family_feud_x!(block_id: params[:id])
+
+      Experiences::Broadcaster.new(@experience).broadcast_experience_update
+
+      # Clear the X flag after a delay
+      # Frontend will show animation for 5 seconds
+      Thread.new do
+        sleep 5
+        ActiveRecord::Base.connection_pool.with_connection do
+          block.reload
+          payload = block.payload || {}
+          if payload.dig("game_state", "show_x")
+            payload["game_state"]["show_x"] = false
+            block.update!(payload: payload)
+            Experiences::Broadcaster.new(@experience).broadcast_experience_update
+          end
+        end
+      end
+
+      render json: { success: true }, status: 200
+    end
+  end
+
+  # POST /api/experiences/:experience_id/blocks/:id/family_feud/next_question
+  def next_question
+    with_experience_orchestration do
+      block = Experiences::Orchestrator.new(
+        experience: @experience, actor: @user
+      ).next_family_feud_question!(block_id: params[:id])
+
+      Experiences::Broadcaster.new(@experience).broadcast_experience_update
+
+      render json: { success: true }, status: 200
+    end
+  end
+
+  # POST /api/experiences/:experience_id/blocks/:id/family_feud/restart_playing
+  def restart_playing
+    with_experience_orchestration do
+      block = Experiences::Orchestrator.new(
+        experience: @experience, actor: @user
+      ).restart_family_feud_playing!(block_id: params[:id])
+
+      Experiences::Broadcaster.new(@experience).broadcast_experience_update
+
+      render json: { success: true }, status: 200
+    end
+  end
+
+  # POST /api/experiences/:experience_id/blocks/:id/family_feud/restart_categorizing
+  def restart_categorizing
+    with_experience_orchestration do
+      block = Experiences::Orchestrator.new(
+        experience: @experience, actor: @user
+      ).restart_family_feud_categorizing!(block_id: params[:id])
+
+      Experiences::Broadcaster.new(@experience).broadcast_experience_update
+
+      render json: { success: true }, status: 200
+    end
+  end
+
+  # POST /api/experiences/:experience_id/blocks/:id/family_feud/restart_everything
+  def restart_everything
+    with_experience_orchestration do
+      block = Experiences::Orchestrator.new(
+        experience: @experience, actor: @user
+      ).restart_family_feud_everything!(block_id: params[:id])
+
+      Experiences::Broadcaster.new(@experience).broadcast_experience_update
 
       render json: { success: true }, status: 200
     end

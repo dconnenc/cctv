@@ -4,9 +4,9 @@
     <% email_field_name = :"passwordless[#{email_field}]" %>
     <%= f.label email_field_name,
         t("passwordless.sessions.new.email.label"),
-        for: "passwordless_#{email_field}" %>
-    <%= email_field_tag email_field_name,
-        params.fetch(email_field_name, nil),
+        for: "email" %>
+    <%= email_field_tag :email,
+        params.fetch(:email, nil),
         required: true,
         autofocus: true,
         placeholder: t("passwordless.sessions.new.email.placeholder") %>

@@ -19,7 +19,7 @@ export function useFamilyFeudBuckets(blockId?: string, dispatch?: (action: any) 
   }, [blockId, dispatch, registerFamilyFeudDispatch, unregisterFamilyFeudDispatch]);
 
   const addBucket = useCallback(
-    async (blockId: string, name: string = 'New Bucket') => {
+    async (blockId: string, questionId: string, name: string = 'New Bucket') => {
       if (!code) {
         setError('Missing experience code');
         return null;
@@ -32,7 +32,7 @@ export function useFamilyFeudBuckets(blockId?: string, dispatch?: (action: any) 
       try {
         const res = await experienceFetch(url, {
           method: 'POST',
-          body: JSON.stringify({ name }),
+          body: JSON.stringify({ question_id: questionId, name }),
         });
 
         const data = await res.json();
@@ -57,7 +57,7 @@ export function useFamilyFeudBuckets(blockId?: string, dispatch?: (action: any) 
   );
 
   const renameBucket = useCallback(
-    async (blockId: string, bucketId: string, name: string) => {
+    async (blockId: string, questionId: string, bucketId: string, name: string) => {
       if (!code) {
         setError('Missing experience code');
         return null;
@@ -70,7 +70,7 @@ export function useFamilyFeudBuckets(blockId?: string, dispatch?: (action: any) 
       try {
         const res = await experienceFetch(url, {
           method: 'PATCH',
-          body: JSON.stringify({ name }),
+          body: JSON.stringify({ question_id: questionId, name }),
         });
 
         const data = await res.json();
@@ -95,7 +95,7 @@ export function useFamilyFeudBuckets(blockId?: string, dispatch?: (action: any) 
   );
 
   const deleteBucket = useCallback(
-    async (blockId: string, bucketId: string) => {
+    async (blockId: string, questionId: string, bucketId: string) => {
       if (!code) {
         setError('Missing experience code');
         return null;
@@ -108,6 +108,7 @@ export function useFamilyFeudBuckets(blockId?: string, dispatch?: (action: any) 
       try {
         const res = await experienceFetch(url, {
           method: 'DELETE',
+          body: JSON.stringify({ question_id: questionId }),
         });
 
         const data = await res.json();
@@ -132,7 +133,7 @@ export function useFamilyFeudBuckets(blockId?: string, dispatch?: (action: any) 
   );
 
   const assignAnswer = useCallback(
-    async (blockId: string, answerId: string, bucketId: string | null) => {
+    async (blockId: string, questionId: string, answerId: string, bucketId: string | null) => {
       if (!code) {
         setError('Missing experience code');
         return null;
@@ -145,7 +146,7 @@ export function useFamilyFeudBuckets(blockId?: string, dispatch?: (action: any) 
       try {
         const res = await experienceFetch(url, {
           method: 'PATCH',
-          body: JSON.stringify({ bucket_id: bucketId }),
+          body: JSON.stringify({ question_id: questionId, bucket_id: bucketId }),
         });
 
         const data = await res.json();

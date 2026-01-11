@@ -73,7 +73,7 @@ export default function Register() {
       <form className={styles.form} onSubmit={handleSubmit}>
         {!isAuthenticated && (
           <input
-            className="join-input"
+            className={styles.input}
             type="email"
             placeholder="Your Email"
             value={email}
@@ -84,7 +84,7 @@ export default function Register() {
           />
         )}
         <input
-          className="join-input"
+          className={styles.input}
           type="text"
           placeholder="Your Name"
           value={participantName}

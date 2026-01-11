@@ -20,13 +20,14 @@ class WebsocketMessageService
   }.freeze
 
   # Build experience state message (initial subscription)
-  def self.experience_state(experience, visibility_payload:, logical_stream:, participant_id:, participant: nil, include_participants: false)
+  def self.experience_state(experience, visibility_payload:, logical_stream:, participant_id:, participant: nil, include_participants: false, participants: nil)
     message = {
       type: MESSAGE_TYPES[:EXPERIENCE_STATE],
       experience: ExperienceSerializer.serialize_for_websocket_message(
         experience,
         visibility_payload: visibility_payload,
-        include_participants: include_participants
+        include_participants: include_participants,
+        participants: participants
       ),
       metadata: {
         logical_stream: logical_stream,
@@ -40,13 +41,14 @@ class WebsocketMessageService
   end
 
   # Build experience updated message (broadcasts)
-  def self.experience_updated(experience, visibility_payload:, stream_key:, stream_type:, participant_id:, role:, segments:, participant: nil, include_participants: false)
+  def self.experience_updated(experience, visibility_payload:, stream_key:, stream_type:, participant_id:, role:, segments:, participant: nil, include_participants: false, participants: nil)
     message = {
       type: MESSAGE_TYPES[:EXPERIENCE_UPDATED],
       experience: ExperienceSerializer.serialize_for_websocket_message(
         experience,
         visibility_payload: visibility_payload,
-        include_participants: include_participants
+        include_participants: include_participants,
+        participants: participants
       ),
       metadata: {
         stream_key: stream_key,
