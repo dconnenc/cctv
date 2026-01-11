@@ -1,4 +1,4 @@
-import { FormEvent, useState } from 'react';
+import { FormEvent, useEffect, useState } from 'react';
 
 import { Button, TextInput } from '@cctv/core';
 import { useSubmitQuestionResponse } from '@cctv/hooks';
@@ -35,6 +35,10 @@ export default function Question({
   const [submittedValue, setSubmittedValue] = useState<string>('');
   const { submitQuestionResponse, isLoading, error } = useSubmitQuestionResponse();
   const userAlreadyResponded = responses?.user_responded || false;
+
+  useEffect(() => {
+    setSubmittedValue('');
+  }, [blockId]);
 
   const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
