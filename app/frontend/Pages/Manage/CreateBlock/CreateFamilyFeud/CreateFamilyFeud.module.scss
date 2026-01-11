@@ -5,7 +5,7 @@
 .questionItem {
   display: grid;
   grid-template-columns: auto 1fr auto;
-  gap: 16px;
+  gap: var(--space-sm);
   align-items: center;
   width: 100%;
 }
@@ -33,6 +33,6 @@
 }
 
 .removeButton {
-  padding: 8px;
+  padding: 0.5rem;
   min-width: auto;
 }

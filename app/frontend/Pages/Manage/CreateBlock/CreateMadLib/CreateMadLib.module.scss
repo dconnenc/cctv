@@ -1,5 +1,5 @@
 .preview {
-  padding: 16px;
+  padding: var(--space-sm);
   border: 2px solid var(--white);
   border-radius: 8px;
   min-height: 60px;
@@ -21,22 +21,22 @@
   color: var(--yellow);
   font-weight: bold;
   background: rgba(255, 255, 0, 0.1);
-  padding: 2px 4px;
+  padding: 0.125rem 0.25rem;
   border-radius: 4px;
 }
 
 .buttonGroup {
   display: flex;
-  gap: 12px;
+  gap: 0.75rem;
   justify-content: center;
   width: 100%;
 }
 
 .partItem {
   display: flex;
-  gap: 12px;
+  gap: 0.75rem;
   align-items: end;
-  padding: 12px;
+  padding: 0.75rem;
   border: 1px solid var(--white);
   border-radius: 8px;
   width: 100%;
@@ -62,7 +62,7 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 0.5rem;
 }
 
 .variableInfo h5 {
@@ -74,9 +74,9 @@
 .variableFields {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 0.75rem;
   background: rgba(255, 255, 0, 0.05);
-  padding: 12px;
+  padding: 0.75rem;
   border-radius: 8px;
   border: 1px solid rgba(255, 255, 0, 0.2);
 }
@@ -84,12 +84,12 @@
 .partActions {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 0.25rem;
   flex-shrink: 0;
 }
 
 .partActions button {
   min-width: 40px;
-  padding: 4px 8px;
+  padding: 0.25rem 0.5rem;
   font-size: 14px;
 }

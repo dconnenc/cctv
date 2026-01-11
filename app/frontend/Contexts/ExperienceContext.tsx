@@ -186,8 +186,8 @@ export function ExperienceProvider({ children }: ExperienceProviderProps) {
 
   // WebSocket connection management
   useEffect(() => {
-    if (!jwt || !currentCode) {
-      qaLogger('[WS SETUP] No JWT or code, disconnecting all websockets');
+    if (!currentCode) {
+      qaLogger('[WS SETUP] No code, disconnecting all websockets');
       disconnectAllWebsockets();
       return;
     }
@@ -211,7 +211,12 @@ export function ExperienceProvider({ children }: ExperienceProviderProps) {
     } else {
       qaLogger('[WS SETUP] PARTICIPANT PAGE - Creating 1 websocket: Participant');
       // Regular participant page: single websocket
-      connectParticipantWebsocket();
+      if (jwt) {
+        connectParticipantWebsocket();
+      } else {
+        qaLogger('[WS SETUP] No JWT available for participant view');
+        disconnectAllWebsockets();
+      }
     }
 
     return () => disconnectAllWebsockets();
@@ -328,22 +333,19 @@ export function ExperienceProvider({ children }: ExperienceProviderProps) {
     monitorWsRef.current.onopen = () => {
       qaLogger('[Monitor WS] WebSocket connected');
 
-      const subscription = {
-        command: 'subscribe',
-        identifier: JSON.stringify({
-          channel: 'ExperienceSubscriptionChannel',
-          code: currentCode,
-          token: jwt,
-          view_type: 'monitor',
-        }),
-      };
-
-      const id = JSON.stringify({
+      const identifierObj: any = {
         channel: 'ExperienceSubscriptionChannel',
         code: currentCode,
-        token: jwt,
         view_type: 'monitor',
-      });
+      };
+      if (jwt) identifierObj.token = jwt;
+
+      const subscription = {
+        command: 'subscribe',
+        identifier: JSON.stringify(identifierObj),
+      };
+
+      const id = JSON.stringify(identifierObj);
       monitorIdentifierRef.current = id;
       monitorWsRef.current?.send(JSON.stringify(subscription));
     };

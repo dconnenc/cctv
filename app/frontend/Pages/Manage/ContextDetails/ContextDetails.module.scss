@@ -12,7 +12,7 @@
 
 .toggleButtons {
   display: flex;
-  gap: 8px;
+  gap: var(--space-xs);
 }
 
 .participantSelector {
@@ -22,8 +22,8 @@
 .blockDetails {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  padding: 16px;
+  gap: var(--space-xs);
+  padding: var(--space-sm);
   background: rgba(255, 255, 255, 0.05);
   border-radius: 8px;
 }
@@ -31,12 +31,12 @@
 .detailsTitle {
   font-size: 16px;
   font-weight: 600;
-  margin: 0 0 8px 0;
+  margin: 0 0 var(--space-xs) 0;
 }
 
 .detailRow {
   display: flex;
-  gap: 8px;
+  gap: var(--space-xs);
   font-size: 14px;
 }
 
@@ -53,7 +53,7 @@
 
 @media (max-width: 768px) {
   .root {
-    padding: 16px;
+    padding: var(--space-sm);
   }
 
   .toggleButtons {

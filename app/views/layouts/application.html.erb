@@ -9,6 +9,22 @@
 
     <%= yield :head %>
 
+    <script>
+      (function() {
+        try {
+          var d = document.documentElement;
+          var t = localStorage.getItem('ui.theme');
+          if (t !== 'light' && t !== 'dark') {
+            t = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+          }
+          d.setAttribute('data-theme', t);
+          if (t === 'dark') d.classList.add('dark'); else d.classList.remove('dark');
+          var bg = localStorage.getItem('ui.bgAnimated');
+          d.setAttribute('data-bg', bg === 'false' ? 'solid' : 'animated');
+        } catch (e) { /* no-op */ }
+      })();
+    </script>
+
     <link rel="manifest" href="/manifest.json">
     <link rel="icon" href="/icon.png" type="image/png">
 

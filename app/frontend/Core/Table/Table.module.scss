@@ -13,13 +13,13 @@
   text-align: left;
   font-weight: 600;
   font-size: 0.825rem;
-  padding: 0.5rem 0.75rem;
+  padding: var(--space-xs) var(--space-xs);
   border-bottom: 1px solid hsl(var(--border));
   white-space: nowrap;
 }
 
 .table tbody td {
-  padding: 0.5rem 0.75rem;
+  padding: var(--space-xs) var(--space-xs);
   border-bottom: 1px solid hsl(var(--border));
   vertical-align: top;
 }
@@ -92,14 +92,14 @@
 .menuList {
   position: absolute;
   color: hsl(var(--popover-foreground));
-  top: calc(100% + 6px);
+  top: calc(100% + var(--space-xs));
   right: 0;
   min-width: 10rem;
   border: 1px solid hsl(var(--border));
   border-radius: 0.625rem;
   box-shadow: var(--shadow-1, 0 8px 24px rgba(0, 0, 0, 0.08));
   background: hsl(var(--popover));
-  padding: 0.375rem;
+  padding: var(--space-xs);
   z-index: 20;
 }
 
@@ -107,7 +107,7 @@
   display: block;
   width: 100%;
   text-align: left;
-  padding: 0.5rem 0.625rem;
+  padding: var(--space-xs) var(--space-xs);
   border-radius: 0.5rem;
   background: transparent;
   border: 0;

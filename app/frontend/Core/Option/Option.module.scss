@@ -6,8 +6,8 @@
   color: var(--white);
 
   border: 2px solid var(--white);
-  padding: 12px;
-  border-radius: 4px;
+  padding: var(--space-xs);
+  border-radius: 0.25rem;
   cursor: pointer;
   transition: border-color 0.2s ease;
 

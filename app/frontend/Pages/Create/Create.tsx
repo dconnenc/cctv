@@ -10,6 +10,7 @@ import styles from './Create.module.scss';
 /** Form page for creating a new experience */
 export default function Create() {
   const [experienceUrl, setExperienceUrl] = useState<string>();
+  const [experienceName, setExperienceName] = useState<string>();
   const nameRef = useRef<HTMLInputElement>(null);
 
   const { post, isLoading, error, setError } = usePost<CreateExperienceApiResponse>({
@@ -44,7 +45,10 @@ export default function Create() {
     if (response && response.type === 'success') {
       setExperienceUrl(response.experience.url);
       if (name && code) {
-        addSessionCreatedExperience({ code: code.trim(), name: name.trim() });
+        const trimmedName = name.trim();
+        const trimmedCode = code.trim();
+        setExperienceName(trimmedName);
+        addSessionCreatedExperience({ code: trimmedCode, name: trimmedName });
       }
     } else if (response && response.type === 'error') {
       setError(response.error || 'Failed to create experience');
@@ -63,7 +67,7 @@ export default function Create() {
     return (
       <section className="page flex-centered">
         <Panel className={styles.container}>
-          <h1 className={styles.title}>{`Experience: ${nameRef.current?.value}`}</h1>
+          <h1 className={styles.title}>{`Experience: ${experienceName || ''}`}</h1>
           <img src={qrCode} alt={`QR code for joining an experience`} />
           <a href={experienceUrl} className={styles.link}>
             {'Go to lobby'}

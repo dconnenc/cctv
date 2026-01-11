@@ -1,5 +1,6 @@
 .title {
-  margin-bottom: 0.5rem;
+  margin-bottom: var(--space-xs);
+  font-size: 1.5rem;
 }
 
 // Subtitle and general text styles
@@ -7,15 +8,30 @@
   opacity: 0.85;
 }
 
+/* Active block wrapper (participant view): center block content vertically */
+.experienceContent {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100dvh - var(--nav-h) - calc(var(--space-sm) * 2));
+}
+
+.activeBlock {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 // Error states
 .error {
   color: hsl(var(--destructive));
-  margin-bottom: 1rem;
+  margin-bottom: var(--space-sm);
 }
 
 .invalidCode {
   color: hsl(var(--destructive));
-  margin-bottom: 0.75rem;
+  margin-bottom: var(--space-xs);
 }
 
 // Link styles
@@ -32,12 +48,12 @@
 
 // Lobby state styles
 .participantsCount {
-  margin-bottom: 1rem;
+  margin-bottom: var(--space-sm);
   opacity: 0.85;
 }
 
 .loadingSpinner {
-  margin-left: 0.5rem;
+  margin-left: var(--space-xs);
   font-size: 0.8rem;
 }
 
@@ -47,12 +63,12 @@
   max-width: 300px;
   background-color: hsl(var(--muted));
   border-radius: 8px;
-  padding: 1rem;
-  margin-bottom: 1rem;
+  padding: var(--space-sm);
+  margin: 0 auto var(--space-sm) auto;
 }
 
 .participantsTitle {
-  margin: 0 0 0.75rem 0;
+  margin: 0 0 var(--space-xs) 0;
   font-size: 1rem;
   opacity: 0.9;
 }
@@ -64,7 +80,7 @@
 }
 
 .participantItem {
-  padding: 0.5rem 0;
+  padding: var(--space-xs) 0;
   border-bottom: 1px solid hsl(var(--border));
   display: flex;
   align-items: center;
@@ -89,13 +105,13 @@
 }
 
 .waitingMessage {
-  margin-top: 1rem;
+  margin-top: var(--space-sm);
   opacity: 0.75;
   font-size: 0.9rem;
 }
 
 .avatarEditor {
-  margin-top: 1rem;
+  margin-top: var(--space-sm);
   width: 100%;
   display: flex;
   justify-content: center;
@@ -103,17 +119,17 @@
 
 .adminControls {
   position: absolute;
-  top: 16px;
-  right: 16px;
+  top: var(--space-sm);
+  right: var(--space-sm);
   z-index: 11;
   display: flex;
-  gap: 8px;
+  gap: var(--space-xs);
 }
 
 .avatarToggleBtn {
   position: fixed;
-  top: calc((var(--nav-h) - 44px) / 2);
-  right: calc(16px + env(safe-area-inset-right));
+  top: calc((var(--nav-h) - 2.75rem) / 2);
+  right: calc(var(--space-sm) + env(safe-area-inset-right));
   z-index: 10000;
   width: 44px;
   height: 44px;
@@ -125,6 +141,10 @@
   justify-content: center;
   overflow: hidden;
   cursor: pointer;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.08s ease;
   pointer-events: auto;
 }
 
@@ -137,10 +157,20 @@
   min-height: 100%;
 }
 
+.avatarToggleBtn:hover,
+.avatarToggleBtn:focus-visible {
+  border-color: var(--yellow);
+  box-shadow: var(--tv-glow);
+}
+
+.avatarToggleBtn:active {
+  transform: scale(0.98);
+}
+
 // Mobile-only Playbill CTA
 .playbillCta {
   display: none;
-  margin-top: 1rem;
+  margin-top: var(--space-sm);
 }
 
 @media (max-width: 768px) {
@@ -148,12 +178,60 @@
     display: flex;
     justify-content: center;
   }
+
+  .adminControls {
+    display: none !important;
+  }
+
+  .experienceInfo {
+    margin-bottom: var(--space-xs);
+  }
+
+  .lobbyGrid {
+    display: grid;
+    grid-template-rows: 1fr 1fr 1fr;
+    min-height: calc(100dvh - var(--nav-h) - calc(var(--space-sm) * 2));
+    gap: var(--space-sm);
+  }
+
+  .topArea {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+  }
+
+  .bottomActions {
+    display: flex;
+    gap: var(--space-sm);
+    width: 100%;
+  }
+
+  .actionLink {
+    flex: 1 1 0;
+    display: block;
+  }
+
+  .actionButton {
+    width: 100%;
+  }
+
+  .middleArea {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .participantsContainer {
+    max-width: 100%;
+    flex: 1 1 auto;
+    overflow: auto;
+  }
 }
 
 // WebSocket connection status
 .connectionStatus {
-  margin-bottom: 1rem;
-  padding: 0.5rem;
+  margin-bottom: var(--space-sm);
+  padding: var(--space-xs);
   border-radius: 4px;
   background-color: hsl(var(--muted));
   text-align: center;
@@ -166,4 +244,72 @@
 
 .disconnected {
   color: var(--yellow);
+}
+
+/* Ghost button global treatment */
+.ghostButton {
+  background: transparent !important;
+  color: var(--white) !important;
+  border: 1px solid var(--white) !important;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    color 0.2s ease;
+  &:hover,
+  &:focus-visible {
+    border-color: var(--yellow) !important;
+    box-shadow: var(--tv-glow);
+  }
+}
+
+// Admin manage link styling
+.adminActions {
+  margin-top: var(--space-sm);
+}
+
+.adminButton {
+  color: hsl(var(--primary));
+  text-decoration: underline;
+  font-weight: 500;
+}
+/* Desktop/default actions row */
+.bottomActions {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: var(--space-sm);
+  width: 100%;
+}
+/* Shared 3-row vertical layout for lobby view across breakpoints */
+.lobbyGrid {
+  display: grid;
+  grid-template-rows: 1fr 1fr 1fr;
+  height: calc(100dvh - var(--nav-h) - calc(var(--space-sm) * 2));
+  gap: var(--space-sm);
+}
+
+.topArea {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  min-height: 0;
+}
+
+.middleArea {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 0;
+}
+
+/* Allow the lobby list to expand/scroll within the middle area without creating page scroll */
+.middleArea .participantsContainer {
+  max-width: 100%;
+  flex: 1 1 auto;
+  overflow: auto;
+  margin: 0 0 var(--space-xs) 0;
+}
+
+.bottomActions {
+  min-height: 0;
 }

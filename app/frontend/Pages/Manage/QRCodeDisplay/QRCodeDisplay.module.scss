@@ -3,9 +3,9 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 16px;
+  gap: var(--space-xs);
   height: 100%;
-  padding: 24px;
+  padding: 1.5rem;
 }
 
 .title {
@@ -20,8 +20,8 @@
 }
 
 .compact {
-  gap: 8px;
-  padding: 8px;
+  gap: 0.5rem;
+  padding: var(--space-xs);
 }
 
 .compact .title {

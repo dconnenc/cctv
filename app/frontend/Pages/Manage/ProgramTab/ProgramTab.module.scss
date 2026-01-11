@@ -1,14 +1,14 @@
 .root {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: var(--space-sm);
 }
 
 .header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 16px;
+  gap: var(--space-sm);
   flex-wrap: wrap;
 }
 
@@ -21,7 +21,7 @@
 .header button {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 0.5rem;
 }
 
 .content {

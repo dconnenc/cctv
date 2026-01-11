@@ -20,6 +20,7 @@ import {
 } from '@cctv/pages';
 
 import { BlockPage } from './Pages/Block/Block';
+import Avatar from './Pages/Experience/Avatar';
 import ManageViewer from './Pages/Manage/Viewer/ManageViewer';
 import {
   AllowRegisterRoute,
@@ -68,8 +69,12 @@ function App() {
                 <Route path="register" element={<Register />} />
               </Route>
 
+              {/* Public/unauthenticated Monitor view */}
+              <Route path="monitor" element={<Monitor />} />
+
               <Route element={<RequireExperienceParticipantOrAdmin />}>
                 <Route index element={<Experience />} />
+                <Route path="avatar" element={<Avatar />} />
                 <Route path="playbill" element={<Playbill />} />
 
                 <Route element={<RequireExperienceHostOrAdmin />}>
@@ -77,7 +82,6 @@ function App() {
                   <Route path="manage/old" element={<Manage />} />
                   <Route path="manage/blocks/new" element={<ManageCreateBlock />} />
                   <Route path="manage/blocks/:blockId" element={<BlockPage />} />
-                  <Route path="monitor" element={<Monitor />} />
                 </Route>
               </Route>
             </Route>

@@ -22,11 +22,8 @@ export default function BucketCard({ bucket, index }: BucketCardProps) {
     <div className={`${styles.card} ${styles.revealed}`}>
       <div className={styles.revealedContent}>
         <div className={styles.textContent}>
-          <span className={styles.bucketName}>{bucket.bucket_name}</span>
           <span className={styles.percentage}>{bucket.percentage}%</span>
-        </div>
-        <div className={styles.percentageBar}>
-          <div className={styles.percentageFill} style={{ width: `${bucket.percentage}%` }} />
+          <span className={styles.bucketName}>{bucket.bucket_name}</span>
         </div>
       </div>
     </div>

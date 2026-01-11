@@ -1,7 +1,8 @@
 <div class="app">
-  <div class="tv-static" ></div>
+  <div class="tv-static"></div>
   <%= form_with(url: admin_sign_in_path, data: { turbo: 'false' }, class: 'passwordless-form') do |f| %>
-    <%= f.label :email,
+    <% email_field_name = :"passwordless[#{email_field}]" %>
+    <%= f.label email_field_name,
         t("passwordless.sessions.new.email.label"),
         for: "email" %>
     <%= email_field_tag :email,
