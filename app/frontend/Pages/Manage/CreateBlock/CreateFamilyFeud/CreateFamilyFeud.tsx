@@ -1,6 +1,7 @@
 import { X } from 'lucide-react';
 
-import { Button, TextInput } from '@cctv/core';
+import { Button } from '@cctv/core/Button/Button';
+import { TextInput } from '@cctv/core/TextInput/TextInput';
 import { BlockComponentProps, FamilyFeudData } from '@cctv/types';
 
 import sharedStyles from '../CreateBlock.module.scss';

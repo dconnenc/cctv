@@ -4,20 +4,29 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useMemo,
   useRef,
   useState,
 } from 'react';
 
 import { useLocation, useParams } from 'react-router-dom';
 
-import { useUser } from '@cctv/contexts';
+import { useUser } from '@cctv/contexts/UserContext';
 import {
+  FamilyFeudAction,
+  FamilyFeudActionType,
+} from '@cctv/pages/Block/FamilyFeudManager/familyFeudReducer';
+import {
+  AuthError,
+  DrawingUpdateMessage,
   Experience,
+  ExperienceChannelMessage,
   ExperienceContextType,
   ParticipantSummary,
   WebSocketMessage,
-  WebSocketMessageType,
   WebSocketMessageTypes,
+  isDrawingUpdateMessage,
+  isExperiencePayloadMessage,
 } from '@cctv/types';
 import {
   getJWTKey,
@@ -66,8 +75,10 @@ export function ExperienceProvider({ children }: ExperienceProviderProps) {
   const impersonationIdentifierRef = useRef<string>(undefined);
 
   // Family Feud dispatch registry (keyed by blockId)
-  const familyFeudDispatchRegistry = useRef<Map<string, (action: any) => void>>(new Map());
-  const lobbyDrawingDispatchRef = useRef<((action: any) => void) | null>(null);
+  const familyFeudDispatchRegistry = useRef<Map<string, (action: FamilyFeudAction) => void>>(
+    new Map(),
+  );
+  const lobbyDrawingDispatchRef = useRef<((action: DrawingUpdateMessage) => void) | null>(null);
 
   const currentCode = code || '';
   const isManagePage = location.pathname.includes('/manage');
@@ -98,8 +109,8 @@ export function ExperienceProvider({ children }: ExperienceProviderProps) {
           clearJWT();
         }
 
-        const err = new Error('Authentication expired');
-        (err as any).code = 401;
+        const err: AuthError = new Error('Authentication expired');
+        err.code = 401;
         throw err;
       }
 
@@ -444,7 +455,7 @@ export function ExperienceProvider({ children }: ExperienceProviderProps) {
     setWsError(undefined);
   }, []);
 
-  const handleParticipantMessage = useCallback((message: any) => {
+  const handleParticipantMessage = useCallback((message: { type?: string; message?: unknown }) => {
     if (message.type === 'ping') return;
 
     if (message.type === 'welcome') return;
@@ -459,24 +470,15 @@ export function ExperienceProvider({ children }: ExperienceProviderProps) {
       return;
     }
 
-    const wsMessage: WebSocketMessage = message.message || message;
-    if (!wsMessage || typeof wsMessage !== 'object') {
-      return;
-    }
+    const raw = message.message ?? message;
+    if (!raw || typeof raw !== 'object') return;
 
-    const messageType: WebSocketMessageType = wsMessage.type;
-    if (!messageType) {
-      return;
-    }
+    const wsMessage = raw as WebSocketMessage;
+    if (!wsMessage.type) return;
 
-    if (
-      messageType === WebSocketMessageTypes.EXPERIENCE_STATE ||
-      messageType === WebSocketMessageTypes.EXPERIENCE_UPDATED ||
-      messageType === WebSocketMessageTypes.STREAM_CHANGED
-    ) {
-      qaLogger(`[PARTICIPANT WS] Processing: ${messageType}`);
-      const experienceMessage = wsMessage as any;
-      const updatedExperience = experienceMessage.experience;
+    if (isExperiencePayloadMessage(wsMessage)) {
+      qaLogger(`[PARTICIPANT WS] Processing: ${wsMessage.type}`);
+      const updatedExperience = wsMessage.experience;
 
       if (updatedExperience) {
         qaLogger(
@@ -486,15 +488,14 @@ export function ExperienceProvider({ children }: ExperienceProviderProps) {
         setExperienceStatus(updatedExperience.status === 'live' ? 'live' : 'lobby');
         setError(undefined);
 
-        // Set participant from message
-        if (experienceMessage.participant) {
-          setParticipant(experienceMessage.participant);
+        if (wsMessage.participant) {
+          setParticipant(wsMessage.participant);
         }
       }
     }
   }, []);
 
-  const handleAdminMessage = useCallback((message: any) => {
+  const handleAdminMessage = useCallback((message: { type?: string; message?: unknown }) => {
     if (message.type === 'ping') return;
 
     if (message.type === 'welcome') return;
@@ -509,60 +510,50 @@ export function ExperienceProvider({ children }: ExperienceProviderProps) {
       return;
     }
 
-    const wsMessage: WebSocketMessage = message.message || message;
-    if (!wsMessage || typeof wsMessage !== 'object') {
-      return;
-    }
+    const raw = message.message ?? message;
+    if (!raw || typeof raw !== 'object') return;
 
-    const messageType: WebSocketMessageType = wsMessage.type;
-    if (!messageType) {
-      return;
-    }
+    const wsMessage = raw as WebSocketMessage;
+    if (!wsMessage.type) return;
 
-    if (
-      messageType === WebSocketMessageTypes.EXPERIENCE_STATE ||
-      messageType === WebSocketMessageTypes.EXPERIENCE_UPDATED ||
-      messageType === WebSocketMessageTypes.STREAM_CHANGED
-    ) {
-      qaLogger(`[ADMIN WS] Processing: ${messageType}`);
-      const experienceMessage = wsMessage as any;
-      const updatedExperience = experienceMessage.experience;
+    if (isExperiencePayloadMessage(wsMessage)) {
+      qaLogger(`[ADMIN WS] Processing: ${wsMessage.type}`);
+      const updatedExperience = wsMessage.experience;
 
       if (updatedExperience) {
         qaLogger(
-          `[PARTICIPANT WS] Updating experience: status=${updatedExperience.status}, blocks=${updatedExperience.blocks?.length || 0}`,
+          `[ADMIN WS] Updating experience: status=${updatedExperience.status}, blocks=${updatedExperience.blocks?.length || 0}`,
         );
         setExperience(updatedExperience);
         setExperienceStatus(updatedExperience.status === 'live' ? 'live' : 'lobby');
         setError(undefined);
       }
     } else if (wsMessage.type === WebSocketMessageTypes.FAMILY_FEUD_UPDATED) {
-      qaLogger(`[ADMIN WS] Processing family_feud_updated: ${wsMessage.operation}`);
-      const { block_id, operation, data } = wsMessage as any;
+      const ffMsg = wsMessage;
+      qaLogger(`[ADMIN WS] Processing family_feud_updated: ${ffMsg.operation}`);
+      const { block_id, operation, data } = ffMsg;
 
-      // Dispatch to the specific FamilyFeudManager instance registered for this block
       const dispatch = familyFeudDispatchRegistry.current.get(block_id);
       if (dispatch) {
-        // Map websocket operation strings to typed actions
-        const actionTypeMap: Record<string, string> = {
-          bucket_added: 'BUCKET_ADDED',
-          bucket_renamed: 'BUCKET_RENAMED',
-          bucket_deleted: 'BUCKET_DELETED',
-          answer_assigned: 'ANSWER_ASSIGNED',
-          answer_received: 'ANSWER_RECEIVED',
-          question_added: 'QUESTION_ADDED',
-          question_deleted: 'QUESTION_DELETED',
+        const actionTypeMap: Record<string, FamilyFeudActionType> = {
+          bucket_added: FamilyFeudActionType.BUCKET_ADDED,
+          bucket_renamed: FamilyFeudActionType.BUCKET_RENAMED,
+          bucket_deleted: FamilyFeudActionType.BUCKET_DELETED,
+          answer_assigned: FamilyFeudActionType.ANSWER_ASSIGNED,
+          answer_received: FamilyFeudActionType.ANSWER_RECEIVED,
+          question_added: FamilyFeudActionType.QUESTION_ADDED,
+          question_deleted: FamilyFeudActionType.QUESTION_DELETED,
         };
 
         const actionType = actionTypeMap[operation];
         if (actionType) {
-          dispatch({ type: actionType as any, payload: data });
+          dispatch({ type: actionType, payload: data } as FamilyFeudAction);
         }
       }
     }
   }, []);
 
-  const handleMonitorMessage = useCallback((message: any) => {
+  const handleMonitorMessage = useCallback((message: { type?: string; message?: unknown }) => {
     if (message.type === 'ping') return;
 
     if (message.type === 'welcome') return;
@@ -577,24 +568,17 @@ export function ExperienceProvider({ children }: ExperienceProviderProps) {
       return;
     }
 
-    const wsMessage: WebSocketMessage = message.message || message;
-    if (!wsMessage || typeof wsMessage !== 'object') {
-      return;
-    }
+    const raw = message.message ?? message;
+    if (!raw || typeof raw !== 'object') return;
 
-    const messageType: WebSocketMessageType = wsMessage.type;
-    if (!messageType) {
-      return;
-    }
+    const channelMsg = raw as ExperienceChannelMessage;
 
-    if (
-      messageType === WebSocketMessageTypes.EXPERIENCE_STATE ||
-      messageType === WebSocketMessageTypes.EXPERIENCE_UPDATED ||
-      messageType === WebSocketMessageTypes.STREAM_CHANGED
-    ) {
-      qaLogger(`[Monitor WS] Processing: ${messageType}`);
-      const experienceMessage = wsMessage as any;
-      const updatedExperience = experienceMessage.experience;
+    if (isDrawingUpdateMessage(channelMsg)) {
+      const dispatch = lobbyDrawingDispatchRef.current;
+      if (dispatch) dispatch(channelMsg);
+    } else if (isExperiencePayloadMessage(channelMsg)) {
+      qaLogger(`[Monitor WS] Processing: ${channelMsg.type}`);
+      const updatedExperience = channelMsg.experience;
 
       if (updatedExperience) {
         qaLogger(
@@ -602,54 +586,42 @@ export function ExperienceProvider({ children }: ExperienceProviderProps) {
         );
         setMonitorView(updatedExperience);
       }
-    } else if ((wsMessage as any).type === 'drawing_update') {
-      const dispatch = lobbyDrawingDispatchRef.current;
-      if (dispatch) dispatch(wsMessage as any);
     }
   }, []);
 
-  const handleImpersonationMessage = useCallback((message: any) => {
-    if (message.type === 'ping') return;
+  const handleImpersonationMessage = useCallback(
+    (message: { type?: string; message?: unknown }) => {
+      if (message.type === 'ping') return;
 
-    if (message.type === 'welcome') return;
+      if (message.type === 'welcome') return;
 
-    if (message.type === 'confirm_subscription') {
-      qaLogger('[IMPERSONATION WS] Subscription confirmed');
-      return;
-    }
-
-    if (message.type === 'reject_subscription') {
-      qaLogger('[IMPERSONATION WS] SUBSCRIPTION REJECTED - Check backend logs');
-      return;
-    }
-
-    const wsMessage: WebSocketMessage = message.message || message;
-    if (!wsMessage || typeof wsMessage !== 'object') {
-      return;
-    }
-
-    const messageType: WebSocketMessageType = wsMessage.type;
-    if (!messageType) {
-      return;
-    }
-
-    if (
-      messageType === WebSocketMessageTypes.EXPERIENCE_STATE ||
-      messageType === WebSocketMessageTypes.EXPERIENCE_UPDATED ||
-      messageType === WebSocketMessageTypes.STREAM_CHANGED
-    ) {
-      qaLogger(`[IMPERSONATION WS] Processing: ${messageType}`);
-      const experienceMessage = wsMessage as any;
-      const updatedExperience = experienceMessage.experience;
-
-      if (updatedExperience) {
-        qaLogger(
-          `[IMPERSONATION WS] Updating participant view: status=${updatedExperience.status}, blocks=${updatedExperience.blocks?.length || 0}`,
-        );
-        setParticipantView(updatedExperience);
+      if (message.type === 'confirm_subscription') {
+        qaLogger('[IMPERSONATION WS] Subscription confirmed');
+        return;
       }
-    }
-  }, []);
+
+      if (message.type === 'reject_subscription') {
+        qaLogger('[IMPERSONATION WS] SUBSCRIPTION REJECTED - Check backend logs');
+        return;
+      }
+
+      const wsMessage = (message.message ?? message) as WebSocketMessage;
+      if (!wsMessage || typeof wsMessage !== 'object') return;
+
+      if (isExperiencePayloadMessage(wsMessage)) {
+        qaLogger(`[IMPERSONATION WS] Processing: ${wsMessage.type}`);
+        const updatedExperience = wsMessage.experience;
+
+        if (updatedExperience) {
+          qaLogger(
+            `[IMPERSONATION WS] Updating participant view: status=${updatedExperience.status}, blocks=${updatedExperience.blocks?.length || 0}`,
+          );
+          setParticipantView(updatedExperience);
+        }
+      }
+    },
+    [],
+  );
 
   const setJWTHandler = useCallback(
     (token: string) => {
@@ -676,67 +648,100 @@ export function ExperienceProvider({ children }: ExperienceProviderProps) {
     setError(undefined);
   }, [currentCode]);
 
-  const value: ExperienceContextType = {
-    experience,
-    participant,
-    code: currentCode,
-    jwt,
-
-    isAuthenticated: jwt !== undefined && currentCode !== '',
-    isLoading,
-    experienceStatus,
-    error,
-
-    setJWT: setJWTHandler,
-    clearJWT,
-    experienceFetch,
-
-    wsConnected,
-    wsError,
-
-    // Manage page specific
-    monitorView,
-    participantView,
-    impersonatedParticipantId,
-    setImpersonatedParticipantId,
-
-    // Family Feud dispatch registration
-    registerFamilyFeudDispatch: useCallback((blockId: string, dispatch: (action: any) => void) => {
+  const registerFamilyFeudDispatch = useCallback(
+    (blockId: string, dispatch: (action: FamilyFeudAction) => void) => {
       familyFeudDispatchRegistry.current.set(blockId, dispatch);
-    }, []),
-    unregisterFamilyFeudDispatch: useCallback((blockId: string) => {
-      familyFeudDispatchRegistry.current.delete(blockId);
-    }, []),
-    registerLobbyDrawingDispatch: useCallback((dispatch: (action: any) => void) => {
+    },
+    [],
+  );
+  const unregisterFamilyFeudDispatch = useCallback((blockId: string) => {
+    familyFeudDispatchRegistry.current.delete(blockId);
+  }, []);
+  const registerLobbyDrawingDispatch = useCallback(
+    (dispatch: (action: DrawingUpdateMessage) => void) => {
       lobbyDrawingDispatchRef.current = dispatch;
-    }, []),
-    unregisterLobbyDrawingDispatch: useCallback(() => {
-      lobbyDrawingDispatchRef.current = null;
-    }, []),
-    experiencePerform: useCallback(
-      (
-        action: string,
-        payload?: Record<string, any>,
-        target: 'participant' | 'admin' | 'monitor' | 'impersonation' = 'participant',
-      ) => {
-        const frames = {
-          participant: { sock: wsRef.current, id: wsIdentifierRef.current },
-          admin: { sock: wsRef.current, id: wsIdentifierRef.current },
-          monitor: { sock: monitorWsRef.current, id: monitorIdentifierRef.current },
-          impersonation: {
-            sock: impersonationWsRef.current,
-            id: impersonationIdentifierRef.current,
-          },
-        } as const;
-        const f = frames[target];
-        if (!f.sock || !f.id) return;
-        const data = JSON.stringify({ action, ...(payload || {}) });
-        const msg = { command: 'message', identifier: f.id, data } as any;
-        f.sock.send(JSON.stringify(msg));
-      },
-      [],
-    ),
-  };
+    },
+    [],
+  );
+  const unregisterLobbyDrawingDispatch = useCallback(() => {
+    lobbyDrawingDispatchRef.current = null;
+  }, []);
+  const experiencePerform = useCallback(
+    (
+      action: string,
+      payload?: Record<string, unknown>,
+      target: 'participant' | 'admin' | 'monitor' | 'impersonation' = 'participant',
+    ) => {
+      const frames = {
+        participant: { sock: wsRef.current, id: wsIdentifierRef.current },
+        admin: { sock: wsRef.current, id: wsIdentifierRef.current },
+        monitor: { sock: monitorWsRef.current, id: monitorIdentifierRef.current },
+        impersonation: {
+          sock: impersonationWsRef.current,
+          id: impersonationIdentifierRef.current,
+        },
+      } as const;
+      const f = frames[target];
+      if (!f.sock || !f.id) return;
+      const data = JSON.stringify({ action, ...(payload || {}) });
+      const msg: { command: string; identifier: string; data: string } = {
+        command: 'message',
+        identifier: f.id,
+        data,
+      };
+      f.sock.send(JSON.stringify(msg));
+    },
+    [],
+  );
+
+  const value = useMemo<ExperienceContextType>(
+    () => ({
+      experience,
+      participant,
+      code: currentCode,
+      jwt,
+      isAuthenticated: jwt !== undefined && currentCode !== '',
+      isLoading,
+      experienceStatus,
+      error,
+      setJWT: setJWTHandler,
+      clearJWT,
+      experienceFetch,
+      wsConnected,
+      wsError,
+      monitorView,
+      participantView,
+      impersonatedParticipantId,
+      setImpersonatedParticipantId,
+      registerFamilyFeudDispatch,
+      unregisterFamilyFeudDispatch,
+      registerLobbyDrawingDispatch,
+      unregisterLobbyDrawingDispatch,
+      experiencePerform,
+    }),
+    [
+      experience,
+      participant,
+      currentCode,
+      jwt,
+      isLoading,
+      experienceStatus,
+      error,
+      setJWTHandler,
+      clearJWT,
+      experienceFetch,
+      wsConnected,
+      wsError,
+      monitorView,
+      participantView,
+      impersonatedParticipantId,
+      registerFamilyFeudDispatch,
+      unregisterFamilyFeudDispatch,
+      registerLobbyDrawingDispatch,
+      unregisterLobbyDrawingDispatch,
+      experiencePerform,
+    ],
+  );
 
   return <ExperienceContext.Provider value={value}>{children}</ExperienceContext.Provider>;
 }

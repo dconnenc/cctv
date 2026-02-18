@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react';
 
 import { useExperience } from '@cctv/contexts/ExperienceContext';
 import {
+  ApiPayload,
   BlockKind,
   BlockStatus,
   CreateBlockPayload,
@@ -12,7 +13,7 @@ import { qaLogger } from '@cctv/utils';
 
 export interface CreateExperienceBlockParams {
   kind: BlockKind;
-  payload?: Record<string, any>;
+  payload?: ApiPayload;
   visible_to_roles?: ParticipantRole[];
   visible_to_segments?: string[];
   target_user_ids?: string[];
@@ -71,7 +72,7 @@ export function useCreateExperienceBlock() {
 
       const submitPayload: CreateBlockPayload = {
         kind,
-        payload: payload as any,
+        payload: payload as CreateBlockPayload['payload'],
         visible_to_roles,
         visible_to_segments,
         target_user_ids,

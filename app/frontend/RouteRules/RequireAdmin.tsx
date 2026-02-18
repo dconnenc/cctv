@@ -1,6 +1,6 @@
 import { Navigate, Outlet } from 'react-router-dom';
 
-import { useUser } from '@cctv/contexts';
+import { useUser } from '@cctv/contexts/UserContext';
 
 /**
  * Allow: Application Admins

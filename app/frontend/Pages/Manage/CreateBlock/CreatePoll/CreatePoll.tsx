@@ -1,4 +1,6 @@
-import { Button, Dropdown, TextInput } from '@cctv/core';
+import { Button } from '@cctv/core/Button/Button';
+import { Dropdown } from '@cctv/core/Dropdown/Dropdown';
+import { TextInput } from '@cctv/core/TextInput/TextInput';
 import {
   BlockComponentProps,
   BlockKind,

@@ -1,7 +1,9 @@
 import { FormEvent, useMemo, useRef, useState } from 'react';
 
-import { Button, Panel, TextInput } from '@cctv/core';
-import { usePost } from '@cctv/hooks';
+import { Button } from '@cctv/core/Button/Button';
+import { Panel } from '@cctv/core/Panel/Panel';
+import { TextInput } from '@cctv/core/TextInput/TextInput';
+import { usePost } from '@cctv/hooks/usePost';
 import { CreateExperienceApiResponse } from '@cctv/types';
 import { addSessionCreatedExperience, getFormData } from '@cctv/utils';
 

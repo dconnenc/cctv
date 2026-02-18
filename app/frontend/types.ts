@@ -1,5 +1,9 @@
 // ===== CORE DOMAIN TYPES =====
 
+export interface AuthError extends Error {
+  code?: number;
+}
+
 export type UserRole = 'user' | 'admin' | 'superadmin';
 export type ExperienceStatus = 'draft' | 'lobby' | 'live' | 'paused' | 'finished' | 'archived';
 export type ParticipantRole = 'audience' | 'player' | 'moderator' | 'host';
@@ -189,6 +193,13 @@ export interface ExperienceParticipant {
   } | null;
 }
 
+export interface BlockResponse {
+  id: string;
+  user_id: string;
+  answer: any;
+  created_at: string;
+}
+
 // Discriminated union for blocks
 interface BaseBlock {
   id: string;
@@ -212,12 +223,7 @@ interface BaseBlock {
       answer: any;
     } | null;
     aggregate?: Record<string, any>;
-    all_responses?: Array<{
-      id: string;
-      user_id: string;
-      answer: any;
-      created_at: string;
-    }>;
+    all_responses?: BlockResponse[];
   };
 }
 
@@ -568,6 +574,32 @@ export type WebSocketMessage =
   | ConfirmSubscriptionMessage
   | PingMessage
   | FamilyFeudUpdatedMessage;
+
+export interface DrawingUpdateMessage {
+  type: 'drawing_update';
+  participant_id: string;
+  operation: string;
+  data?: unknown;
+}
+
+export type ExperiencePayloadMessage =
+  | ExperienceStateMessage
+  | ExperienceUpdatedMessage
+  | StreamChangedMessage;
+
+export type ExperienceChannelMessage = WebSocketMessage | DrawingUpdateMessage;
+
+export function isExperiencePayloadMessage(msg: WebSocketMessage): msg is ExperiencePayloadMessage {
+  return (
+    msg.type === WebSocketMessageTypes.EXPERIENCE_STATE ||
+    msg.type === WebSocketMessageTypes.EXPERIENCE_UPDATED ||
+    msg.type === WebSocketMessageTypes.STREAM_CHANGED
+  );
+}
+
+export function isDrawingUpdateMessage(msg: ExperienceChannelMessage): msg is DrawingUpdateMessage {
+  return msg.type === 'drawing_update';
+}
 
 // ===== CREATE EXPERIENCE FORM TYPES =====
 

@@ -1,4 +1,4 @@
-import { TextInput } from '@cctv/core';
+import { TextInput } from '@cctv/core/TextInput/TextInput';
 import { BlockKind, BlockStatus, ParticipantSummary } from '@cctv/types';
 import { AnnouncementApiPayload, AnnouncementData, BlockComponentProps } from '@cctv/types';
 

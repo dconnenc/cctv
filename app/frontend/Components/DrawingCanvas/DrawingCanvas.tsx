@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { Image as KonvaImage, Layer, Line, Stage } from 'react-konva';
 
-import { Button } from '@cctv/core';
+import { Button } from '@cctv/core/Button/Button';
 
 import styles from './DrawingCanvas.module.scss';
 

@@ -1,5 +1,5 @@
-import { useExperience } from '@cctv/contexts';
-import { ExperienceBlockContainer } from '@cctv/experiences';
+import { useExperience } from '@cctv/contexts/ExperienceContext';
+import ExperienceBlockContainer from '@cctv/experiences/ExperienceBlockContainer/ExperienceBlockContainer';
 
 import QRCodeDisplay from '../Manage/QRCodeDisplay/QRCodeDisplay';
 import LobbyAvatars from './LobbyAvatars';

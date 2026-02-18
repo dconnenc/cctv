@@ -3,14 +3,12 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 
 import { Dialog, DialogContent } from '@cctv/components/ui/dialog';
-import { useExperience } from '@cctv/contexts';
-import { Panel } from '@cctv/core';
-import {
-  useChangeBlockStatus,
-  useExperiencePause,
-  useExperienceResume,
-  useExperienceStart,
-} from '@cctv/hooks';
+import { useExperience } from '@cctv/contexts/ExperienceContext';
+import { Panel } from '@cctv/core/Panel/Panel';
+import { useChangeBlockStatus } from '@cctv/hooks/useChangeBlockStatus';
+import { useExperiencePause } from '@cctv/hooks/useExperiencePause';
+import { useExperienceResume } from '@cctv/hooks/useExperienceResume';
+import { useExperienceStart } from '@cctv/hooks/useExperienceStart';
 import { Block, BlockStatus, ParticipantSummary } from '@cctv/types';
 
 import BlockViewer from '../Block/Block';

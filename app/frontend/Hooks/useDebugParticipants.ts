@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from 'react';
 
-import { useExperience } from '@cctv/contexts';
+import { useExperience } from '@cctv/contexts/ExperienceContext';
 
 export interface DebugParticipant {
   id: string;

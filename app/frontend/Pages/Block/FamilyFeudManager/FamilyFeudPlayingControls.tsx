@@ -9,7 +9,7 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@cctv/core';
+} from '@cctv/core/DropdownMenu/DropdownMenu';
 import { Block, FamilyFeudGameState } from '@cctv/types';
 
 import styles from './FamilyFeudPlayingControls.module.scss';

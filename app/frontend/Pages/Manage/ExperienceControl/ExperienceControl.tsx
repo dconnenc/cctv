@@ -1,6 +1,8 @@
 import { Pause, Play, Plus } from 'lucide-react';
 
-import { Button, Panel, Pill } from '@cctv/core';
+import { Button } from '@cctv/core/Button/Button';
+import { Panel } from '@cctv/core/Panel/Panel';
+import { Pill } from '@cctv/core/Pill/Pill';
 import { Experience, ExperienceStatus } from '@cctv/types';
 
 import styles from './ExperienceControl.module.scss';

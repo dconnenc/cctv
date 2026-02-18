@@ -2,8 +2,8 @@ import { useEffect, useMemo, useReducer, useRef, useState } from 'react';
 
 import { Image as KonvaImage, Layer, Line, Stage } from 'react-konva';
 
-import { useExperience } from '@cctv/contexts';
-import { ExperienceParticipant } from '@cctv/types';
+import { useExperience } from '@cctv/contexts/ExperienceContext';
+import { DrawingUpdateMessage, ExperienceParticipant } from '@cctv/types';
 
 import styles from './LobbyAvatars.module.scss';
 
@@ -36,7 +36,7 @@ function AvatarSprite({
   size: number;
 }) {
   const img = useHtmlImage(src);
-  if (!img) return null as any;
+  if (!img) return null;
   return <KonvaImage key={id} image={img} x={x} y={y} width={size} height={size} />;
 }
 
@@ -71,7 +71,7 @@ export default function LobbyAvatars() {
   };
   type Action =
     | { type: 'reset' }
-    | { type: 'drawing_update'; participant_id: string; operation: string; data?: any };
+    | { type: 'drawing_update'; participant_id: string; operation: string; data?: unknown };
 
   const [drawState, dispatch] = useReducer(
     (state: State, action: Action): State => {
@@ -79,7 +79,7 @@ export default function LobbyAvatars() {
         case 'reset':
           return { strokes: {}, positions: {} };
         case 'drawing_update': {
-          const { participant_id, operation, data } = action as any;
+          const { participant_id, operation, data } = action;
           const existing = state.strokes[participant_id] || [];
           if (operation === 'clear_all') {
             return { strokes: {}, positions: {} };
@@ -135,15 +135,13 @@ export default function LobbyAvatars() {
 
   useEffect(() => {
     if (!registerLobbyDrawingDispatch || !unregisterLobbyDrawingDispatch) return;
-    const handler = (msg: any) => {
-      if (msg?.type === 'drawing_update' && msg?.participant_id) {
-        dispatch({
-          type: 'drawing_update',
-          participant_id: msg.participant_id,
-          operation: msg.operation,
-          data: msg.data,
-        });
-      }
+    const handler = (msg: DrawingUpdateMessage) => {
+      dispatch({
+        type: 'drawing_update',
+        participant_id: msg.participant_id,
+        operation: msg.operation,
+        data: msg.data,
+      });
     };
     registerLobbyDrawingDispatch(handler);
     return () => unregisterLobbyDrawingDispatch();

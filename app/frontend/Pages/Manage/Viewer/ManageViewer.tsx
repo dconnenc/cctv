@@ -17,14 +17,13 @@ import {
 } from 'lucide-react';
 
 import { Dialog, DialogContent } from '@cctv/components/ui/dialog';
-import { useExperience } from '@cctv/contexts';
-import { Button, Pill } from '@cctv/core';
-import {
-  useChangeBlockStatus,
-  useExperiencePause,
-  useExperienceResume,
-  useExperienceStart,
-} from '@cctv/hooks';
+import { useExperience } from '@cctv/contexts/ExperienceContext';
+import { Button } from '@cctv/core/Button/Button';
+import { Pill } from '@cctv/core/Pill/Pill';
+import { useChangeBlockStatus } from '@cctv/hooks/useChangeBlockStatus';
+import { useExperiencePause } from '@cctv/hooks/useExperiencePause';
+import { useExperienceResume } from '@cctv/hooks/useExperienceResume';
+import { useExperienceStart } from '@cctv/hooks/useExperienceStart';
 import { Block, BlockKind, ParticipantSummary } from '@cctv/types';
 
 import FamilyFeudManager from '../../Block/FamilyFeudManager/FamilyFeudManager';
@@ -375,7 +374,7 @@ export default function ManageViewer() {
             {sidebarCollapsed ? (
               <ul className="p-1 space-y-1">
                 {flattenedBlocks.map(({ block, isChild }, index) => (
-                  <li key={block.id}>
+                  <li key={block.id} style={{ contentVisibility: 'auto' }}>
                     <button
                       className={`relative w-full h-10 flex items-center justify-center rounded-md cursor-pointer text-xs text-[hsl(var(--foreground))] hover:bg-[hsl(var(--muted))] transition-colors ${
                         selectedBlockId === block.id
@@ -409,7 +408,7 @@ export default function ManageViewer() {
             ) : (
               <ul className="p-2 space-y-1">
                 {flattenedBlocks.map(({ block, isChild }, index) => (
-                  <li key={block.id}>
+                  <li key={block.id} style={{ contentVisibility: 'auto' }}>
                     <button
                       className={`relative w-full h-16 px-3 py-2 rounded-md cursor-pointer text-sm text-left text-[hsl(var(--foreground))] hover:bg-[hsl(var(--muted))] transition-colors flex flex-col justify-center ${
                         selectedBlockId === block.id
@@ -606,7 +605,8 @@ export default function ManageViewer() {
 
                   {/* Family Feud Playing Controls - shown above preview when in playing mode */}
                   {selectedBlock.kind === BlockKind.FAMILY_FEUD &&
-                    (selectedBlock.payload as any)?.game_state?.phase === 'playing' && (
+                    selectedBlock.kind === BlockKind.FAMILY_FEUD &&
+                    selectedBlock.payload?.game_state?.phase === 'playing' && (
                       <div className="mb-6">
                         <FamilyFeudManager block={selectedBlock} />
                       </div>
@@ -753,7 +753,8 @@ export default function ManageViewer() {
 
                 {/* Family Feud Manager for family_feud blocks - moved above preview if playing */}
                 {selectedBlock.kind === BlockKind.FAMILY_FEUD &&
-                  (selectedBlock.payload as any)?.game_state?.phase !== 'playing' && (
+                  selectedBlock.kind === BlockKind.FAMILY_FEUD &&
+                  selectedBlock.payload?.game_state?.phase !== 'playing' && (
                     <div className="mt-6 border-t border-[hsl(var(--border))] pt-6">
                       <FamilyFeudManager block={selectedBlock} />
                     </div>

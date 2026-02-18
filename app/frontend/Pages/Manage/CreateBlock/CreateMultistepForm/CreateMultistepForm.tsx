@@ -2,8 +2,9 @@ import { useState } from 'react';
 
 import classNames from 'classnames';
 
-import { Button, TextInput } from '@cctv/core';
+import { Button } from '@cctv/core/Button/Button';
 import { Dropdown } from '@cctv/core/Dropdown/Dropdown';
+import { TextInput } from '@cctv/core/TextInput/TextInput';
 import { BlockKind, BlockStatus, ParticipantSummary } from '@cctv/types';
 import { MultistepFormApiPayload, MultistepFormData } from '@cctv/types';
 

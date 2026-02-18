@@ -1,7 +1,8 @@
 import { FormEvent, useEffect, useRef, useState } from 'react';
 
-import { Button, TextInput } from '@cctv/core';
-import { useSubmitQuestionResponse } from '@cctv/hooks';
+import { Button } from '@cctv/core/Button/Button';
+import { TextInput } from '@cctv/core/TextInput/TextInput';
+import { useSubmitQuestionResponse } from '@cctv/hooks/useSubmitQuestionResponse';
 import { QuestionPayload } from '@cctv/types';
 import { getFormData } from '@cctv/utils';
 

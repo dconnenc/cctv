@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 
-import { useExperience } from '@cctv/contexts';
+import { useExperience } from '@cctv/contexts/ExperienceContext';
 import { Block, BlockStatus } from '@cctv/types';
 
 export function useChangeBlockStatus() {

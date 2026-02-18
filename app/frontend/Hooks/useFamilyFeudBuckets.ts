@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 
-import { useExperience } from '@cctv/contexts';
+import { useExperience } from '@cctv/contexts/ExperienceContext';
 
 export function useFamilyFeudBuckets(blockId?: string, dispatch?: (action: any) => void) {
   const { code, experienceFetch, registerFamilyFeudDispatch, unregisterFamilyFeudDispatch } =

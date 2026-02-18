@@ -3,7 +3,8 @@ import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { LobbyAvatarEditor } from '@cctv/components';
-import { useExperience, useUser } from '@cctv/contexts';
+import { useExperience } from '@cctv/contexts/ExperienceContext';
+import { useUser } from '@cctv/contexts/UserContext';
 
 import styles from './Experience.module.scss';
 

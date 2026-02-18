@@ -1,6 +1,7 @@
 import { DialogDescription, DialogTitle } from '@cctv/components/ui/dialog';
-import { Button, TextInput } from '@cctv/core';
+import { Button } from '@cctv/core/Button/Button';
 import { Dropdown } from '@cctv/core/Dropdown/Dropdown';
+import { TextInput } from '@cctv/core/TextInput/TextInput';
 import { BlockKind, ParticipantSummary } from '@cctv/types';
 
 import CreateAnnouncement from './CreateAnnouncement/CreateAnnouncement';
