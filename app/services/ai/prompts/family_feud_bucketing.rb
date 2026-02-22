@@ -17,13 +17,14 @@ module AI
           Answers to categorize:
           #{answer_list}
 
-          Group these answers into 3-8 buckets of semantically similar responses. Each bucket should have a short, generalized label (Family Feud style - e.g., "Going to work", "Eating breakfast", "Checking phone").
+          Group these answers into buckets of semantically similar responses, like the answer board on Family Feud.
 
           Rules:
           - Every answer must be assigned to exactly one bucket
-          - Bucket names should be concise (1-4 words)
+          - Every bucket must contain at least one answer — do NOT create empty buckets
+          - Never create more buckets than there are answers
+          - Bucket names should be concise (1-4 words), natural, and Family Feud style (e.g. "The Commute", "Sleeping In", "Mom's Cooking")
           - Similar answers belong in the same bucket
-          - Use natural, conversational bucket names
           - Return valid JSON matching the schema
         PROMPT
       end

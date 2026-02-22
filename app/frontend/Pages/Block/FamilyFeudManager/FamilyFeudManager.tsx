@@ -193,12 +193,37 @@ export default function FamilyFeudManager({ block }: FamilyFeudManagerProps) {
     async (questionId: string) => {
       setAutoCategorizing(questionId);
       try {
-        await autoCategorize(block.id, questionId);
+        const result = await autoCategorize(block.id, questionId);
+        if (!result?.buckets) return;
+
+        const question = questionsState.find((q) => q.questionId === questionId);
+        if (!question) return;
+
+        const allAnswers = [
+          ...question.unassignedAnswers,
+          ...question.buckets.flatMap((b) => b.answers),
+        ];
+        const newBuckets = result.buckets.map((b) => ({
+          id: b.id,
+          name: b.name,
+          answers: allAnswers.filter((a) => b.answer_ids?.includes(a.id)),
+        }));
+
+        const assignedIds = new Set(newBuckets.flatMap((b) => b.answers.map((a) => a.id)));
+        const newUnassigned = allAnswers.filter((a) => !assignedIds.has(a.id));
+
+        const updatedQuestions = questionsState.map((q) =>
+          q.questionId === questionId
+            ? { ...q, buckets: newBuckets, unassignedAnswers: newUnassigned }
+            : q,
+        );
+
+        dispatch({ type: FamilyFeudActionType.INIT, payload: updatedQuestions });
       } finally {
         setAutoCategorizing(null);
       }
     },
-    [autoCategorize, block.id],
+    [autoCategorize, block.id, questionsState],
   );
 
   const handleDragEnd = useCallback(

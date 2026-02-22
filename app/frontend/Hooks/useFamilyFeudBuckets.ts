@@ -2,6 +2,16 @@ import { useCallback, useEffect, useState } from 'react';
 
 import { useExperience } from '@cctv/contexts/ExperienceContext';
 
+interface AutoCategorizeBucket {
+  id: string;
+  name: string;
+  answer_ids: string[];
+}
+
+interface AutoCategorizeResult {
+  buckets: AutoCategorizeBucket[];
+}
+
 export function useFamilyFeudBuckets(blockId?: string, dispatch?: (action: any) => void) {
   const { code, experienceFetch, registerFamilyFeudDispatch, unregisterFamilyFeudDispatch } =
     useExperience();
@@ -171,7 +181,7 @@ export function useFamilyFeudBuckets(blockId?: string, dispatch?: (action: any) 
   );
 
   const autoCategorize = useCallback(
-    async (blockId: string, questionId: string) => {
+    async (blockId: string, questionId: string): Promise<AutoCategorizeResult | null> => {
       if (!code) {
         setError('Missing experience code');
         return null;
@@ -193,7 +203,7 @@ export function useFamilyFeudBuckets(blockId?: string, dispatch?: (action: any) 
           setError(msg);
           return null;
         }
-        return data.data;
+        return data.data as AutoCategorizeResult;
       } catch (e: unknown) {
         const msg =
           e instanceof Error && e.message === 'Authentication expired'

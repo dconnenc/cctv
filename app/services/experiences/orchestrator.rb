@@ -270,23 +270,17 @@ module Experiences
           question_payload = question_block.payload || {}
           submissions = ExperienceQuestionSubmission.where(experience_block_id: question_block.id)
 
-          raise AI::Client::Error, "No answers to categorize" if submissions.empty?
-
-          existing_buckets = question_payload["buckets"] || []
-          assigned_ids = existing_buckets.flat_map { |b| b["answer_ids"] || [] }.to_set
-
-          unassigned = submissions.reject { |s| assigned_ids.include?(s.id.to_s) }
-          raise AI::Client::Error, "No unassigned answers to categorize" if unassigned.empty?
+          raise ::AI::Client::Error, "No answers to categorize" if submissions.empty?
 
           question_text = question_payload["question"] || "Question"
-          answers = unassigned.map { |s| { id: s.id.to_s, text: s.answer.to_s } }
+          answers = submissions.map { |s| { id: s.id.to_s, text: s.answer.to_s } }
 
-          prompt_builder = AI::Prompts::FamilyFeudBucketing.new(
+          prompt_builder = ::AI::Prompts::FamilyFeudBucketing.new(
             question_text: question_text,
             answers: answers
           )
 
-          result = AI::Client.call(
+          result = ::AI::Client.call(
             prompt: prompt_builder.prompt,
             response_schema: prompt_builder.response_schema
           )
@@ -294,8 +288,10 @@ module Experiences
           valid_ids = answers.map { |a| a[:id] }.to_set
           ai_buckets = result["buckets"] || []
 
-          question_payload["buckets"] = ai_buckets.map do |ai_bucket|
+          question_payload["buckets"] = ai_buckets.filter_map do |ai_bucket|
             filtered_ids = (ai_bucket["answer_ids"] || []).select { |id| valid_ids.include?(id) }
+            next if filtered_ids.empty?
+
             {
               "id" => "bucket-#{Time.now.to_i}-#{SecureRandom.hex(4)}",
               "name" => ai_bucket["name"].to_s.truncate(50),
