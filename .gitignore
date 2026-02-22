@@ -6,3 +6,4 @@ tmp
 .env
 *.mjs
 app/frontend/tailwind.output.css
+public/vite-test

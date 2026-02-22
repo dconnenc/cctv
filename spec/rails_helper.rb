@@ -47,6 +47,8 @@ RSpec.configure do |config|
   config.include FactoryBot::Syntax::Methods
 end
 
+Capybara.default_max_wait_time = 10
+
 RSpec.configure do |config|
   config.before(:each, type: :system) do
     driven_by :cuprite, screen_size: [1200, 800], options: { headless: ENV["HEADLESS"] != "false" }
