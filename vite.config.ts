@@ -13,6 +13,11 @@ export default defineConfig({
     RubyPlugin(),
     tailwindcss(),
   ],
+  test: {
+    environment: 'jsdom',
+    setupFiles: ['./test-setup.ts'],
+    css: { modules: { classNameStrategy: 'non-scoped' } },
+  },
   resolve: {
     alias: {
       '@cctv/core': path.resolve(fileURLToPath(new URL('.', import.meta.url)), 'app/frontend/Core'),

@@ -55,6 +55,7 @@ function createWebSocketConnection(
   identifierRef: { current: string | undefined },
   disposeRef: { current: boolean },
   attempt = 0,
+  onReconnecting?: (reconnecting: boolean) => void,
 ): void {
   if (disposeRef.current) return;
 
@@ -72,6 +73,7 @@ function createWebSocketConnection(
 
   ws.onopen = () => {
     qaLogger(`[${config.label}] WebSocket connected`);
+    onReconnecting?.(false);
     config.onConnect?.();
 
     ws.send(
@@ -100,8 +102,17 @@ function createWebSocketConnection(
     if (!disposeRef.current && !rejected && event.code !== 1000 && event.code !== 1001) {
       const delay = Math.min(1000 * Math.pow(2, attempt), 30000);
       qaLogger(`[${config.label}] Reconnecting in ${delay}ms (attempt ${attempt + 1})`);
+      onReconnecting?.(true);
       setTimeout(
-        () => createWebSocketConnection(config, wsRef, identifierRef, disposeRef, attempt + 1),
+        () =>
+          createWebSocketConnection(
+            config,
+            wsRef,
+            identifierRef,
+            disposeRef,
+            attempt + 1,
+            onReconnecting,
+          ),
         delay,
       );
     }
@@ -124,6 +135,7 @@ function parseChannelMessage(raw: { type?: string; message?: unknown }): WebSock
 export interface WebSocketContextType {
   wsConnected: boolean;
   wsError?: string;
+  reconnecting: boolean;
   experiencePerform: (
     action: string,
     payload?: Record<string, unknown>,
@@ -152,6 +164,7 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
 
   const [wsConnected, setWsConnected] = useState(false);
   const [wsError, setWsError] = useState<string>();
+  const [reconnecting, setReconnecting] = useState(false);
 
   const wsRef = useRef<WebSocket>(undefined);
   const monitorWsRef = useRef<WebSocket>(undefined);
@@ -163,6 +176,39 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
   const mainDisposeRef = useRef(false);
   const monitorDisposeRef = useRef(false);
   const impersonationDisposeRef = useRef(false);
+
+  const reconnectParticipantWs = useCallback(() => {
+    if (!wsRef.current || !wsIdentifierRef.current) return;
+    qaLogger('[WS] Resubscribe requested — reconnecting participant websocket');
+    const identifier = JSON.parse(wsIdentifierRef.current);
+
+    wsRef.current.close(1000);
+    wsRef.current = undefined;
+    mainDisposeRef.current = false;
+    setReconnecting(true);
+
+    createWebSocketConnection(
+      {
+        label: 'PARTICIPANT WS',
+        identifier,
+        onMessage: (msg) => handleMessageRef.current(msg, 'PARTICIPANT WS', 'main'),
+        onConnect: () => {
+          setWsConnected(true);
+          setWsError(undefined);
+          setReconnecting(false);
+        },
+        onError: () => {
+          setWsError('Connection error');
+          setWsConnected(false);
+          setReconnecting(false);
+        },
+        onClose: () => setWsConnected(false),
+      },
+      wsRef,
+      wsIdentifierRef,
+      mainDisposeRef,
+    );
+  }, []);
 
   const handleExperienceMessage = useCallback(
     (
@@ -208,6 +254,11 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
 
       const wsMessage = parseChannelMessage(raw);
       if (!wsMessage) return;
+
+      if (wsMessage.type === WebSocketMessageTypes.RESUBSCRIBE_REQUIRED && target === 'main') {
+        reconnectParticipantWs();
+        return;
+      }
 
       if (isExperiencePayloadMessage(wsMessage)) {
         qaLogger(`[${label}] Processing: ${wsMessage.type}`);
@@ -258,6 +309,7 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
       setWsReady,
       getFamilyFeudDispatch,
       lobbyDrawingDispatch,
+      reconnectParticipantWs,
     ],
   );
 
@@ -370,6 +422,8 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
           wsRef,
           wsIdentifierRef,
           mainDisposeRef,
+          0,
+          setReconnecting,
         );
       }
     }
@@ -458,8 +512,8 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
   );
 
   const value = useMemo<WebSocketContextType>(
-    () => ({ wsConnected, wsError, experiencePerform }),
-    [wsConnected, wsError, experiencePerform],
+    () => ({ wsConnected, wsError, reconnecting, experiencePerform }),
+    [wsConnected, wsError, reconnecting, experiencePerform],
   );
 
   return <WebSocketContext.Provider value={value}>{children}</WebSocketContext.Provider>;
