@@ -7,7 +7,8 @@ class ExperienceBlock < ApplicationRecord
     MULTISTEP_FORM = "multistep_form",
     ANNOUNCEMENT = "announcement",
     MAD_LIB = "mad_lib",
-    FAMILY_FEUD = "family_feud"
+    FAMILY_FEUD = "family_feud",
+    PHOTO_UPLOAD = "photo_upload"
   ]
 
   belongs_to :experience
@@ -25,6 +26,7 @@ class ExperienceBlock < ApplicationRecord
   has_many :experience_question_submissions, dependent: :destroy
   has_many :experience_multistep_form_submissions, dependent: :destroy
   has_many :experience_mad_lib_submissions, dependent: :destroy
+  has_many :experience_photo_upload_submissions, dependent: :destroy
 
   has_many :parent_links,
     class_name: "ExperienceBlockLink",

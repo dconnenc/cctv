@@ -1,4 +1,7 @@
+import { Link } from 'react-router-dom';
+
 import { useExperience } from '@cctv/contexts/ExperienceContext';
+import { Button } from '@cctv/core';
 
 import styles from './Playbill.module.scss';
 
@@ -23,31 +26,45 @@ export default function Playbill() {
     );
   }
 
+  const sections = experience?.playbill || [];
+
   return (
     <section className={styles.root}>
+      <Link to={`/experiences/${code}`} className={styles.backLink}>
+        <Button className={styles.backButton}>Back to Experience</Button>
+      </Link>
       <h1 className={styles.title}>{experience?.name || code}</h1>
       <p className={styles.subtitle}>Playbill</p>
 
-      {/* Placeholder sections; replace with CMS-driven content later */}
-      <div className={styles.sections}>
-        {[1, 2, 3, 4].map((n) => {
-          const image = `https://picsum.photos/seed/playbill-${n}/800/600`;
-          const title = `Playbill Item ${n}`;
-          const body =
-            'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed non risus. Suspendisse lectus tortor, dignissim sit amet.';
-          return (
-            <div key={n} className={styles.section}>
-              <div className={styles.imageWrap}>
-                <img className={styles.image} src={image} alt={title} />
-              </div>
+      {sections.length === 0 ? (
+        <div className={styles.sections}>
+          <p className={styles.subtitle}>No playbill content yet.</p>
+        </div>
+      ) : (
+        <div className={styles.sections}>
+          {sections.map((section, index) => (
+            <div
+              key={section.id}
+              className={styles.section}
+              style={section.image_url ? undefined : { gridTemplateColumns: '1fr' }}
+            >
+              {section.image_url && (
+                <div className={styles.imageWrap}>
+                  <img
+                    className={styles.image}
+                    src={section.image_url}
+                    alt={`Section ${index + 1} Image`}
+                  />
+                </div>
+              )}
               <div className={styles.textWrap}>
-                <h3 className={styles.itemTitle}>{title}</h3>
-                <p className={styles.itemBody}>{body}</p>
+                <h3 className={styles.itemTitle}>{section.title}</h3>
+                <p className={styles.itemBody}>{section.body}</p>
               </div>
             </div>
-          );
-        })}
-      </div>
+          ))}
+        </div>
+      )}
     </section>
   );
 }

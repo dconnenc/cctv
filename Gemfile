@@ -18,6 +18,7 @@ gem "passwordless"
 gem "jwt"
 
 gem "action_policy"
+gem "image_processing", "~> 1.2"
 
 group :development, :test do
   gem "rspec-rails"

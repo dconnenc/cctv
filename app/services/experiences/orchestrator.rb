@@ -197,6 +197,33 @@ module Experiences
       end
     end
 
+    def submit_photo_upload_response!(block_id:, photo_signed_id:, answer: {})
+      actor_action do
+        block = experience.experience_blocks.find(block_id)
+
+        authorize! block, to: :submit_photo_upload_response?, with: ExperienceBlockPolicy
+
+        blob = ActiveStorage::Blob.find_signed!(photo_signed_id)
+
+        submission = ExperiencePhotoUploadSubmission.find_or_initialize_by(
+          experience_block_id: block.id,
+          user_id: actor.id
+        )
+
+        submission.answer = answer
+
+        if submission.new_record?
+          submission.save!(validate: false)
+          submission.photo.attach(blob)
+        else
+          submission.photo.attach(blob)
+          submission.save!
+        end
+
+        submission
+      end
+    end
+
     def add_family_feud_bucket!(block_id:, question_id:, name:)
       actor_action do
         block = experience.experience_blocks.find(block_id)
