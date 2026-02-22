@@ -1,12 +1,12 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 import { useQuery } from './useQuery';
 
 export function useGet<T>({ url, enabled }: { url: string; enabled?: boolean }) {
   const [data, setData] = useState<T>();
-  const { query, ...rest } = useQuery<T>({ url });
+  const { query, abort, ...rest } = useQuery<T>({ url });
 
-  const get = async () => query({ method: 'GET' });
+  const get = useCallback(async () => query({ method: 'GET' }), [query]);
 
   useEffect(() => {
     if (!enabled) return;
@@ -15,7 +15,9 @@ export function useGet<T>({ url, enabled }: { url: string; enabled?: boolean }) 
       const data = await get();
       setData(data);
     })();
-  }, [url, enabled]);
+
+    return () => abort();
+  }, [url, enabled, get, abort]);
 
   return {
     data,

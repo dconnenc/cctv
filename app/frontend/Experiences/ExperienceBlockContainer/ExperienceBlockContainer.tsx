@@ -12,12 +12,14 @@ interface ExperienceBlockContainerProps {
   block: Block;
   participant?: ParticipantSummary;
   disabled?: boolean;
+  viewContext?: 'participant' | 'monitor' | 'manage';
 }
 
 export default function ExperienceBlockContainer({
   block,
   participant,
   disabled = false,
+  viewContext = 'participant',
 }: ExperienceBlockContainerProps) {
   if (!block.payload) {
     return <p>Party's over, everyone go home.</p>;
@@ -39,6 +41,7 @@ export default function ExperienceBlockContainer({
           blockId={block.id}
           responses={block.responses}
           disabled={disabled}
+          viewContext={viewContext}
         />
       );
     case BlockKind.QUESTION:
@@ -48,6 +51,7 @@ export default function ExperienceBlockContainer({
           responses={block.responses}
           {...block.payload}
           disabled={disabled}
+          viewContext={viewContext}
         />
       );
     case BlockKind.MULTISTEP_FORM:
@@ -57,6 +61,7 @@ export default function ExperienceBlockContainer({
           responses={block.responses}
           {...block.payload}
           disabled={disabled}
+          viewContext={viewContext}
         />
       );
     case BlockKind.ANNOUNCEMENT:

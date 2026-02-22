@@ -1,7 +1,8 @@
 import { FormEvent, useState } from 'react';
 
-import { Button, Option } from '@cctv/core';
-import { useSubmitPollResponse } from '@cctv/hooks';
+import { Button } from '@cctv/core/Button/Button';
+import { Option } from '@cctv/core/Option/Option';
+import { useSubmitPollResponse } from '@cctv/hooks/useSubmitPollResponse';
 import { PollPayload } from '@cctv/types';
 import { getFormData } from '@cctv/utils';
 
@@ -19,6 +20,7 @@ interface PollProps extends PollPayload {
     aggregate?: Record<string, number>;
   };
   disabled?: boolean;
+  viewContext?: 'participant' | 'monitor' | 'manage';
 }
 
 export default function Poll({
@@ -28,6 +30,7 @@ export default function Poll({
   blockId,
   responses,
   disabled = false,
+  viewContext = 'participant',
 }: PollProps) {
   const [submittedValue, setSubmittedValue] = useState<string[]>([]);
   const { submitPollResponse, isLoading, error } = useSubmitPollResponse();
@@ -75,6 +78,14 @@ export default function Poll({
       <div className={styles.submittedValue}>
         <p className={styles.legend}>{question}</p>
         <p className={styles.value}>{displayValue}</p>
+      </div>
+    );
+  }
+
+  if (viewContext === 'monitor') {
+    return (
+      <div className={styles.submittedValue}>
+        <p className={styles.legend}>{question}</p>
       </div>
     );
   }

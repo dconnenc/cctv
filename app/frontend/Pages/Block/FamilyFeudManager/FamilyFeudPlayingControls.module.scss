@@ -1,0 +1,103 @@
+.container {
+  border: 1px solid hsl(var(--border));
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 1rem;
+  background: hsl(var(--muted));
+  border-bottom: 1px solid hsl(var(--border));
+}
+
+.title {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: hsl(var(--foreground));
+}
+
+.progress {
+  font-size: 0.75rem;
+  color: hsl(var(--muted-foreground));
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  background: hsl(var(--card));
+}
+
+.currentQuestion {
+  padding: var(--space-sm);
+  margin: var(--space-sm);
+  background: hsl(var(--background));
+  border-radius: 6px;
+  border: 1px solid hsl(var(--border));
+}
+
+.questionText {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: hsl(var(--foreground));
+}
+
+.buckets {
+  display: flex;
+  flex-direction: column;
+  padding: 0 var(--space-sm);
+  gap: var(--space-sm);
+}
+
+.bucketRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-sm);
+  background: hsl(var(--background));
+  border-radius: 6px;
+  border: 1px solid hsl(var(--border));
+}
+
+.bucketInfo {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  flex: 1;
+}
+
+.bucketName {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: hsl(var(--foreground));
+}
+
+.percentage {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: hsl(var(--primary));
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  margin: var(--space-sm);
+  background-color: hsl(var(--muted));
+  border-radius: 8px;
+}
+
+.actions button {
+  flex: 1;
+}
+
+.error {
+  padding: var(--space-sm);
+  color: hsl(var(--destructive));
+  text-align: center;
+}

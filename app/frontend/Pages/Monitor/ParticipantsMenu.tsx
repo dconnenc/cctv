@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 
 import { ParticipantsList } from '@cctv/components';
-import { useExperience } from '@cctv/contexts';
+import { useExperience } from '@cctv/contexts/ExperienceContext';
 import { ExperienceParticipant } from '@cctv/types';
 
 import styles from './ParticipantsMenu.module.scss';

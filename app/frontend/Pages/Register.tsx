@@ -2,9 +2,10 @@ import { ChangeEvent, FormEvent, KeyboardEvent, useEffect, useState } from 'reac
 
 import { useParams } from 'react-router-dom';
 
-import { useUser } from '@cctv/contexts';
-import { Button } from '@cctv/core';
-import { useGet, useRegisterExperience } from '@cctv/hooks';
+import { useUser } from '@cctv/contexts/UserContext';
+import { Button } from '@cctv/core/Button/Button';
+import { useGet } from '@cctv/hooks/useGet';
+import { useRegisterExperience } from '@cctv/hooks/useRegisterExperience';
 
 import styles from './Register.module.scss';
 
@@ -39,8 +40,8 @@ export default function Register() {
     }
   }, [user]);
 
-  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+  const handleSubmit = async (e?: FormEvent<HTMLFormElement>) => {
+    e?.preventDefault();
     await registerExperience({ email, participantName, isAuthenticated });
   };
 
@@ -60,7 +61,8 @@ export default function Register() {
 
   const handleKeyPress = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
-      handleSubmit(e as any);
+      e.preventDefault();
+      handleSubmit();
     }
   };
 
@@ -73,7 +75,7 @@ export default function Register() {
       <form className={styles.form} onSubmit={handleSubmit}>
         {!isAuthenticated && (
           <input
-            className="join-input"
+            className={styles.input}
             type="email"
             placeholder="Your Email"
             value={email}
@@ -84,7 +86,7 @@ export default function Register() {
           />
         )}
         <input
-          className="join-input"
+          className={styles.input}
           type="text"
           placeholder="Your Name"
           value={participantName}

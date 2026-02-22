@@ -3,18 +3,15 @@ import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { LobbyAvatarEditor } from '@cctv/components';
-import { useExperience, useUser } from '@cctv/contexts';
+import { useExperience } from '@cctv/contexts/ExperienceContext';
+import { useUser } from '@cctv/contexts/UserContext';
 
 import styles from './Experience.module.scss';
 
 export default function Avatar() {
   const navigate = useNavigate();
   const { isAdmin } = useUser();
-  const { experience, participant, code, isLoading, error } = useExperience();
-
-  const participants = experience?.participants || [];
-  const currentFullParticipant = participants.find((p) => p.user_id === participant?.user_id);
-  const participantAvatar = currentFullParticipant?.avatar?.image;
+  const { experience, code, isLoading, error } = useExperience();
 
   useEffect(() => {
     if (isAdmin) {

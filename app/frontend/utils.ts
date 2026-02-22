@@ -33,13 +33,38 @@ export function qaLogger(output: string) {
 }
 
 export const getJWTKey = (code: string) => `experience_jwt_${code}`;
-export const getStoredJWT = (code: string) => localStorage.getItem(getJWTKey(code));
+
+const jwtCache = new Map<string, string | null>();
+
+export const getStoredJWT = (code: string) => {
+  const key = getJWTKey(code);
+  if (jwtCache.has(key)) return jwtCache.get(key) ?? null;
+  const val = localStorage.getItem(key);
+  jwtCache.set(key, val);
+  return val;
+};
 
 export const getAdminJWTKey = (code: string) => `experience_admin_jwt_${code}`;
-export const getStoredAdminJWT = (code: string) => localStorage.getItem(getAdminJWTKey(code));
-export const setStoredAdminJWT = (code: string, jwt: string) =>
-  localStorage.setItem(getAdminJWTKey(code), jwt);
-export const removeStoredAdminJWT = (code: string) => localStorage.removeItem(getAdminJWTKey(code));
+
+export const getStoredAdminJWT = (code: string) => {
+  const key = getAdminJWTKey(code);
+  if (jwtCache.has(key)) return jwtCache.get(key) ?? null;
+  const val = localStorage.getItem(key);
+  jwtCache.set(key, val);
+  return val;
+};
+
+export const setStoredAdminJWT = (code: string, jwt: string) => {
+  const key = getAdminJWTKey(code);
+  localStorage.setItem(key, jwt);
+  jwtCache.set(key, jwt);
+};
+
+export const removeStoredAdminJWT = (code: string) => {
+  const key = getAdminJWTKey(code);
+  localStorage.removeItem(key);
+  jwtCache.delete(key);
+};
 
 export const clearAllExperienceJWTs = () => {
   const keysToRemove: string[] = [];
@@ -51,7 +76,10 @@ export const clearAllExperienceJWTs = () => {
     }
   }
 
-  keysToRemove.forEach((key) => localStorage.removeItem(key));
+  keysToRemove.forEach((key) => {
+    localStorage.removeItem(key);
+    jwtCache.delete(key);
+  });
 };
 
 export function cn(...inputs: ClassValue[]) {

@@ -2,7 +2,8 @@ class ExperienceSerializer
   def self.serialize_experience(
     experience,
     visibility_payload: nil,
-    include_participants: false
+    include_participants: false,
+    participants: nil
   )
     blocks = visibility_payload&.dig(:experience, :blocks) || []
     next_block = visibility_payload&.dig(:experience, :next_block)
@@ -23,13 +24,14 @@ class ExperienceSerializer
     }
 
     if include_participants
+      # Use preloaded participants if available, otherwise query
+      all_participants = participants || experience.experience_participants.includes(:user)
+      
       result[:hosts] = serialize_participants(
-        experience.experience_participants.host
+        all_participants.select { |p| p.role == 'host' }
       )
 
-      result[:participants] = serialize_participants(
-        experience.experience_participants
-      )
+      result[:participants] = serialize_participants(all_participants)
     end
 
     result
@@ -38,7 +40,8 @@ class ExperienceSerializer
   def self.serialize_for_api_response(
     experience,
     visibility_payload:,
-    current_participant: nil
+    current_participant: nil,
+    participants: nil
   )
     {
       type: 'success',
@@ -46,7 +49,8 @@ class ExperienceSerializer
       experience: serialize_experience(
         experience,
         visibility_payload: visibility_payload,
-        include_participants: true
+        include_participants: true,
+        participants: participants
       ),
       participant: current_participant ? serialize_participant_summary(current_participant) : nil
     }
@@ -55,12 +59,14 @@ class ExperienceSerializer
   def self.serialize_for_websocket_message(
     experience,
     visibility_payload:,
-    include_participants: false
+    include_participants: false,
+    participants: nil
   )
     serialize_experience(
       experience,
       visibility_payload: visibility_payload,
-      include_participants: include_participants
+      include_participants: include_participants,
+      participants: participants
     )
   end
 

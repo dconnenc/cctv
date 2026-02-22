@@ -1,12 +1,14 @@
 import { ReactNode, createContext, useCallback, useContext, useState } from 'react';
 
-import { useCreateExperienceBlock } from '@cctv/hooks';
+import { useCreateExperienceBlock } from '@cctv/hooks/useCreateExperienceBlock';
 import {
   ApiPayload,
   BlockKind,
   BlockStatus,
   CreateBlockContextValue,
   FormBlockData,
+  MadLibData,
+  ParticipantRole,
   ParticipantSummary,
 } from '@cctv/types';
 
@@ -97,9 +99,10 @@ export function CreateBlockProvider({
         return { kind: BlockKind.FAMILY_FEUD, data: getDefaultFamilyFeudState() };
       case BlockKind.PHOTO_UPLOAD:
         return { kind: BlockKind.PHOTO_UPLOAD, data: getDefaultPhotoUploadState() };
-      default:
-        const exhaustiveCheck: never = blockKind;
-        throw new Error(`Unknown block kind: ${exhaustiveCheck}`);
+      default: {
+        const _exhaust: never = blockKind;
+        throw new Error(`Unknown block kind: ${_exhaust}`);
+      }
     }
   }, []);
 
@@ -107,7 +110,7 @@ export function CreateBlockProvider({
     getDefaultFormData(BlockKind.POLL),
   );
 
-  const [visibleRoles, setVisibleRoles] = useState<string[]>([]);
+  const [visibleRoles, setVisibleRoles] = useState<ParticipantRole[]>([]);
   const [visibleSegmentsText, setVisibleSegmentsText] = useState<string>('');
   const [targetUserIdsText, setTargetUserIdsText] = useState<string>('');
   const [showInLobby, setShowInLobby] = useState<boolean>(false);
@@ -155,9 +158,10 @@ export function CreateBlockProvider({
         case BlockKind.PHOTO_UPLOAD:
           validationError = validatePhotoUpload(blockData.data);
           break;
-        default:
-          // This should never be reached due to exhaustive checking
-          validationError = `Unknown block kind: ${(blockData as any).kind}`;
+        default: {
+          const _exhaust: never = blockData;
+          validationError = `Unknown block kind: ${(_exhaust as FormBlockData).kind}`;
+        }
       }
 
       if (validationError) {
@@ -188,10 +192,11 @@ export function CreateBlockProvider({
         case BlockKind.PHOTO_UPLOAD:
           canOpenImmediately = canPhotoUploadOpenImmediately(blockData.data, participants);
           break;
-        default:
-          // This should never be reached due to exhaustive checking
+        default: {
+          const _exhaust: never = blockData;
           canOpenImmediately = false;
-          console.error(`Unknown block kind: ${(blockData as any).kind}`);
+          console.error(`Unknown block kind: ${(_exhaust as FormBlockData).kind}`);
+        }
       }
 
       if (status === 'open' && !canOpenImmediately) {
@@ -247,10 +252,11 @@ export function CreateBlockProvider({
             data: processPhotoUploadBeforeSubmit(blockData.data, status, participants),
           };
           break;
-        default:
-          // This should never be reached due to exhaustive checking
-          processedFormData = blockData as any;
-          console.error(`Unknown block kind: ${(blockData as any).kind}`);
+        default: {
+          const _exhaust: never = blockData;
+          processedFormData = _exhaust as FormBlockData;
+          console.error(`Unknown block kind: ${(_exhaust as FormBlockData).kind}`);
+        }
       }
 
       let payload: ApiPayload;
@@ -279,9 +285,10 @@ export function CreateBlockProvider({
         case BlockKind.PHOTO_UPLOAD:
           payload = buildPhotoUploadPayload(processedFormData.data);
           break;
-        default:
-          // This should never be reached due to exhaustive checking
-          throw new Error(`Unknown block kind: ${(processedFormData as any).kind}`);
+        default: {
+          const _exhaust: never = processedFormData;
+          throw new Error(`Unknown block kind: ${(_exhaust as FormBlockData).kind}`);
+        }
       }
 
       const visible_to_segments = visibleSegmentsText
@@ -293,7 +300,27 @@ export function CreateBlockProvider({
         .map((s) => s.trim())
         .filter(Boolean);
 
-      let submitPayload: any = {
+      const submitPayload: {
+        kind: BlockKind;
+        payload: ApiPayload;
+        visible_to_roles: ParticipantRole[];
+        visible_to_segments: string[];
+        target_user_ids: string[];
+        status: BlockStatus;
+        open_immediately: boolean;
+        show_in_lobby: boolean;
+        variables?: Array<{
+          key: string;
+          label: string;
+          datatype: string;
+          required: boolean;
+          source?:
+            | { type: string; participant_id: string }
+            | { kind: string; question: string; input_type: string };
+        }>;
+        variable_bindings?: Array<{ variable_id: string; source_block_id: string }>;
+        questions?: Array<{ payload: Record<string, string> }>;
+      } = {
         kind: blockData.kind,
         payload,
         visible_to_roles: visibleRoles,
@@ -305,8 +332,8 @@ export function CreateBlockProvider({
       };
 
       if (blockData.kind === BlockKind.MAD_LIB) {
-        const internalData = processedFormData.data as any;
-        const variables = (internalData.variables || []).map((v: any) => ({
+        const internalData = processedFormData.data as MadLibData;
+        const variables = (internalData.variables ?? []).map((v) => ({
           key: v.id,
           label: v.name,
           datatype: v.dataType === 'number' ? 'number' : 'string',

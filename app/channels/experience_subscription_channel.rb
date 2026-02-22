@@ -145,29 +145,42 @@ class ExperienceSubscriptionChannel < ApplicationCable::Channel
       "user=#{@user&.id}, participant=#{@participant&.id}, is_admin=#{@is_admin}"
     )
 
+    # Preload all data to avoid N+1 queries
+    preloaded_data = preload_experience_data
+
     case @view_type
     when 'monitor'
       transmit(
         WebsocketMessageService.experience_state(
           @experience,
           visibility_payload: Experiences::Visibility.payload_for_monitor(
-            experience: @experience
+            experience: @experience,
+            blocks: preloaded_data[:blocks],
+            participants: preloaded_data[:participants],
+            submissions_cache: preloaded_data[:submissions_cache]
           ),
           logical_stream: "monitor_view",
           participant_id: nil,
-          include_participants: true
+          include_participants: true,
+          participants: preloaded_data[:participants]
         )
       )
     when 'impersonation'
       transmit(
         WebsocketMessageService.experience_state(
           @experience,
-          visibility_payload: payload_for_participant(
-            @impersonated_participant.user
+          visibility_payload: Experiences::Visibility.payload_for_user(
+            experience: @experience,
+            user: @impersonated_participant.user,
+            participant: @impersonated_participant,
+            blocks: preloaded_data[:blocks],
+            submissions_cache: preloaded_data[:submissions_cache],
+            participants_by_user_id: preloaded_data[:participants_by_user_id]
           ),
           logical_stream: "participant_#{@impersonated_participant.id}",
           participant_id: @impersonated_participant.id,
-          include_participants: true
+          include_participants: true,
+          participants: preloaded_data[:participants]
         )
       )
     else
@@ -188,11 +201,16 @@ class ExperienceSubscriptionChannel < ApplicationCable::Channel
             @experience,
             visibility_payload: Experiences::Visibility.payload_for_user(
               experience: @experience,
-              user: @user
+              user: @user,
+              participant: @participant,
+              blocks: preloaded_data[:blocks],
+              submissions_cache: preloaded_data[:submissions_cache],
+              participants_by_user_id: preloaded_data[:participants_by_user_id]
             ),
             logical_stream: "admin_view",
             participant_id: nil,
-            include_participants: true
+            include_participants: true,
+            participants: preloaded_data[:participants]
           )
         )
       else
@@ -219,11 +237,19 @@ class ExperienceSubscriptionChannel < ApplicationCable::Channel
         transmit(
           WebsocketMessageService.experience_state(
             @experience,
-            visibility_payload: payload,
+            visibility_payload: Experiences::Visibility.payload_for_user(
+              experience: @experience,
+              user: @user,
+              participant: @participant,
+              blocks: preloaded_data[:blocks],
+              submissions_cache: preloaded_data[:submissions_cache],
+              participants_by_user_id: preloaded_data[:participants_by_user_id]
+            ),
             logical_stream: "participant_#{@participant.id}",
             participant_id: @participant.id,
             participant: participant_summary,
-            include_participants: true
+            include_participants: true,
+            participants: preloaded_data[:participants]
           )
         )
       end
@@ -247,16 +273,114 @@ class ExperienceSubscriptionChannel < ApplicationCable::Channel
       role: @participant.role
     }
 
+    # Preload all data to avoid N+1 queries
+    preloaded_data = preload_experience_data
+
     transmit(
       WebsocketMessageService.experience_state(
         @experience,
-        visibility_payload: payload_for_participant(@user),
+        visibility_payload: Experiences::Visibility.payload_for_user(
+          experience: @experience,
+          user: @user,
+          participant: @participant,
+          blocks: preloaded_data[:blocks],
+          submissions_cache: preloaded_data[:submissions_cache],
+          participants_by_user_id: preloaded_data[:participants_by_user_id]
+        ),
         logical_stream: "participant_#{@participant.id}",
         participant_id: @participant.id,
         participant: participant_summary,
-        include_participants: true
+        include_participants: true,
+        participants: preloaded_data[:participants]
       )
     )
+  end
+
+  def preload_experience_data
+    # Load all blocks with all associations
+    blocks = @experience.experience_blocks
+      .includes(
+        :experience_poll_submissions,
+        :experience_question_submissions,
+        :experience_multistep_form_submissions,
+        :experience_mad_lib_submissions,
+        :child_links,
+        :parent_links,
+        children: [
+          :experience_poll_submissions,
+          :experience_question_submissions,
+          :experience_multistep_form_submissions,
+          :experience_mad_lib_submissions,
+          :child_links,
+          :parent_links
+        ],
+        parents: [],
+        variables: { bindings: :source_block }
+      )
+      .order(position: :asc)
+      .to_a
+
+    # Load all participants with users
+    participants = @experience.experience_participants.includes(:user).to_a
+
+    # Build in-memory cache of submissions
+    submissions_cache = build_submissions_cache(blocks)
+
+    # Build participant lookup by user_id
+    participants_by_user_id = participants.index_by(&:user_id)
+
+    {
+      blocks: blocks,
+      participants: participants,
+      submissions_cache: submissions_cache,
+      participants_by_user_id: participants_by_user_id
+    }
+  end
+
+  def build_submissions_cache(blocks)
+    cache = {}
+
+    blocks.each do |block|
+      cache[block.id] = {}
+
+      block.experience_poll_submissions.each do |submission|
+        cache[block.id][submission.user_id] = submission
+      end
+
+      block.experience_question_submissions.each do |submission|
+        cache[block.id][submission.user_id] = submission
+      end
+
+      block.experience_multistep_form_submissions.each do |submission|
+        cache[block.id][submission.user_id] = submission
+      end
+
+      block.experience_mad_lib_submissions.each do |submission|
+        cache[block.id][submission.user_id] = submission
+      end
+
+      block.children.each do |child|
+        cache[child.id] ||= {}
+
+        child.experience_poll_submissions.each do |submission|
+          cache[child.id][submission.user_id] = submission
+        end
+
+        child.experience_question_submissions.each do |submission|
+          cache[child.id][submission.user_id] = submission
+        end
+
+        child.experience_multistep_form_submissions.each do |submission|
+          cache[child.id][submission.user_id] = submission
+        end
+
+        child.experience_mad_lib_submissions.each do |submission|
+          cache[child.id][submission.user_id] = submission
+        end
+      end
+    end
+
+    cache
   end
 
   def find_experience_or_reject
@@ -382,7 +506,14 @@ class ExperienceSubscriptionChannel < ApplicationCable::Channel
   end
 
   def payload_for_participant(user)
-    Experiences::Visibility.payload_for_user(experience: @experience, user: user)
+    preloaded_data = preload_experience_data
+    Experiences::Visibility.payload_for_user(
+      experience: @experience,
+      user: user,
+      blocks: preloaded_data[:blocks],
+      submissions_cache: preloaded_data[:submissions_cache],
+      participants_by_user_id: preloaded_data[:participants_by_user_id]
+    )
   end
 
   def log_stream_subscription

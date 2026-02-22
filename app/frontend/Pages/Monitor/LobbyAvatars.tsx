@@ -2,8 +2,8 @@ import { useEffect, useMemo, useReducer, useRef, useState } from 'react';
 
 import { Image as KonvaImage, Layer, Line, Stage } from 'react-konva';
 
-import { useExperience } from '@cctv/contexts';
-import { ExperienceParticipant } from '@cctv/types';
+import { useExperience } from '@cctv/contexts/ExperienceContext';
+import { DrawingUpdateMessage, ExperienceParticipant } from '@cctv/types';
 
 import styles from './LobbyAvatars.module.scss';
 
@@ -36,7 +36,7 @@ function AvatarSprite({
   size: number;
 }) {
   const img = useHtmlImage(src);
-  if (!img) return null as any;
+  if (!img) return null;
   return <KonvaImage key={id} image={img} x={x} y={y} width={size} height={size} />;
 }
 
@@ -69,9 +69,15 @@ export default function LobbyAvatars() {
     strokes: { [participantId: string]: Stroke[] };
     positions: { [participantId: string]: { x: number; y: number } };
   };
+  type DrawingData =
+    | { operation: 'clear_all' }
+    | { operation: 'stroke_started'; data?: { points: number[]; color: string; width: number } }
+    | { operation: 'stroke_points_appended'; data?: { points: number[] } }
+    | { operation: 'stroke_ended' }
+    | { operation: 'avatar_position'; data?: { position: { x: number; y: number } } };
   type Action =
     | { type: 'reset' }
-    | { type: 'drawing_update'; participant_id: string; operation: string; data?: any };
+    | ({ type: 'drawing_update'; participant_id: string } & DrawingData);
 
   const [drawState, dispatch] = useReducer(
     (state: State, action: Action): State => {
@@ -79,52 +85,58 @@ export default function LobbyAvatars() {
         case 'reset':
           return { strokes: {}, positions: {} };
         case 'drawing_update': {
-          const { participant_id, operation, data } = action as any;
+          const { participant_id, operation } = action;
           const existing = state.strokes[participant_id] || [];
-          if (operation === 'clear_all') {
-            return { strokes: {}, positions: {} };
-          } else if (operation === 'stroke_started') {
-            const stroke: Stroke = {
-              points: data?.points || [],
-              color: data?.color || '#000',
-              width: data?.width || 4,
-            };
-            return {
-              ...state,
-              strokes: { ...state.strokes, [participant_id]: [...existing, stroke] },
-              positions: state.positions,
-            };
-          } else if (operation === 'stroke_points_appended') {
-            const next = existing.slice();
-            if (next.length === 0) return state;
-            const s = { ...next[next.length - 1] };
-            s.points = [...s.points, ...(data?.points || [])];
-            next[next.length - 1] = s;
-            return {
-              ...state,
-              strokes: { ...state.strokes, [participant_id]: next },
-              positions: state.positions,
-            };
-          } else if (operation === 'stroke_ended') {
-            const next = existing.slice();
-            if (next.length === 0) return state;
-            const s = { ...next[next.length - 1], ended: true };
-            next[next.length - 1] = s;
-            return {
-              ...state,
-              strokes: { ...state.strokes, [participant_id]: next },
-              positions: state.positions,
-            };
-          } else if (operation === 'avatar_position') {
-            const pos = (data && data.position) || undefined;
-            if (!pos) return state;
-            return {
-              ...state,
-              strokes: state.strokes,
-              positions: { ...state.positions, [participant_id]: pos },
-            };
+          switch (operation) {
+            case 'clear_all':
+              return { strokes: {}, positions: {} };
+            case 'stroke_started': {
+              const stroke: Stroke = {
+                points: action.data?.points || [],
+                color: action.data?.color || '#000',
+                width: action.data?.width || 4,
+              };
+              return {
+                ...state,
+                strokes: { ...state.strokes, [participant_id]: [...existing, stroke] },
+                positions: state.positions,
+              };
+            }
+            case 'stroke_points_appended': {
+              const next = existing.slice();
+              if (next.length === 0) return state;
+              const s = { ...next[next.length - 1] };
+              s.points = [...s.points, ...(action.data?.points || [])];
+              next[next.length - 1] = s;
+              return {
+                ...state,
+                strokes: { ...state.strokes, [participant_id]: next },
+                positions: state.positions,
+              };
+            }
+            case 'stroke_ended': {
+              const next = existing.slice();
+              if (next.length === 0) return state;
+              const s = { ...next[next.length - 1], ended: true };
+              next[next.length - 1] = s;
+              return {
+                ...state,
+                strokes: { ...state.strokes, [participant_id]: next },
+                positions: state.positions,
+              };
+            }
+            case 'avatar_position': {
+              const pos = action.data?.position;
+              if (!pos) return state;
+              return {
+                ...state,
+                strokes: state.strokes,
+                positions: { ...state.positions, [participant_id]: pos },
+              };
+            }
+            default:
+              return state;
           }
-          return state;
         }
         default:
           return state;
@@ -135,15 +147,13 @@ export default function LobbyAvatars() {
 
   useEffect(() => {
     if (!registerLobbyDrawingDispatch || !unregisterLobbyDrawingDispatch) return;
-    const handler = (msg: any) => {
-      if (msg?.type === 'drawing_update' && msg?.participant_id) {
-        dispatch({
-          type: 'drawing_update',
-          participant_id: msg.participant_id,
-          operation: msg.operation,
-          data: msg.data,
-        });
-      }
+    const handler = (msg: DrawingUpdateMessage) => {
+      dispatch({
+        type: 'drawing_update',
+        participant_id: msg.participant_id,
+        operation: msg.operation,
+        data: msg.data,
+      } as Action);
     };
     registerLobbyDrawingDispatch(handler);
     return () => unregisterLobbyDrawingDispatch();

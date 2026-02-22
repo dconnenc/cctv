@@ -1,4 +1,4 @@
-import { ReactNode } from 'react';
+import { ReactNode, memo } from 'react';
 
 import styles from './Table.module.scss';
 
@@ -14,6 +14,30 @@ export interface TableProps<T extends object> {
   data: T[];
   emptyState?: ReactNode;
 }
+
+function TableRow<T extends object>({
+  rowData,
+  columns,
+  rowIndex,
+}: {
+  rowData: T;
+  columns: Column<T>[];
+  rowIndex: number;
+}) {
+  const row = columns.map(
+    (column) => column.Cell?.(rowData) ?? (rowData as T)[column.key as keyof T],
+  );
+  const rowKey = 'row-' + rowIndex;
+  return (
+    <tr>
+      {row.map((cell, cellIndex) => (
+        <td key={rowKey + '-cell-' + cellIndex}>{cell as ReactNode}</td>
+      ))}
+    </tr>
+  );
+}
+
+const MemoizedTableRow = memo(TableRow) as typeof TableRow;
 
 export function Table<T extends object>({ columns, data, emptyState }: TableProps<T>) {
   if (!data?.length) {
@@ -36,18 +60,14 @@ export function Table<T extends object>({ columns, data, emptyState }: TableProp
           </tr>
         </thead>
         <tbody>
-          {data.map((data, index) => {
-            const row = columns.map((column) => column.Cell?.(data) || data[column.key as keyof T]);
-            const rowKey = 'row-' + index;
-
-            return (
-              <tr key={'row:' + index}>
-                {row.map((cell, cellIndex) => {
-                  return <td key={rowKey + '-cell-' + cellIndex}>{cell as ReactNode}</td>;
-                })}
-              </tr>
-            );
-          })}
+          {data.map((rowData, index) => (
+            <MemoizedTableRow
+              key={'row:' + index}
+              rowData={rowData}
+              columns={columns}
+              rowIndex={index}
+            />
+          ))}
         </tbody>
       </table>
     </div>

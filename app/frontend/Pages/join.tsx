@@ -1,11 +1,12 @@
-import { FormEvent, useId } from 'react';
+import { ChangeEvent, FormEvent, useState } from 'react';
 
 import { useSearchParams } from 'react-router-dom';
 
-import { Button, TextInput } from '@cctv/core';
-import { useGet } from '@cctv/hooks';
+import { Button } from '@cctv/core/Button/Button';
+import { useGet } from '@cctv/hooks/useGet';
 import { useJoinExperience } from '@cctv/hooks/useJoinExperience';
-import { getFormData } from '@cctv/utils';
+
+import styles from './Join.module.scss';
 
 interface RegistrationInfoResponse {
   type: 'success' | 'error';
@@ -21,43 +22,54 @@ interface RegistrationInfoResponse {
 
 export default function Join() {
   const [searchParams] = useSearchParams();
+  const [code, setCode] = useState('');
 
-  // Get slug from URL query params (e.g., ?code=secret-code)
   const slugFromUrl = searchParams.get('code');
 
-  // Fetch the actual experience code from the slug
   const { data: registrationInfo } = useGet<RegistrationInfoResponse>({
     url: `/api/experiences/${slugFromUrl}/registration_info`,
     enabled: !!slugFromUrl,
   });
 
-  // Use the actual code from the API, not the slug
-  const code = registrationInfo?.experience?.code;
+  const { joinExperience, isLoading, error, setError } = useJoinExperience();
 
-  const id = useId();
-  const { joinExperience, isLoading, error } = useJoinExperience();
+  const actualCode = code || registrationInfo?.experience?.code || '';
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const formData = getFormData<{ code?: string }>(e.currentTarget);
-    const code = formData.code;
+    await joinExperience(actualCode);
+  };
 
-    await joinExperience(code || '');
+  const handleCodeChange = (e: ChangeEvent<HTMLInputElement>) => {
+    setCode(e.target.value);
+    if (error) {
+      setError('');
+    }
   };
 
   return (
     <section className="page flex-centered">
-      <label htmlFor={id} className="hero-subtitle">
-        Enter the secret code:
-      </label>
-      <form onSubmit={handleSubmit}>
-        <TextInput defaultValue={code} id={id} name="code" disabled={isLoading} maxLength={50} />
-        {error && (
-          <p className="error-message" style={{ marginTop: '8px' }}>
-            {error}
-          </p>
-        )}
-        <Button className="join-submit" type="submit" loading={isLoading} loadingText="Joining...">
+      <div className={styles.header}>
+        {registrationInfo?.experience?.name && <p>{registrationInfo.experience.name}</p>}
+        <p>Enter the secret code:</p>
+      </div>
+      <form className={styles.form} onSubmit={handleSubmit}>
+        <input
+          type="text"
+          placeholder="Secret Code"
+          value={actualCode}
+          onChange={handleCodeChange}
+          disabled={isLoading}
+          maxLength={50}
+        />
+        {error && <p className={`error-message ${styles.error}`}>{error}</p>}
+        <Button
+          className="join-submit"
+          type="submit"
+          loading={isLoading}
+          loadingText="Joining..."
+          disabled={!actualCode.trim()}
+        >
           Submit
         </Button>
       </form>

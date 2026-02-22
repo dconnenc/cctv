@@ -139,7 +139,89 @@ RSpec.describe Experiences::Orchestrator do
     end
   end
 
+  describe "#open_block!" do
+    let(:participant_role) { ExperienceParticipant.roles[:host] }
 
+    subject do
+      described_class.new(actor: user, experience: experience).open_block!(block.id)
+    end
+
+    context "when opening a family feud block with child question blocks" do
+      let!(:block) do
+        create(
+          :experience_block,
+          :family_feud,
+          experience: experience,
+          status: :hidden,
+          question_count: 2
+        )
+      end
+
+      it "opens the parent block and all child question blocks" do
+        subject
+
+        expect(block.reload.status).to eq("open")
+        expect(block.child_blocks.count).to eq(2)
+        expect(block.child_blocks.map(&:status)).to all(eq("open"))
+      end
+    end
+  end
+
+  describe "#close_block!" do
+    let(:participant_role) { ExperienceParticipant.roles[:host] }
+
+    subject do
+      described_class.new(actor: user, experience: experience).close_block!(block.id)
+    end
+
+    context "when closing a parent block with children" do
+      let!(:block) do
+        create(
+          :experience_block,
+          :family_feud,
+          experience: experience,
+          status: :open,
+          question_count: 2
+        )
+      end
+
+      it "closes the parent block and all child blocks" do
+        subject
+
+        expect(block.reload.status).to eq("closed")
+        expect(block.child_blocks.count).to eq(2)
+        expect(block.child_blocks.map(&:status)).to all(eq("closed"))
+      end
+    end
+  end
+
+  describe "#hide_block!" do
+    let(:participant_role) { ExperienceParticipant.roles[:host] }
+
+    subject do
+      described_class.new(actor: user, experience: experience).hide_block!(block.id)
+    end
+
+    context "when hiding a parent block with children" do
+      let!(:block) do
+        create(
+          :experience_block,
+          :family_feud,
+          experience: experience,
+          status: :open,
+          question_count: 2
+        )
+      end
+
+      it "hides the parent block and all child blocks" do
+        subject
+
+        expect(block.reload.status).to eq("hidden")
+        expect(block.child_blocks.count).to eq(2)
+        expect(block.child_blocks.map(&:status)).to all(eq("hidden"))
+      end
+    end
+  end
 
   describe "#add_block!" do
     let(:kind) { "poll" }

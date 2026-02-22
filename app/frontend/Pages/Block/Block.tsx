@@ -1,8 +1,8 @@
-import { Params, useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 
 import { DialogDescription, DialogTitle } from '@cctv/components/ui/dialog';
-import { useExperience } from '@cctv/contexts';
-import { BlockKind } from '@cctv/types';
+import { useExperience } from '@cctv/contexts/ExperienceContext';
+import { BlockKind, type Block as BlockType } from '@cctv/types';
 
 import FamilyFeudManager from './FamilyFeudManager/FamilyFeudManager';
 
@@ -35,10 +35,9 @@ export default function Block({ blockId }: BlockProps) {
   let block = experience.blocks.find((b) => b.id === blockId);
 
   if (!block) {
-    // Search in children of all blocks
     for (const parentBlock of experience.blocks) {
-      if ((parentBlock as any).children) {
-        block = (parentBlock as any).children.find((child: any) => child.id === blockId);
+      if (parentBlock.children?.length) {
+        block = parentBlock.children.find((child: BlockType) => child.id === blockId);
         if (block) break;
       }
     }

@@ -1,6 +1,16 @@
 import { useCallback, useEffect, useState } from 'react';
 
-import { useExperience } from '@cctv/contexts';
+import { useExperience } from '@cctv/contexts/ExperienceContext';
+
+interface AutoCategorizeBucket {
+  id: string;
+  name: string;
+  answer_ids: string[];
+}
+
+interface AutoCategorizeResult {
+  buckets: AutoCategorizeBucket[];
+}
 
 export function useFamilyFeudBuckets(blockId?: string, dispatch?: (action: any) => void) {
   const { code, experienceFetch, registerFamilyFeudDispatch, unregisterFamilyFeudDispatch } =
@@ -19,7 +29,7 @@ export function useFamilyFeudBuckets(blockId?: string, dispatch?: (action: any) 
   }, [blockId, dispatch, registerFamilyFeudDispatch, unregisterFamilyFeudDispatch]);
 
   const addBucket = useCallback(
-    async (blockId: string, name: string = 'New Bucket') => {
+    async (blockId: string, questionId: string, name: string = 'New Bucket') => {
       if (!code) {
         setError('Missing experience code');
         return null;
@@ -32,7 +42,7 @@ export function useFamilyFeudBuckets(blockId?: string, dispatch?: (action: any) 
       try {
         const res = await experienceFetch(url, {
           method: 'POST',
-          body: JSON.stringify({ name }),
+          body: JSON.stringify({ question_id: questionId, name }),
         });
 
         const data = await res.json();
@@ -42,9 +52,9 @@ export function useFamilyFeudBuckets(blockId?: string, dispatch?: (action: any) 
           return null;
         }
         return data.data.bucket;
-      } catch (e: any) {
+      } catch (e: unknown) {
         const msg =
-          e?.message === 'Authentication expired'
+          e instanceof Error && e.message === 'Authentication expired'
             ? 'Authentication expired'
             : 'Connection error. Please try again.';
         setError(msg);
@@ -57,7 +67,7 @@ export function useFamilyFeudBuckets(blockId?: string, dispatch?: (action: any) 
   );
 
   const renameBucket = useCallback(
-    async (blockId: string, bucketId: string, name: string) => {
+    async (blockId: string, questionId: string, bucketId: string, name: string) => {
       if (!code) {
         setError('Missing experience code');
         return null;
@@ -70,7 +80,7 @@ export function useFamilyFeudBuckets(blockId?: string, dispatch?: (action: any) 
       try {
         const res = await experienceFetch(url, {
           method: 'PATCH',
-          body: JSON.stringify({ name }),
+          body: JSON.stringify({ question_id: questionId, name }),
         });
 
         const data = await res.json();
@@ -80,9 +90,9 @@ export function useFamilyFeudBuckets(blockId?: string, dispatch?: (action: any) 
           return false;
         }
         return true;
-      } catch (e: any) {
+      } catch (e: unknown) {
         const msg =
-          e?.message === 'Authentication expired'
+          e instanceof Error && e.message === 'Authentication expired'
             ? 'Authentication expired'
             : 'Connection error. Please try again.';
         setError(msg);
@@ -95,7 +105,7 @@ export function useFamilyFeudBuckets(blockId?: string, dispatch?: (action: any) 
   );
 
   const deleteBucket = useCallback(
-    async (blockId: string, bucketId: string) => {
+    async (blockId: string, questionId: string, bucketId: string) => {
       if (!code) {
         setError('Missing experience code');
         return null;
@@ -108,6 +118,7 @@ export function useFamilyFeudBuckets(blockId?: string, dispatch?: (action: any) 
       try {
         const res = await experienceFetch(url, {
           method: 'DELETE',
+          body: JSON.stringify({ question_id: questionId }),
         });
 
         const data = await res.json();
@@ -117,9 +128,9 @@ export function useFamilyFeudBuckets(blockId?: string, dispatch?: (action: any) 
           return false;
         }
         return true;
-      } catch (e: any) {
+      } catch (e: unknown) {
         const msg =
-          e?.message === 'Authentication expired'
+          e instanceof Error && e.message === 'Authentication expired'
             ? 'Authentication expired'
             : 'Connection error. Please try again.';
         setError(msg);
@@ -132,7 +143,7 @@ export function useFamilyFeudBuckets(blockId?: string, dispatch?: (action: any) 
   );
 
   const assignAnswer = useCallback(
-    async (blockId: string, answerId: string, bucketId: string | null) => {
+    async (blockId: string, questionId: string, answerId: string, bucketId: string | null) => {
       if (!code) {
         setError('Missing experience code');
         return null;
@@ -145,7 +156,7 @@ export function useFamilyFeudBuckets(blockId?: string, dispatch?: (action: any) 
       try {
         const res = await experienceFetch(url, {
           method: 'PATCH',
-          body: JSON.stringify({ bucket_id: bucketId }),
+          body: JSON.stringify({ question_id: questionId, bucket_id: bucketId }),
         });
 
         const data = await res.json();
@@ -155,9 +166,9 @@ export function useFamilyFeudBuckets(blockId?: string, dispatch?: (action: any) 
           return false;
         }
         return true;
-      } catch (e: any) {
+      } catch (e: unknown) {
         const msg =
-          e?.message === 'Authentication expired'
+          e instanceof Error && e.message === 'Authentication expired'
             ? 'Authentication expired'
             : 'Connection error. Please try again.';
         setError(msg);
@@ -169,5 +180,52 @@ export function useFamilyFeudBuckets(blockId?: string, dispatch?: (action: any) 
     [code, experienceFetch],
   );
 
-  return { addBucket, renameBucket, deleteBucket, assignAnswer, isLoading, error, setError };
+  const autoCategorize = useCallback(
+    async (blockId: string, questionId: string): Promise<AutoCategorizeResult | null> => {
+      if (!code) {
+        setError('Missing experience code');
+        return null;
+      }
+      setIsLoading(true);
+      setError(null);
+
+      const url = `/api/experiences/${encodeURIComponent(code)}/blocks/${encodeURIComponent(blockId)}/family_feud/auto_categorize`;
+
+      try {
+        const res = await experienceFetch(url, {
+          method: 'POST',
+          body: JSON.stringify({ question_id: questionId }),
+        });
+
+        const data = await res.json();
+        if (!res.ok || data?.success === false) {
+          const msg = data?.error || 'Failed to auto-categorize answers';
+          setError(msg);
+          return null;
+        }
+        return data.data as AutoCategorizeResult;
+      } catch (e: unknown) {
+        const msg =
+          e instanceof Error && e.message === 'Authentication expired'
+            ? 'Authentication expired'
+            : 'Connection error. Please try again.';
+        setError(msg);
+        return null;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [code, experienceFetch],
+  );
+
+  return {
+    addBucket,
+    renameBucket,
+    deleteBucket,
+    assignAnswer,
+    autoCategorize,
+    isLoading,
+    error,
+    setError,
+  };
 }

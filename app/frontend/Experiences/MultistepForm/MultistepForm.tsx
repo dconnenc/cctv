@@ -2,7 +2,8 @@ import { FormEvent, useState } from 'react';
 
 import classNames from 'classnames';
 
-import { Button, TextInput } from '@cctv/core';
+import { Button } from '@cctv/core/Button/Button';
+import { TextInput } from '@cctv/core/TextInput/TextInput';
 import { useSubmitMultistepFormResponse } from '@cctv/hooks/useSubmitMultistepFormResponse';
 import { MultistepFormPayload } from '@cctv/types';
 import { getFormData, isNotEmpty } from '@cctv/utils';
@@ -20,6 +21,7 @@ interface MultistepFormProps extends MultistepFormPayload {
     } | null;
   };
   disabled?: boolean;
+  viewContext?: 'participant' | 'monitor' | 'manage';
 }
 
 /** A multistep form experience. Transitions between questions so user only sees one at a time. */
@@ -28,6 +30,7 @@ export default function MultistepForm({
   blockId,
   responses,
   disabled = false,
+  viewContext = 'participant',
 }: MultistepFormProps) {
   const [stepIndex, setStepIndex] = useState(0);
   const [stepErrors, setStepErrors] = useState<Set<string>>(new Set());
@@ -109,6 +112,18 @@ export default function MultistepForm({
         ) : (
           <p className={styles.value}>You have already responded to this form.</p>
         )}
+      </div>
+    );
+  }
+
+  if (viewContext === 'monitor') {
+    return (
+      <div className={styles.submittedValue}>
+        {questions.map((question) => (
+          <div key={question.formKey} className={styles.submittedAnswer}>
+            <p className={styles.legend}>{question.question}</p>
+          </div>
+        ))}
       </div>
     );
   }

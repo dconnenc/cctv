@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 
-import { Button } from '@cctv/core';
+import { Button } from '@cctv/core/Button/Button';
 
 import styles from './AdminNotification.module.scss';
 

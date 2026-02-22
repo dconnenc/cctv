@@ -2,17 +2,15 @@ import { useMemo } from 'react';
 
 import { MoreHorizontal } from 'lucide-react';
 
-import { useExperience } from '@cctv/contexts';
+import { Button } from '@cctv/core/Button/Button';
 import {
-  Button,
-  Column,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-  Pill,
-  Table,
-} from '@cctv/core';
+} from '@cctv/core/DropdownMenu/DropdownMenu';
+import { Pill } from '@cctv/core/Pill/Pill';
+import { Column, Table } from '@cctv/core/Table/Table';
 import { Block, BlockStatus, ParticipantSummary } from '@cctv/types';
 
 import styles from './BlocksTable.module.scss';
@@ -46,8 +44,8 @@ export function BlocksTable({
       rows.push({ block, depth, isChild });
 
       // Add children from the children array if it exists
-      if ((block as any).children && (block as any).children.length > 0) {
-        (block as any).children.forEach((childBlock: Block) => {
+      if (block.children && block.children.length > 0) {
+        block.children.forEach((childBlock: Block) => {
           addBlockAndChildren(childBlock, depth + 1, true);
         });
       }
@@ -142,7 +140,7 @@ export function BlocksTable({
             return <span>→ {getTargetParticipantNames(row.block)}</span>;
           }
           // For parent blocks with children, show — (targeting is on children)
-          if ((row.block as any).children && (row.block as any).children.length > 0) {
+          if (row.block.children && row.block.children.length > 0) {
             return <span>—</span>;
           }
           // For parent blocks without children, show count

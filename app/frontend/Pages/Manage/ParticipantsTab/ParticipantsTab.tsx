@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 
-import { Column, Pill, Table } from '@cctv/core';
+import { Pill } from '@cctv/core/Pill/Pill';
+import { Column, Table } from '@cctv/core/Table/Table';
 import { ParticipantSummary } from '@cctv/types';
 
 import styles from './ParticipantsTab.module.scss';

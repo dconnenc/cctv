@@ -16,7 +16,7 @@ import { useEffect } from 'react';
  * return <div ref={scrollRef} className="scrollable">...</div>;
  * ```
  */
-export function useScrollFade(ref: React.RefObject<HTMLElement>) {
+export function useScrollFade(ref: React.RefObject<HTMLElement | null>) {
   useEffect(() => {
     const element = ref.current;
     if (!element) return;
@@ -40,7 +40,7 @@ export function useScrollFade(ref: React.RefObject<HTMLElement>) {
     };
 
     updateScrollIndicators();
-    element.addEventListener('scroll', updateScrollIndicators);
+    element.addEventListener('scroll', updateScrollIndicators, { passive: true });
 
     // Update on content changes
     const observer = new MutationObserver(updateScrollIndicators);

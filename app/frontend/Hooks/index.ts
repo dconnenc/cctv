@@ -20,3 +20,4 @@ export { useSimulateResponses } from './useSimulateResponses';
 export { useUpdatePlaybill } from './useUpdatePlaybill';
 export { useDirectUpload } from './useDirectUpload';
 export { useSubmitPhotoUploadResponse } from './useSubmitPhotoUploadResponse';
+export { useBlockPresentation } from './useBlockPresentation';

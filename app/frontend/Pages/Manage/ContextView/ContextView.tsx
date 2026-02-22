@@ -1,4 +1,4 @@
-import { Panel } from '@cctv/core';
+import { Panel } from '@cctv/core/Panel/Panel';
 import { Block, Experience, ParticipantSummary } from '@cctv/types';
 
 import BlockPreview from '../BlockPreview/BlockPreview';
@@ -31,7 +31,7 @@ export default function ContextView({
       <Panel title={panelTitle}>
         <div className={styles.preview}>
           {monitorBlock ? (
-            <BlockPreview block={monitorBlock} />
+            <BlockPreview block={monitorBlock} viewContext="monitor" />
           ) : (
             <QRCodeDisplay experience={monitorView} />
           )}

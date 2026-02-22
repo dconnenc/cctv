@@ -1,7 +1,8 @@
-import { FormEvent, useState } from 'react';
+import { FormEvent, useEffect, useRef, useState } from 'react';
 
-import { Button, TextInput } from '@cctv/core';
-import { useSubmitQuestionResponse } from '@cctv/hooks';
+import { Button } from '@cctv/core/Button/Button';
+import { TextInput } from '@cctv/core/TextInput/TextInput';
+import { useSubmitQuestionResponse } from '@cctv/hooks/useSubmitQuestionResponse';
 import { QuestionPayload } from '@cctv/types';
 import { getFormData } from '@cctv/utils';
 
@@ -19,6 +20,7 @@ interface QuestionProps extends QuestionPayload {
   };
   buttonText?: string;
   disabled?: boolean;
+  viewContext?: 'participant' | 'monitor' | 'manage';
 }
 
 export default function Question({
@@ -29,10 +31,19 @@ export default function Question({
   responses,
   buttonText = 'Submit',
   disabled = false,
+  viewContext = 'participant',
 }: QuestionProps) {
   const [submittedValue, setSubmittedValue] = useState<string>('');
   const { submitQuestionResponse, isLoading, error } = useSubmitQuestionResponse();
   const userAlreadyResponded = responses?.user_responded || false;
+  const currentBlockIdRef = useRef(blockId);
+
+  useEffect(() => {
+    // Using http and ws causes weird submission race conditions if the rendered
+    // block is the same type.
+    currentBlockIdRef.current = blockId;
+    setSubmittedValue('');
+  }, [blockId]);
 
   const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -47,6 +58,8 @@ export default function Question({
       return;
     }
 
+    const submittedBlockId = actualBlockId;
+
     const response = await submitQuestionResponse({
       blockId: actualBlockId,
       answer: {
@@ -55,8 +68,10 @@ export default function Question({
       },
     });
 
-    if (response?.success) {
+    if (response?.success && currentBlockIdRef.current === submittedBlockId) {
       setSubmittedValue(value);
+    } else if (response?.success) {
+      console.log('[QA] Skipping setSubmittedValue - blockId changed during submission');
     }
   };
 
@@ -74,12 +89,20 @@ export default function Question({
     );
   }
 
+  if (viewContext === 'monitor') {
+    return (
+      <div className={styles.submittedValue}>
+        <p className={styles.legend}>{question}</p>
+      </div>
+    );
+  }
+
   return (
     <form className={styles.form} onSubmit={onSubmit}>
       <fieldset className={styles.fieldset}>
         <legend className={styles.legend}>{question}</legend>
         {error && <p className={styles.error}>{error}</p>}
-        <TextInput name={formKey} type={inputType} required disabled={disabled} />
+        <TextInput key={blockId} name={formKey} type={inputType} required disabled={disabled} />
         <Button type="submit" loading={isLoading} loadingText="Submitting..." disabled={disabled}>
           {buttonText}
         </Button>

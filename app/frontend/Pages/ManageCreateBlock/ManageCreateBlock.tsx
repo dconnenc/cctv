@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 
-import { useExperience } from '@cctv/contexts';
-import { useChangeBlockStatus } from '@cctv/hooks';
+import { useExperience } from '@cctv/contexts/ExperienceContext';
+import { useChangeBlockStatus } from '@cctv/hooks/useChangeBlockStatus';
 import { ParticipantSummary } from '@cctv/types';
 
 import CreateBlock from '../Manage/CreateBlock/CreateBlock';

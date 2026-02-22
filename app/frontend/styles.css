@@ -298,9 +298,7 @@ body {
 
 /* Mobile adjustments */
 @media (max-width: 480px) {
-  /* Standard mobile content width */
   .page {
-    max-width: 20rem;
     padding-left: var(--space-xs);
     padding-right: var(--space-xs);
   }

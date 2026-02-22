@@ -1,4 +1,5 @@
-import { Dropdown, TextInput } from '@cctv/core';
+import { Dropdown } from '@cctv/core/Dropdown/Dropdown';
+import { TextInput } from '@cctv/core/TextInput/TextInput';
 import {
   BlockComponentProps,
   BlockKind,
@@ -9,7 +10,6 @@ import {
 } from '@cctv/types';
 
 import sharedStyles from '../CreateBlock.module.scss';
-import styles from './CreateQuestion.module.scss';
 
 export const getDefaultQuestionState = (): QuestionData => {
   return {

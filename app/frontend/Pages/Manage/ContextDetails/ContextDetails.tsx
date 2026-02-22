@@ -1,4 +1,6 @@
-import { Button, Dropdown, Panel } from '@cctv/core';
+import { Button } from '@cctv/core/Button/Button';
+import { Dropdown } from '@cctv/core/Dropdown/Dropdown';
+import { Panel } from '@cctv/core/Panel/Panel';
 import { Experience, ParticipantSummary } from '@cctv/types';
 
 import styles from './ContextDetails.module.scss';

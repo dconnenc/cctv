@@ -3,9 +3,10 @@ import { useEffect, useState } from 'react';
 import { Bug, ChevronDown, ChevronUp, Play, Users } from 'lucide-react';
 
 import { DialogDescription, DialogTitle } from '@cctv/components/ui/dialog';
-import { useExperience } from '@cctv/contexts';
-import { Button } from '@cctv/core';
-import { useDebugParticipants, useSimulateResponses } from '@cctv/hooks';
+import { useExperience } from '@cctv/contexts/ExperienceContext';
+import { Button } from '@cctv/core/Button/Button';
+import { useDebugParticipants } from '@cctv/hooks/useDebugParticipants';
+import { useSimulateResponses } from '@cctv/hooks/useSimulateResponses';
 import { Block, BlockKind } from '@cctv/types';
 
 import styles from './DebugPanel.module.scss';

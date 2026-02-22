@@ -1,5 +1,5 @@
-import { useExperience } from '@cctv/contexts';
-import { ExperienceBlockContainer } from '@cctv/experiences';
+import { useExperience } from '@cctv/contexts/ExperienceContext';
+import ExperienceBlockContainer from '@cctv/experiences/ExperienceBlockContainer/ExperienceBlockContainer';
 
 import QRCodeDisplay from '../Manage/QRCodeDisplay/QRCodeDisplay';
 import LobbyAvatars from './LobbyAvatars';
@@ -45,7 +45,7 @@ export default function Monitor() {
     <section className={styles.root}>
       {showProgramBlock ? (
         <div className={styles.blockContainer}>
-          <ExperienceBlockContainer block={currentBlock} disabled />
+          <ExperienceBlockContainer block={currentBlock} disabled viewContext="monitor" />
         </div>
       ) : (
         <>

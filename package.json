@@ -10,6 +10,7 @@
     "dev": "foreman start -f Procfile.dev",
     "format": "prettier --write \"{app,config,lib,public}/**/*.{js,jsx,ts,tsx,css,scss,md,json,yml,yaml}\"",
     "format:check": "prettier --check \"{app,config,lib,public}/**/*.{js,jsx,ts,tsx,css,scss,md,json,yml,yaml}\"",
+    "typecheck": "tsc --noEmit",
     "prepare": "husky",
     "shadcn": "yarn dlx shadcn@latest",
     "tailwind:build": "tailwindcss -i ./app/frontend/tailwind.css -o ./app/frontend/tailwind.output.css",
@@ -55,6 +56,7 @@
     "lint-staged": "^16.2.0",
     "prettier": "^3.3.3",
     "sass": "^1.92.1",
+    "typescript": "^5.9.3",
     "vite": "^5.4.21",
     "vite-plugin-ruby": "^5.1.1"
   }

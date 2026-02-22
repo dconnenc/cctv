@@ -14,17 +14,18 @@ class Experiences::Broadcaster
       "[Broadcaster] Broadcasting to experience #{experience.code}"
     )
 
-    experience.experience_participants.includes(:user).each do |participant|
-      broadcast_to_participant(participant)
+    # Preload all data in ONE query to eliminate N+1s
+    preloaded_data = preload_broadcast_data
+
+    preloaded_data[:participants].each do |participant|
+      broadcast_to_participant(participant, preloaded_data)
     end
 
-    broadcast_monitor_view
-    broadcast_admin_view
+    broadcast_monitor_view(preloaded_data)
+    broadcast_admin_view(preloaded_data)
   end
 
   def broadcast_family_feud_update(block_id:, operation:, data:)
-    sleep(rand(0.5..2.0))
-    
     Rails.logger.info(
       "[Broadcaster] Broadcasting family_feud_updated to experience #{experience.code}"
     )
@@ -63,21 +64,123 @@ class Experiences::Broadcaster
 
   private
 
-  def broadcast_monitor_view
+  def preload_broadcast_data
+    # Load all blocks with all associations in one query
+    blocks = experience.experience_blocks
+      .includes(
+        :experience_poll_submissions,
+        :experience_question_submissions,
+        :experience_multistep_form_submissions,
+        :experience_mad_lib_submissions,
+        :child_links,
+        :parent_links,
+        children: [
+          :experience_poll_submissions,
+          :experience_question_submissions,
+          :experience_multistep_form_submissions,
+          :experience_mad_lib_submissions,
+          :child_links,
+          :parent_links
+        ],
+        parents: [],
+        variables: { bindings: :source_block }
+      )
+      .order(position: :asc)
+      .to_a
+
+    # Load all participants with users
+    participants = experience.experience_participants.includes(:user).to_a
+
+    # Build in-memory cache of submissions by block_id and user_id
+    submissions_cache = build_submissions_cache(blocks)
+
+    # Build participant lookup by user_id
+    participants_by_user_id = participants.index_by(&:user_id)
+
+    {
+      blocks: blocks,
+      participants: participants,
+      submissions_cache: submissions_cache,
+      participants_by_user_id: participants_by_user_id
+    }
+  end
+
+  def build_submissions_cache(blocks)
+    cache = {}
+
+    blocks.each do |block|
+      cache[block.id] = {}
+
+      # Poll submissions
+      block.experience_poll_submissions.each do |submission|
+        cache[block.id][submission.user_id] = submission
+      end
+
+      # Question submissions
+      block.experience_question_submissions.each do |submission|
+        cache[block.id][submission.user_id] = submission
+      end
+
+      # Multistep form submissions
+      block.experience_multistep_form_submissions.each do |submission|
+        cache[block.id][submission.user_id] = submission
+      end
+
+      # Mad lib submissions
+      block.experience_mad_lib_submissions.each do |submission|
+        cache[block.id][submission.user_id] = submission
+      end
+
+      # Cache child block submissions too
+      block.children.each do |child|
+        cache[child.id] ||= {}
+
+        child.experience_poll_submissions.each do |submission|
+          cache[child.id][submission.user_id] = submission
+        end
+
+        child.experience_question_submissions.each do |submission|
+          cache[child.id][submission.user_id] = submission
+        end
+
+        child.experience_multistep_form_submissions.each do |submission|
+          cache[child.id][submission.user_id] = submission
+        end
+
+        child.experience_mad_lib_submissions.each do |submission|
+          cache[child.id][submission.user_id] = submission
+        end
+      end
+    end
+
+    cache
+  end
+
+  def broadcast_monitor_view(preloaded_data = nil)
     begin
+      payload = if preloaded_data
+        Experiences::Visibility.payload_for_monitor(
+          experience: experience,
+          blocks: preloaded_data[:blocks],
+          participants: preloaded_data[:participants],
+          submissions_cache: preloaded_data[:submissions_cache]
+        )
+      else
+        Experiences::Visibility.payload_for_monitor(experience: experience)
+      end
+
       send_broadcast(
         self.class.monitor_stream_key(experience),
         WebsocketMessageService.experience_updated(
           experience,
-          visibility_payload: Experiences::Visibility.payload_for_monitor(
-            experience: experience
-          ),
+          visibility_payload: payload,
           stream_key: "monitor_view",
           stream_type: :monitor,
           participant_id: nil,
           role: :host,
           segments: [],
-          include_participants: true
+          include_participants: true,
+          participants: preloaded_data&.dig(:participants)
         )
       )
     rescue => e
@@ -89,21 +192,30 @@ class Experiences::Broadcaster
     end
   end
 
-  def broadcast_admin_view
+  def broadcast_admin_view(preloaded_data = nil)
     begin
+      payload = if preloaded_data
+        Experiences::Visibility.payload_for_admin(
+          experience: experience,
+          blocks: preloaded_data[:blocks],
+          submissions_cache: preloaded_data[:submissions_cache]
+        )
+      else
+        Experiences::Visibility.payload_for_admin(experience: experience)
+      end
+
       send_broadcast(
         self.class.admin_stream_key(experience),
         WebsocketMessageService.experience_updated(
           experience,
-          visibility_payload: Experiences::Visibility.payload_for_admin(
-            experience: experience
-          ),
+          visibility_payload: payload,
           stream_key: "admin_view",
           stream_type: :admin,
           participant_id: nil,
           role: :host,
           segments: [],
-          include_participants: true
+          include_participants: true,
+          participants: preloaded_data&.dig(:participants)
         )
       )
     rescue => e
@@ -118,7 +230,7 @@ class Experiences::Broadcaster
     end
   end
 
-  def broadcast_to_participant(participant)
+  def broadcast_to_participant(participant, preloaded_data = nil)
     begin
       participant_summary = {
         id: participant.id,
@@ -128,21 +240,35 @@ class Experiences::Broadcaster
         role: participant.role
       }
 
+      payload = if preloaded_data
+        Experiences::Visibility.payload_for_user(
+          experience: experience,
+          user: participant.user,
+          participant: participant,
+          blocks: preloaded_data[:blocks],
+          submissions_cache: preloaded_data[:submissions_cache],
+          participants_by_user_id: preloaded_data[:participants_by_user_id]
+        )
+      else
+        Experiences::Visibility.payload_for_user(
+          experience: experience,
+          user: participant.user
+        )
+      end
+
       send_broadcast(
         self.class.stream_key_for_participant(participant),
         WebsocketMessageService.experience_updated(
           experience,
-          visibility_payload: Experiences::Visibility.payload_for_user(
-            experience: experience,
-            user: participant.user
-          ),
+          visibility_payload: payload,
           stream_key: "participant_#{participant.id}",
           stream_type: :direct,
           participant_id: participant.id,
           role: participant.role.to_sym,
           segments: participant.segments || [],
           participant: participant_summary,
-          include_participants: true
+          include_participants: true,
+          participants: preloaded_data&.dig(:participants)
         )
       )
     rescue => e

@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 
-import { useExperience } from '@cctv/contexts';
+import { useExperience } from '@cctv/contexts/ExperienceContext';
 import { Button } from '@cctv/core';
 
 import styles from './Playbill.module.scss';

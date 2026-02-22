@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 
-import { useExperience } from '@cctv/contexts';
+import { useExperience } from '@cctv/contexts/ExperienceContext';
 import { Block, BlockStatus } from '@cctv/types';
 
 export function useChangeBlockStatus() {
@@ -25,7 +25,7 @@ export function useChangeBlockStatus() {
       try {
         let path = '';
         const method = 'POST';
-        let body: any = undefined;
+        let body: string | undefined = undefined;
 
         if (status === 'open') {
           path = `${baseUrl}open`;
@@ -44,9 +44,9 @@ export function useChangeBlockStatus() {
           return { success: false, error: msg };
         }
         return { success: true };
-      } catch (e: any) {
+      } catch (e: unknown) {
         const msg =
-          e?.message === 'Authentication expired'
+          e instanceof Error && e.message === 'Authentication expired'
             ? 'Authentication expired'
             : 'Connection error. Please try again.';
         setError(msg);

@@ -1,6 +1,14 @@
 .root {
 }
 
+.headerRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
 .title {
   font-size: 24px;
   font-weight: 700;
@@ -79,6 +87,12 @@
   border: 1px solid hsl(var(--border));
   font-weight: 700;
   font-size: 14px;
+}
+
+.columnHeaderActions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
 }
 
 .bucketsList {
