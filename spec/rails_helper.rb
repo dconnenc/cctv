@@ -52,6 +52,21 @@ Capybara.default_max_wait_time = 10
 
 RSpec.configure do |config|
   config.before(:each, type: :system) do
-    driven_by :cuprite, screen_size: [1200, 800], options: { headless: ENV["HEADLESS"] != "false" }
+    driven_by :cuprite, screen_size: [1440, 900], options: { headless: ENV["HEADLESS"] != "false" }
   end
+
+  # config.before(:each, type: :system) do
+  #   @console_messages = []
+  #   page.driver.browser.on(:console) do |msg|
+  #     @console_messages << "[#{msg.type}] #{msg.text}"
+  #   end
+  # end
+
+  # config.after(:each, type: :system) do |example|
+  #   if example.exception && @console_messages&.any?
+  #     puts "\n--- Browser Console (#{example.full_description}) ---"
+  #     @console_messages.each { |msg| puts "  #{msg}" }
+  #     puts "---"
+  #   end
+  # end
 end
