@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 
-import { Link, NavLink, useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 import { ParticipantsList } from '@cctv/components';
 import { useExperience } from '@cctv/contexts/ExperienceContext';

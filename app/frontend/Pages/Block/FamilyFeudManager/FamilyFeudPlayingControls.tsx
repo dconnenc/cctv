@@ -26,7 +26,6 @@ interface FamilyFeudPlayingControlsProps {
 }
 
 export default function FamilyFeudPlayingControls({
-  block,
   gameState,
   onRevealBucket,
   onShowX,

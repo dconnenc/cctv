@@ -10,7 +10,6 @@ import {
 } from '@cctv/types';
 
 import sharedStyles from '../CreateBlock.module.scss';
-import styles from './CreateQuestion.module.scss';
 
 export const getDefaultQuestionState = (): QuestionData => {
   return {

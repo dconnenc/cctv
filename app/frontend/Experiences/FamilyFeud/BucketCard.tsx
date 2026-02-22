@@ -7,7 +7,7 @@ interface BucketCardProps {
   index: number;
 }
 
-export default function BucketCard({ bucket, index }: BucketCardProps) {
+export default function BucketCard({ bucket }: BucketCardProps) {
   if (!bucket.revealed) {
     return (
       <div className={styles.card}>

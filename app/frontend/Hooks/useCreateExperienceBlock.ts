@@ -22,16 +22,14 @@ export interface CreateExperienceBlockParams {
   variables?: Array<{
     key: string;
     label: string;
-    datatype: 'string' | 'number' | 'text';
+    datatype: string;
     required: boolean;
-    source:
-      | { type: 'participant'; participant_id: string }
-      | { kind: 'question'; question: string; input_type: string };
+    source?:
+      | { type: string; participant_id: string }
+      | { kind: string; question: string; input_type: string };
   }>;
   questions?: Array<{
-    payload: {
-      question: string;
-    };
+    payload: Record<string, string>;
   }>;
 }
 
@@ -43,7 +41,7 @@ export function useCreateExperienceBlock() {
   const createExperienceBlock = useCallback(
     async ({
       kind,
-      payload = {},
+      payload,
       visible_to_roles = [],
       visible_to_segments = [],
       target_user_ids = [],

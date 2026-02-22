@@ -1,5 +1,3 @@
-import React from 'react';
-
 import { useExperience } from '@cctv/contexts/ExperienceContext';
 import { useSaveAvatar } from '@cctv/hooks/useSaveAvatar';
 

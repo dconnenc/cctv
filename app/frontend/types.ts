@@ -296,7 +296,7 @@ export type UserSummary = Pick<User, 'id' | 'name' | 'email'>;
 
 export type ParticipantSummary = Pick<
   ExperienceParticipant,
-  'id' | 'user_id' | 'name' | 'email' | 'role'
+  'id' | 'user_id' | 'name' | 'email' | 'role' | 'avatar'
 >;
 
 // ===== API REQUEST TYPES =====
@@ -335,16 +335,14 @@ export interface CreateBlockPayload {
   variables?: Array<{
     key: string;
     label: string;
-    datatype: 'string' | 'number' | 'text';
+    datatype: string;
     required: boolean;
-    source:
-      | { type: 'participant'; participant_id: string }
-      | { kind: 'question'; question: string; input_type: string };
+    source?:
+      | { type: string; participant_id: string }
+      | { kind: string; question: string; input_type: string };
   }>;
   questions?: Array<{
-    payload: {
-      question: string;
-    };
+    payload: Record<string, string>;
   }>;
 }
 
@@ -671,8 +669,8 @@ export interface CreateBlockContextValue {
   error: string | null;
 
   // Additional form state
-  visibleRoles: string[];
-  setVisibleRoles: (roles: string[]) => void;
+  visibleRoles: ParticipantRole[];
+  setVisibleRoles: (roles: ParticipantRole[]) => void;
   visibleSegmentsText: string;
   setVisibleSegmentsText: (text: string) => void;
   targetUserIdsText: string;

@@ -46,7 +46,7 @@ import { Button } from '@cctv/components/ui/button';
 import { useExperience } from '@cctv/contexts/ExperienceContext';
 import { useFamilyFeudBuckets } from '@cctv/hooks/useFamilyFeudBuckets';
 import { useScrollFade } from '@cctv/hooks/useScrollFade';
-import { Block, BlockKind, BlockResponse, FamilyFeudPayload } from '@cctv/types';
+import { Block, BlockKind, BlockResponse } from '@cctv/types';
 
 import FamilyFeudPlayingControls from './FamilyFeudPlayingControls';
 import {
@@ -68,7 +68,7 @@ interface FamilyFeudManagerProps {
   onBucketOperation?: (action: FamilyFeudAction) => void;
 }
 
-export default function FamilyFeudManager({ block, onBucketOperation }: FamilyFeudManagerProps) {
+export default function FamilyFeudManager({ block }: FamilyFeudManagerProps) {
   const { code } = useExperience();
   const [questionsState, dispatch] = useReducer(familyFeudReducer, []);
   const { addBucket, renameBucket, deleteBucket, assignAnswer } = useFamilyFeudBuckets(
@@ -569,20 +569,6 @@ const BucketItem = ({
 const BucketDropZone = ({ bucket, snapshot }: { bucket: any; snapshot: any }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
   useScrollFade(scrollRef);
-
-  const renderClone = (provided: any, snapshot: any, rubric: any) => {
-    const answer = bucket.answers[rubric.source.index];
-    return (
-      <div
-        ref={provided.innerRef}
-        {...provided.draggableProps}
-        {...provided.dragHandleProps}
-        className={`${styles.answer} ${snapshot.isDragging ? styles.isDragging : ''}`}
-      >
-        {answer.text}
-      </div>
-    );
-  };
 
   return (
     <div

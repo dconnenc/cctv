@@ -8,6 +8,7 @@ import {
   CreateBlockContextValue,
   FormBlockData,
   MadLibData,
+  ParticipantRole,
   ParticipantSummary,
 } from '@cctv/types';
 
@@ -99,7 +100,7 @@ export function CreateBlockProvider({
     getDefaultFormData(BlockKind.POLL),
   );
 
-  const [visibleRoles, setVisibleRoles] = useState<string[]>([]);
+  const [visibleRoles, setVisibleRoles] = useState<ParticipantRole[]>([]);
   const [visibleSegmentsText, setVisibleSegmentsText] = useState<string>('');
   const [targetUserIdsText, setTargetUserIdsText] = useState<string>('');
   const [showInLobby, setShowInLobby] = useState<boolean>(false);
@@ -277,7 +278,7 @@ export function CreateBlockProvider({
       const submitPayload: {
         kind: BlockKind;
         payload: ApiPayload;
-        visible_to_roles: string[];
+        visible_to_roles: ParticipantRole[];
         visible_to_segments: string[];
         target_user_ids: string[];
         status: BlockStatus;
@@ -288,10 +289,12 @@ export function CreateBlockProvider({
           label: string;
           datatype: string;
           required: boolean;
-          source?: { type: string; participant_id: string };
+          source?:
+            | { type: string; participant_id: string }
+            | { kind: string; question: string; input_type: string };
         }>;
         variable_bindings?: Array<{ variable_id: string; source_block_id: string }>;
-        questions?: unknown;
+        questions?: Array<{ payload: Record<string, string> }>;
       } = {
         kind: blockData.kind,
         payload,
