@@ -1,0 +1,193 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  max-height: 70vh;
+  overflow-y: auto;
+  padding: var(--space-xs);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.headerTitle {
+  font-size: 1.125rem;
+  font-weight: 600;
+  text-align: left;
+}
+
+.card {
+  border: 1px solid hsl(var(--border));
+  border-radius: 0.5rem;
+  padding: var(--space-sm);
+  background: hsl(var(--card));
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.cardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.cardIndex {
+  font-size: 0.75rem;
+  color: hsl(var(--muted-foreground));
+  text-align: left;
+}
+
+.cardActions {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.iconBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  padding: 0;
+  border: none;
+  border-radius: 0.25rem;
+  background: transparent;
+  color: hsl(var(--muted-foreground));
+  cursor: pointer;
+
+  &:hover {
+    background: hsl(var(--muted));
+    color: hsl(var(--foreground));
+  }
+}
+
+.iconBtnDanger {
+  composes: iconBtn;
+
+  &:hover {
+    background: hsl(var(--destructive) / 0.15);
+    color: hsl(var(--destructive));
+  }
+}
+
+.fieldGroup {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.textarea {
+  width: 100%;
+  min-height: 4rem;
+  padding: var(--space-xs);
+  font-size: 0.875rem;
+  font-family: var(--font-primary);
+  border: 1px solid hsl(var(--border));
+  border-radius: 0.375rem;
+  background-color: hsl(var(--input));
+  color: hsl(var(--foreground));
+  resize: vertical;
+  text-align: left;
+
+  &::placeholder {
+    color: hsl(var(--muted-foreground));
+  }
+
+  &:focus {
+    outline: none;
+    border-color: hsl(var(--ring));
+    box-shadow: 0 0 0 0.125rem hsl(var(--ring) / 0.3);
+  }
+}
+
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-xs);
+  padding-top: var(--space-xs);
+  border-top: 1px solid hsl(var(--border));
+}
+
+.empty {
+  text-align: center;
+  padding: var(--space-md) 0;
+  color: hsl(var(--muted-foreground));
+  font-size: 0.875rem;
+}
+
+.imageField {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.imageLabel {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: hsl(var(--foreground));
+  text-align: left;
+}
+
+.imagePreviewWrapper {
+  position: relative;
+  display: inline-block;
+  max-width: 12rem;
+}
+
+.imagePreview {
+  width: 100%;
+  border-radius: 0.375rem;
+  border: 1px solid hsl(var(--border));
+  object-fit: cover;
+}
+
+.imageRemoveBtn {
+  position: absolute;
+  top: 0.25rem;
+  right: 0.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: hsl(var(--destructive));
+  color: hsl(var(--destructive-foreground));
+  cursor: pointer;
+
+  &:hover {
+    opacity: 0.9;
+  }
+}
+
+.imageUploadBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  border: 1px dashed hsl(var(--border));
+  border-radius: 0.375rem;
+  background: transparent;
+  color: hsl(var(--muted-foreground));
+  cursor: pointer;
+
+  &:hover {
+    background: hsl(var(--muted));
+    color: hsl(var(--foreground));
+    border-color: hsl(var(--foreground));
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}

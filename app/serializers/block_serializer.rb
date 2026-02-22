@@ -159,6 +159,37 @@ class BlockSerializer
         resolved_variables: resolved_variables
       }
 
+    when ExperienceBlock::PHOTO_UPLOAD
+      submissions = block.experience_photo_upload_submissions.includes(photo_attachment: :blob)
+      total = submissions.count
+      user_response = submissions.find { |s| s.user_id == user&.id }
+
+      response = {
+        total: total,
+        user_response: if user_response
+          {
+            id: user_response.id,
+            answer: user_response.answer,
+            photo_url: user_response.photo.attached? ? ActiveStorageUrlService.blob_url(user_response.photo.blob) : nil
+          }
+        end,
+        user_responded: user_response.present?
+      }
+
+      if mod_or_host?(participant_role) || user_admin?(user)
+        response[:all_responses] = submissions.map do |submission|
+          {
+            id: submission.id,
+            user_id: submission.user_id,
+            answer: submission.answer,
+            photo_url: submission.photo.attached? ? ActiveStorageUrlService.blob_url(submission.photo.blob) : nil,
+            created_at: submission.created_at
+          }
+        end
+      end
+
+      response
+
     else
       {}
     end
@@ -255,6 +286,30 @@ class BlockSerializer
         user_responded: false,
         resolved_variables: {}
       }
+
+    when ExperienceBlock::PHOTO_UPLOAD
+      submissions = block.experience_photo_upload_submissions.includes(photo_attachment: :blob)
+      total = submissions.count
+
+      response = {
+        total: total,
+        user_response: nil,
+        user_responded: false
+      }
+
+      if mod_or_host?(participant_role)
+        response[:all_responses] = submissions.map do |submission|
+          {
+            id: submission.id,
+            user_id: submission.user_id,
+            answer: submission.answer,
+            photo_url: submission.photo.attached? ? ActiveStorageUrlService.blob_url(submission.photo.blob) : nil,
+            created_at: submission.created_at
+          }
+        end
+      end
+
+      response
 
     else
       {}

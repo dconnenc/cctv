@@ -1,7 +1,7 @@
 class Api::ExperiencesController < Api::BaseController
   authorize :user, through: :current_user
   before_action :authenticate_and_set_user_and_experience,
-    only: [:open_lobby, :start, :pause, :resume, :admin_token, :clear_avatars]
+    only: [:open_lobby, :start, :pause, :resume, :admin_token, :clear_avatars, :update_playbill]
 
   # POST /api/experiences
   def create
@@ -132,6 +132,36 @@ class Api::ExperiencesController < Api::BaseController
     )
 
     render json: { success: true }
+  end
+
+  # PATCH /api/experiences/:id/update_playbill
+  def update_playbill
+    is_system_admin = @user&.admin? || @user&.superadmin?
+    is_host_or_mod = @experience.experience_participants.where(user_id: @user&.id, role: %w[host moderator]).exists?
+
+    unless is_system_admin || is_host_or_mod
+      render json: { success: false, error: 'forbidden' }, status: :forbidden
+      return
+    end
+
+    @experience.playbill = params[:playbill] || []
+
+    if @experience.save
+      (params[:playbill] || []).each do |section|
+        next unless section[:image_signed_id].present?
+
+        blob = ActiveStorage::Blob.find_signed(section[:image_signed_id])
+        next unless blob
+        next if @experience.attachments.where(blob_id: blob.id).exists?
+
+        @experience.attachments.attach(blob)
+      end
+
+      Experiences::Broadcaster.new(@experience).broadcast_experience_update
+      render json: { success: true }
+    else
+      render json: { success: false, error: @experience.errors.full_messages.to_sentence }, status: :unprocessable_entity
+    end
   end
 
   # POST /api/experiences/:id/admin_token

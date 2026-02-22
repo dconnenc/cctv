@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 
 import {
+  BookOpen,
   Bug,
   ChevronLeft,
   ChevronRight,
@@ -32,6 +33,7 @@ import BlockPreview from '../BlockPreview/BlockPreview';
 import ContextView from '../ContextView/ContextView';
 import CreateBlock from '../CreateBlock/CreateBlock';
 import ParticipantsTab from '../ParticipantsTab/ParticipantsTab';
+import PlaybillTab from '../PlaybillTab/PlaybillTab';
 import DebugPanel from './DebugPanel/DebugPanel';
 
 export default function ManageViewer() {
@@ -39,6 +41,7 @@ export default function ManageViewer() {
   const [showParticipantDetails, setShowParticipantDetails] = useState(false);
   const [showDebugPanel, setShowDebugPanel] = useState(false);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isPlaybillDialogOpen, setIsPlaybillDialogOpen] = useState(false);
   const [busyBlockId, setBusyBlockId] = useState<string>();
   const [dismissedError, setDismissedError] = useState(false);
   const [viewMode, setViewMode] = useState<'monitor' | 'participant' | 'responses'>('monitor');
@@ -531,6 +534,13 @@ export default function ManageViewer() {
                 <Bug size={16} />
               </button>
               <button
+                onClick={() => setIsPlaybillDialogOpen(true)}
+                className="px-3 py-1.5 text-sm rounded-md border border-[hsl(var(--border))] hover:bg-[hsl(var(--muted))] transition-colors"
+                title="Edit Playbill"
+              >
+                <BookOpen size={16} />
+              </button>
+              <button
                 onClick={() => setShowParticipantDetails(!showParticipantDetails)}
                 className="px-3 py-1.5 text-sm rounded-md border border-[hsl(var(--border))] hover:bg-[hsl(var(--muted))] transition-colors"
               >
@@ -681,6 +691,7 @@ export default function ManageViewer() {
                                     id: string;
                                     user_id: string;
                                     answer: unknown;
+                                    photo_url?: string;
                                     created_at: string;
                                   }>;
                                 }
@@ -691,6 +702,13 @@ export default function ManageViewer() {
                                 const participant = participantsCombined.find(
                                   (p) => p.user_id === response.user_id,
                                 );
+                                const hasAnswer =
+                                  response.answer != null &&
+                                  !(
+                                    typeof response.answer === 'object' &&
+                                    Object.keys(response.answer as Record<string, unknown>)
+                                      .length === 0
+                                  );
                                 return (
                                   <div
                                     key={response.id}
@@ -704,11 +722,25 @@ export default function ManageViewer() {
                                         {new Date(response.created_at).toLocaleTimeString()}
                                       </span>
                                     </div>
-                                    <div className="text-sm text-white">
-                                      {typeof response.answer === 'object'
-                                        ? JSON.stringify(response.answer, null, 2)
-                                        : String(response.answer)}
-                                    </div>
+                                    {response.photo_url && (
+                                      <img
+                                        src={response.photo_url}
+                                        alt={`Response from ${participant?.name || 'Unknown'}`}
+                                        style={{
+                                          maxWidth: '12rem',
+                                          borderRadius: '0.375rem',
+                                          border: '1px solid hsl(var(--border))',
+                                          marginBottom: hasAnswer ? '0.5rem' : 0,
+                                        }}
+                                      />
+                                    )}
+                                    {hasAnswer && (
+                                      <div className="text-sm text-white">
+                                        {typeof response.answer === 'object'
+                                          ? JSON.stringify(response.answer, null, 2)
+                                          : String(response.answer)}
+                                      </div>
+                                    )}
                                   </div>
                                 );
                               });
@@ -855,6 +887,13 @@ export default function ManageViewer() {
       <Dialog open={showDebugPanel} onOpenChange={setShowDebugPanel}>
         <DialogContent className="sm:max-w-2xl w-full">
           <DebugPanel selectedBlock={selectedBlock} />
+        </DialogContent>
+      </Dialog>
+
+      {/* Playbill editor */}
+      <Dialog open={isPlaybillDialogOpen} onOpenChange={setIsPlaybillDialogOpen}>
+        <DialogContent className="sm:max-w-2xl w-full">
+          <PlaybillTab playbill={experience?.playbill || []} />
         </DialogContent>
       </Dialog>
     </>

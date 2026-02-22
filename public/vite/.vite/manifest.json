@@ -1,0 +1,9 @@
+{
+  "entrypoints/application.tsx": {
+    "file": "assets/application-Dje4Ic4j.js",
+    "name": "entrypoints/application.tsx",
+    "src": "entrypoints/application.tsx",
+    "isEntry": true,
+    "css": ["assets/application-C49_k2q5.css"]
+  }
+}

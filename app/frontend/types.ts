@@ -12,6 +12,7 @@ export enum BlockKind {
   ANNOUNCEMENT = 'announcement',
   MAD_LIB = 'mad_lib',
   FAMILY_FEUD = 'family_feud',
+  PHOTO_UPLOAD = 'photo_upload',
 }
 
 // ===== BLOCK PAYLOAD TYPES =====
@@ -38,6 +39,10 @@ export interface AnnouncementPayload {
 
 export interface FamilyFeudPayload {
   title: string;
+}
+
+export interface PhotoUploadPayload {
+  prompt: string;
 }
 
 export interface BlockLink {
@@ -121,6 +126,11 @@ export interface FamilyFeudApiPayload {
   title: string;
 }
 
+export interface PhotoUploadApiPayload {
+  type: 'photo_upload';
+  prompt: string;
+}
+
 // Discriminated union for API payloads (what gets sent to backend)
 export type ApiPayload =
   | PollApiPayload
@@ -128,7 +138,18 @@ export type ApiPayload =
   | MultistepFormApiPayload
   | AnnouncementApiPayload
   | MadLibApiPayload
-  | FamilyFeudApiPayload;
+  | FamilyFeudApiPayload
+  | PhotoUploadApiPayload;
+
+// ===== PLAYBILL TYPES =====
+
+export interface PlaybillSection {
+  id: string;
+  title: string;
+  body: string;
+  image_signed_id?: string;
+  image_url?: string;
+}
 
 // ===== ENTITY TYPES =====
 
@@ -231,13 +252,35 @@ export interface FamilyFeudBlock extends BaseBlock {
   payload: FamilyFeudPayload;
 }
 
+export interface PhotoUploadBlock extends BaseBlock {
+  kind: BlockKind.PHOTO_UPLOAD;
+  payload: PhotoUploadPayload;
+  responses?: {
+    total: number;
+    user_responded: boolean;
+    user_response?: {
+      id: string;
+      answer: Record<string, unknown>;
+      photo_url?: string;
+    } | null;
+    all_responses?: Array<{
+      id: string;
+      user_id: string;
+      answer: Record<string, unknown>;
+      photo_url?: string;
+      created_at: string;
+    }>;
+  };
+}
+
 export type Block =
   | PollBlock
   | QuestionBlock
   | MultistepFormBlock
   | AnnouncementBlock
   | MadLibBlock
-  | FamilyFeudBlock;
+  | FamilyFeudBlock
+  | PhotoUploadBlock;
 
 export interface Experience {
   id: string;
@@ -250,6 +293,7 @@ export interface Experience {
   participants: ExperienceParticipant[];
   blocks: Block[];
   next_block?: Block | null;
+  playbill?: PlaybillSection[];
   created_at: string;
   updated_at: string;
 }
@@ -290,7 +334,8 @@ export interface CreateBlockPayload {
     | MultistepFormPayload
     | AnnouncementPayload
     | MadLibPayload
-    | FamilyFeudPayload;
+    | FamilyFeudPayload
+    | PhotoUploadPayload;
   visible_to_roles?: ParticipantRole[];
   visible_to_segments?: string[];
   target_user_ids?: string[];
@@ -574,6 +619,10 @@ export interface FamilyFeudData {
   questions: Array<{ id: string; question: string }>;
 }
 
+export interface PhotoUploadData {
+  prompt: string;
+}
+
 // Union type for all block component data
 export type BlockComponentData =
   | PollData
@@ -581,7 +630,8 @@ export type BlockComponentData =
   | MultistepFormData
   | AnnouncementData
   | MadLibData
-  | FamilyFeudData;
+  | FamilyFeudData
+  | PhotoUploadData;
 
 // Discriminated union for form block data
 export type FormBlockData =
@@ -590,7 +640,8 @@ export type FormBlockData =
   | { kind: BlockKind.MULTISTEP_FORM; data: MultistepFormData }
   | { kind: BlockKind.ANNOUNCEMENT; data: AnnouncementData }
   | { kind: BlockKind.MAD_LIB; data: MadLibData }
-  | { kind: BlockKind.FAMILY_FEUD; data: FamilyFeudData };
+  | { kind: BlockKind.FAMILY_FEUD; data: FamilyFeudData }
+  | { kind: BlockKind.PHOTO_UPLOAD; data: PhotoUploadData };
 
 export interface CreateBlockContextValue {
   // Form block data with discriminated union

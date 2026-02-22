@@ -34,6 +34,13 @@ import {
   validateMultistepForm,
 } from './CreateMultistepForm/CreateMultistepForm';
 import {
+  buildPhotoUploadPayload,
+  canPhotoUploadOpenImmediately,
+  getDefaultPhotoUploadState,
+  processPhotoUploadBeforeSubmit,
+  validatePhotoUpload,
+} from './CreatePhotoUpload/CreatePhotoUpload';
+import {
   buildPollPayload,
   canPollOpenImmediately,
   getDefaultPollState,
@@ -88,6 +95,8 @@ export function CreateBlockProvider({
         return { kind: BlockKind.MAD_LIB, data: getDefaultMadLibState() };
       case BlockKind.FAMILY_FEUD:
         return { kind: BlockKind.FAMILY_FEUD, data: getDefaultFamilyFeudState() };
+      case BlockKind.PHOTO_UPLOAD:
+        return { kind: BlockKind.PHOTO_UPLOAD, data: getDefaultPhotoUploadState() };
       default:
         const exhaustiveCheck: never = blockKind;
         throw new Error(`Unknown block kind: ${exhaustiveCheck}`);
@@ -143,6 +152,9 @@ export function CreateBlockProvider({
         case BlockKind.FAMILY_FEUD:
           validationError = validateFamilyFeud(blockData.data);
           break;
+        case BlockKind.PHOTO_UPLOAD:
+          validationError = validatePhotoUpload(blockData.data);
+          break;
         default:
           // This should never be reached due to exhaustive checking
           validationError = `Unknown block kind: ${(blockData as any).kind}`;
@@ -172,6 +184,9 @@ export function CreateBlockProvider({
           break;
         case BlockKind.FAMILY_FEUD:
           canOpenImmediately = canFamilyFeudOpenImmediately();
+          break;
+        case BlockKind.PHOTO_UPLOAD:
+          canOpenImmediately = canPhotoUploadOpenImmediately(blockData.data, participants);
           break;
         default:
           // This should never be reached due to exhaustive checking
@@ -226,6 +241,12 @@ export function CreateBlockProvider({
             data: processFamilyFeudBeforeSubmit(blockData.data),
           };
           break;
+        case BlockKind.PHOTO_UPLOAD:
+          processedFormData = {
+            kind: BlockKind.PHOTO_UPLOAD,
+            data: processPhotoUploadBeforeSubmit(blockData.data, status, participants),
+          };
+          break;
         default:
           // This should never be reached due to exhaustive checking
           processedFormData = blockData as any;
@@ -254,6 +275,9 @@ export function CreateBlockProvider({
           break;
         case BlockKind.FAMILY_FEUD:
           payload = buildFamilyFeudPayload(processedFormData.data);
+          break;
+        case BlockKind.PHOTO_UPLOAD:
+          payload = buildPhotoUploadPayload(processedFormData.data);
           break;
         default:
           // This should never be reached due to exhaustive checking

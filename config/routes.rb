@@ -6,6 +6,12 @@ Rails.application.routes.draw do
   # Mount Action Cable for WebSocket connections
   mount ActionCable.server => '/cable'
 
+  scope :rails do
+    scope :active_storage do
+      post "direct_uploads", to: "api/direct_uploads#create"
+    end
+  end
+
   passwordless_for :users
 
   # Reveal health status on /up that returns 200 if the app boots with no exceptions, otherwise 500.
@@ -35,6 +41,7 @@ Rails.application.routes.draw do
         post :pause
         post :resume
         post :clear_avatars
+        patch :update_playbill
       end
 
       resources(
@@ -50,7 +57,8 @@ Rails.application.routes.draw do
           post :submit_question_response
           post :submit_multistep_form_response
           post :submit_mad_lib_response
-          
+          post :submit_photo_upload_response
+
           post 'family_feud/add_bucket', action: :add_bucket
           patch 'family_feud/buckets/:bucket_id', action: :rename_bucket
           delete 'family_feud/buckets/:bucket_id', action: :delete_bucket

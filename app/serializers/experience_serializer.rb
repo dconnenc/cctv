@@ -18,7 +18,8 @@ class ExperienceSerializer
       created_at: experience.created_at,
       updated_at: experience.updated_at,
       blocks: blocks,
-      next_block: next_block
+      next_block: next_block,
+      playbill: serialize_playbill(experience.playbill)
     }
 
     if include_participants
@@ -90,5 +91,18 @@ class ExperienceSerializer
       email: participant.user.email,
       role: participant.role
     }
+  end
+
+  def self.serialize_playbill(playbill)
+    return [] unless playbill.is_a?(Array)
+
+    playbill.map do |section|
+      resolved = section.dup
+      if section["image_signed_id"].present?
+        blob = ActiveStorage::Blob.find_signed(section["image_signed_id"])
+        resolved["image_url"] = blob ? ActiveStorageUrlService.blob_url(blob) : nil
+      end
+      resolved
+    end
   end
 end

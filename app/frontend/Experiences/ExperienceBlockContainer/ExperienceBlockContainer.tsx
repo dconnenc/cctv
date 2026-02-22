@@ -4,6 +4,7 @@ import Announcement from '../Announcement/Announcement';
 import FamilyFeud from '../FamilyFeud/FamilyFeud';
 import MadLib from '../MadLib/MadLib';
 import MultistepForm from '../MultistepForm/MultistepForm';
+import PhotoUpload from '../PhotoUpload/PhotoUpload';
 import Poll from '../Poll/Poll';
 import Question from '../Question/Question';
 
@@ -64,6 +65,15 @@ export default function ExperienceBlockContainer({
       return <MadLib responses={block.responses} parts={block.payload.parts} />;
     case BlockKind.FAMILY_FEUD:
       return <FamilyFeud {...block.payload} />;
+    case BlockKind.PHOTO_UPLOAD:
+      return (
+        <PhotoUpload
+          blockId={block.id}
+          prompt={block.payload.prompt}
+          responses={block.responses}
+          disabled={disabled}
+        />
+      );
     default:
       const exhaustiveCheck: never = block;
       return (

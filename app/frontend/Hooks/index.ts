@@ -17,3 +17,6 @@ export { useSaveAvatar } from './useSaveAvatar';
 export { useClearAvatars } from './useClearAvatars';
 export { useDebugParticipants } from './useDebugParticipants';
 export { useSimulateResponses } from './useSimulateResponses';
+export { useUpdatePlaybill } from './useUpdatePlaybill';
+export { useDirectUpload } from './useDirectUpload';
+export { useSubmitPhotoUploadResponse } from './useSubmitPhotoUploadResponse';

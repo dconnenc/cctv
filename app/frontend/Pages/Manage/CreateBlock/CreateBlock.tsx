@@ -8,6 +8,7 @@ import { CreateBlockProvider, useCreateBlockContext } from './CreateBlockContext
 import CreateFamilyFeud from './CreateFamilyFeud/CreateFamilyFeud';
 import CreateMadLib from './CreateMadLib/CreateMadLib';
 import CreateMultistepForm from './CreateMultistepForm/CreateMultistepForm';
+import CreatePhotoUpload from './CreatePhotoUpload/CreatePhotoUpload';
 import CreatePoll from './CreatePoll/CreatePoll';
 import CreateQuestion from './CreateQuestion/CreateQuestion';
 
@@ -59,6 +60,7 @@ function CreateBlockForm({ onClose }: CreateBlockFormProps) {
           { label: 'Announcement', value: BlockKind.ANNOUNCEMENT },
           { label: 'Mad Lib', value: BlockKind.MAD_LIB },
           { label: 'Family Feud', value: BlockKind.FAMILY_FEUD },
+          { label: 'Photo Upload', value: BlockKind.PHOTO_UPLOAD },
         ]}
         value={blockData.kind}
         onChange={setKind}
@@ -112,6 +114,8 @@ function BlockEditor() {
       return <CreateMadLib data={blockData.data} onChange={onChange} participants={participants} />;
     case BlockKind.FAMILY_FEUD:
       return <CreateFamilyFeud data={blockData.data} onChange={onChange} />;
+    case BlockKind.PHOTO_UPLOAD:
+      return <CreatePhotoUpload data={blockData.data} onChange={onChange} />;
     default:
       const exhaustiveCheck: never = blockData;
       return <div className={styles.details}>Unknown block type: {exhaustiveCheck}</div>;
