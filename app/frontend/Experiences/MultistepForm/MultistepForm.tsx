@@ -2,7 +2,8 @@ import { FormEvent, useState } from 'react';
 
 import classNames from 'classnames';
 
-import { Button, TextInput } from '@cctv/core';
+import { Button } from '@cctv/core/Button/Button';
+import { TextInput } from '@cctv/core/TextInput/TextInput';
 import { useSubmitMultistepFormResponse } from '@cctv/hooks/useSubmitMultistepFormResponse';
 import { MultistepFormPayload } from '@cctv/types';
 import { getFormData, isNotEmpty } from '@cctv/utils';

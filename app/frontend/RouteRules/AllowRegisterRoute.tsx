@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 
 import { Navigate, Outlet } from 'react-router-dom';
 
-import { useExperience } from '@cctv/contexts';
+import { useExperience } from '@cctv/contexts/ExperienceContext';
 import { getStoredJWT } from '@cctv/utils';
 
 /**

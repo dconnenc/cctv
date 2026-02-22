@@ -43,9 +43,10 @@ import { DragDropContext, Draggable, Droppable } from '@hello-pangea/dnd';
 import { ChevronDown, ChevronRight, Loader2, Play, Plus, Trash2 } from 'lucide-react';
 
 import { Button } from '@cctv/components/ui/button';
-import { useExperience } from '@cctv/contexts';
-import { useFamilyFeudBuckets, useScrollFade } from '@cctv/hooks';
-import { Block, FamilyFeudPayload } from '@cctv/types';
+import { useExperience } from '@cctv/contexts/ExperienceContext';
+import { useFamilyFeudBuckets } from '@cctv/hooks/useFamilyFeudBuckets';
+import { useScrollFade } from '@cctv/hooks/useScrollFade';
+import { Block, BlockKind, BlockResponse } from '@cctv/types';
 
 import FamilyFeudPlayingControls from './FamilyFeudPlayingControls';
 import {
@@ -57,30 +58,34 @@ import {
 
 import styles from './FamilyFeudManager.module.scss';
 
+interface FamilyFeudChildPayload {
+  question?: string;
+  buckets?: Array<{ id: string; name: string; answer_ids?: string[] }>;
+}
+
 interface FamilyFeudManagerProps {
   block: Block;
   onBucketOperation?: (action: FamilyFeudAction) => void;
 }
 
-export default function FamilyFeudManager({ block, onBucketOperation }: FamilyFeudManagerProps) {
+export default function FamilyFeudManager({ block }: FamilyFeudManagerProps) {
   const { code } = useExperience();
   const [questionsState, dispatch] = useReducer(familyFeudReducer, []);
   const { addBucket, renameBucket, deleteBucket, assignAnswer } = useFamilyFeudBuckets(
     block.id,
     dispatch,
   );
-  const childQuestions = (block as any).children || [];
+  const childQuestions = block.children ?? [];
   const [editingBucketNames, setEditingBucketNames] = useState<Record<string, string>>({});
   const renameTimeoutRef = useRef<Record<string, NodeJS.Timeout>>({});
   const [addingBucketForQuestion, setAddingBucketForQuestion] = useState<string | null>(null);
   const [deletingBucketId, setDeletingBucketId] = useState<string | null>(null);
   const [startingPlaying, setStartingPlaying] = useState(false);
 
-  // UI-only state (not synced, resets on page load)
   const [collapsedQuestions, setCollapsedQuestions] = useState<Set<string>>(new Set());
   const [collapsedBuckets, setCollapsedBuckets] = useState<Set<string>>(new Set());
 
-  const payload = block.payload as FamilyFeudPayload;
+  const payload = block.kind === BlockKind.FAMILY_FEUD ? block.payload : undefined;
   const gameState = payload?.game_state;
   const isPlaying = gameState?.phase === 'playing';
 
@@ -89,14 +94,16 @@ export default function FamilyFeudManager({ block, onBucketOperation }: FamilyFe
   // This preserves UI state (collapsed states, optimistic updates)
   useEffect(() => {
     const newQuestionsState: QuestionWithBuckets[] = childQuestions.map((childBlock: Block) => {
-      const responses = (childBlock.responses as any)?.all_responses || [];
-      const questionBuckets = (childBlock as any).payload?.buckets || [];
+      const responses =
+        (childBlock.responses as { all_responses?: BlockResponse[] }).all_responses ?? [];
+      const childPayload = childBlock.payload as FamilyFeudChildPayload | undefined;
+      const questionBuckets = childPayload?.buckets ?? [];
 
-      const allAnswers = responses.map((response: any) => {
+      const allAnswers = responses.map((response) => {
         const answerText =
           typeof response.answer === 'string'
             ? response.answer
-            : response.answer?.value || JSON.stringify(response.answer);
+            : (response.answer?.value ?? JSON.stringify(response.answer));
 
         return {
           id: response.id,
@@ -107,21 +114,21 @@ export default function FamilyFeudManager({ block, onBucketOperation }: FamilyFe
         };
       });
 
-      const savedBuckets = questionBuckets.map((b: any) => ({
+      const savedBuckets = questionBuckets.map((b) => ({
         id: b.id,
         name: b.name,
-        answers: allAnswers.filter((a: any) => b.answer_ids?.includes(a.id)),
+        answers: allAnswers.filter((a) => b.answer_ids?.includes(a.id)),
         isCollapsed: false,
       }));
 
       const assignedAnswerIds = new Set(
-        savedBuckets.flatMap((bucket: any) => bucket.answers.map((a: any) => a.id)),
+        savedBuckets.flatMap((bucket) => bucket.answers.map((a) => a.id)),
       );
-      const unassignedAnswers = allAnswers.filter((a: any) => !assignedAnswerIds.has(a.id));
+      const unassignedAnswers = allAnswers.filter((a) => !assignedAnswerIds.has(a.id));
 
       return {
         questionId: childBlock.id,
-        questionText: (childBlock as any).payload?.question || 'Question',
+        questionText: childPayload?.question ?? 'Question',
         buckets: savedBuckets,
         unassignedAnswers,
       };
@@ -377,7 +384,7 @@ export default function FamilyFeudManager({ block, onBucketOperation }: FamilyFe
   return (
     <div className={styles.root}>
       <div className={styles.headerRow}>
-        <h2 className={styles.title}>{(block as any).payload?.title || 'Family Feud'}</h2>
+        <h2 className={styles.title}>{payload?.title ?? 'Family Feud'}</h2>
         <Button variant="default" size="lg" onClick={handleStartPlaying} disabled={startingPlaying}>
           <Play size={20} />
           {startingPlaying ? 'Starting...' : 'Start Playing'}
@@ -562,20 +569,6 @@ const BucketItem = ({
 const BucketDropZone = ({ bucket, snapshot }: { bucket: any; snapshot: any }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
   useScrollFade(scrollRef);
-
-  const renderClone = (provided: any, snapshot: any, rubric: any) => {
-    const answer = bucket.answers[rubric.source.index];
-    return (
-      <div
-        ref={provided.innerRef}
-        {...provided.draggableProps}
-        {...provided.dragHandleProps}
-        className={`${styles.answer} ${snapshot.isDragging ? styles.isDragging : ''}`}
-      >
-        {answer.text}
-      </div>
-    );
-  };
 
   return (
     <div

@@ -1,4 +1,10 @@
+import type { FamilyFeudAction } from '@cctv/pages/Block/FamilyFeudManager/familyFeudReducer';
+
 // ===== CORE DOMAIN TYPES =====
+
+export interface AuthError extends Error {
+  code?: number;
+}
 
 export type UserRole = 'user' | 'admin' | 'superadmin';
 export type ExperienceStatus = 'draft' | 'lobby' | 'live' | 'paused' | 'finished' | 'archived';
@@ -189,6 +195,13 @@ export interface ExperienceParticipant {
   } | null;
 }
 
+export interface BlockResponse {
+  id: string;
+  user_id: string;
+  answer: any;
+  created_at: string;
+}
+
 // Discriminated union for blocks
 interface BaseBlock {
   id: string;
@@ -212,12 +225,7 @@ interface BaseBlock {
       answer: any;
     } | null;
     aggregate?: Record<string, any>;
-    all_responses?: Array<{
-      id: string;
-      user_id: string;
-      answer: any;
-      created_at: string;
-    }>;
+    all_responses?: BlockResponse[];
   };
 }
 
@@ -288,7 +296,7 @@ export type UserSummary = Pick<User, 'id' | 'name' | 'email'>;
 
 export type ParticipantSummary = Pick<
   ExperienceParticipant,
-  'id' | 'user_id' | 'name' | 'email' | 'role'
+  'id' | 'user_id' | 'name' | 'email' | 'role' | 'avatar'
 >;
 
 // ===== API REQUEST TYPES =====
@@ -327,16 +335,14 @@ export interface CreateBlockPayload {
   variables?: Array<{
     key: string;
     label: string;
-    datatype: 'string' | 'number' | 'text';
+    datatype: string;
     required: boolean;
-    source:
-      | { type: 'participant'; participant_id: string }
-      | { kind: 'question'; question: string; input_type: string };
+    source?:
+      | { type: string; participant_id: string }
+      | { kind: string; question: string; input_type: string };
   }>;
   questions?: Array<{
-    payload: {
-      question: string;
-    };
+    payload: Record<string, string>;
   }>;
 }
 
@@ -480,10 +486,12 @@ export const WebSocketMessageTypes = {
 export type WebSocketMessageType =
   (typeof WebSocketMessageTypes)[keyof typeof WebSocketMessageTypes];
 
+export type FamilyFeudDispatchPayload = FamilyFeudAction['payload'];
+
 export interface FamilyFeudUpdatedMessageMetadata extends WebSocketMessageMetadata {
   block_id: string;
   operation: string;
-  data: any;
+  data: FamilyFeudDispatchPayload;
 }
 
 export type StreamType = 'role' | 'role_segments' | 'targeted';
@@ -552,7 +560,7 @@ export interface FamilyFeudUpdatedMessage
   extends BaseWebSocketMessage<'family_feud_updated', FamilyFeudUpdatedMessageMetadata> {
   block_id: string;
   operation: string;
-  data: any;
+  data: FamilyFeudDispatchPayload;
 }
 
 export interface ConfirmSubscriptionMessage extends BaseWebSocketMessage<'confirm_subscription'> {}
@@ -568,6 +576,32 @@ export type WebSocketMessage =
   | ConfirmSubscriptionMessage
   | PingMessage
   | FamilyFeudUpdatedMessage;
+
+export interface DrawingUpdateMessage {
+  type: 'drawing_update';
+  participant_id: string;
+  operation: string;
+  data?: unknown;
+}
+
+export type ExperiencePayloadMessage =
+  | ExperienceStateMessage
+  | ExperienceUpdatedMessage
+  | StreamChangedMessage;
+
+export type ExperienceChannelMessage = WebSocketMessage | DrawingUpdateMessage;
+
+export function isExperiencePayloadMessage(msg: WebSocketMessage): msg is ExperiencePayloadMessage {
+  return (
+    msg.type === WebSocketMessageTypes.EXPERIENCE_STATE ||
+    msg.type === WebSocketMessageTypes.EXPERIENCE_UPDATED ||
+    msg.type === WebSocketMessageTypes.STREAM_CHANGED
+  );
+}
+
+export function isDrawingUpdateMessage(msg: ExperienceChannelMessage): msg is DrawingUpdateMessage {
+  return msg.type === 'drawing_update';
+}
 
 // ===== CREATE EXPERIENCE FORM TYPES =====
 
@@ -635,8 +669,8 @@ export interface CreateBlockContextValue {
   error: string | null;
 
   // Additional form state
-  visibleRoles: string[];
-  setVisibleRoles: (roles: string[]) => void;
+  visibleRoles: ParticipantRole[];
+  setVisibleRoles: (roles: ParticipantRole[]) => void;
   visibleSegmentsText: string;
   setVisibleSegmentsText: (text: string) => void;
   targetUserIdsText: string;
@@ -680,18 +714,16 @@ export interface ExperienceContextType {
   impersonatedParticipantId?: string;
   setImpersonatedParticipantId: (id: string | undefined) => void;
 
-  // Family Feud block-scoped dispatch registration
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   registerFamilyFeudDispatch?: (blockId: string, dispatch: (action: any) => void) => void;
   unregisterFamilyFeudDispatch?: (blockId: string) => void;
 
-  // Lobby drawing live updates
-  registerLobbyDrawingDispatch?: (dispatch: (action: any) => void) => void;
+  registerLobbyDrawingDispatch?: (dispatch: (action: DrawingUpdateMessage) => void) => void;
   unregisterLobbyDrawingDispatch?: () => void;
 
-  // Perform ActionCable channel actions on current main socket
   experiencePerform?: (
     action: string,
-    payload?: Record<string, any>,
+    payload?: Record<string, unknown>,
     target?: 'participant' | 'admin' | 'monitor' | 'impersonation',
   ) => void;
 }

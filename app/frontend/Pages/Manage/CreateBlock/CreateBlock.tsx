@@ -1,7 +1,8 @@
 import { DialogDescription, DialogTitle } from '@cctv/components/ui/dialog';
-import { Button, TextInput } from '@cctv/core';
+import { Button } from '@cctv/core/Button/Button';
 import { Dropdown } from '@cctv/core/Dropdown/Dropdown';
-import { BlockKind, ParticipantSummary } from '@cctv/types';
+import { TextInput } from '@cctv/core/TextInput/TextInput';
+import { BlockKind, ParticipantRole, ParticipantSummary } from '@cctv/types';
 
 import CreateAnnouncement from './CreateAnnouncement/CreateAnnouncement';
 import { CreateBlockProvider, useCreateBlockContext } from './CreateBlockContext';
@@ -141,7 +142,7 @@ function AdditionalDetails() {
           { label: 'Host', value: 'host' },
         ]}
         value={visibleRoles}
-        onChange={(value) => setVisibleRoles([value])}
+        onChange={(value) => setVisibleRoles([value as ParticipantRole])}
       />
       <TextInput
         label="Visible to segments (comma-separated)"

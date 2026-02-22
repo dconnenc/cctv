@@ -2,7 +2,7 @@ import { BrowserRouter } from 'react-router-dom';
 
 import { createRoot } from 'react-dom/client';
 
-import { ThemeProvider } from '@cctv/contexts';
+import { ThemeProvider } from '@cctv/contexts/ThemeContext';
 
 import App from '../App';
 

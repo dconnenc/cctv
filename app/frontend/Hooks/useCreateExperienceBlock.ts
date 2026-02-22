@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react';
 
 import { useExperience } from '@cctv/contexts/ExperienceContext';
 import {
+  ApiPayload,
   BlockKind,
   BlockStatus,
   CreateBlockPayload,
@@ -12,7 +13,7 @@ import { qaLogger } from '@cctv/utils';
 
 export interface CreateExperienceBlockParams {
   kind: BlockKind;
-  payload?: Record<string, any>;
+  payload?: ApiPayload;
   visible_to_roles?: ParticipantRole[];
   visible_to_segments?: string[];
   target_user_ids?: string[];
@@ -21,16 +22,14 @@ export interface CreateExperienceBlockParams {
   variables?: Array<{
     key: string;
     label: string;
-    datatype: 'string' | 'number' | 'text';
+    datatype: string;
     required: boolean;
-    source:
-      | { type: 'participant'; participant_id: string }
-      | { kind: 'question'; question: string; input_type: string };
+    source?:
+      | { type: string; participant_id: string }
+      | { kind: string; question: string; input_type: string };
   }>;
   questions?: Array<{
-    payload: {
-      question: string;
-    };
+    payload: Record<string, string>;
   }>;
 }
 
@@ -42,7 +41,7 @@ export function useCreateExperienceBlock() {
   const createExperienceBlock = useCallback(
     async ({
       kind,
-      payload = {},
+      payload,
       visible_to_roles = [],
       visible_to_segments = [],
       target_user_ids = [],
@@ -71,7 +70,7 @@ export function useCreateExperienceBlock() {
 
       const submitPayload: CreateBlockPayload = {
         kind,
-        payload: payload as any,
+        payload: payload as CreateBlockPayload['payload'],
         visible_to_roles,
         visible_to_segments,
         target_user_ids,

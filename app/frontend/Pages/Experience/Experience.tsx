@@ -1,13 +1,13 @@
 import { useEffect } from 'react';
 
-import { Link, NavLink, useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 import { ParticipantsList } from '@cctv/components';
-import { useUser } from '@cctv/contexts';
-import { useExperience } from '@cctv/contexts';
-import { Button } from '@cctv/core';
-import { ExperienceBlockContainer } from '@cctv/experiences';
-import { useClearAvatars } from '@cctv/hooks';
+import { useExperience } from '@cctv/contexts/ExperienceContext';
+import { useUser } from '@cctv/contexts/UserContext';
+import { Button } from '@cctv/core/Button/Button';
+import ExperienceBlockContainer from '@cctv/experiences/ExperienceBlockContainer/ExperienceBlockContainer';
+import { useClearAvatars } from '@cctv/hooks/useClearAvatars';
 
 import AdminNotification from './AdminNotification/AdminNotification';
 

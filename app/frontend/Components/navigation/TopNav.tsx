@@ -5,7 +5,7 @@ import { NavLink } from 'react-router-dom';
 import { Settings } from 'lucide-react';
 
 import { Switch } from '@cctv/components/ui/switch';
-import { useTheme } from '@cctv/contexts';
+import { useTheme } from '@cctv/contexts/ThemeContext';
 import { useUser } from '@cctv/contexts/UserContext';
 import { getSessionCreatedExperiences } from '@cctv/utils';
 

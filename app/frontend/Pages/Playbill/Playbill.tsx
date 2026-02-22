@@ -1,4 +1,4 @@
-import { useExperience } from '@cctv/contexts';
+import { useExperience } from '@cctv/contexts/ExperienceContext';
 
 import styles from './Playbill.module.scss';
 

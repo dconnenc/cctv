@@ -1,4 +1,4 @@
-import { useExperience } from '@cctv/contexts';
+import { useExperience } from '@cctv/contexts/ExperienceContext';
 import { usePost } from '@cctv/hooks/usePost';
 import { RegisterExperienceApiResponse } from '@cctv/types';
 import { qaLogger } from '@cctv/utils';

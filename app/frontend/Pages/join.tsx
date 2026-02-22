@@ -2,8 +2,8 @@ import { ChangeEvent, FormEvent, useState } from 'react';
 
 import { useSearchParams } from 'react-router-dom';
 
-import { Button } from '@cctv/core';
-import { useGet } from '@cctv/hooks';
+import { Button } from '@cctv/core/Button/Button';
+import { useGet } from '@cctv/hooks/useGet';
 import { useJoinExperience } from '@cctv/hooks/useJoinExperience';
 
 import styles from './Join.module.scss';

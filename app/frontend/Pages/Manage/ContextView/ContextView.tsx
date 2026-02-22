@@ -1,4 +1,4 @@
-import { Panel } from '@cctv/core';
+import { Panel } from '@cctv/core/Panel/Panel';
 import { Block, Experience, ParticipantSummary } from '@cctv/types';
 
 import BlockPreview from '../BlockPreview/BlockPreview';

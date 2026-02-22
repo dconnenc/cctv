@@ -1,7 +1,8 @@
 import { FormEvent, useState } from 'react';
 
-import { Button, Option } from '@cctv/core';
-import { useSubmitPollResponse } from '@cctv/hooks';
+import { Button } from '@cctv/core/Button/Button';
+import { Option } from '@cctv/core/Option/Option';
+import { useSubmitPollResponse } from '@cctv/hooks/useSubmitPollResponse';
 import { PollPayload } from '@cctv/types';
 import { getFormData } from '@cctv/utils';
 

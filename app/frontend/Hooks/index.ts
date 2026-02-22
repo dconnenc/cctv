@@ -17,3 +17,4 @@ export { useSaveAvatar } from './useSaveAvatar';
 export { useClearAvatars } from './useClearAvatars';
 export { useDebugParticipants } from './useDebugParticipants';
 export { useSimulateResponses } from './useSimulateResponses';
+export { useBlockPresentation } from './useBlockPresentation';

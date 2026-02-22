@@ -4,7 +4,7 @@ import { useQuery } from './useQuery';
 
 export function useGet<T>({ url, enabled }: { url: string; enabled?: boolean }) {
   const [data, setData] = useState<T>();
-  const { query, ...rest } = useQuery<T>({ url });
+  const { query, abort, ...rest } = useQuery<T>({ url });
 
   const get = async () => query({ method: 'GET' });
 
@@ -15,7 +15,9 @@ export function useGet<T>({ url, enabled }: { url: string; enabled?: boolean }) 
       const data = await get();
       setData(data);
     })();
-  }, [url, enabled]);
+
+    return () => abort();
+  }, [url, enabled, get, abort]);
 
   return {
     data,

@@ -1,7 +1,5 @@
-import React from 'react';
-
-import { useExperience } from '@cctv/contexts';
-import { useSaveAvatar } from '@cctv/hooks';
+import { useExperience } from '@cctv/contexts/ExperienceContext';
+import { useSaveAvatar } from '@cctv/hooks/useSaveAvatar';
 
 import DrawingCanvas from '../DrawingCanvas/DrawingCanvas';
 
@@ -16,7 +14,9 @@ export default function LobbyAvatarEditor({ onFinalize }: { onFinalize?: () => v
     <DrawingCanvas
       initialImage={initialImage}
       initialPosition={initialPosition}
-      onStrokeEvent={(evt) => experiencePerform?.('drawing_event', evt as any, 'participant')}
+      onStrokeEvent={(evt) =>
+        experiencePerform?.('drawing_event', evt as Record<string, unknown>, 'participant')
+      }
       onPositionDrag={(pos) =>
         experiencePerform?.('avatar_position', { position: pos }, 'participant')
       }
