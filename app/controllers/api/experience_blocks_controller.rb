@@ -260,6 +260,24 @@ class Api::ExperienceBlocksController < Api::BaseController
     end
   end
 
+  # POST /api/experiences/:experience_id/blocks/:id/family_feud/auto_categorize
+  def auto_categorize
+    with_experience_orchestration do
+      block = @experience.experience_blocks.find(params[:id])
+
+      buckets = Experiences::Orchestrator.new(
+        experience: @experience, actor: @user
+      ).auto_categorize_family_feud!(
+        block_id: params[:id],
+        question_id: params[:question_id]
+      )
+
+      Experiences::Broadcaster.new(@experience).broadcast_experience_update
+
+      render json: { success: true, data: { buckets: buckets } }, status: 200
+    end
+  end
+
   # POST /api/experiences/:experience_id/blocks/:id/family_feud/add_bucket
   def add_bucket
     with_experience_orchestration do
