@@ -45,6 +45,7 @@ RSpec.configure do |config|
   # Filter lines from Rails gems in backtraces.
   config.filter_rails_from_backtrace!
   config.include FactoryBot::Syntax::Methods
+  config.include SystemHelpers, type: :system
 end
 
 Capybara.default_max_wait_time = 10
