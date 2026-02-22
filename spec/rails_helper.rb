@@ -47,7 +47,8 @@ RSpec.configure do |config|
   config.include FactoryBot::Syntax::Methods
 end
 
-Capybara.javascript_driver = :cuprite
-Capybara.register_driver(:cuprite) do |app|
-  Capybara::Cuprite::Driver.new(app, window_size: [1200, 800])
+RSpec.configure do |config|
+  config.before(:each, type: :system) do
+    driven_by :cuprite, screen_size: [1200, 800], options: { headless: ENV["HEADLESS"] != "false" }
+  end
 end
