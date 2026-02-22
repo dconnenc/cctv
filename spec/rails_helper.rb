@@ -1,6 +1,8 @@
 require 'spec_helper'
 ENV['RAILS_ENV'] ||= 'test'
 require_relative '../config/environment'
+require "capybara/cuprite"
+
 # Prevent database truncation if the environment is production
 abort("The Rails environment is running in production mode!") if Rails.env.production?
 
@@ -45,3 +47,8 @@ RSpec.configure do |config|
   config.include FactoryBot::Syntax::Methods
 end
 
+RSpec.configure do |config|
+  config.before(:each, type: :system) do
+    driven_by :cuprite, screen_size: [1200, 800], options: { headless: ENV["HEADLESS"] != "false" }
+  end
+end
