@@ -27,6 +27,10 @@ import { useAuth } from './AuthContext';
 import { useDispatchRegistry } from './DispatchRegistryContext';
 import { useExperienceState } from './ExperienceStateContext';
 
+const MAX_RECONNECT_ATTEMPTS = 10;
+const RECONNECT_BASE_DELAY_MS = 1000;
+const RECONNECT_MAX_DELAY_MS = 15000;
+
 interface WebSocketConfig {
   label: string;
   identifier: Record<string, string>;
@@ -36,40 +40,90 @@ interface WebSocketConfig {
   onClose?: (event: CloseEvent) => void;
 }
 
-function createWebSocketConnection(config: WebSocketConfig): WebSocket {
-  const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-  const wsUrl = `${protocol}//${window.location.host}/cable`;
+interface ManagedWebSocket {
+  ws: WebSocket;
+  close: () => void;
+}
 
-  qaLogger(`[${config.label}] Connecting: ${wsUrl}`);
-  const ws = new WebSocket(wsUrl);
+function createWebSocketConnection(
+  config: WebSocketConfig,
+  onReconnecting?: (reconnecting: boolean) => void,
+): ManagedWebSocket {
+  let closedIntentionally = false;
+  let reconnectAttempts = 0;
+  let reconnectTimer: ReturnType<typeof setTimeout> | undefined;
+  let currentWs: WebSocket;
 
-  ws.onopen = () => {
-    qaLogger(`[${config.label}] WebSocket connected`);
-    config.onConnect?.();
+  function connect(): WebSocket {
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const wsUrl = `${protocol}//${window.location.host}/cable`;
 
-    const subscription = {
-      command: 'subscribe',
-      identifier: JSON.stringify(config.identifier),
+    qaLogger(`[${config.label}] Connecting: ${wsUrl}`);
+    const ws = new WebSocket(wsUrl);
+
+    ws.onopen = () => {
+      qaLogger(`[${config.label}] WebSocket connected`);
+      reconnectAttempts = 0;
+      onReconnecting?.(false);
+      config.onConnect?.();
+
+      const subscription = {
+        command: 'subscribe',
+        identifier: JSON.stringify(config.identifier),
+      };
+      ws.send(JSON.stringify(subscription));
     };
-    ws.send(JSON.stringify(subscription));
-  };
 
-  ws.onmessage = (event) => {
-    const message = JSON.parse(event.data);
-    config.onMessage(message);
-  };
+    ws.onmessage = (event) => {
+      const message = JSON.parse(event.data);
+      config.onMessage(message);
+    };
 
-  ws.onerror = () => {
-    qaLogger(`[${config.label}] WebSocket error`);
-    config.onError?.();
-  };
+    ws.onerror = () => {
+      qaLogger(`[${config.label}] WebSocket error`);
+      config.onError?.();
+    };
 
-  ws.onclose = (event) => {
-    qaLogger(`[${config.label}] WebSocket closed${event.code ? `. Code: ${event.code}` : ''}`);
-    config.onClose?.(event);
-  };
+    ws.onclose = (event) => {
+      qaLogger(`[${config.label}] WebSocket closed${event.code ? `. Code: ${event.code}` : ''}`);
+      config.onClose?.(event);
 
-  return ws;
+      if (!closedIntentionally && reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
+        const delay = Math.min(
+          RECONNECT_BASE_DELAY_MS * Math.pow(2, reconnectAttempts),
+          RECONNECT_MAX_DELAY_MS,
+        );
+        reconnectAttempts++;
+        qaLogger(
+          `[${config.label}] Reconnecting in ${delay}ms (attempt ${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS})`,
+        );
+        onReconnecting?.(true);
+        reconnectTimer = setTimeout(() => {
+          if (!closedIntentionally) {
+            currentWs = connect();
+          }
+        }, delay);
+      } else if (!closedIntentionally) {
+        qaLogger(`[${config.label}] Max reconnection attempts reached`);
+        onReconnecting?.(false);
+      }
+    };
+
+    return ws;
+  }
+
+  currentWs = connect();
+
+  return {
+    get ws() {
+      return currentWs;
+    },
+    close() {
+      closedIntentionally = true;
+      if (reconnectTimer) clearTimeout(reconnectTimer);
+      currentWs.close();
+    },
+  };
 }
 
 function parseChannelMessage(raw: { type?: string; message?: unknown }): WebSocketMessage | null {
@@ -88,6 +142,7 @@ function parseChannelMessage(raw: { type?: string; message?: unknown }): WebSock
 export interface WebSocketContextType {
   wsConnected: boolean;
   wsError?: string;
+  reconnecting: boolean;
   experiencePerform: (
     action: string,
     payload?: Record<string, unknown>,
@@ -112,13 +167,43 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
 
   const [wsConnected, setWsConnected] = useState(false);
   const [wsError, setWsError] = useState<string>();
+  const [reconnecting, setReconnecting] = useState(false);
 
-  const wsRef = useRef<WebSocket>(undefined);
-  const monitorWsRef = useRef<WebSocket>(undefined);
-  const impersonationWsRef = useRef<WebSocket>(undefined);
+  const wsRef = useRef<ManagedWebSocket>(undefined);
+  const monitorWsRef = useRef<ManagedWebSocket>(undefined);
+  const impersonationWsRef = useRef<ManagedWebSocket>(undefined);
   const wsIdentifierRef = useRef<string>(undefined);
   const monitorIdentifierRef = useRef<string>(undefined);
   const impersonationIdentifierRef = useRef<string>(undefined);
+
+  const reconnectParticipantWs = useCallback(() => {
+    if (!wsRef.current || !wsIdentifierRef.current) return;
+    qaLogger('[WS] Resubscribe requested — reconnecting participant websocket');
+    const identifier = JSON.parse(wsIdentifierRef.current);
+    wsRef.current.close();
+    wsRef.current = undefined as any;
+
+    const handleMsg = handleExperienceMessageRef.current;
+    wsRef.current = createWebSocketConnection(
+      {
+        label: 'PARTICIPANT WS',
+        identifier,
+        onMessage: (msg) => handleMsg(msg, 'PARTICIPANT WS', 'main'),
+        onConnect: () => {
+          setWsConnected(true);
+          setWsError(undefined);
+        },
+        onError: () => {
+          setWsError('Connection error');
+          setWsConnected(false);
+        },
+        onClose: () => setWsConnected(false),
+      },
+      setReconnecting,
+    );
+  }, []);
+
+  const handleExperienceMessageRef = useRef<typeof handleExperienceMessage>(null as any);
 
   const handleExperienceMessage = useCallback(
     (
@@ -159,6 +244,11 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
 
       const wsMessage = parseChannelMessage(raw);
       if (!wsMessage) return;
+
+      if (wsMessage.type === WebSocketMessageTypes.RESUBSCRIBE_REQUIRED && target === 'main') {
+        reconnectParticipantWs();
+        return;
+      }
 
       if (isExperiencePayloadMessage(wsMessage)) {
         qaLogger(`[${label}] Processing: ${wsMessage.type}`);
@@ -217,8 +307,11 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
       setParticipantView,
       getFamilyFeudDispatch,
       getLobbyDrawingDispatch,
+      reconnectParticipantWs,
     ],
   );
+
+  handleExperienceMessageRef.current = handleExperienceMessage;
 
   const disconnectAllWebsockets = useCallback(() => {
     if (wsRef.current) {
@@ -238,6 +331,7 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
     }
     setWsConnected(false);
     setWsError(undefined);
+    setReconnecting(false);
   }, []);
 
   useEffect(() => {
@@ -250,33 +344,33 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
     if (isManagePage) {
       qaLogger('[WS SETUP] MANAGE PAGE - Creating 3 websockets: Admin, Monitor, Impersonation');
 
-      if (wsRef.current?.readyState !== WebSocket.OPEN) {
-        wsRef.current = createWebSocketConnection({
-          label: 'ADMIN WS',
-          identifier: {
-            channel: 'ExperienceSubscriptionChannel',
-            code,
-            ...(jwt ? { token: jwt } : {}),
-          },
-          onMessage: (msg) => handleExperienceMessage(msg, 'ADMIN WS', 'main'),
-          onConnect: () => {
-            setWsConnected(true);
-            setWsError(undefined);
-          },
-          onError: () => {
-            setWsError('Connection error');
-            setWsConnected(false);
-          },
-          onClose: () => setWsConnected(false),
-        });
-        wsIdentifierRef.current = JSON.stringify({
+      if (!wsRef.current || wsRef.current.ws.readyState !== WebSocket.OPEN) {
+        const adminId = {
           channel: 'ExperienceSubscriptionChannel',
           code,
           ...(jwt ? { token: jwt } : {}),
-        });
+        };
+        wsRef.current = createWebSocketConnection(
+          {
+            label: 'ADMIN WS',
+            identifier: adminId,
+            onMessage: (msg) => handleExperienceMessage(msg, 'ADMIN WS', 'main'),
+            onConnect: () => {
+              setWsConnected(true);
+              setWsError(undefined);
+            },
+            onError: () => {
+              setWsError('Connection error');
+              setWsConnected(false);
+            },
+            onClose: () => setWsConnected(false),
+          },
+          setReconnecting,
+        );
+        wsIdentifierRef.current = JSON.stringify(adminId);
       }
 
-      if (monitorWsRef.current?.readyState !== WebSocket.OPEN) {
+      if (!monitorWsRef.current || monitorWsRef.current.ws.readyState !== WebSocket.OPEN) {
         const monitorId: Record<string, string> = {
           channel: 'ExperienceSubscriptionChannel',
           code,
@@ -316,7 +410,7 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
     } else if (isMonitorPage) {
       qaLogger('[WS SETUP] Monitor PAGE - Creating 1 websocket: Monitor');
 
-      if (monitorWsRef.current?.readyState !== WebSocket.OPEN) {
+      if (!monitorWsRef.current || monitorWsRef.current.ws.readyState !== WebSocket.OPEN) {
         const monitorId: Record<string, string> = {
           channel: 'ExperienceSubscriptionChannel',
           code,
@@ -334,22 +428,25 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
       qaLogger('[WS SETUP] PARTICIPANT PAGE - Creating 1 websocket: Participant');
 
       if (jwt) {
-        if (wsRef.current?.readyState !== WebSocket.OPEN) {
+        if (!wsRef.current || wsRef.current.ws.readyState !== WebSocket.OPEN) {
           const participantId = { channel: 'ExperienceSubscriptionChannel', code, token: jwt };
-          wsRef.current = createWebSocketConnection({
-            label: 'PARTICIPANT WS',
-            identifier: participantId,
-            onMessage: (msg) => handleExperienceMessage(msg, 'PARTICIPANT WS', 'main'),
-            onConnect: () => {
-              setWsConnected(true);
-              setWsError(undefined);
+          wsRef.current = createWebSocketConnection(
+            {
+              label: 'PARTICIPANT WS',
+              identifier: participantId,
+              onMessage: (msg) => handleExperienceMessage(msg, 'PARTICIPANT WS', 'main'),
+              onConnect: () => {
+                setWsConnected(true);
+                setWsError(undefined);
+              },
+              onError: () => {
+                setWsError('Connection error');
+                setWsConnected(false);
+              },
+              onClose: () => setWsConnected(false),
             },
-            onError: () => {
-              setWsError('Connection error');
-              setWsConnected(false);
-            },
-            onClose: () => setWsConnected(false),
-          });
+            setReconnecting,
+          );
           wsIdentifierRef.current = JSON.stringify(participantId);
         }
       } else {
@@ -377,10 +474,13 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
       target: 'participant' | 'admin' | 'monitor' | 'impersonation' = 'participant',
     ) => {
       const frames = {
-        participant: { sock: wsRef.current, id: wsIdentifierRef.current },
-        admin: { sock: wsRef.current, id: wsIdentifierRef.current },
-        monitor: { sock: monitorWsRef.current, id: monitorIdentifierRef.current },
-        impersonation: { sock: impersonationWsRef.current, id: impersonationIdentifierRef.current },
+        participant: { sock: wsRef.current?.ws, id: wsIdentifierRef.current },
+        admin: { sock: wsRef.current?.ws, id: wsIdentifierRef.current },
+        monitor: { sock: monitorWsRef.current?.ws, id: monitorIdentifierRef.current },
+        impersonation: {
+          sock: impersonationWsRef.current?.ws,
+          id: impersonationIdentifierRef.current,
+        },
       } as const;
       const f = frames[target];
       if (!f.sock || !f.id) return;
@@ -391,8 +491,8 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
   );
 
   const value = useMemo<WebSocketContextType>(
-    () => ({ wsConnected, wsError, experiencePerform }),
-    [wsConnected, wsError, experiencePerform],
+    () => ({ wsConnected, wsError, reconnecting, experiencePerform }),
+    [wsConnected, wsError, reconnecting, experiencePerform],
   );
 
   return <WebSocketContext.Provider value={value}>{children}</WebSocketContext.Provider>;

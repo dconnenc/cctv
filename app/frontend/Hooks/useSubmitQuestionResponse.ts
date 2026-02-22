@@ -11,33 +11,30 @@ export interface SubmitQuestionResponseParams {
   };
 }
 
-export interface SubmitQuestionResponseResponse {
+export interface SubmitQuestionResponseResult {
   success: boolean;
-  data?: any;
   error?: string;
 }
 
 export function useSubmitQuestionResponse() {
   const { code, experienceFetch } = useExperience();
-  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const submitQuestionResponse = useCallback(
     async ({
       blockId,
       answer,
-    }: SubmitQuestionResponseParams): Promise<SubmitQuestionResponseResponse | null> => {
+    }: SubmitQuestionResponseParams): Promise<SubmitQuestionResponseResult> => {
       if (!code) {
         setError('Missing experience code');
-        return null;
+        return { success: false, error: 'Missing experience code' };
       }
 
       if (!blockId) {
         setError('Missing block ID');
-        return null;
+        return { success: false, error: 'Missing block ID' };
       }
 
-      setIsLoading(true);
       setError(null);
 
       qaLogger(`Submitting question response for block ${blockId} in experience ${code}`);
@@ -51,7 +48,7 @@ export function useSubmitQuestionResponse() {
           },
         );
 
-        const data: SubmitQuestionResponseResponse = await res.json();
+        const data = await res.json();
 
         if (!data?.success) {
           const msg = data?.error || 'Question submission failed';
@@ -60,7 +57,7 @@ export function useSubmitQuestionResponse() {
         }
 
         qaLogger('Successfully submitted question response');
-        return data;
+        return { success: true };
       } catch (e: any) {
         const msg =
           e?.message === 'Authentication expired'
@@ -68,17 +65,10 @@ export function useSubmitQuestionResponse() {
             : 'Connection error. Please try again.';
         setError(msg);
         return { success: false, error: msg };
-      } finally {
-        setIsLoading(false);
       }
     },
     [code, experienceFetch],
   );
 
-  return {
-    submitQuestionResponse,
-    isLoading,
-    error,
-    setError,
-  };
+  return { submitQuestionResponse, error, setError };
 }

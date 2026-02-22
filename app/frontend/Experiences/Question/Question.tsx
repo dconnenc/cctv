@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useRef, useState } from 'react';
+import { FormEvent, useEffect, useState } from 'react';
 
 import { Button } from '@cctv/core/Button/Button';
 import { TextInput } from '@cctv/core/TextInput/TextInput';
@@ -33,16 +33,11 @@ export default function Question({
   disabled = false,
   viewContext = 'participant',
 }: QuestionProps) {
-  const [submittedValue, setSubmittedValue] = useState<string>('');
-  const { submitQuestionResponse, isLoading, error } = useSubmitQuestionResponse();
-  const userAlreadyResponded = responses?.user_responded || false;
-  const currentBlockIdRef = useRef(blockId);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { submitQuestionResponse, error } = useSubmitQuestionResponse();
 
   useEffect(() => {
-    // Using http and ws causes weird submission race conditions if the rendered
-    // block is the same type.
-    currentBlockIdRef.current = blockId;
-    setSubmittedValue('');
+    setIsSubmitting(false);
   }, [blockId]);
 
   const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
@@ -50,7 +45,6 @@ export default function Question({
     const formData = getFormData<Record<string, string>>(e.currentTarget);
     const value = formData[formKey] || '';
 
-    // Get the block ID from props or URL query params
     const actualBlockId = blockId || new URLSearchParams(window.location.search).get('blockId');
 
     if (!actualBlockId) {
@@ -58,7 +52,7 @@ export default function Question({
       return;
     }
 
-    const submittedBlockId = actualBlockId;
+    setIsSubmitting(true);
 
     const response = await submitQuestionResponse({
       blockId: actualBlockId,
@@ -68,23 +62,28 @@ export default function Question({
       },
     });
 
-    if (response?.success && currentBlockIdRef.current === submittedBlockId) {
-      setSubmittedValue(value);
-    } else if (response?.success) {
-      console.log('[QA] Skipping setSubmittedValue - blockId changed during submission');
+    if (!response?.success) {
+      setIsSubmitting(false);
     }
   };
 
-  if (submittedValue || userAlreadyResponded) {
+  if (responses?.user_responded) {
     const displayValue =
-      submittedValue ||
-      responses?.user_response?.answer?.value ||
-      'You have already responded to this question.';
+      responses?.user_response?.answer?.value || 'You have already responded to this question.';
 
     return (
       <div className={styles.submittedValue}>
         <p className={styles.legend}>{question}</p>
         <p className={styles.value}>{displayValue}</p>
+      </div>
+    );
+  }
+
+  if (isSubmitting) {
+    return (
+      <div className={styles.submittedValue}>
+        <p className={styles.legend}>{question}</p>
+        <p className={styles.value}>Submitting...</p>
       </div>
     );
   }
@@ -103,7 +102,7 @@ export default function Question({
         <legend className={styles.legend}>{question}</legend>
         {error && <p className={styles.error}>{error}</p>}
         <TextInput key={blockId} name={formKey} type={inputType} required disabled={disabled} />
-        <Button type="submit" loading={isLoading} loadingText="Submitting..." disabled={disabled}>
+        <Button type="submit" disabled={disabled}>
           {buttonText}
         </Button>
       </fieldset>
