@@ -7,16 +7,6 @@ RSpec.describe "Participant experience", type: :system do
     sign_in(admin)
     create_experience(name: "Test Experience", code: "test-exp")
 
-    click_link "Go to lobby"
-    wait_for_boot
-
-    expect(page).to have_text(
-      "You're viewing this experience as an admin but aren't registered as a participant."
-    )
-
-    click_link "Manage Experience"
-    expect(page).to have_text("No blocks yet")
-
     click_button "Block"
 
     expect(page).to have_text("Create Block")

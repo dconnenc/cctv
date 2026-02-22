@@ -30,6 +30,21 @@ module SystemHelpers
     expect(page).to have_css("img[alt='QR code for joining an experience']")
   end
 
+  def create_experience_and_go_to_manage(name:, code:)
+    create_experience(name:, code:)
+
+    click_link "Go to lobby"
+    wait_for_boot
+
+    expect(page).to have_text(
+      "You're viewing this experience as an admin but aren't registered as a " \
+        "participant."
+    )
+
+    click_link "Manage Experience"
+    expect(page).to have_text("No blocks yet")
+  end
+
   def register_participant(code:, name:, email:, experience_name:)
     visit "/join?code=#{code}"
     wait_for_boot
