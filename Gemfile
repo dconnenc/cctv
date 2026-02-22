@@ -34,7 +34,6 @@ group :development do
   gem "letter_opener"
   gem "letter_opener_web"
 
-  # Highlight the fine-grained location where an error occurred [https://github.com/ruby/error_highlight]
-  gem "error_highlight", ">= 0.4.0", platforms: [ :ruby ]
+
 end
 
