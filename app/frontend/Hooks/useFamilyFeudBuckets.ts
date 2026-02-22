@@ -42,9 +42,9 @@ export function useFamilyFeudBuckets(blockId?: string, dispatch?: (action: any) 
           return null;
         }
         return data.data.bucket;
-      } catch (e: any) {
+      } catch (e: unknown) {
         const msg =
-          e?.message === 'Authentication expired'
+          e instanceof Error && e.message === 'Authentication expired'
             ? 'Authentication expired'
             : 'Connection error. Please try again.';
         setError(msg);
@@ -80,9 +80,9 @@ export function useFamilyFeudBuckets(blockId?: string, dispatch?: (action: any) 
           return false;
         }
         return true;
-      } catch (e: any) {
+      } catch (e: unknown) {
         const msg =
-          e?.message === 'Authentication expired'
+          e instanceof Error && e.message === 'Authentication expired'
             ? 'Authentication expired'
             : 'Connection error. Please try again.';
         setError(msg);
@@ -118,9 +118,9 @@ export function useFamilyFeudBuckets(blockId?: string, dispatch?: (action: any) 
           return false;
         }
         return true;
-      } catch (e: any) {
+      } catch (e: unknown) {
         const msg =
-          e?.message === 'Authentication expired'
+          e instanceof Error && e.message === 'Authentication expired'
             ? 'Authentication expired'
             : 'Connection error. Please try again.';
         setError(msg);
@@ -156,9 +156,9 @@ export function useFamilyFeudBuckets(blockId?: string, dispatch?: (action: any) 
           return false;
         }
         return true;
-      } catch (e: any) {
+      } catch (e: unknown) {
         const msg =
-          e?.message === 'Authentication expired'
+          e instanceof Error && e.message === 'Authentication expired'
             ? 'Authentication expired'
             : 'Connection error. Please try again.';
         setError(msg);

@@ -1,3 +1,5 @@
+import type { FamilyFeudAction } from '@cctv/pages/Block/FamilyFeudManager/familyFeudReducer';
+
 // ===== CORE DOMAIN TYPES =====
 
 export interface AuthError extends Error {
@@ -486,10 +488,12 @@ export const WebSocketMessageTypes = {
 export type WebSocketMessageType =
   (typeof WebSocketMessageTypes)[keyof typeof WebSocketMessageTypes];
 
+export type FamilyFeudDispatchPayload = FamilyFeudAction['payload'];
+
 export interface FamilyFeudUpdatedMessageMetadata extends WebSocketMessageMetadata {
   block_id: string;
   operation: string;
-  data: any;
+  data: FamilyFeudDispatchPayload;
 }
 
 export type StreamType = 'role' | 'role_segments' | 'targeted';
@@ -558,7 +562,7 @@ export interface FamilyFeudUpdatedMessage
   extends BaseWebSocketMessage<'family_feud_updated', FamilyFeudUpdatedMessageMetadata> {
   block_id: string;
   operation: string;
-  data: any;
+  data: FamilyFeudDispatchPayload;
 }
 
 export interface ConfirmSubscriptionMessage extends BaseWebSocketMessage<'confirm_subscription'> {}
@@ -712,18 +716,16 @@ export interface ExperienceContextType {
   impersonatedParticipantId?: string;
   setImpersonatedParticipantId: (id: string | undefined) => void;
 
-  // Family Feud block-scoped dispatch registration
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   registerFamilyFeudDispatch?: (blockId: string, dispatch: (action: any) => void) => void;
   unregisterFamilyFeudDispatch?: (blockId: string) => void;
 
-  // Lobby drawing live updates
-  registerLobbyDrawingDispatch?: (dispatch: (action: any) => void) => void;
+  registerLobbyDrawingDispatch?: (dispatch: (action: DrawingUpdateMessage) => void) => void;
   unregisterLobbyDrawingDispatch?: () => void;
 
-  // Perform ActionCable channel actions on current main socket
   experiencePerform?: (
     action: string,
-    payload?: Record<string, any>,
+    payload?: Record<string, unknown>,
     target?: 'participant' | 'admin' | 'monitor' | 'impersonation',
   ) => void;
 }
