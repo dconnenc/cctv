@@ -1,6 +1,8 @@
 require 'spec_helper'
 ENV['RAILS_ENV'] ||= 'test'
 require_relative '../config/environment'
+require "capybara/cuprite"
+
 # Prevent database truncation if the environment is production
 abort("The Rails environment is running in production mode!") if Rails.env.production?
 
@@ -45,3 +47,7 @@ RSpec.configure do |config|
   config.include FactoryBot::Syntax::Methods
 end
 
+Capybara.javascript_driver = :cuprite
+Capybara.register_driver(:cuprite) do |app|
+  Capybara::Cuprite::Driver.new(app, window_size: [1200, 800])
+end
