@@ -40,7 +40,7 @@
 import { useCallback, useEffect, useReducer, useRef, useState } from 'react';
 
 import { DragDropContext, Draggable, Droppable } from '@hello-pangea/dnd';
-import { ChevronDown, ChevronRight, Loader2, Play, Plus, Trash2 } from 'lucide-react';
+import { ChevronDown, ChevronRight, Loader2, Play, Plus, Sparkles, Trash2 } from 'lucide-react';
 
 import { Button } from '@cctv/components/ui/button';
 import { useExperience } from '@cctv/contexts/ExperienceContext';
@@ -71,16 +71,15 @@ interface FamilyFeudManagerProps {
 export default function FamilyFeudManager({ block }: FamilyFeudManagerProps) {
   const { code } = useExperience();
   const [questionsState, dispatch] = useReducer(familyFeudReducer, []);
-  const { addBucket, renameBucket, deleteBucket, assignAnswer } = useFamilyFeudBuckets(
-    block.id,
-    dispatch,
-  );
+  const { addBucket, renameBucket, deleteBucket, assignAnswer, autoCategorize } =
+    useFamilyFeudBuckets(block.id, dispatch);
   const childQuestions = block.children ?? [];
   const [editingBucketNames, setEditingBucketNames] = useState<Record<string, string>>({});
   const renameTimeoutRef = useRef<Record<string, NodeJS.Timeout>>({});
   const [addingBucketForQuestion, setAddingBucketForQuestion] = useState<string | null>(null);
   const [deletingBucketId, setDeletingBucketId] = useState<string | null>(null);
   const [startingPlaying, setStartingPlaying] = useState(false);
+  const [autoCategorizing, setAutoCategorizing] = useState<string | null>(null);
 
   const [collapsedQuestions, setCollapsedQuestions] = useState<Set<string>>(new Set());
   const [collapsedBuckets, setCollapsedBuckets] = useState<Set<string>>(new Set());
@@ -188,6 +187,18 @@ export default function FamilyFeudManager({ block }: FamilyFeudManagerProps) {
       }
     },
     [deleteBucket, block.id],
+  );
+
+  const handleAutoCategorize = useCallback(
+    async (questionId: string) => {
+      setAutoCategorizing(questionId);
+      try {
+        await autoCategorize(block.id, questionId);
+      } finally {
+        setAutoCategorizing(null);
+      }
+    },
+    [autoCategorize, block.id],
   );
 
   const handleDragEnd = useCallback(
@@ -413,10 +424,12 @@ export default function FamilyFeudManager({ block }: FamilyFeudManagerProps) {
                     <BucketsColumn
                       question={question}
                       addingBucketForQuestion={addingBucketForQuestion}
+                      autoCategorizing={autoCategorizing}
                       editingBucketNames={editingBucketNames}
                       deletingBucketId={deletingBucketId}
                       collapsedBuckets={collapsedBuckets}
                       onAddBucket={handleAddBucket}
+                      onAutoCategorize={handleAutoCategorize}
                       onRenameBucket={handleRenameBucket}
                       onDeleteBucket={handleDeleteBucket}
                       onToggleBucket={toggleBucket}
@@ -436,61 +449,87 @@ export default function FamilyFeudManager({ block }: FamilyFeudManagerProps) {
 const BucketsColumn = ({
   question,
   addingBucketForQuestion,
+  autoCategorizing,
   editingBucketNames,
   deletingBucketId,
   collapsedBuckets,
   onAddBucket,
+  onAutoCategorize,
   onRenameBucket,
   onDeleteBucket,
   onToggleBucket,
 }: {
   question: QuestionWithBuckets;
   addingBucketForQuestion: string | null;
+  autoCategorizing: string | null;
   editingBucketNames: Record<string, string>;
   deletingBucketId: string | null;
   collapsedBuckets: Set<string>;
   onAddBucket: (questionId: string) => void;
+  onAutoCategorize: (questionId: string) => void;
   onRenameBucket: (questionId: string, bucketId: string, name: string) => void;
   onDeleteBucket: (questionId: string, bucketId: string) => void;
   onToggleBucket: (bucketId: string) => void;
-}) => (
-  <div className={styles.bucketsColumn}>
-    <div className={styles.columnHeader}>
-      <span>Buckets</span>
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={() => onAddBucket(question.questionId)}
-        disabled={addingBucketForQuestion === question.questionId}
-      >
-        <Plus size={16} />
-        {addingBucketForQuestion === question.questionId ? 'Adding...' : 'Add Bucket'}
-      </Button>
-    </div>
+}) => {
+  const isCategorizing = autoCategorizing === question.questionId;
+  const hasUnassigned = question.unassignedAnswers.length > 0;
 
-    <div className={styles.bucketsList}>
-      {question.buckets.map((bucket) => (
-        <BucketItem
-          key={bucket.id}
-          questionId={question.questionId}
-          bucket={bucket}
-          isCollapsed={collapsedBuckets.has(bucket.id)}
-          editingBucketNames={editingBucketNames}
-          deletingBucketId={deletingBucketId}
-          onRenameBucket={onRenameBucket}
-          onDeleteBucket={onDeleteBucket}
-          onToggleBucket={() => onToggleBucket(bucket.id)}
-        />
-      ))}
-
-      {question.buckets.length === 0 && (
-        <div className={styles.noBuckets}>
-          <p>Click "Add Bucket" to get started.</p>
+  return (
+    <div className={styles.bucketsColumn}>
+      <div className={styles.columnHeader}>
+        <span>Buckets</span>
+        <div className={styles.columnHeaderActions}>
+          {hasUnassigned && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onAutoCategorize(question.questionId)}
+              disabled={isCategorizing}
+            >
+              {isCategorizing ? (
+                <Loader2 size={16} className={styles.spinner} />
+              ) : (
+                <Sparkles size={16} />
+              )}
+              {isCategorizing ? 'Categorizing...' : 'Auto-categorize'}
+            </Button>
+          )}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onAddBucket(question.questionId)}
+            disabled={addingBucketForQuestion === question.questionId}
+          >
+            <Plus size={16} />
+            {addingBucketForQuestion === question.questionId ? 'Adding...' : 'Add Bucket'}
+          </Button>
         </div>
-      )}
+      </div>
+
+      <div className={styles.bucketsList}>
+        {question.buckets.map((bucket) => (
+          <BucketItem
+            key={bucket.id}
+            questionId={question.questionId}
+            bucket={bucket}
+            isCollapsed={collapsedBuckets.has(bucket.id)}
+            editingBucketNames={editingBucketNames}
+            deletingBucketId={deletingBucketId}
+            onRenameBucket={onRenameBucket}
+            onDeleteBucket={onDeleteBucket}
+            onToggleBucket={() => onToggleBucket(bucket.id)}
+          />
+        ))}
+
+        {question.buckets.length === 0 && (
+          <div className={styles.noBuckets}>
+            <p>Click "Add Bucket" to get started.</p>
+          </div>
+        )}
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 const BucketItem = ({
   questionId,

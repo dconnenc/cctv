@@ -53,6 +53,7 @@ Rails.application.routes.draw do
           post :submit_multistep_form_response
           post :submit_mad_lib_response
           
+          post 'family_feud/auto_categorize', action: :auto_categorize
           post 'family_feud/add_bucket', action: :add_bucket
           patch 'family_feud/buckets/:bucket_id', action: :rename_bucket
           delete 'family_feud/buckets/:bucket_id', action: :delete_bucket

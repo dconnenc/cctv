@@ -89,6 +89,12 @@
   font-size: 14px;
 }
 
+.columnHeaderActions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
 .bucketsList {
   display: flex;
   flex-direction: column;

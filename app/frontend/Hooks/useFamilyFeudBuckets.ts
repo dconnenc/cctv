@@ -170,5 +170,52 @@ export function useFamilyFeudBuckets(blockId?: string, dispatch?: (action: any) 
     [code, experienceFetch],
   );
 
-  return { addBucket, renameBucket, deleteBucket, assignAnswer, isLoading, error, setError };
+  const autoCategorize = useCallback(
+    async (blockId: string, questionId: string) => {
+      if (!code) {
+        setError('Missing experience code');
+        return null;
+      }
+      setIsLoading(true);
+      setError(null);
+
+      const url = `/api/experiences/${encodeURIComponent(code)}/blocks/${encodeURIComponent(blockId)}/family_feud/auto_categorize`;
+
+      try {
+        const res = await experienceFetch(url, {
+          method: 'POST',
+          body: JSON.stringify({ question_id: questionId }),
+        });
+
+        const data = await res.json();
+        if (!res.ok || data?.success === false) {
+          const msg = data?.error || 'Failed to auto-categorize answers';
+          setError(msg);
+          return null;
+        }
+        return data.data;
+      } catch (e: unknown) {
+        const msg =
+          e instanceof Error && e.message === 'Authentication expired'
+            ? 'Authentication expired'
+            : 'Connection error. Please try again.';
+        setError(msg);
+        return null;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [code, experienceFetch],
+  );
+
+  return {
+    addBucket,
+    renameBucket,
+    deleteBucket,
+    assignAnswer,
+    autoCategorize,
+    isLoading,
+    error,
+    setError,
+  };
 }
