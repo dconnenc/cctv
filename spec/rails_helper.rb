@@ -49,6 +49,7 @@ RSpec.configure do |config|
 end
 
 Capybara.default_max_wait_time = 10
+Capybara.enable_aria_label = true
 
 RSpec.configure do |config|
   config.before(:each, type: :system) do

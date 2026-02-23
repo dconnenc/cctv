@@ -8,7 +8,7 @@ interface AnnouncementProps extends AnnouncementPayload {
 
 export default function Announcement({ participant, message }: AnnouncementProps) {
   const processedMessage = participant
-    ? message.replace(/\{\{participant_name\}\}/g, participant.name || participant.email)
+    ? message.replace(/\{\{\s*participant_name\s*\}\}/g, participant.name || participant.email)
     : message;
 
   return (
