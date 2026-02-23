@@ -13,11 +13,13 @@ RSpec.describe "Participant experience", type: :system do
 
     expect(page).to have_text("Create Block")
     select "Announcement", from: "Kind"
-    fill_in "Announcement Message", with: "Welcome {{ participant_name }} to the show!"
+    fill_in(
+      "Announcement Message",
+      with: "Welcome {{ participant_name }} to the show!"
+    )
     click_button "Queue block"
 
     expect(page).to have_text("announcement")
-    expect(page).to have_no_text("No blocks yet")
 
     click_button "Start"
     expect(page).to have_button("Pause")

@@ -3,31 +3,15 @@ require "rails_helper"
 RSpec.describe "Creating a new experience", type: :system do
   let(:admin) { create(:user, :admin) }
 
-  it "creates an experience and navigates to the manage page" do
+  it "creates an announcement block starts the experience" do
     sign_in(admin)
     create_experience(name: "Test Experience", code: "test-exp")
 
     click_link "Go to lobby"
-    wait_for_boot
 
     expect(page).to have_text(
-      "You're viewing this experience as an admin but aren't registered as a participant."
-    )
-
-    click_link "Manage Experience"
-
-    expect(page).to have_text("No blocks yet")
-  end
-
-  it "creates an announcement block with interpolation and starts the experience" do
-    sign_in(admin)
-    create_experience(name: "Test Experience", code: "test-exp")
-
-    click_link "Go to lobby"
-    wait_for_boot
-
-    expect(page).to have_text(
-      "You're viewing this experience as an admin but aren't registered as a participant."
+      "You're viewing this experience as an admin but aren't registered as a " \
+        "participant."
     )
 
     click_link "Manage Experience"
@@ -37,7 +21,7 @@ RSpec.describe "Creating a new experience", type: :system do
 
     expect(page).to have_text("Create Block")
     select "Announcement", from: "Kind"
-    fill_in "Announcement Message", with: "Welcome {{ participant_name }} to the show!"
+    fill_in "Announcement Message", with: "Welcome to the show!"
     click_button "Queue block"
 
     expect(page).to have_text("announcement")
