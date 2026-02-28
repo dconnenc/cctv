@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 
 import { ParticipantsList } from '@cctv/components';
 import { useExperience } from '@cctv/contexts/ExperienceContext';
@@ -15,6 +15,7 @@ import styles from './Experience.module.scss';
 
 export default function Experience() {
   const navigate = useNavigate();
+  const { state: locationState } = useLocation();
   const { experience, participant, code, isLoading, experienceStatus, error } = useExperience();
   const { isAdmin } = useUser();
   const { clearAvatars, isLoading: clearing } = useClearAvatars();
@@ -51,10 +52,11 @@ export default function Experience() {
   const hasInitialData = !isAdmin ? experience && participant : experience;
 
   useEffect(() => {
+    if (locationState?.avatarSubmitted) return;
     if (experienceStatus === 'lobby' && needsAvatar && code && !isLoading && hasInitialData) {
       navigate(`/experiences/${code}/avatar`, { replace: true });
     }
-  }, [experienceStatus, needsAvatar, code, navigate, isLoading, hasInitialData]);
+  }, [locationState, experienceStatus, needsAvatar, code, navigate, isLoading, hasInitialData]);
   const currentBlock = experience?.blocks?.[0];
 
   if (experienceStatus === 'lobby') {

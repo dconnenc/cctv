@@ -106,6 +106,8 @@ module SystemHelpers
     fill_in placeholder: "Your Name", with: name
     click_button "Register"
 
+    wait_for_animation
+
     expect(page).to have_text(experience_name)
   end
 end

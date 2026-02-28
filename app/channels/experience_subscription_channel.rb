@@ -83,7 +83,6 @@ class ExperienceSubscriptionChannel < ApplicationCable::Channel
   end
 
   def setup_monitor_view_subscription
-    authorize_admin_or_host_or_reject
     @current_stream = Experiences::Broadcaster.monitor_stream_key(@experience)
     @view_type = 'monitor'
     stream_from @current_stream
