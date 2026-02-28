@@ -184,7 +184,7 @@ export default function BlockDetailPanel({
                 block={
                   viewMode === 'monitor'
                     ? (monitorView?.next_block ?? undefined)
-                    : (participantView?.next_block ?? undefined)
+                    : (participantView?.blocks[0] ?? undefined)
                 }
                 participant={
                   viewMode === 'participant'
