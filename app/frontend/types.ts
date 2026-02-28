@@ -197,6 +197,12 @@ export interface User {
   most_recent_participant_name?: string;
 }
 
+export interface AvatarStroke {
+  points: number[];
+  color: string;
+  width: number;
+}
+
 export interface ExperienceParticipant {
   id: string;
   user_id: string;
@@ -210,8 +216,7 @@ export interface ExperienceParticipant {
   created_at: string;
   updated_at: string;
   avatar?: {
-    image?: string;
-    position?: { x: number; y: number } | null;
+    strokes?: AvatarStroke[];
     updated_at?: string;
   } | null;
 }

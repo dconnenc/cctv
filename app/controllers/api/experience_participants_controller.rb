@@ -16,10 +16,8 @@ class Api::ExperienceParticipantsController < Api::BaseController
     end
 
     avatar = participant.avatar || {}
-    image = params.dig(:avatar, :image)
-    position = params.dig(:avatar, :position)
-    avatar[:image] = image if image.present?
-    avatar[:position] = position if position.present?
+    strokes = params.dig(:avatar, :strokes)
+    avatar[:strokes] = strokes if strokes.present?
 
     participant.update!(avatar: avatar)
 

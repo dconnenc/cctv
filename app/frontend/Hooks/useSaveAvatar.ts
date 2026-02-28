@@ -1,11 +1,11 @@
 import { useCallback, useState } from 'react';
 
 import { useExperience } from '@cctv/contexts/ExperienceContext';
+import { AvatarStroke } from '@cctv/types';
 
 export interface SaveAvatarParams {
   participantId: string;
-  image?: string;
-  position?: { x: number; y: number };
+  strokes?: AvatarStroke[];
 }
 
 export function useSaveAvatar() {
@@ -14,7 +14,7 @@ export function useSaveAvatar() {
   const [error, setError] = useState<string | null>(null);
 
   const saveAvatar = useCallback(
-    async ({ participantId, image, position }: SaveAvatarParams) => {
+    async ({ participantId, strokes }: SaveAvatarParams) => {
       if (!code) {
         setError('Missing experience code');
         return { success: false, error: 'Missing experience code' } as const;
@@ -32,7 +32,7 @@ export function useSaveAvatar() {
           `/api/experiences/${encodeURIComponent(code)}/participants/${encodeURIComponent(participantId)}/avatar`,
           {
             method: 'POST',
-            body: JSON.stringify({ avatar: { image, position } }),
+            body: JSON.stringify({ avatar: { strokes } }),
           },
         );
         const data = await res.json();

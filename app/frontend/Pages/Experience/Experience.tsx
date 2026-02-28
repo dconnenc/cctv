@@ -45,8 +45,7 @@ export default function Experience() {
 
   const participants = experience?.participants || [];
   const currentFullParticipant = participants.find((p) => p.user_id === participant?.user_id);
-  const participantAvatar = currentFullParticipant?.avatar?.image;
-  const needsAvatar = !isAdmin && !participantAvatar;
+  const needsAvatar = !isAdmin && !currentFullParticipant?.avatar?.strokes?.length;
 
   // Wait for both experience AND participant data before checking avatar
   const hasInitialData = !isAdmin ? experience && participant : experience;
@@ -148,14 +147,14 @@ export default function Experience() {
             )}
           </div>
         </div>
-        {!isAdmin && participantAvatar && (
+        {!isAdmin && !needsAvatar && (
           <button
             className={styles.avatarToggleBtn}
             aria-label="Edit avatar"
             title="Edit avatar"
             onClick={() => navigate(`/experiences/${code}/avatar`)}
           >
-            <img className={styles.avatarToggleImg} src={participantAvatar} alt="Your avatar" />
+            Edit Avatar
           </button>
         )}
       </section>
