@@ -50,10 +50,7 @@ export default function LobbyAvatars() {
           return { strokes: {} };
         case 'drawing_update': {
           const { participant_id, operation } = action;
-          console.log('drawing updated: ', participant_id, operation);
-          console.log('action.data: ', action.data);
           const existing = state.strokes[participant_id] || [];
-          console.log('existing strokes count: ', existing.length);
           switch (operation) {
             case 'clear_all':
               return { strokes: {} };
@@ -70,14 +67,10 @@ export default function LobbyAvatars() {
             case 'stroke_points_appended': {
               const next = existing.slice();
               if (next.length === 0) {
-                console.log('ERROR: stroke_points_appended but no existing strokes!');
                 return state;
               }
               const s = { ...next[next.length - 1] };
-              console.log('Before append - points count:', s.points.length);
-              console.log('Points to append:', action.data?.points);
               s.points = [...s.points, ...(action.data?.points || [])];
-              console.log('After append - points count:', s.points.length);
               next[next.length - 1] = s;
               return {
                 strokes: { ...state.strokes, [participant_id]: next },
@@ -145,15 +138,10 @@ export default function LobbyAvatars() {
           <Layer>
             {participants.map((p) => {
               // Prefer live strokes (participant is actively drawing); fall back to committed.
-              console.log('DRAWING');
               const strokes: AvatarStroke[] =
                 (drawState.strokes[p.id]?.length ? drawState.strokes[p.id] : p.avatar?.strokes) ??
                 [];
 
-              console.log(p.name);
-              console.log(drawState.strokes[p.id]);
-              console.log(p.avatar?.strokes);
-              console.log('Strokes: ', strokes);
               if (!strokes.length) return null;
 
               const pos = stableRandomPosition(p.id, size.w, size.h, AVATAR_DISPLAY_SIZE);

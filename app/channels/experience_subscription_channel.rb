@@ -24,24 +24,14 @@ class ExperienceSubscriptionChannel < ApplicationCable::Channel
 
     op = data["operation"]
     payload = data["data"] || {}
-    
-    Rails.logger.info("[DrawingEvent] Received operation: #{op}")
-    Rails.logger.info("[DrawingEvent] Received data: #{data["data"].inspect}")
-    Rails.logger.info("[DrawingEvent] Payload to broadcast: #{payload.inspect}")
-    Rails.logger.info("[DrawingEvent] Payload class: #{payload.class}")
-    
-    broadcast_message = {
-      type: 'drawing_update',
-      participant_id: @participant.id,
-      operation: op,
-      data: payload,
-    }
-    
-    Rails.logger.info("[DrawingEvent] Full broadcast message: #{broadcast_message.to_json}")
-    
     ActionCable.server.broadcast(
       Experiences::Broadcaster.monitor_stream_key(@experience),
-      broadcast_message,
+      {
+        type: 'drawing_update',
+        participant_id: @participant.id,
+        operation: op,
+        data: payload,
+      },
     )
   end
 
