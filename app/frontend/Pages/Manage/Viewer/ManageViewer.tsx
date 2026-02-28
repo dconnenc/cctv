@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
-import { Bug, Pause, Play, X } from 'lucide-react';
+import { BookOpen, Bug, Pause, Play, X } from 'lucide-react';
 
 import { Dialog, DialogContent } from '@cctv/components/ui/dialog';
 import { useExperience } from '@cctv/contexts/ExperienceContext';
@@ -14,6 +14,7 @@ import { Block, ParticipantSummary } from '@cctv/types';
 
 import CreateBlock from '../CreateBlock/CreateBlock';
 import ParticipantsTab from '../ParticipantsTab/ParticipantsTab';
+import PlaybillTab from '../PlaybillTab/PlaybillTab';
 import BlockDetailPanel from './BlockDetailPanel';
 import BlockSidebar from './BlockSidebar';
 import DebugPanel from './DebugPanel/DebugPanel';
@@ -59,6 +60,7 @@ export default function ManageViewer() {
   const [showParticipantDetails, setShowParticipantDetails] = useState(false);
   const [showDebugPanel, setShowDebugPanel] = useState(false);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isPlaybillDialogOpen, setIsPlaybillDialogOpen] = useState(false);
   const [dismissedError, setDismissedError] = useState(false);
   const [viewMode, setViewMode] = useState<'monitor' | 'participant' | 'responses'>('monitor');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
@@ -194,6 +196,13 @@ export default function ManageViewer() {
                 <Bug size={16} />
               </button>
               <button
+                onClick={() => setIsPlaybillDialogOpen(true)}
+                className="px-3 py-1.5 text-sm rounded-md border border-[hsl(var(--border))] hover:bg-[hsl(var(--muted))] transition-colors"
+                title="Edit Playbill"
+              >
+                <BookOpen size={16} />
+              </button>
+              <button
                 onClick={() => setShowParticipantDetails((prev) => !prev)}
                 className="px-3 py-1.5 text-sm rounded-md border border-[hsl(var(--border))] hover:bg-[hsl(var(--muted))] transition-colors"
               >
@@ -277,6 +286,12 @@ export default function ManageViewer() {
       <Dialog open={showDebugPanel} onOpenChange={setShowDebugPanel}>
         <DialogContent className="sm:max-w-2xl w-full">
           <DebugPanel selectedBlock={selectedBlock} />
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isPlaybillDialogOpen} onOpenChange={setIsPlaybillDialogOpen}>
+        <DialogContent className="sm:max-w-2xl w-full">
+          <PlaybillTab playbill={experience?.playbill || []} />
         </DialogContent>
       </Dialog>
     </>

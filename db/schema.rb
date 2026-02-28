@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2025_11_11_152004) do
+ActiveRecord::Schema[7.2].define(version: 2026_02_22_214200) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "citext"
   enable_extension "plpgsql"
@@ -24,6 +24,34 @@ ActiveRecord::Schema[7.2].define(version: 2025_11_11_152004) do
   create_enum "experience_statuses", ["draft", "lobby", "live", "paused", "finished", "archived"]
   create_enum "participant_status", ["registered", "active"]
   create_enum "user_roles", ["user", "admin", "superadmin"]
+
+  create_table "active_storage_attachments", force: :cascade do |t|
+    t.string "name", null: false
+    t.string "record_type", null: false
+    t.uuid "record_id", null: false
+    t.bigint "blob_id", null: false
+    t.datetime "created_at", null: false
+    t.index ["blob_id"], name: "index_active_storage_attachments_on_blob_id"
+    t.index ["record_type", "record_id", "name", "blob_id"], name: "index_active_storage_attachments_uniqueness", unique: true
+  end
+
+  create_table "active_storage_blobs", force: :cascade do |t|
+    t.string "key", null: false
+    t.string "filename", null: false
+    t.string "content_type"
+    t.text "metadata"
+    t.string "service_name", null: false
+    t.bigint "byte_size", null: false
+    t.string "checksum"
+    t.datetime "created_at", null: false
+    t.index ["key"], name: "index_active_storage_blobs_on_key", unique: true
+  end
+
+  create_table "active_storage_variant_records", force: :cascade do |t|
+    t.bigint "blob_id", null: false
+    t.string "variation_digest", null: false
+    t.index ["blob_id", "variation_digest"], name: "index_active_storage_variant_records_uniqueness", unique: true
+  end
 
   create_table "experience_block_links", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.uuid "parent_block_id", null: false
@@ -114,8 +142,8 @@ ActiveRecord::Schema[7.2].define(version: 2025_11_11_152004) do
     t.datetime "updated_at", null: false
     t.enum "role", default: "audience", null: false, enum_type: "experience_participant_roles"
     t.string "segments", default: [], null: false, array: true
-    t.string "name", null: false
     t.jsonb "avatar", default: {}, null: false
+    t.string "name", null: false
     t.index ["avatar"], name: "index_experience_participants_on_avatar", using: :gin
     t.index ["experience_id", "status"], name: "index_experience_participants_on_experience_id_and_status"
     t.index ["experience_id"], name: "index_experience_participants_on_experience_id"
@@ -124,6 +152,16 @@ ActiveRecord::Schema[7.2].define(version: 2025_11_11_152004) do
     t.index ["segments"], name: "index_experience_participants_on_segments", using: :gin
     t.index ["user_id", "experience_id"], name: "index_experience_participants_on_user_id_and_experience_id", unique: true
     t.index ["user_id"], name: "index_experience_participants_on_user_id"
+  end
+
+  create_table "experience_photo_upload_submissions", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "experience_block_id", null: false
+    t.uuid "user_id", null: false
+    t.jsonb "answer", default: {}, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["experience_block_id"], name: "index_experience_photo_upload_submissions_on_block_id"
+    t.index ["user_id"], name: "index_experience_photo_upload_submissions_on_user_id"
   end
 
   create_table "experience_poll_submissions", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -158,6 +196,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_11_11_152004) do
     t.datetime "ended_at"
     t.text "description"
     t.string "code_slug", null: false
+    t.jsonb "playbill", default: [], null: false
     t.index ["code_slug"], name: "index_experiences_on_code_slug", unique: true
     t.index ["creator_id"], name: "index_experiences_on_creator_id"
     t.index ["status"], name: "index_experiences_on_status"
@@ -188,6 +227,8 @@ ActiveRecord::Schema[7.2].define(version: 2025_11_11_152004) do
     t.index ["email"], name: "index_users_on_email", unique: true
   end
 
+  add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
+  add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "experience_block_links", "experience_blocks", column: "child_block_id", on_delete: :cascade
   add_foreign_key "experience_block_links", "experience_blocks", column: "parent_block_id", on_delete: :cascade
   add_foreign_key "experience_block_variable_bindings", "experience_block_variables", column: "variable_id", on_delete: :cascade
@@ -201,6 +242,8 @@ ActiveRecord::Schema[7.2].define(version: 2025_11_11_152004) do
   add_foreign_key "experience_multistep_form_submissions", "users", on_delete: :cascade
   add_foreign_key "experience_participants", "experiences", on_delete: :cascade
   add_foreign_key "experience_participants", "users", on_delete: :cascade
+  add_foreign_key "experience_photo_upload_submissions", "experience_blocks", on_delete: :cascade
+  add_foreign_key "experience_photo_upload_submissions", "users", on_delete: :cascade
   add_foreign_key "experience_poll_submissions", "experience_blocks", on_delete: :cascade
   add_foreign_key "experience_poll_submissions", "users", on_delete: :cascade
   add_foreign_key "experience_question_submissions", "experience_blocks", on_delete: :cascade

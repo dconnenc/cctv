@@ -6,7 +6,9 @@ class Experience < ApplicationRecord
            class_name: 'ExperienceParticipant'
   has_many :hosts, through: :host_participants, source: :user
 
-  has_many :experience_blocks, 
+  has_many_attached :attachments
+
+  has_many :experience_blocks,
     -> { order(position: :asc) },
     dependent: :destroy
 
@@ -28,6 +30,7 @@ class Experience < ApplicationRecord
 
   validates :code, presence: true, uniqueness: true, length: { minimum: 1, maximum: 255 }
   validates :code_slug, presence: true, uniqueness: true
+  validate :validate_playbill_structure
 
   before_validation :generate_code_slug, if: :code_changed?
 
@@ -81,6 +84,30 @@ class Experience < ApplicationRecord
   end
 
   private
+
+  def validate_playbill_structure
+    return if playbill.blank?
+
+    unless playbill.is_a?(Array)
+      errors.add(:playbill, "must be an array")
+      return
+    end
+
+    playbill.each_with_index do |section, i|
+      unless section.is_a?(Hash)
+        errors.add(:playbill, "section #{i} must be a hash")
+        next
+      end
+
+      unless section["title"].is_a?(String) && section["body"].is_a?(String)
+        errors.add(:playbill, "section #{i} must have title and body strings")
+      end
+
+      if section.key?("image_signed_id") && !section["image_signed_id"].is_a?(String)
+        errors.add(:playbill, "section #{i} image_signed_id must be a string")
+      end
+    end
+  end
 
   # Generate a URL-safe slug from the code
   # Preserves the original code but creates a slug for use in URLs

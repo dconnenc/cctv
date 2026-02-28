@@ -197,6 +197,33 @@ module Experiences
       end
     end
 
+    def submit_photo_upload_response!(block_id:, photo_signed_id:, answer: {})
+      actor_action do
+        block = experience.experience_blocks.find(block_id)
+
+        authorize! block, to: :submit_photo_upload_response?, with: ExperienceBlockPolicy
+
+        blob = ActiveStorage::Blob.find_signed!(photo_signed_id)
+
+        submission = ExperiencePhotoUploadSubmission.find_or_initialize_by(
+          experience_block_id: block.id,
+          user_id: actor.id
+        )
+
+        submission.answer = answer
+
+        if submission.new_record?
+          submission.save!(validate: false)
+          submission.photo.attach(blob)
+        else
+          submission.photo.attach(blob)
+          submission.save!
+        end
+
+        submission
+      end
+    end
+
     def add_family_feud_bucket!(block_id:, question_id:, name:)
       actor_action do
         block = experience.experience_blocks.find(block_id)
@@ -256,6 +283,51 @@ module Experiences
           question_block.update!(payload: question_payload)
 
           true
+        end
+      end
+    end
+
+    def auto_categorize_family_feud!(block_id:, question_id:)
+      actor_action do
+        block = experience.experience_blocks.find(block_id)
+        question_block = experience.experience_blocks.find(question_id)
+        authorize! experience, to: :manage_blocks?, with: ExperiencePolicy
+
+        transaction do
+          question_payload = question_block.payload || {}
+          submissions = ExperienceQuestionSubmission.where(experience_block_id: question_block.id)
+
+          raise ::AI::Client::Error, "No answers to categorize" if submissions.empty?
+
+          question_text = question_payload["question"] || "Question"
+          answers = submissions.map { |s| { id: s.id.to_s, text: s.answer.to_s } }
+
+          prompt_builder = ::AI::Prompts::FamilyFeudBucketing.new(
+            question_text: question_text,
+            answers: answers
+          )
+
+          result = ::AI::Client.call(
+            prompt: prompt_builder.prompt,
+            response_schema: prompt_builder.response_schema
+          )
+
+          valid_ids = answers.map { |a| a[:id] }.to_set
+          ai_buckets = result["buckets"] || []
+
+          question_payload["buckets"] = ai_buckets.filter_map do |ai_bucket|
+            filtered_ids = (ai_bucket["answer_ids"] || []).select { |id| valid_ids.include?(id) }
+            next if filtered_ids.empty?
+
+            {
+              "id" => "bucket-#{Time.now.to_i}-#{SecureRandom.hex(4)}",
+              "name" => ai_bucket["name"].to_s.truncate(50),
+              "answer_ids" => filtered_ids
+            }
+          end
+
+          question_block.update!(payload: question_payload)
+          question_payload["buckets"]
         end
       end
     end

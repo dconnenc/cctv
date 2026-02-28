@@ -260,6 +260,58 @@ class Api::ExperienceBlocksController < Api::BaseController
     end
   end
 
+  # POST /api/experiences/:experience_id/blocks/:id/family_feud/auto_categorize
+  def auto_categorize
+    with_experience_orchestration do
+      block = @experience.experience_blocks.find(params[:id])
+
+      buckets = Experiences::Orchestrator.new(
+        experience: @experience, actor: @user
+      ).auto_categorize_family_feud!(
+        block_id: params[:id],
+        question_id: params[:question_id]
+      )
+
+      Experiences::Broadcaster.new(@experience).broadcast_experience_update
+
+      render json: { success: true, data: { buckets: buckets } }, status: 200
+    end
+  end
+
+  # POST /api/experiences/:experience_id/blocks/:id/submit_photo_upload_response
+  def submit_photo_upload_response
+    with_experience_orchestration do
+      block = @experience.experience_blocks.find(params[:id])
+
+      submission = Experiences::Orchestrator.new(
+        experience: @experience, actor: @user
+      ).submit_photo_upload_response!(
+        block_id: params[:id],
+        photo_signed_id: params[:photo_signed_id],
+        answer: params[:answer] || {}
+      )
+
+      updated_block = Experiences::Visibility.serialize_block_for_user(
+        experience: @experience,
+        user: @user,
+        block: block
+      )
+
+      Experiences::Broadcaster.new(@experience).broadcast_experience_update
+
+      render json: {
+        success: true,
+        data: {
+          submission: {
+            id: submission.id,
+            photo_url: submission.photo.attached? ? ActiveStorageUrlService.blob_url(submission.photo.blob) : nil
+          },
+          block: updated_block
+        },
+      }, status: 200
+    end
+  end
+
   # POST /api/experiences/:experience_id/blocks/:id/family_feud/add_bucket
   def add_bucket
     with_experience_orchestration do

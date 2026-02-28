@@ -44,7 +44,8 @@ function App() {
     <UserProvider>
       <div className={`app${booting ? ' app--booting' : ''}`}>
         <BackgroundStatic />
-        {!currentRoute.pathname.includes('/monitor') && <TopNav />}
+        {!currentRoute.pathname.includes('/monitor') &&
+          !currentRoute.pathname.includes('/playbill') && <TopNav />}
         <div className={styles.root}>
           <Suspense fallback={<div className="flex-centered">Loading…</div>}>
             <RouteWink>
