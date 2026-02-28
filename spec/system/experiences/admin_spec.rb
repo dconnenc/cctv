@@ -24,7 +24,7 @@ RSpec.describe "Creating a new experience", type: :system do
     fill_in "Announcement Message", with: "Welcome to the show!"
     click_button "Queue block"
 
-    expect(page).to have_text("announcement")
+    expect(page).to have_css("li[aria-label='block 1']")
     expect(page).to have_no_text("No blocks yet")
 
     click_button "Start"

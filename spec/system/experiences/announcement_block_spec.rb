@@ -1,9 +1,9 @@
 require "rails_helper"
 
-RSpec.describe "Participant experience", type: :system do
+RSpec.describe "Announcement Block", type: :system do
   let(:admin) { create(:user, :admin) }
 
-  it "participant sees an announcement block after admin presents it" do
+  it "shows participants interpolated values on their screens, and the correct management impersonation views" do
     sign_in(admin)
     create_experience_and_go_to_manage(
       name: "Test Experience", code: "test-exp"
@@ -19,7 +19,7 @@ RSpec.describe "Participant experience", type: :system do
     )
     click_button "Queue block"
 
-    expect(page).to have_text("announcement")
+    expect(page).to have_css("li[aria-label='block 1']")
 
     click_button "Start"
     expect(page).to have_button("Pause")
@@ -36,8 +36,8 @@ RSpec.describe "Participant experience", type: :system do
     end
 
     visit current_path
-    expect(page).to have_text("announcement")
-    find("button", text: /announcement/).click
+    expect(page).to have_css("li[aria-label='block 1']")
+    within("li[aria-label='block 1']") { find("button", text: /announcement/).click }
     click_button "Present"
 
     using_session(:participant) do
@@ -56,7 +56,7 @@ RSpec.describe "Participant experience", type: :system do
     end
 
     visit current_path
-    find("button", text: /announcement/).click
+    within("li[aria-label='block 1']") { find("button", text: /announcement/).click }
 
     within("[aria-label='Preview mode']") { click_button "Participant" }
     expect(page).to have_select("View as participant")

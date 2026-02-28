@@ -48,7 +48,11 @@ RSpec.configure do |config|
   config.include SystemHelpers, type: :system
 end
 
-Capybara.default_max_wait_time = 10
+# Keep this low, if you need to bump it, consider re-writing the test or using
+# a custom wait for your use case
+Capybara.default_max_wait_time = 4
+
+# This is needed so we can assert on aria attributes
 Capybara.enable_aria_label = true
 
 RSpec.configure do |config|
