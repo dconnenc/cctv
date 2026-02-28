@@ -56,6 +56,7 @@ module SystemHelpers
 
     click_menu_link("Sign in")
 
+    expect(page).to have_field("email", disabled: false)
     fill_in "email", with: user.email
     click_button "Sign in"
 
