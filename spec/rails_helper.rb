@@ -45,10 +45,18 @@ RSpec.configure do |config|
   # Filter lines from Rails gems in backtraces.
   config.filter_rails_from_backtrace!
   config.include FactoryBot::Syntax::Methods
+  config.include SystemHelpers, type: :system
 end
+
+# Keep this low, if you need to bump it, consider re-writing the test or using
+# a custom wait for your use case
+Capybara.default_max_wait_time = 4
+
+# This is needed so we can assert on aria attributes
+Capybara.enable_aria_label = true
 
 RSpec.configure do |config|
   config.before(:each, type: :system) do
-    driven_by :cuprite, screen_size: [1200, 800], options: { headless: ENV["HEADLESS"] != "false" }
+    driven_by :cuprite, screen_size: [1440, 900], options: { headless: ENV["HEADLESS"] != "false" }
   end
 end

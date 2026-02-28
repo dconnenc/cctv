@@ -1,7 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
-import { Link, useLocation } from 'react-router-dom';
-
 import { BookOpen, Bug, Pause, Play, X } from 'lucide-react';
 
 import { Dialog, DialogContent } from '@cctv/components/ui/dialog';
@@ -58,7 +56,6 @@ function ExperienceActionButton() {
 }
 
 export default function ManageViewer() {
-  const location = useLocation();
   const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
   const [showParticipantDetails, setShowParticipantDetails] = useState(false);
   const [showDebugPanel, setShowDebugPanel] = useState(false);
@@ -184,9 +181,6 @@ export default function ManageViewer() {
                 {experience?.name || 'Experience'}
               </div>
               {statusLabel && <Pill label={statusLabel} />}
-              <Link className="text-lg text-yellow-500 z-10" to={location.pathname + '/old'}>
-                Go to old view
-              </Link>
             </div>
             <div className="flex items-center gap-2">
               <ExperienceActionButton />

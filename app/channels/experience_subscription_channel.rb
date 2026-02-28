@@ -35,22 +35,6 @@ class ExperienceSubscriptionChannel < ApplicationCable::Channel
     )
   end
 
-  # Participant moved avatar position in lobby positioning mode (ephemeral)
-  def avatar_position(data)
-    return unless @experience && @participant && !monitor_view_subscription? && !@is_admin
-
-    pos = data["position"] || {}
-    ActionCable.server.broadcast(
-      Experiences::Broadcaster.monitor_stream_key(@experience),
-      {
-        type: 'drawing_update',
-        participant_id: @participant.id,
-        operation: 'avatar_position',
-        data: { position: pos },
-      },
-    )
-  end
-
   def resubscribe
     return reject unless valid_resubscription_request?
 
@@ -83,7 +67,6 @@ class ExperienceSubscriptionChannel < ApplicationCable::Channel
   end
 
   def setup_monitor_view_subscription
-    authorize_admin_or_host_or_reject
     @current_stream = Experiences::Broadcaster.monitor_stream_key(@experience)
     @view_type = 'monitor'
     stream_from @current_stream

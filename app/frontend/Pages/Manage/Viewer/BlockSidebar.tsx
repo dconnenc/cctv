@@ -71,7 +71,11 @@ export default function BlockSidebar({
         {sidebarCollapsed ? (
           <ul className="p-1 space-y-1">
             {flattenedBlocks.map(({ block, isChild }, index) => (
-              <li key={block.id} style={{ contentVisibility: 'auto' }}>
+              <li
+                key={block.id}
+                style={{ contentVisibility: 'auto' }}
+                aria-label={`block ${index + 1}`}
+              >
                 <button
                   className={`relative w-full h-10 flex items-center justify-center rounded-md cursor-pointer text-xs text-[hsl(var(--foreground))] hover:bg-[hsl(var(--muted))] transition-colors ${
                     selectedBlockId === block.id
@@ -105,7 +109,11 @@ export default function BlockSidebar({
         ) : (
           <ul className="p-2 space-y-1">
             {flattenedBlocks.map(({ block, isChild }, index) => (
-              <li key={block.id} style={{ contentVisibility: 'auto' }}>
+              <li
+                key={block.id}
+                style={{ contentVisibility: 'auto' }}
+                aria-label={`block ${index + 1}`}
+              >
                 <button
                   className={`relative w-full h-16 px-3 py-2 rounded-md cursor-pointer text-sm text-left text-[hsl(var(--foreground))] hover:bg-[hsl(var(--muted))] transition-colors flex flex-col justify-center ${
                     selectedBlockId === block.id

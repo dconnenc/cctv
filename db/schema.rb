@@ -142,8 +142,8 @@ ActiveRecord::Schema[7.2].define(version: 2026_02_22_214200) do
     t.datetime "updated_at", null: false
     t.enum "role", default: "audience", null: false, enum_type: "experience_participant_roles"
     t.string "segments", default: [], null: false, array: true
-    t.jsonb "avatar", default: {}, null: false
     t.string "name", null: false
+    t.jsonb "avatar", default: {}, null: false
     t.index ["avatar"], name: "index_experience_participants_on_avatar", using: :gin
     t.index ["experience_id", "status"], name: "index_experience_participants_on_experience_id_and_status"
     t.index ["experience_id"], name: "index_experience_participants_on_experience_id"

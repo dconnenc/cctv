@@ -29,7 +29,7 @@ function TableRow<T extends object>({
   );
   const rowKey = 'row-' + rowIndex;
   return (
-    <tr>
+    <tr aria-rowindex={rowIndex + 1}>
       {row.map((cell, cellIndex) => (
         <td key={rowKey + '-cell-' + cellIndex}>{cell as ReactNode}</td>
       ))}

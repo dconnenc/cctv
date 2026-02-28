@@ -28,7 +28,6 @@ import styles from './App.module.scss';
 const BlockPage = lazy(() =>
   import('@cctv/pages/Block/Block').then((m) => ({ default: m.BlockPage })),
 );
-const Manage = lazy(() => import('@cctv/pages/Manage/Manage'));
 const ManageCreateBlock = lazy(() => import('@cctv/pages/ManageCreateBlock/ManageCreateBlock'));
 const ManageViewer = lazy(() => import('@cctv/pages/Manage/Viewer/ManageViewer'));
 
@@ -82,7 +81,6 @@ function App() {
 
                   <Route element={<RequireExperienceHostOrAdmin />}>
                     <Route path="manage" element={<ManageViewer />} />
-                    <Route path="manage/old" element={<Manage />} />
                     <Route path="manage/blocks/new" element={<ManageCreateBlock />} />
                     <Route path="manage/blocks/:blockId" element={<BlockPage />} />
                   </Route>

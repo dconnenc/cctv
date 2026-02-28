@@ -44,7 +44,9 @@ export default function Avatar() {
         <p className={styles.experienceStatus}>Draw your avatar to enter the lobby</p>
       </div>
       <div className={styles.avatarEditor}>
-        <LobbyAvatarEditor onFinalize={() => navigate(`/experiences/${code}`)} />
+        <LobbyAvatarEditor
+          onFinalize={() => navigate(`/experiences/${code}`, { state: { avatarSubmitted: true } })}
+        />
       </div>
     </section>
   );

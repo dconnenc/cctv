@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 
 import { ParticipantsList } from '@cctv/components';
 import { useExperience } from '@cctv/contexts/ExperienceContext';
@@ -15,6 +15,7 @@ import styles from './Experience.module.scss';
 
 export default function Experience() {
   const navigate = useNavigate();
+  const { state: locationState } = useLocation();
   const { experience, participant, code, isLoading, experienceStatus, error } = useExperience();
   const { isAdmin } = useUser();
   const { clearAvatars, isLoading: clearing } = useClearAvatars();
@@ -44,17 +45,17 @@ export default function Experience() {
 
   const participants = experience?.participants || [];
   const currentFullParticipant = participants.find((p) => p.user_id === participant?.user_id);
-  const participantAvatar = currentFullParticipant?.avatar?.image;
-  const needsAvatar = !isAdmin && !participantAvatar;
+  const needsAvatar = !isAdmin && !currentFullParticipant?.avatar?.strokes?.length;
 
   // Wait for both experience AND participant data before checking avatar
   const hasInitialData = !isAdmin ? experience && participant : experience;
 
   useEffect(() => {
+    if (locationState?.avatarSubmitted) return;
     if (experienceStatus === 'lobby' && needsAvatar && code && !isLoading && hasInitialData) {
       navigate(`/experiences/${code}/avatar`, { replace: true });
     }
-  }, [experienceStatus, needsAvatar, code, navigate, isLoading, hasInitialData]);
+  }, [locationState, experienceStatus, needsAvatar, code, navigate, isLoading, hasInitialData]);
   const currentBlock = experience?.blocks?.[0];
 
   if (experienceStatus === 'lobby') {
@@ -146,14 +147,14 @@ export default function Experience() {
             )}
           </div>
         </div>
-        {!isAdmin && participantAvatar && (
+        {!isAdmin && !needsAvatar && (
           <button
             className={styles.avatarToggleBtn}
             aria-label="Edit avatar"
             title="Edit avatar"
             onClick={() => navigate(`/experiences/${code}/avatar`)}
           >
-            <img className={styles.avatarToggleImg} src={participantAvatar} alt="Your avatar" />
+            Edit Avatar
           </button>
         )}
       </section>

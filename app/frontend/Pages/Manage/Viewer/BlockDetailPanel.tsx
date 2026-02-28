@@ -103,7 +103,11 @@ export default function BlockDetailPanel({
 
       <div className="space-y-4">
         <div className="flex items-center gap-4">
-          <div className="flex items-center gap-1 p-1 bg-[hsl(var(--muted))] rounded-lg">
+          <div
+            role="group"
+            aria-label="Preview mode"
+            className="flex items-center gap-1 p-1 bg-[hsl(var(--muted))] rounded-lg"
+          >
             <button
               onClick={() => onViewModeChange('monitor')}
               className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm transition-colors ${
@@ -141,6 +145,7 @@ export default function BlockDetailPanel({
 
           {viewMode === 'participant' && (
             <select
+              aria-label="View as participant"
               value={impersonatedParticipantId || ''}
               onChange={(e) => onImpersonatedParticipantChange(e.target.value)}
               className="px-3 py-1.5 text-sm rounded-md bg-[hsl(var(--muted))] border border-[hsl(var(--border))] text-white"
@@ -179,7 +184,7 @@ export default function BlockDetailPanel({
                 block={
                   viewMode === 'monitor'
                     ? (monitorView?.next_block ?? undefined)
-                    : (participantView?.next_block ?? undefined)
+                    : (participantView?.blocks[0] ?? undefined)
                 }
                 participant={
                   viewMode === 'participant'

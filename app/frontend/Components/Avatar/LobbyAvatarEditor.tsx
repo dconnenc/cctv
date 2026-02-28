@@ -1,5 +1,6 @@
 import { useExperience } from '@cctv/contexts/ExperienceContext';
 import { useSaveAvatar } from '@cctv/hooks/useSaveAvatar';
+import { AvatarStroke } from '@cctv/types';
 
 import DrawingCanvas from '../DrawingCanvas/DrawingCanvas';
 
@@ -7,28 +8,19 @@ export default function LobbyAvatarEditor({ onFinalize }: { onFinalize?: () => v
   const { participant, experiencePerform } = useExperience();
   const { saveAvatar } = useSaveAvatar();
 
-  const initialImage = participant?.avatar?.image || undefined;
-  const initialPosition = participant?.avatar?.position || undefined;
+  const initialStrokes = participant?.avatar?.strokes ?? [];
 
   return (
     <DrawingCanvas
-      initialImage={initialImage}
-      initialPosition={initialPosition}
+      initialStrokes={initialStrokes}
       onStrokeEvent={(evt) =>
         experiencePerform?.('drawing_event', evt as Record<string, unknown>, 'participant')
       }
-      onPositionDrag={(pos) =>
-        experiencePerform?.('avatar_position', { position: pos }, 'participant')
-      }
-      onSaveDrawing={async (uri) => {
+      onSubmit={async (strokes: AvatarStroke[]) => {
         if (!participant?.id) return;
-        await saveAvatar({ participantId: participant.id, image: uri });
+        await saveAvatar({ participantId: participant.id, strokes });
+        onFinalize?.();
       }}
-      onSavePosition={async (pos) => {
-        if (!participant?.id) return;
-        await saveAvatar({ participantId: participant.id, position: pos });
-      }}
-      onFinalize={onFinalize}
     />
   );
 }

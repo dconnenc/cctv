@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 
-import { DirectUpload } from '@rails/activestorage';
+import { Blob as ActiveStorageBlob, DirectUpload } from '@rails/activestorage';
 
 import { useExperience } from '@cctv/contexts';
 
@@ -42,7 +42,7 @@ export function useDirectUpload() {
           delegate,
         );
 
-        directUpload.create((uploadError, blob) => {
+        directUpload.create((uploadError: Error, blob: ActiveStorageBlob) => {
           setIsUploading(false);
 
           if (uploadError) {
