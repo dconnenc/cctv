@@ -56,19 +56,11 @@ module SystemHelpers
 
     click_menu_link("Sign in")
 
-    # The Sign in page does not render a Menu. The presence of a menu is used
-    # as a post condition to assert the sign in action worked.
-    #
-    # NOTE: the sign-in flow automatically signs in admins so this check won't
-    # work in the future. For now, it is a safe guard to make sure we can use
-    # the menu as our post condition
-    expect(page).to_not have_button("Menu")
-
     fill_in "email", with: user.email
     click_button "Sign in"
 
-    # The sign-in page doesn't render a menu. See above as for why we're using
-    # this as our post condition
+    # The sign-in page doesn't render a menu so we can use it as a post
+    # condition.
     expect(page).to have_button("Menu")
   end
 
