@@ -127,7 +127,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!currentCode || userIsLoading) return;
 
-    qaLogger(`Experience code changed to ${currentCode} — resetting auth`);
+    qaLogger(`Initializing auth for experience: ${currentCode}`);
     setIsLoading(true);
 
     if ((isManagePage || isMonitorPage) && isAdmin) {
