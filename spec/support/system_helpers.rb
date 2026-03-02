@@ -33,6 +33,7 @@ module SystemHelpers
     # Check if the menu is expanded. If not, click Menu to expand
     unless page.has_css?("[aria-expanded='true']", wait: 0)
       click_button "Menu"
+      sleep 0.5
       expect(page).to have_css("[aria-expanded='true']")
     end
 
@@ -54,11 +55,8 @@ module SystemHelpers
 
     expect(page).to have_text("CCTV")
 
-    sleep 0.5
-
     click_menu_link("Sign in")
 
-    sleep 0.5 # TODO: Remove this and put a proper assertion in
     expect(page).to have_field("email", disabled: false)
     fill_in "email", with: user.email
     click_button "Sign in"
