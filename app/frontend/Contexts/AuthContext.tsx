@@ -16,6 +16,7 @@ import {
   getJWTKey,
   getStoredAdminJWT,
   getStoredJWT,
+  isJWTExpired,
   qaLogger,
   removeStoredAdminJWT,
   setStoredAdminJWT,
@@ -131,12 +132,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     if ((isManagePage || isMonitorPage) && isAdmin) {
       const storedAdminJWT = getStoredAdminJWT(currentCode);
-      if (storedAdminJWT) {
-        qaLogger('Found stored admin JWT; setting in context');
+      if (storedAdminJWT && !isJWTExpired(storedAdminJWT)) {
+        qaLogger('Found valid stored admin JWT; setting in context');
         setJWTState(storedAdminJWT);
         setIsLoading(false);
       } else {
-        qaLogger('No stored admin JWT; fetching from API');
+        if (storedAdminJWT) {
+          qaLogger('Stored admin JWT is expired; fetching fresh token');
+        } else {
+          qaLogger('No stored admin JWT; fetching from API');
+        }
         fetchAdminJWT().finally(() => setIsLoading(false));
       }
     } else {

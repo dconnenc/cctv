@@ -98,7 +98,7 @@ export interface WebSocketContextType {
 const WebSocketContext = createContext<WebSocketContextType | undefined>(undefined);
 
 export function WebSocketProvider({ children }: { children: ReactNode }) {
-  const { code, jwt, isManagePage, isMonitorPage } = useAuth();
+  const { code, jwt, isManagePage, isMonitorPage, isLoading } = useAuth();
   const {
     setExperience,
     setParticipant,
@@ -241,9 +241,8 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    if (!code) {
-      qaLogger('[WS SETUP] No code, disconnecting all websockets');
-      disconnectAllWebsockets();
+    if (!code || isLoading) {
+      qaLogger('[WS SETUP] No code or auth loading, skipping websocket setup');
       return;
     }
 
@@ -362,6 +361,7 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
   }, [
     jwt,
     code,
+    isLoading,
     isManagePage,
     isMonitorPage,
     impersonatedParticipantId,
