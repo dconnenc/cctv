@@ -42,10 +42,10 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const { code } = useParams<{ code: string }>();
   const location = useLocation();
-  const { isAdmin } = useUser();
+  const { isAdmin, isLoading: userIsLoading } = useUser();
 
   const [jwt, setJWTState] = useState<string>();
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   const currentCode = code || '';
   const isManagePage = location.pathname.includes('/manage');
@@ -125,7 +125,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [currentCode, isAdmin]);
 
   useEffect(() => {
-    if (!currentCode) return;
+    if (!currentCode || userIsLoading) return;
 
     qaLogger(`Experience code changed to ${currentCode} — resetting auth`);
     setIsLoading(true);
@@ -155,7 +155,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       setIsLoading(false);
     }
-  }, [currentCode, isManagePage, isMonitorPage, isAdmin, fetchAdminJWT]);
+  }, [currentCode, isManagePage, isMonitorPage, isAdmin, userIsLoading, fetchAdminJWT]);
 
   const setJWT = useCallback(
     (token: string) => {

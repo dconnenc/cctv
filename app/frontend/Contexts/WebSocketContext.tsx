@@ -106,6 +106,7 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
     setError,
     setMonitorView,
     setParticipantView,
+    setWsReady,
     impersonatedParticipantId,
   } = useExperienceState();
   const { getFamilyFeudDispatch, getLobbyDrawingDispatch } = useDispatchRegistry();
@@ -175,6 +176,7 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
             setExperience(updatedExperience);
             setExperienceStatus(updatedExperience.status === 'live' ? 'live' : 'lobby');
             setError(undefined);
+            setWsReady(true);
 
             if (wsMessage.participant) {
               setParticipant(wsMessage.participant);
@@ -215,6 +217,7 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
       setError,
       setMonitorView,
       setParticipantView,
+      setWsReady,
       getFamilyFeudDispatch,
       getLobbyDrawingDispatch,
     ],
@@ -240,6 +243,9 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
     setWsError(undefined);
   }, []);
 
+  // Main effect: manages admin, monitor, and participant connections.
+  // Does not depend on impersonatedParticipantId so impersonation changes
+  // don't tear down and rebuild the stable connections.
   useEffect(() => {
     if (!code || isLoading) {
       qaLogger('[WS SETUP] No code or auth loading, skipping websocket setup');
@@ -247,17 +253,66 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
     }
 
     if (isManagePage) {
-      qaLogger('[WS SETUP] MANAGE PAGE - Creating 3 websockets: Admin, Monitor, Impersonation');
+      qaLogger('[WS SETUP] MANAGE PAGE - Creating admin and monitor websockets');
 
-      if (wsRef.current?.readyState !== WebSocket.OPEN) {
+      wsRef.current = createWebSocketConnection({
+        label: 'ADMIN WS',
+        identifier: {
+          channel: 'ExperienceSubscriptionChannel',
+          code,
+          ...(jwt ? { token: jwt } : {}),
+        },
+        onMessage: (msg) => handleExperienceMessage(msg, 'ADMIN WS', 'main'),
+        onConnect: () => {
+          setWsConnected(true);
+          setWsError(undefined);
+        },
+        onError: () => {
+          setWsError('Connection error');
+          setWsConnected(false);
+        },
+        onClose: () => setWsConnected(false),
+      });
+      wsIdentifierRef.current = JSON.stringify({
+        channel: 'ExperienceSubscriptionChannel',
+        code,
+        ...(jwt ? { token: jwt } : {}),
+      });
+
+      const monitorId: Record<string, string> = {
+        channel: 'ExperienceSubscriptionChannel',
+        code,
+        view_type: 'monitor',
+      };
+      monitorWsRef.current = createWebSocketConnection({
+        label: 'Monitor WS',
+        identifier: monitorId,
+        onMessage: (msg) => handleExperienceMessage(msg, 'Monitor WS', 'monitor'),
+      });
+      monitorIdentifierRef.current = JSON.stringify(monitorId);
+    } else if (isMonitorPage) {
+      qaLogger('[WS SETUP] MONITOR PAGE - Creating monitor websocket');
+
+      const monitorId: Record<string, string> = {
+        channel: 'ExperienceSubscriptionChannel',
+        code,
+        view_type: 'monitor',
+      };
+      monitorWsRef.current = createWebSocketConnection({
+        label: 'Monitor WS',
+        identifier: monitorId,
+        onMessage: (msg) => handleExperienceMessage(msg, 'Monitor WS', 'monitor'),
+      });
+      monitorIdentifierRef.current = JSON.stringify(monitorId);
+    } else {
+      qaLogger('[WS SETUP] PARTICIPANT PAGE - Creating participant websocket');
+
+      if (jwt) {
+        const participantId = { channel: 'ExperienceSubscriptionChannel', code, token: jwt };
         wsRef.current = createWebSocketConnection({
-          label: 'ADMIN WS',
-          identifier: {
-            channel: 'ExperienceSubscriptionChannel',
-            code,
-            ...(jwt ? { token: jwt } : {}),
-          },
-          onMessage: (msg) => handleExperienceMessage(msg, 'ADMIN WS', 'main'),
+          label: 'PARTICIPANT WS',
+          identifier: participantId,
+          onMessage: (msg) => handleExperienceMessage(msg, 'PARTICIPANT WS', 'main'),
           onConnect: () => {
             setWsConnected(true);
             setWsError(undefined);
@@ -268,105 +323,65 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
           },
           onClose: () => setWsConnected(false),
         });
-        wsIdentifierRef.current = JSON.stringify({
-          channel: 'ExperienceSubscriptionChannel',
-          code,
-          ...(jwt ? { token: jwt } : {}),
-        });
-      }
-
-      if (monitorWsRef.current?.readyState !== WebSocket.OPEN) {
-        const monitorId: Record<string, string> = {
-          channel: 'ExperienceSubscriptionChannel',
-          code,
-          view_type: 'monitor',
-        };
-        if (jwt) monitorId.token = jwt;
-        monitorWsRef.current = createWebSocketConnection({
-          label: 'Monitor WS',
-          identifier: monitorId,
-          onMessage: (msg) => handleExperienceMessage(msg, 'Monitor WS', 'monitor'),
-        });
-        monitorIdentifierRef.current = JSON.stringify(monitorId);
-      }
-
-      if (impersonatedParticipantId) {
-        if (impersonationWsRef.current) {
-          impersonationWsRef.current.close();
-        }
-        const impersonationId = {
-          channel: 'ExperienceSubscriptionChannel',
-          code,
-          ...(jwt ? { token: jwt } : {}),
-          as_participant_id: impersonatedParticipantId,
-        };
-        impersonationWsRef.current = createWebSocketConnection({
-          label: 'IMPERSONATION WS',
-          identifier: impersonationId,
-          onMessage: (msg) => handleExperienceMessage(msg, 'IMPERSONATION WS', 'impersonation'),
-        });
-        impersonationIdentifierRef.current = JSON.stringify(impersonationId);
-      } else if (impersonationWsRef.current) {
-        qaLogger('[IMPERSONATION WS] Disconnecting');
-        impersonationWsRef.current.close();
-        impersonationWsRef.current = undefined;
-        setParticipantView(undefined);
-      }
-    } else if (isMonitorPage) {
-      qaLogger('[WS SETUP] Monitor PAGE - Creating 1 websocket: Monitor');
-
-      if (monitorWsRef.current?.readyState !== WebSocket.OPEN) {
-        const monitorId: Record<string, string> = {
-          channel: 'ExperienceSubscriptionChannel',
-          code,
-          view_type: 'monitor',
-        };
-        if (jwt) monitorId.token = jwt;
-        monitorWsRef.current = createWebSocketConnection({
-          label: 'Monitor WS',
-          identifier: monitorId,
-          onMessage: (msg) => handleExperienceMessage(msg, 'Monitor WS', 'monitor'),
-        });
-        monitorIdentifierRef.current = JSON.stringify(monitorId);
-      }
-    } else {
-      qaLogger('[WS SETUP] PARTICIPANT PAGE - Creating 1 websocket: Participant');
-
-      if (jwt) {
-        if (wsRef.current?.readyState !== WebSocket.OPEN) {
-          const participantId = { channel: 'ExperienceSubscriptionChannel', code, token: jwt };
-          wsRef.current = createWebSocketConnection({
-            label: 'PARTICIPANT WS',
-            identifier: participantId,
-            onMessage: (msg) => handleExperienceMessage(msg, 'PARTICIPANT WS', 'main'),
-            onConnect: () => {
-              setWsConnected(true);
-              setWsError(undefined);
-            },
-            onError: () => {
-              setWsError('Connection error');
-              setWsConnected(false);
-            },
-            onClose: () => setWsConnected(false),
-          });
-          wsIdentifierRef.current = JSON.stringify(participantId);
-        }
-      } else {
-        qaLogger('[WS SETUP] No JWT available for participant view');
-        disconnectAllWebsockets();
+        wsIdentifierRef.current = JSON.stringify(participantId);
       }
     }
 
-    return () => disconnectAllWebsockets();
+    return () => {
+      disconnectAllWebsockets();
+      setWsReady(false);
+    };
   }, [
     jwt,
     code,
     isLoading,
     isManagePage,
     isMonitorPage,
-    impersonatedParticipantId,
     handleExperienceMessage,
     disconnectAllWebsockets,
+    setWsReady,
+  ]);
+
+  // Impersonation effect: manages the impersonation connection independently.
+  // Changing the impersonated participant only affects this connection.
+  useEffect(() => {
+    if (!code || isLoading || !isManagePage) return;
+
+    if (impersonatedParticipantId) {
+      qaLogger(`[IMPERSONATION WS] Connecting for participant ${impersonatedParticipantId}`);
+      if (impersonationWsRef.current) {
+        impersonationWsRef.current.close();
+      }
+      const impersonationId = {
+        channel: 'ExperienceSubscriptionChannel',
+        code,
+        ...(jwt ? { token: jwt } : {}),
+        as_participant_id: impersonatedParticipantId,
+      };
+      impersonationWsRef.current = createWebSocketConnection({
+        label: 'IMPERSONATION WS',
+        identifier: impersonationId,
+        onMessage: (msg) => handleExperienceMessage(msg, 'IMPERSONATION WS', 'impersonation'),
+      });
+      impersonationIdentifierRef.current = JSON.stringify(impersonationId);
+    }
+
+    return () => {
+      if (impersonationWsRef.current) {
+        qaLogger('[IMPERSONATION WS] Disconnecting');
+        impersonationWsRef.current.close();
+        impersonationWsRef.current = undefined;
+        impersonationIdentifierRef.current = undefined;
+      }
+      setParticipantView(undefined);
+    };
+  }, [
+    code,
+    isLoading,
+    isManagePage,
+    jwt,
+    impersonatedParticipantId,
+    handleExperienceMessage,
     setParticipantView,
   ]);
 

@@ -85,6 +85,7 @@ export default function ManageViewer() {
     experience,
     error: experienceError,
     isLoading,
+    wsReady,
     impersonatedParticipantId,
     setImpersonatedParticipantId,
     monitorView,
@@ -151,7 +152,7 @@ export default function ManageViewer() {
     }
   }, [experience?.blocks, selectedBlockId]);
 
-  if (isLoading) {
+  if (isLoading || !wsReady) {
     return <section className="page flex-centered">Loading...</section>;
   }
 

@@ -762,6 +762,7 @@ export interface ExperienceContextType {
   experienceFetch: (url: string, options?: RequestInit) => Promise<Response>;
 
   wsConnected: boolean;
+  wsReady: boolean;
   wsError?: string;
 
   // Manage page specific properties

@@ -42,6 +42,7 @@ export function useExperience(): ExperienceContextType {
     clearJWT: auth.clearJWT,
     experienceFetch: auth.experienceFetch,
     wsConnected: ws.wsConnected,
+    wsReady: state.wsReady,
     wsError: ws.wsError,
     monitorView: state.monitorView,
     participantView: state.participantView,
