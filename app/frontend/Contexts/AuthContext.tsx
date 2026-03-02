@@ -92,11 +92,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         qaLogger('Admin JWT received');
         setStoredAdminJWT(currentCode, data.jwt);
         setJWTState(data.jwt);
+        return data.jwt as string;
       } else {
         throw new Error('Invalid admin JWT response');
       }
     } catch (err) {
       console.error('Error fetching admin JWT:', err);
+      return undefined;
     }
   }, [currentCode, isAdmin]);
 
@@ -120,9 +122,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (response.status === 401) {
         const isAdminJWT = !!(jwt && jwt === getStoredAdminJWT(currentCode));
         if (isAdminJWT) {
-          qaLogger('401 on admin JWT; clearing and attempting re-fetch');
+          qaLogger('401 on admin JWT; clearing and retrying with fresh token');
           clearAdminJWT();
-          fetchAdminJWT();
+          const newJWT = await fetchAdminJWT();
+          if (newJWT) {
+            const retryHeaders: RequestInit['headers'] = {
+              Authorization: `Bearer ${newJWT}`,
+              'Content-Type': 'application/json',
+              ...options.headers,
+            };
+            const retryResponse = await fetch(url, { ...options, headers: retryHeaders });
+            if (retryResponse.ok) return retryResponse;
+            if (retryResponse.status === 401) {
+              qaLogger('401 on retried admin JWT; session also expired');
+              clearAdminJWT();
+              setJWTState(undefined);
+            }
+          }
         } else {
           qaLogger('401 on participant JWT; clearing');
           clearParticipantJWT();
