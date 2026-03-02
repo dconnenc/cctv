@@ -54,6 +54,8 @@ module SystemHelpers
 
     expect(page).to have_text("CCTV")
 
+    sleep 0.5
+
     click_menu_link("Sign in")
 
     sleep 0.5 # TODO: Remove this and put a proper assertion in
