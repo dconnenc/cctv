@@ -158,7 +158,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [jwt, currentCode, clearAdminJWT, clearParticipantJWT, fetchAdminJWT],
   );
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (!currentCode || userIsLoading) return;
 
@@ -186,11 +185,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setJWTState(storedJWT);
       } else {
         qaLogger('No stored participant JWT');
-        setJWTState(undefined);
       }
       setIsLoading(false);
     }
-  }, [currentCode, isAdmin, userIsLoading, fetchAdminJWT]);
+  }, [currentCode, isManagePage, isAdmin, userIsLoading, fetchAdminJWT]);
 
   const setParticipantJWT = useCallback(
     (token: string) => {
