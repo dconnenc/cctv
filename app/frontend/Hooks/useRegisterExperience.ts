@@ -11,7 +11,7 @@ interface RegisterExperienceParams {
 }
 
 export function useRegisterExperience() {
-  const { code, setJWT } = useExperience();
+  const { code, setParticipantJWT } = useExperience();
   const { post, isLoading, error, setError } = usePost<RegisterExperienceApiResponse>({
     url: `/api/experiences/${code}/register`,
   });
@@ -63,7 +63,7 @@ export function useRegisterExperience() {
     if (response.type === 'success') {
       // Success - store JWT and redirect to experience
       qaLogger(`Successfully regsitered participant. Storing JWT and redirecting to experience`);
-      setJWT(response.jwt);
+      setParticipantJWT(response.jwt);
       window.location.href = response.url;
     }
   };

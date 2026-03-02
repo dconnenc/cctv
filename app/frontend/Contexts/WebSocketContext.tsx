@@ -23,9 +23,19 @@ import {
 } from '@cctv/types';
 import { qaLogger } from '@cctv/utils';
 
-import { useAuth } from './AuthContext';
+import { useAuth, useExperienceRoute } from './AuthContext';
 import { useDispatchRegistry } from './DispatchRegistryContext';
 import { useExperienceState } from './ExperienceStateContext';
+
+const ACTION_TYPE_MAP: Record<string, FamilyFeudActionType> = {
+  bucket_added: FamilyFeudActionType.BUCKET_ADDED,
+  bucket_renamed: FamilyFeudActionType.BUCKET_RENAMED,
+  bucket_deleted: FamilyFeudActionType.BUCKET_DELETED,
+  answer_assigned: FamilyFeudActionType.ANSWER_ASSIGNED,
+  answer_received: FamilyFeudActionType.ANSWER_RECEIVED,
+  question_added: FamilyFeudActionType.QUESTION_ADDED,
+  question_deleted: FamilyFeudActionType.QUESTION_DELETED,
+};
 
 interface WebSocketConfig {
   label: string;
@@ -36,26 +46,42 @@ interface WebSocketConfig {
   onClose?: (event: CloseEvent) => void;
 }
 
-function createWebSocketConnection(config: WebSocketConfig): WebSocket {
+function createWebSocketConnection(
+  config: WebSocketConfig,
+  wsRef: { current: WebSocket | undefined },
+  identifierRef: { current: string | undefined },
+  disposeRef: { current: boolean },
+  attempt = 0,
+): void {
+  if (disposeRef.current) return;
+
   const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
   const wsUrl = `${protocol}//${window.location.host}/cable`;
 
-  qaLogger(`[${config.label}] Connecting: ${wsUrl}`);
+  qaLogger(
+    `[${config.label}] Connecting: ${wsUrl}${attempt > 0 ? ` (attempt ${attempt + 1})` : ''}`,
+  );
   const ws = new WebSocket(wsUrl);
+  wsRef.current = ws;
+  identifierRef.current = JSON.stringify(config.identifier);
+
+  let rejected = false;
 
   ws.onopen = () => {
     qaLogger(`[${config.label}] WebSocket connected`);
     config.onConnect?.();
 
-    const subscription = {
-      command: 'subscribe',
-      identifier: JSON.stringify(config.identifier),
-    };
-    ws.send(JSON.stringify(subscription));
+    ws.send(
+      JSON.stringify({
+        command: 'subscribe',
+        identifier: JSON.stringify(config.identifier),
+      }),
+    );
   };
 
   ws.onmessage = (event) => {
     const message = JSON.parse(event.data);
+    if (message.type === 'reject_subscription') rejected = true;
     config.onMessage(message);
   };
 
@@ -67,9 +93,16 @@ function createWebSocketConnection(config: WebSocketConfig): WebSocket {
   ws.onclose = (event) => {
     qaLogger(`[${config.label}] WebSocket closed${event.code ? `. Code: ${event.code}` : ''}`);
     config.onClose?.(event);
-  };
 
-  return ws;
+    if (!disposeRef.current && !rejected && event.code !== 1000 && event.code !== 1001) {
+      const delay = Math.min(1000 * Math.pow(2, attempt), 30000);
+      qaLogger(`[${config.label}] Reconnecting in ${delay}ms (attempt ${attempt + 1})`);
+      setTimeout(
+        () => createWebSocketConnection(config, wsRef, identifierRef, disposeRef, attempt + 1),
+        delay,
+      );
+    }
+  };
 }
 
 function parseChannelMessage(raw: { type?: string; message?: unknown }): WebSocketMessage | null {
@@ -91,14 +124,15 @@ export interface WebSocketContextType {
   experiencePerform: (
     action: string,
     payload?: Record<string, unknown>,
-    target?: 'participant' | 'admin' | 'monitor' | 'impersonation',
+    target?: 'primary' | 'monitor' | 'impersonation',
   ) => void;
 }
 
 const WebSocketContext = createContext<WebSocketContextType | undefined>(undefined);
 
 export function WebSocketProvider({ children }: { children: ReactNode }) {
-  const { code, jwt, isManagePage, isMonitorPage } = useAuth();
+  const { code, isManagePage, isMonitorPage } = useExperienceRoute();
+  const { jwt, isLoading } = useAuth();
   const {
     setExperience,
     setParticipant,
@@ -106,6 +140,7 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
     setError,
     setMonitorView,
     setParticipantView,
+    setWsReady,
     impersonatedParticipantId,
   } = useExperienceState();
   const { getFamilyFeudDispatch, getLobbyDrawingDispatch } = useDispatchRegistry();
@@ -119,6 +154,10 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
   const wsIdentifierRef = useRef<string>(undefined);
   const monitorIdentifierRef = useRef<string>(undefined);
   const impersonationIdentifierRef = useRef<string>(undefined);
+
+  const mainDisposeRef = useRef(false);
+  const monitorDisposeRef = useRef(false);
+  const impersonationDisposeRef = useRef(false);
 
   const handleExperienceMessage = useCallback(
     (
@@ -138,9 +177,10 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
       }
 
       if (target === 'monitor') {
-        const payload = raw.message ?? raw;
-        if (!payload || typeof payload !== 'object') return;
-        const channelMsg = payload as ExperienceChannelMessage;
+        const wsMessage = parseChannelMessage(raw);
+        if (!wsMessage) return;
+
+        const channelMsg = wsMessage as ExperienceChannelMessage;
 
         if (isDrawingUpdateMessage(channelMsg)) {
           const dispatch = getLobbyDrawingDispatch();
@@ -175,6 +215,7 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
             setExperience(updatedExperience);
             setExperienceStatus(updatedExperience.status === 'live' ? 'live' : 'lobby');
             setError(undefined);
+            setWsReady(true);
 
             if (wsMessage.participant) {
               setParticipant(wsMessage.participant);
@@ -191,17 +232,7 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
 
         const dispatch = getFamilyFeudDispatch(block_id);
         if (dispatch) {
-          const actionTypeMap: Record<string, FamilyFeudActionType> = {
-            bucket_added: FamilyFeudActionType.BUCKET_ADDED,
-            bucket_renamed: FamilyFeudActionType.BUCKET_RENAMED,
-            bucket_deleted: FamilyFeudActionType.BUCKET_DELETED,
-            answer_assigned: FamilyFeudActionType.ANSWER_ASSIGNED,
-            answer_received: FamilyFeudActionType.ANSWER_RECEIVED,
-            question_added: FamilyFeudActionType.QUESTION_ADDED,
-            question_deleted: FamilyFeudActionType.QUESTION_DELETED,
-          };
-
-          const actionType = actionTypeMap[operation];
+          const actionType = ACTION_TYPE_MAP[operation];
           if (actionType) {
             dispatch({ type: actionType, payload: data } as FamilyFeudAction);
           }
@@ -215,50 +246,41 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
       setError,
       setMonitorView,
       setParticipantView,
+      setWsReady,
       getFamilyFeudDispatch,
       getLobbyDrawingDispatch,
     ],
   );
 
-  const disconnectAllWebsockets = useCallback(() => {
-    if (wsRef.current) {
-      qaLogger('[WS] Disconnecting main WebSocket');
-      wsRef.current.close();
-      wsRef.current = undefined;
-    }
-    if (monitorWsRef.current) {
-      qaLogger('[WS] Disconnecting monitor WebSocket');
-      monitorWsRef.current.close();
-      monitorWsRef.current = undefined;
-    }
-    if (impersonationWsRef.current) {
-      qaLogger('[WS] Disconnecting impersonation WebSocket');
-      impersonationWsRef.current.close();
-      impersonationWsRef.current = undefined;
-    }
-    setWsConnected(false);
-    setWsError(undefined);
-  }, []);
-
+  const handleMessageRef = useRef(handleExperienceMessage);
   useEffect(() => {
-    if (!code) {
-      qaLogger('[WS SETUP] No code, disconnecting all websockets');
-      disconnectAllWebsockets();
+    handleMessageRef.current = handleExperienceMessage;
+  });
+
+  // Main effect: manages admin, monitor, and participant connections.
+  // Does not depend on impersonatedParticipantId so impersonation changes
+  // don't tear down and rebuild the stable connections.
+  useEffect(() => {
+    if (!code || isLoading) {
+      qaLogger('[WS SETUP] No code or auth loading, skipping websocket setup');
       return;
     }
 
-    if (isManagePage) {
-      qaLogger('[WS SETUP] MANAGE PAGE - Creating 3 websockets: Admin, Monitor, Impersonation');
+    mainDisposeRef.current = false;
+    monitorDisposeRef.current = false;
 
-      if (wsRef.current?.readyState !== WebSocket.OPEN) {
-        wsRef.current = createWebSocketConnection({
+    if (isManagePage) {
+      qaLogger('[WS SETUP] MANAGE PAGE - Creating admin and monitor websockets');
+
+      createWebSocketConnection(
+        {
           label: 'ADMIN WS',
           identifier: {
             channel: 'ExperienceSubscriptionChannel',
             code,
             ...(jwt ? { token: jwt } : {}),
           },
-          onMessage: (msg) => handleExperienceMessage(msg, 'ADMIN WS', 'main'),
+          onMessage: (msg) => handleMessageRef.current(msg, 'ADMIN WS', 'main'),
           onConnect: () => {
             setWsConnected(true);
             setWsError(undefined);
@@ -268,78 +290,64 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
             setWsConnected(false);
           },
           onClose: () => setWsConnected(false),
-        });
-        wsIdentifierRef.current = JSON.stringify({
-          channel: 'ExperienceSubscriptionChannel',
-          code,
-          ...(jwt ? { token: jwt } : {}),
-        });
-      }
+        },
+        wsRef,
+        wsIdentifierRef,
+        mainDisposeRef,
+      );
 
-      if (monitorWsRef.current?.readyState !== WebSocket.OPEN) {
-        const monitorId: Record<string, string> = {
-          channel: 'ExperienceSubscriptionChannel',
-          code,
-          view_type: 'monitor',
-        };
-        if (jwt) monitorId.token = jwt;
-        monitorWsRef.current = createWebSocketConnection({
+      const monitorId: Record<string, string> = {
+        channel: 'ExperienceSubscriptionChannel',
+        code,
+        view_type: 'monitor',
+      };
+      createWebSocketConnection(
+        {
           label: 'Monitor WS',
           identifier: monitorId,
-          onMessage: (msg) => handleExperienceMessage(msg, 'Monitor WS', 'monitor'),
-        });
-        monitorIdentifierRef.current = JSON.stringify(monitorId);
-      }
-
-      if (impersonatedParticipantId) {
-        if (impersonationWsRef.current) {
-          impersonationWsRef.current.close();
-        }
-        const impersonationId = {
-          channel: 'ExperienceSubscriptionChannel',
-          code,
-          ...(jwt ? { token: jwt } : {}),
-          as_participant_id: impersonatedParticipantId,
-        };
-        impersonationWsRef.current = createWebSocketConnection({
-          label: 'IMPERSONATION WS',
-          identifier: impersonationId,
-          onMessage: (msg) => handleExperienceMessage(msg, 'IMPERSONATION WS', 'impersonation'),
-        });
-        impersonationIdentifierRef.current = JSON.stringify(impersonationId);
-      } else if (impersonationWsRef.current) {
-        qaLogger('[IMPERSONATION WS] Disconnecting');
-        impersonationWsRef.current.close();
-        impersonationWsRef.current = undefined;
-        setParticipantView(undefined);
-      }
+          onMessage: (msg) => handleMessageRef.current(msg, 'Monitor WS', 'monitor'),
+        },
+        monitorWsRef,
+        monitorIdentifierRef,
+        monitorDisposeRef,
+      );
     } else if (isMonitorPage) {
-      qaLogger('[WS SETUP] Monitor PAGE - Creating 1 websocket: Monitor');
+      qaLogger('[WS SETUP] MONITOR PAGE - Creating monitor websocket');
 
-      if (monitorWsRef.current?.readyState !== WebSocket.OPEN) {
-        const monitorId: Record<string, string> = {
-          channel: 'ExperienceSubscriptionChannel',
-          code,
-          view_type: 'monitor',
-        };
-        if (jwt) monitorId.token = jwt;
-        monitorWsRef.current = createWebSocketConnection({
+      const monitorId: Record<string, string> = {
+        channel: 'ExperienceSubscriptionChannel',
+        code,
+        view_type: 'monitor',
+      };
+      createWebSocketConnection(
+        {
           label: 'Monitor WS',
           identifier: monitorId,
-          onMessage: (msg) => handleExperienceMessage(msg, 'Monitor WS', 'monitor'),
-        });
-        monitorIdentifierRef.current = JSON.stringify(monitorId);
-      }
+          onMessage: (msg) => handleMessageRef.current(msg, 'Monitor WS', 'monitor'),
+          onConnect: () => {
+            setWsConnected(true);
+            setWsError(undefined);
+          },
+          onError: () => {
+            setWsError('Connection error');
+            setWsConnected(false);
+          },
+          onClose: () => setWsConnected(false),
+        },
+        monitorWsRef,
+        monitorIdentifierRef,
+        monitorDisposeRef,
+      );
     } else {
-      qaLogger('[WS SETUP] PARTICIPANT PAGE - Creating 1 websocket: Participant');
+      qaLogger('[WS SETUP] PARTICIPANT PAGE - Creating participant websocket');
 
       if (jwt) {
-        if (wsRef.current?.readyState !== WebSocket.OPEN) {
-          const participantId = { channel: 'ExperienceSubscriptionChannel', code, token: jwt };
-          wsRef.current = createWebSocketConnection({
+        const participantId = { channel: 'ExperienceSubscriptionChannel', code, token: jwt };
+        createWebSocketConnection(
+          {
             label: 'PARTICIPANT WS',
             identifier: participantId,
-            onMessage: (msg) => handleExperienceMessage(msg, 'PARTICIPANT WS', 'main'),
+            onMessage: (msg) => handleMessageRef.current(msg, 'PARTICIPANT WS', 'main'),
             onConnect: () => {
               setWsConnected(true);
               setWsError(undefined);
@@ -349,36 +357,86 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
               setWsConnected(false);
             },
             onClose: () => setWsConnected(false),
-          });
-          wsIdentifierRef.current = JSON.stringify(participantId);
-        }
-      } else {
-        qaLogger('[WS SETUP] No JWT available for participant view');
-        disconnectAllWebsockets();
+          },
+          wsRef,
+          wsIdentifierRef,
+          mainDisposeRef,
+        );
       }
     }
 
-    return () => disconnectAllWebsockets();
-  }, [
-    jwt,
-    code,
-    isManagePage,
-    isMonitorPage,
-    impersonatedParticipantId,
-    handleExperienceMessage,
-    disconnectAllWebsockets,
-    setParticipantView,
-  ]);
+    return () => {
+      mainDisposeRef.current = true;
+      monitorDisposeRef.current = true;
+
+      if (wsRef.current) {
+        qaLogger('[WS] Disconnecting main WebSocket');
+        wsRef.current.close(1000);
+        wsRef.current = undefined;
+      }
+      if (monitorWsRef.current) {
+        qaLogger('[WS] Disconnecting monitor WebSocket');
+        monitorWsRef.current.close(1000);
+        monitorWsRef.current = undefined;
+      }
+
+      setWsConnected(false);
+      setWsError(undefined);
+      setWsReady(false);
+    };
+  }, [jwt, code, isLoading, isManagePage, isMonitorPage, setWsReady]);
+
+  // Impersonation effect: manages the impersonation connection independently.
+  // Changing the impersonated participant only affects this connection.
+  useEffect(() => {
+    if (!code || isLoading || !isManagePage) return;
+
+    if (impersonatedParticipantId) {
+      qaLogger(`[IMPERSONATION WS] Connecting for participant ${impersonatedParticipantId}`);
+      impersonationDisposeRef.current = false;
+
+      if (impersonationWsRef.current) {
+        impersonationWsRef.current.close(1000);
+      }
+
+      const impersonationId = {
+        channel: 'ExperienceSubscriptionChannel',
+        code,
+        ...(jwt ? { token: jwt } : {}),
+        as_participant_id: impersonatedParticipantId,
+      };
+      createWebSocketConnection(
+        {
+          label: 'IMPERSONATION WS',
+          identifier: impersonationId,
+          onMessage: (msg) => handleMessageRef.current(msg, 'IMPERSONATION WS', 'impersonation'),
+        },
+        impersonationWsRef,
+        impersonationIdentifierRef,
+        impersonationDisposeRef,
+      );
+    }
+
+    return () => {
+      impersonationDisposeRef.current = true;
+      if (impersonationWsRef.current) {
+        qaLogger('[IMPERSONATION WS] Disconnecting');
+        impersonationWsRef.current.close(1000);
+        impersonationWsRef.current = undefined;
+        impersonationIdentifierRef.current = undefined;
+      }
+      setParticipantView(undefined);
+    };
+  }, [code, isLoading, isManagePage, jwt, impersonatedParticipantId, setParticipantView]);
 
   const experiencePerform = useCallback(
     (
       action: string,
       payload?: Record<string, unknown>,
-      target: 'participant' | 'admin' | 'monitor' | 'impersonation' = 'participant',
+      target: 'primary' | 'monitor' | 'impersonation' = 'primary',
     ) => {
       const frames = {
-        participant: { sock: wsRef.current, id: wsIdentifierRef.current },
-        admin: { sock: wsRef.current, id: wsIdentifierRef.current },
+        primary: { sock: wsRef.current, id: wsIdentifierRef.current },
         monitor: { sock: monitorWsRef.current, id: monitorIdentifierRef.current },
         impersonation: { sock: impersonationWsRef.current, id: impersonationIdentifierRef.current },
       } as const;

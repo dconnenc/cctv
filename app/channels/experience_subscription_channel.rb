@@ -1,12 +1,17 @@
 class ExperienceSubscriptionChannel < ApplicationCable::Channel
   def subscribed
     setup_experience_and_user
+    return unless @experience
 
     if monitor_view_subscription?
       setup_monitor_view_subscription
     elsif impersonation_subscription?
       setup_impersonation_subscription
     else
+      unless @is_admin || @participant
+        reject
+        return
+      end
       setup_stream_subscription
     end
 

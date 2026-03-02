@@ -757,11 +757,12 @@ export interface ExperienceContextType {
   experienceStatus: 'lobby' | 'live';
   error?: string;
 
-  setJWT: (token: string) => void;
-  clearJWT: () => void;
+  setParticipantJWT: (token: string) => void;
+  clearAuth: () => void;
   experienceFetch: (url: string, options?: RequestInit) => Promise<Response>;
 
   wsConnected: boolean;
+  wsReady: boolean;
   wsError?: string;
 
   // Manage page specific properties
@@ -780,6 +781,6 @@ export interface ExperienceContextType {
   experiencePerform?: (
     action: string,
     payload?: Record<string, unknown>,
-    target?: 'participant' | 'admin' | 'monitor' | 'impersonation',
+    target?: 'primary' | 'monitor' | 'impersonation',
   ) => void;
 }

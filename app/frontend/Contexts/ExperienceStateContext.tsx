@@ -10,6 +10,7 @@ export interface ExperienceStateContextType {
   monitorView?: Experience;
   participantView?: Experience;
   impersonatedParticipantId?: string;
+  wsReady: boolean;
   setExperience: (exp: Experience | undefined) => void;
   setParticipant: (p: ParticipantSummary | undefined) => void;
   setExperienceStatus: (s: 'lobby' | 'live') => void;
@@ -17,6 +18,7 @@ export interface ExperienceStateContextType {
   setMonitorView: (exp: Experience | undefined) => void;
   setParticipantView: (exp: Experience | undefined) => void;
   setImpersonatedParticipantId: (id: string | undefined) => void;
+  setWsReady: (ready: boolean) => void;
   resetState: () => void;
 }
 
@@ -30,6 +32,7 @@ export function ExperienceStateProvider({ children }: { children: ReactNode }) {
   const [monitorView, setMonitorView] = useState<Experience>();
   const [participantView, setParticipantView] = useState<Experience>();
   const [impersonatedParticipantId, setImpersonatedParticipantId] = useState<string>();
+  const [wsReady, setWsReady] = useState(false);
 
   const resetState = useCallback(() => {
     setExperience(undefined);
@@ -37,6 +40,7 @@ export function ExperienceStateProvider({ children }: { children: ReactNode }) {
     setMonitorView(undefined);
     setParticipantView(undefined);
     setError(undefined);
+    setWsReady(false);
   }, []);
 
   const value = useMemo<ExperienceStateContextType>(
@@ -48,6 +52,7 @@ export function ExperienceStateProvider({ children }: { children: ReactNode }) {
       monitorView,
       participantView,
       impersonatedParticipantId,
+      wsReady,
       setExperience,
       setParticipant,
       setExperienceStatus,
@@ -55,6 +60,7 @@ export function ExperienceStateProvider({ children }: { children: ReactNode }) {
       setMonitorView,
       setParticipantView,
       setImpersonatedParticipantId,
+      setWsReady,
       resetState,
     }),
     [
@@ -65,6 +71,7 @@ export function ExperienceStateProvider({ children }: { children: ReactNode }) {
       monitorView,
       participantView,
       impersonatedParticipantId,
+      wsReady,
       resetState,
     ],
   );

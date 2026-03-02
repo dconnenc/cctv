@@ -20,6 +20,18 @@ export default function Experience() {
   const { isAdmin } = useUser();
   const { clearAvatars, isLoading: clearing } = useClearAvatars();
 
+  const participants = experience?.participants || [];
+  const currentFullParticipant = participants.find((p) => p.user_id === participant?.user_id);
+  const needsAvatar = !isAdmin && !currentFullParticipant?.avatar?.strokes?.length;
+  const hasInitialData = !isAdmin ? experience && participant : experience;
+
+  useEffect(() => {
+    if (locationState?.avatarSubmitted) return;
+    if (experienceStatus === 'lobby' && needsAvatar && code && !isLoading && hasInitialData) {
+      navigate(`/experiences/${code}/avatar`, { replace: true });
+    }
+  }, [locationState, experienceStatus, needsAvatar, code, navigate, isLoading, hasInitialData]);
+
   if (isLoading) {
     return (
       <section className="page">
@@ -42,20 +54,6 @@ export default function Experience() {
       </section>
     );
   }
-
-  const participants = experience?.participants || [];
-  const currentFullParticipant = participants.find((p) => p.user_id === participant?.user_id);
-  const needsAvatar = !isAdmin && !currentFullParticipant?.avatar?.strokes?.length;
-
-  // Wait for both experience AND participant data before checking avatar
-  const hasInitialData = !isAdmin ? experience && participant : experience;
-
-  useEffect(() => {
-    if (locationState?.avatarSubmitted) return;
-    if (experienceStatus === 'lobby' && needsAvatar && code && !isLoading && hasInitialData) {
-      navigate(`/experiences/${code}/avatar`, { replace: true });
-    }
-  }, [locationState, experienceStatus, needsAvatar, code, navigate, isLoading, hasInitialData]);
   const currentBlock = experience?.blocks?.[0];
 
   if (experienceStatus === 'lobby') {
