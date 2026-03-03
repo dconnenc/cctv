@@ -1,7 +1,7 @@
 import { ReactNode, createContext, useContext, useEffect, useState } from 'react';
 
 import { clearAllExperienceJWTs } from '@cctv/contexts/jwtStorage';
-import { UserRole } from '@cctv/types';
+import { AvatarStroke, UserRole } from '@cctv/types';
 
 interface User {
   id: string;
@@ -13,6 +13,7 @@ interface User {
   admin: boolean;
   super_admin: boolean;
   most_recent_participant_name?: string;
+  most_recent_avatar?: { strokes?: AvatarStroke[] } | null;
 }
 
 interface UserContextType {

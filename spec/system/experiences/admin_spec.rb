@@ -1,34 +1,47 @@
 require "rails_helper"
 
-RSpec.describe "Creating a new experience", type: :system do
+RSpec.describe "Managing Blocks", type: :system do
   let(:admin) { create(:user, :admin) }
-
-  it "creates an announcement block starts the experience" do
-    sign_in(admin)
-    create_experience(name: "Test Experience", code: "test-exp")
-
-    click_link "Go to lobby"
-
-    expect(page).to have_text(
-      "You're viewing this experience as an admin but aren't registered as a " \
-        "participant."
+  let!(:experience) do
+    create(
+      :experience,
+      :draft,
+      creator: admin,
+      name: "Management Experience",
+      code: "management-experience"
     )
+  end
 
-    click_link "Manage Experience"
-    expect(page).to have_text("No blocks yet")
+  describe "enqueing and presenting blocks" do
+    before do
+      # Sign an admin in as the default session so we can get back to the
+      # management screen to make changes to the experience state
+      sign_in(admin)
+    end
 
-    click_button "Block"
+    it "prompts a user for an avatar while in the lobby" do
+      using_session(:monitor) do
+        visit "/experiences/#{experience.code_slug}/monitor"
+        expect(page).to have_text("Participants")
+      end
 
-    expect(page).to have_text("Create Block")
-    select "Announcement", from: "Kind"
-    fill_in "Announcement Message", with: "Welcome to the show!"
-    click_button "Queue block"
+      using_session(:participant) do
+        register_participant(
+          code: experience.code_slug,
+          name: "Alice",
+          email: "alice@example.com",
+          experience_name: experience.name
+        )
 
-    expect(page).to have_css("li[aria-label='block 1']")
-    expect(page).to have_no_text("No blocks yet")
+        expect(page).to have_text("Draw your avatar to enter the lobby")
 
-    click_button "Start"
+        draw_and_submit_avatar
+        expect(page).to have_text("Players in Lobby:")
+      end
 
-    expect(page).to have_button("Pause")
+      using_session(:monitor) do
+        expect(page).to have_text("Alice")
+      end
+    end
   end
 end
