@@ -6,8 +6,22 @@ FactoryBot.define do
     status { ExperienceParticipant.statuses[:registered] }
 
     role { ExperienceParticipant.roles[:audience] }
-    
+
     name { user&.name || "Test Participant" }
+
+    trait :with_avatar do
+      avatar do
+        {
+          'strokes' => [
+            {
+              'points' => [1, 2, 3, 4],
+              'color' => '#ff0000',
+              'width' => 4
+            }
+          ]
+        }
+      end
+    end
 
     trait :audience do
       role { ExperienceParticipant.roles[:audience] }
