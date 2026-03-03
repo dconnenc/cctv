@@ -1,12 +1,4 @@
-import {
-  ReactNode,
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-} from 'react';
+import { ReactNode, createContext, useCallback, useContext, useMemo, useState } from 'react';
 
 import { useParams } from 'react-router-dom';
 
@@ -24,7 +16,6 @@ export interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   setParticipantJWT: (token: string) => void;
-  setAdminJWT: (token: string | undefined) => void;
   clearAuth: () => void;
   experienceFetch: (url: string, options?: RequestInit) => Promise<Response>;
 }
@@ -35,8 +26,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const { code } = useParams<{ code: string }>();
   const currentCode = code ?? '';
 
-  const [jwt, setJWTState] = useState<string>();
-  const [isLoading, setIsLoading] = useState(true);
+  const [jwt, setJWTState] = useState<string | undefined>(() => {
+    if (!currentCode) return undefined;
+    return getStoredParticipantJWT(currentCode) ?? undefined;
+  });
+  const [isLoading] = useState(false);
 
   const revokeParticipantJWT = useCallback(() => {
     if (!currentCode) return;
@@ -50,28 +44,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       removeStoredAdminJWT(currentCode);
     }
     setJWTState(undefined);
-  }, [currentCode]);
-
-  // Called by AdminAuthProvider to register the active admin JWT so websocket
-  // connections can use it without AuthContext needing to know about routes.
-  const setAdminJWT = useCallback((token: string | undefined) => {
-    setJWTState(token);
-  }, []);
-
-  // Initialize participant JWT from localStorage on mount.
-  useEffect(() => {
-    if (!currentCode) return;
-
-    qaLogger(`Initializing auth for experience: ${currentCode}`);
-
-    const storedParticipantJWT = getStoredParticipantJWT(currentCode);
-    if (storedParticipantJWT) {
-      qaLogger('Found stored participant JWT; setting in context');
-      setJWTState(storedParticipantJWT);
-    } else {
-      qaLogger('No stored participant JWT');
-    }
-    setIsLoading(false);
   }, [currentCode]);
 
   const experienceFetch = useCallback(
@@ -128,11 +100,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isAuthenticated: jwt !== undefined && currentCode !== '',
       isLoading,
       setParticipantJWT,
-      setAdminJWT,
       clearAuth,
       experienceFetch,
     }),
-    [jwt, currentCode, isLoading, setParticipantJWT, setAdminJWT, clearAuth, experienceFetch],
+    [jwt, currentCode, isLoading, setParticipantJWT, clearAuth, experienceFetch],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

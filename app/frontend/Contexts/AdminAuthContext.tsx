@@ -4,7 +4,6 @@ import {
   useCallback,
   useContext,
   useEffect,
-  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -22,9 +21,8 @@ import {
 import { AuthError } from '@cctv/types';
 import { qaLogger } from '@cctv/utils';
 
-import { useAuth } from './AuthContext';
-
 export interface AdminAuthContextType {
+  adminJWT: string | undefined;
   adminFetch: (url: string, options?: RequestInit) => Promise<Response>;
   isAdminLoading: boolean;
 }
@@ -35,9 +33,7 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
   const { code } = useParams<{ code: string }>();
   const currentCode = code ?? '';
   const { isAdmin } = useUser();
-  const { setAdminJWT: setContextAdminJWT } = useAuth();
 
-  // Synchronously initialize from localStorage so the JWT is available before effects run.
   const [adminJWT, setAdminJWTState] = useState<string | undefined>(() => {
     if (!currentCode) return undefined;
     const stored = getStoredAdminJWT(currentCode);
@@ -55,17 +51,15 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
       if (!currentCode) return;
       setStoredAdminJWT(currentCode, token);
       setAdminJWTState(token);
-      setContextAdminJWT(token);
     },
-    [currentCode, setContextAdminJWT],
+    [currentCode],
   );
 
   const revokeAdminJWT = useCallback(() => {
     if (!currentCode) return;
     removeStoredAdminJWT(currentCode);
     setAdminJWTState(undefined);
-    setContextAdminJWT(undefined);
-  }, [currentCode, setContextAdminJWT]);
+  }, [currentCode]);
 
   // Admin JWT is obtained by exchanging session credentials (cookie-based)
   // for a short-lived experience-scoped JWT, hence credentials: 'include'.
@@ -101,26 +95,13 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
     }
   }, [currentCode, isAdmin, applyAdminJWT]);
 
-  // Sync the stored admin JWT to AuthContext before other effects run, so that
-  // WebSocketContext's useEffect sees the correct JWT on its first execution.
-  useLayoutEffect(() => {
-    if (adminJWT) {
-      setContextAdminJWT(adminJWT);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
   // Fetch a fresh admin JWT from the API if none was found in localStorage.
   const hasFetchedRef = useRef(false);
   useEffect(() => {
     if (hasFetchedRef.current || adminJWT || !isAdmin) return;
     hasFetchedRef.current = true;
 
-    qaLogger(
-      getStoredAdminJWT(currentCode)
-        ? 'Stored admin JWT is expired; fetching fresh token'
-        : 'No stored admin JWT; fetching from API',
-    );
+    qaLogger('No valid admin JWT found; fetching from API');
     fetchAdminJWT().finally(() => setIsAdminLoading(false));
   }, [currentCode, isAdmin, adminJWT, fetchAdminJWT]);
 
@@ -128,35 +109,35 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
     async (url: string, options: RequestInit = {}) => {
       if (!currentCode) throw new Error('No experience code available');
 
-      if (!adminJWT) {
-        const err: AuthError = new Error('No admin JWT available');
+      const makeRequest = async (token: string): Promise<Response> => {
+        const headers: RequestInit['headers'] = {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          ...options.headers,
+        };
+        return fetch(url, { ...options, headers });
+      };
+
+      // No JWT client-side - attempt session refresh before giving up,
+      // same recovery path as receiving a 401 on a stale token.
+      const token = adminJWT ?? (await fetchAdminJWT());
+      if (!token) {
+        const err: AuthError = new Error('Authentication expired');
         err.code = 401;
         throw err;
       }
 
-      const headers: RequestInit['headers'] = {
-        Authorization: `Bearer ${adminJWT}`,
-        'Content-Type': 'application/json',
-        ...options.headers,
-      };
-
-      const response = await fetch(url, { ...options, headers });
+      const response = await makeRequest(token);
 
       if (response.status === 401) {
-        // Admin JWTs can be auto-refreshed via session auth. Attempt one retry.
+        // Token was rejected - clear it and attempt one session refresh.
         qaLogger('401 on admin JWT; clearing and retrying with fresh token');
         revokeAdminJWT();
         const newJWT = await fetchAdminJWT();
         if (newJWT) {
-          const retryHeaders: RequestInit['headers'] = {
-            Authorization: `Bearer ${newJWT}`,
-            'Content-Type': 'application/json',
-            ...options.headers,
-          };
-          const retryResponse = await fetch(url, { ...options, headers: retryHeaders });
+          const retryResponse = await makeRequest(newJWT);
           if (retryResponse.ok) return retryResponse;
           if (retryResponse.status === 401) {
-            // Session itself has expired; nothing to retry.
             qaLogger('401 on retried admin JWT; session also expired');
             revokeAdminJWT();
           }
@@ -177,8 +158,8 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
   );
 
   const value = useMemo<AdminAuthContextType>(
-    () => ({ adminFetch, isAdminLoading }),
-    [adminFetch, isAdminLoading],
+    () => ({ adminJWT, adminFetch, isAdminLoading }),
+    [adminJWT, adminFetch, isAdminLoading],
   );
 
   return <AdminAuthContext.Provider value={value}>{children}</AdminAuthContext.Provider>;
