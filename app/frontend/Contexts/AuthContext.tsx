@@ -12,6 +12,9 @@ import { useLocation, useParams } from 'react-router-dom';
 
 import { useUser } from '@cctv/contexts/UserContext';
 import { AuthError } from '@cctv/types';
+
+// NOTE: Why are there utils methods that look like they should be a part of the auth context
+// They should be defined here if they belong here
 import {
   getJWTKey,
   getStoredAdminJWT,
@@ -22,9 +25,11 @@ import {
   setStoredAdminJWT,
 } from '@cctv/utils';
 
+// NOTE: Comment these, why is code used should be clear that it is the cache key
 const setStoredJWT = (code: string, jwt: string) => localStorage.setItem(getJWTKey(code), jwt);
 const removeStoredJWT = (code: string) => localStorage.removeItem(getJWTKey(code));
 
+// Comment what this is for
 export function useExperienceRoute() {
   const { code } = useParams<{ code: string }>();
   const { pathname } = useLocation();
@@ -47,21 +52,25 @@ export interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  // NOTE: Why isMangePage? Should this be isAdminPage to indicate admin auth?
   const { code: currentCode, isManagePage } = useExperienceRoute();
   const { isAdmin, isLoading: userIsLoading } = useUser();
 
   const [jwt, setJWTState] = useState<string>();
   const [isLoading, setIsLoading] = useState(true);
 
+  // NOTE: Is this duplicating a utils method. It apperas to just wrap it
   const clearAdminJWT = useCallback(() => {
     if (currentCode) removeStoredAdminJWT(currentCode);
   }, [currentCode]);
 
+  // NOTE: Is this duplicating a utils method. It apperas to just wrap it
   const clearParticipantJWT = useCallback(() => {
     if (currentCode) removeStoredJWT(currentCode);
     setJWTState(undefined);
   }, [currentCode]);
 
+  // NOTE: What is the storedJWT vs participantJWT vs adminJWT
   const clearAuth = useCallback(() => {
     if (currentCode) {
       removeStoredJWT(currentCode);
@@ -70,11 +79,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setJWTState(undefined);
   }, [currentCode]);
 
+  // NOTE: The retry logic below depends on this fn returning a JWT. The type
+  // system should make this clear
   const fetchAdminJWT = useCallback(async () => {
     if (!currentCode || !isAdmin) return;
 
     try {
       qaLogger('Fetching admin JWT');
+
+      // NOTE: Comment that admin tokens are fetched based on session auth
       const response = await fetch(
         `/api/experiences/${encodeURIComponent(currentCode)}/admin_token`,
         {
@@ -90,6 +103,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (data?.success && data?.jwt) {
         qaLogger('Admin JWT received');
+
+        // NOTE: The two set calls here seem like they should be part of the one
+        // fn call that clearly indicates its purpose. Related to above with why
+        // different jwts
         setStoredAdminJWT(currentCode, data.jwt);
         setJWTState(data.jwt);
         return data.jwt as string;
@@ -102,6 +119,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [currentCode, isAdmin]);
 
+  // NOTE: This fn needs clean up. The code should make it clear, or comments,
+  // * why different headers
+  // * why retry for admin, not participant
+  // * There is duplication for setting up a request (3 times alone in this fn)
   const experienceFetch = useCallback(
     async (url: string, options: RequestInit = {}) => {
       if (!currentCode) throw new Error('No experience code available');
@@ -120,6 +141,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const response = await fetch(url, { ...options, headers });
 
       if (response.status === 401) {
+        // NOTE: This check is for ensureing a participant key. Should we have
+        // admin vs nonadmin fetch. This whole fn is handling two cases and is
+        // a mess to reason about. If we chagne this. Don't try and be clever
+        // with backwards compatibility. Do full refactors the right way
         const isAdminJWT = !!(jwt && jwt === getStoredAdminJWT(currentCode));
         if (isAdminJWT) {
           qaLogger('401 on admin JWT; clearing and retrying with fresh token');
@@ -150,7 +175,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (!response.ok) {
         qaLogger(`Failed experienceFetch: ${response.status}`);
-        throw new Error(`Failed to load experience (status ${response.status})`);
+        throw new Error(`Failed to fetch ${url} (status ${response.status})`);
       }
 
       return response;
@@ -158,6 +183,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [jwt, currentCode, clearAdminJWT, clearParticipantJWT, fetchAdminJWT],
   );
 
+  // NOTE: This is too hard to understand at a glance. Needs better abstraction
+  // levels to understand intent and a comment for the effect
   useEffect(() => {
     if (!currentCode || userIsLoading) return;
 
