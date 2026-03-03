@@ -128,16 +128,17 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
     async (url: string, options: RequestInit = {}) => {
       if (!currentCode) throw new Error('No experience code available');
 
-      const headers: RequestInit['headers'] = adminJWT
-        ? {
-            Authorization: `Bearer ${adminJWT}`,
-            'Content-Type': 'application/json',
-            ...options.headers,
-          }
-        : {
-            'Content-Type': 'application/json',
-            ...options.headers,
-          };
+      if (!adminJWT) {
+        const err: AuthError = new Error('No admin JWT available');
+        err.code = 401;
+        throw err;
+      }
+
+      const headers: RequestInit['headers'] = {
+        Authorization: `Bearer ${adminJWT}`,
+        'Content-Type': 'application/json',
+        ...options.headers,
+      };
 
       const response = await fetch(url, { ...options, headers });
 

@@ -78,16 +78,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     async (url: string, options: RequestInit = {}) => {
       if (!currentCode) throw new Error('No experience code available');
 
-      const headers: RequestInit['headers'] = jwt
-        ? {
-            Authorization: `Bearer ${jwt}`,
-            'Content-Type': 'application/json',
-            ...options.headers,
-          }
-        : {
-            'Content-Type': 'application/json',
-            ...options.headers,
-          };
+      if (!jwt) {
+        const err: AuthError = new Error('No JWT available');
+        err.code = 401;
+        throw err;
+      }
+
+      const headers: RequestInit['headers'] = {
+        Authorization: `Bearer ${jwt}`,
+        'Content-Type': 'application/json',
+        ...options.headers,
+      };
 
       const response = await fetch(url, { ...options, headers });
 
