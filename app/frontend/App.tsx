@@ -3,6 +3,7 @@ import { Suspense, lazy, useEffect, useState } from 'react';
 import { Outlet, Route, useLocation } from 'react-router-dom';
 
 import { BackgroundStatic, RouteWink, TopNav } from '@cctv/components';
+import { AdminAuthProvider } from '@cctv/contexts/AdminAuthContext';
 import { ExperienceProvider } from '@cctv/contexts/ExperienceContext';
 import { UserProvider } from '@cctv/contexts/UserContext';
 import Create from '@cctv/pages/Create/Create';
@@ -80,9 +81,17 @@ function App() {
                   <Route path="playbill" element={<Playbill />} />
 
                   <Route element={<RequireExperienceHostOrAdmin />}>
-                    <Route path="manage" element={<ManageViewer />} />
-                    <Route path="manage/blocks/new" element={<ManageCreateBlock />} />
-                    <Route path="manage/blocks/:blockId" element={<BlockPage />} />
+                    <Route
+                      element={
+                        <AdminAuthProvider>
+                          <Outlet />
+                        </AdminAuthProvider>
+                      }
+                    >
+                      <Route path="manage" element={<ManageViewer />} />
+                      <Route path="manage/blocks/new" element={<ManageCreateBlock />} />
+                      <Route path="manage/blocks/:blockId" element={<BlockPage />} />
+                    </Route>
                   </Route>
                 </Route>
               </Route>

@@ -1,10 +1,12 @@
 import { useCallback, useState } from 'react';
 
 import { useExperience } from '@cctv/contexts';
+import { useAdminAuth } from '@cctv/contexts/AdminAuthContext';
 import { PlaybillSection } from '@cctv/types';
 
 export function useUpdatePlaybill() {
-  const { code, experienceFetch } = useExperience();
+  const { code } = useExperience();
+  const { adminFetch } = useAdminAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -17,7 +19,7 @@ export function useUpdatePlaybill() {
       setIsLoading(true);
       setError(null);
       try {
-        const res = await experienceFetch(
+        const res = await adminFetch(
           `/api/experiences/${encodeURIComponent(code)}/update_playbill`,
           {
             method: 'PATCH',
@@ -39,7 +41,7 @@ export function useUpdatePlaybill() {
         setIsLoading(false);
       }
     },
-    [code, experienceFetch],
+    [code, adminFetch],
   );
 
   return { updatePlaybill, isLoading, error };

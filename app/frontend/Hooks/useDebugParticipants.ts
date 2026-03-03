@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useState } from 'react';
 
+import { useAdminAuth } from '@cctv/contexts/AdminAuthContext';
 import { useExperience } from '@cctv/contexts/ExperienceContext';
 
 export interface DebugParticipant {
@@ -11,7 +12,8 @@ export interface DebugParticipant {
 }
 
 export function useDebugParticipants() {
-  const { code, experienceFetch, experience } = useExperience();
+  const { code, experience } = useExperience();
+  const { adminFetch } = useAdminAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [createdParticipants, setCreatedParticipants] = useState<DebugParticipant[]>([]);
@@ -60,7 +62,7 @@ export function useDebugParticipants() {
       setError(null);
 
       try {
-        const res = await experienceFetch(
+        const res = await adminFetch(
           `/api/experiences/${encodeURIComponent(code)}/debug/create_participants`,
           {
             method: 'POST',
@@ -102,7 +104,7 @@ export function useDebugParticipants() {
         setIsLoading(false);
       }
     },
-    [code, experienceFetch],
+    [code, adminFetch],
   );
 
   const clearParticipants = useCallback(() => {
@@ -126,7 +128,7 @@ export function useDebugParticipants() {
     setError(null);
 
     try {
-      const res = await experienceFetch(
+      const res = await adminFetch(
         `/api/experiences/${encodeURIComponent(code)}/debug/get_participant_jwts`,
         {
           method: 'POST',
@@ -161,7 +163,7 @@ export function useDebugParticipants() {
     } finally {
       setIsLoading(false);
     }
-  }, [code, experienceFetch, existingParticipants]);
+  }, [code, adminFetch, existingParticipants]);
 
   return {
     createParticipants,

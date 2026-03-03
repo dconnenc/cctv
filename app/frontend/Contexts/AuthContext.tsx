@@ -8,43 +8,23 @@ import {
   useState,
 } from 'react';
 
-import { useLocation, useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 
-import { useUser } from '@cctv/contexts/UserContext';
-import { AuthError } from '@cctv/types';
-
-// NOTE: Why are there utils methods that look like they should be a part of the auth context
-// They should be defined here if they belong here
 import {
-  getJWTKey,
-  getStoredAdminJWT,
-  getStoredJWT,
-  isJWTExpired,
-  qaLogger,
+  getStoredParticipantJWT,
   removeStoredAdminJWT,
-  setStoredAdminJWT,
-} from '@cctv/utils';
-
-// NOTE: Comment these, why is code used should be clear that it is the cache key
-const setStoredJWT = (code: string, jwt: string) => localStorage.setItem(getJWTKey(code), jwt);
-const removeStoredJWT = (code: string) => localStorage.removeItem(getJWTKey(code));
-
-// Comment what this is for
-export function useExperienceRoute() {
-  const { code } = useParams<{ code: string }>();
-  const { pathname } = useLocation();
-  return {
-    code: code ?? '',
-    isManagePage: pathname.includes('/manage'),
-    isMonitorPage: pathname.includes('/monitor'),
-  };
-}
+  removeStoredParticipantJWT,
+  setStoredParticipantJWT,
+} from '@cctv/contexts/jwtStorage';
+import { AuthError } from '@cctv/types';
+import { qaLogger } from '@cctv/utils';
 
 export interface AuthContextType {
   jwt?: string;
   isAuthenticated: boolean;
   isLoading: boolean;
   setParticipantJWT: (token: string) => void;
+  setAdminJWT: (token: string | undefined) => void;
   clearAuth: () => void;
   experienceFetch: (url: string, options?: RequestInit) => Promise<Response>;
 }
@@ -52,77 +32,48 @@ export interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  // NOTE: Why isMangePage? Should this be isAdminPage to indicate admin auth?
-  const { code: currentCode, isManagePage } = useExperienceRoute();
-  const { isAdmin, isLoading: userIsLoading } = useUser();
+  const { code } = useParams<{ code: string }>();
+  const currentCode = code ?? '';
 
   const [jwt, setJWTState] = useState<string>();
   const [isLoading, setIsLoading] = useState(true);
 
-  // NOTE: Is this duplicating a utils method. It apperas to just wrap it
-  const clearAdminJWT = useCallback(() => {
-    if (currentCode) removeStoredAdminJWT(currentCode);
-  }, [currentCode]);
-
-  // NOTE: Is this duplicating a utils method. It apperas to just wrap it
-  const clearParticipantJWT = useCallback(() => {
-    if (currentCode) removeStoredJWT(currentCode);
+  const revokeParticipantJWT = useCallback(() => {
+    if (!currentCode) return;
+    removeStoredParticipantJWT(currentCode);
     setJWTState(undefined);
   }, [currentCode]);
 
-  // NOTE: What is the storedJWT vs participantJWT vs adminJWT
   const clearAuth = useCallback(() => {
     if (currentCode) {
-      removeStoredJWT(currentCode);
+      removeStoredParticipantJWT(currentCode);
       removeStoredAdminJWT(currentCode);
     }
     setJWTState(undefined);
   }, [currentCode]);
 
-  // NOTE: The retry logic below depends on this fn returning a JWT. The type
-  // system should make this clear
-  const fetchAdminJWT = useCallback(async () => {
-    if (!currentCode || !isAdmin) return;
+  // Called by AdminAuthProvider to register the active admin JWT so websocket
+  // connections can use it without AuthContext needing to know about routes.
+  const setAdminJWT = useCallback((token: string | undefined) => {
+    setJWTState(token);
+  }, []);
 
-    try {
-      qaLogger('Fetching admin JWT');
+  // Initialize participant JWT from localStorage on mount.
+  useEffect(() => {
+    if (!currentCode) return;
 
-      // NOTE: Comment that admin tokens are fetched based on session auth
-      const response = await fetch(
-        `/api/experiences/${encodeURIComponent(currentCode)}/admin_token`,
-        {
-          method: 'POST',
-          credentials: 'include',
-          headers: { 'Content-Type': 'application/json' },
-        },
-      );
+    qaLogger(`Initializing auth for experience: ${currentCode}`);
 
-      if (!response.ok) throw new Error('Failed to fetch admin JWT');
-
-      const data = await response.json();
-
-      if (data?.success && data?.jwt) {
-        qaLogger('Admin JWT received');
-
-        // NOTE: The two set calls here seem like they should be part of the one
-        // fn call that clearly indicates its purpose. Related to above with why
-        // different jwts
-        setStoredAdminJWT(currentCode, data.jwt);
-        setJWTState(data.jwt);
-        return data.jwt as string;
-      } else {
-        throw new Error('Invalid admin JWT response');
-      }
-    } catch (err) {
-      console.error('Error fetching admin JWT:', err);
-      return undefined;
+    const storedParticipantJWT = getStoredParticipantJWT(currentCode);
+    if (storedParticipantJWT) {
+      qaLogger('Found stored participant JWT; setting in context');
+      setJWTState(storedParticipantJWT);
+    } else {
+      qaLogger('No stored participant JWT');
     }
-  }, [currentCode, isAdmin]);
+    setIsLoading(false);
+  }, [currentCode]);
 
-  // NOTE: This fn needs clean up. The code should make it clear, or comments,
-  // * why different headers
-  // * why retry for admin, not participant
-  // * There is duplication for setting up a request (3 times alone in this fn)
   const experienceFetch = useCallback(
     async (url: string, options: RequestInit = {}) => {
       if (!currentCode) throw new Error('No experience code available');
@@ -141,33 +92,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const response = await fetch(url, { ...options, headers });
 
       if (response.status === 401) {
-        // NOTE: This check is for ensureing a participant key. Should we have
-        // admin vs nonadmin fetch. This whole fn is handling two cases and is
-        // a mess to reason about. If we chagne this. Don't try and be clever
-        // with backwards compatibility. Do full refactors the right way
-        const isAdminJWT = !!(jwt && jwt === getStoredAdminJWT(currentCode));
-        if (isAdminJWT) {
-          qaLogger('401 on admin JWT; clearing and retrying with fresh token');
-          clearAdminJWT();
-          const newJWT = await fetchAdminJWT();
-          if (newJWT) {
-            const retryHeaders: RequestInit['headers'] = {
-              Authorization: `Bearer ${newJWT}`,
-              'Content-Type': 'application/json',
-              ...options.headers,
-            };
-            const retryResponse = await fetch(url, { ...options, headers: retryHeaders });
-            if (retryResponse.ok) return retryResponse;
-            if (retryResponse.status === 401) {
-              qaLogger('401 on retried admin JWT; session also expired');
-              clearAdminJWT();
-              setJWTState(undefined);
-            }
-          }
-        } else {
-          qaLogger('401 on participant JWT; clearing');
-          clearParticipantJWT();
-        }
+        qaLogger('401 on participant JWT; clearing');
+        revokeParticipantJWT();
         const err: AuthError = new Error('Authentication expired');
         err.code = 401;
         throw err;
@@ -180,42 +106,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       return response;
     },
-    [jwt, currentCode, clearAdminJWT, clearParticipantJWT, fetchAdminJWT],
+    [jwt, currentCode, revokeParticipantJWT],
   );
-
-  // NOTE: This is too hard to understand at a glance. Needs better abstraction
-  // levels to understand intent and a comment for the effect
-  useEffect(() => {
-    if (!currentCode || userIsLoading) return;
-
-    qaLogger(`Initializing auth for experience: ${currentCode}`);
-    setIsLoading(true);
-
-    if (isManagePage && isAdmin) {
-      const storedAdminJWT = getStoredAdminJWT(currentCode);
-      if (storedAdminJWT && !isJWTExpired(storedAdminJWT)) {
-        qaLogger('Found valid stored admin JWT; setting in context');
-        setJWTState(storedAdminJWT);
-        setIsLoading(false);
-      } else {
-        if (storedAdminJWT) {
-          qaLogger('Stored admin JWT is expired; fetching fresh token');
-        } else {
-          qaLogger('No stored admin JWT; fetching from API');
-        }
-        fetchAdminJWT().finally(() => setIsLoading(false));
-      }
-    } else {
-      const storedJWT = getStoredJWT(currentCode);
-      if (storedJWT) {
-        qaLogger('Found stored participant JWT; setting in context');
-        setJWTState(storedJWT);
-      } else {
-        qaLogger('No stored participant JWT');
-      }
-      setIsLoading(false);
-    }
-  }, [currentCode, isManagePage, isAdmin, userIsLoading, fetchAdminJWT]);
 
   const setParticipantJWT = useCallback(
     (token: string) => {
@@ -223,7 +115,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         console.warn('Cannot set JWT without an experience code');
         return;
       }
-      setStoredJWT(currentCode, token);
+      setStoredParticipantJWT(currentCode, token);
       setJWTState(token);
     },
     [currentCode],
@@ -235,10 +127,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isAuthenticated: jwt !== undefined && currentCode !== '',
       isLoading,
       setParticipantJWT,
+      setAdminJWT,
       clearAuth,
       experienceFetch,
     }),
-    [jwt, currentCode, isLoading, setParticipantJWT, clearAuth, experienceFetch],
+    [jwt, currentCode, isLoading, setParticipantJWT, setAdminJWT, clearAuth, experienceFetch],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

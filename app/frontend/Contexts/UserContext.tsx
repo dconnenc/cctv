@@ -1,7 +1,7 @@
 import { ReactNode, createContext, useContext, useEffect, useState } from 'react';
 
+import { clearAllExperienceJWTs } from '@cctv/contexts/jwtStorage';
 import { UserRole } from '@cctv/types';
-import { clearAllExperienceJWTs } from '@cctv/utils';
 
 interface User {
   id: string;

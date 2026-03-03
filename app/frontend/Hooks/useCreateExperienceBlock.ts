@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react';
 
+import { useAdminAuth } from '@cctv/contexts/AdminAuthContext';
 import { useExperience } from '@cctv/contexts/ExperienceContext';
 import {
   ApiPayload,
@@ -34,7 +35,8 @@ export interface CreateExperienceBlockParams {
 }
 
 export function useCreateExperienceBlock() {
-  const { code, experienceFetch } = useExperience();
+  const { code } = useExperience();
+  const { adminFetch } = useAdminAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -81,7 +83,7 @@ export function useCreateExperienceBlock() {
       };
 
       try {
-        const res = await experienceFetch(`/api/experiences/${encodeURIComponent(code)}/blocks`, {
+        const res = await adminFetch(`/api/experiences/${encodeURIComponent(code)}/blocks`, {
           method: 'POST',
           body: JSON.stringify({ block: submitPayload }),
         });
@@ -108,7 +110,7 @@ export function useCreateExperienceBlock() {
         setIsLoading(false);
       }
     },
-    [code, experienceFetch],
+    [code, adminFetch],
   );
 
   return {

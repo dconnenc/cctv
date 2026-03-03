@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 
+import { useAdminAuth } from '@cctv/contexts/AdminAuthContext';
 import { useExperience } from '@cctv/contexts/ExperienceContext';
 
 interface AutoCategorizeBucket {
@@ -13,8 +14,8 @@ interface AutoCategorizeResult {
 }
 
 export function useFamilyFeudBuckets(blockId?: string, dispatch?: (action: any) => void) {
-  const { code, experienceFetch, registerFamilyFeudDispatch, unregisterFamilyFeudDispatch } =
-    useExperience();
+  const { code, registerFamilyFeudDispatch, unregisterFamilyFeudDispatch } = useExperience();
+  const { adminFetch } = useAdminAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -40,7 +41,7 @@ export function useFamilyFeudBuckets(blockId?: string, dispatch?: (action: any) 
       const url = `/api/experiences/${encodeURIComponent(code)}/blocks/${encodeURIComponent(blockId)}/family_feud/add_bucket`;
 
       try {
-        const res = await experienceFetch(url, {
+        const res = await adminFetch(url, {
           method: 'POST',
           body: JSON.stringify({ question_id: questionId, name }),
         });
@@ -63,7 +64,7 @@ export function useFamilyFeudBuckets(blockId?: string, dispatch?: (action: any) 
         setIsLoading(false);
       }
     },
-    [code, experienceFetch],
+    [code, adminFetch],
   );
 
   const renameBucket = useCallback(
@@ -78,7 +79,7 @@ export function useFamilyFeudBuckets(blockId?: string, dispatch?: (action: any) 
       const url = `/api/experiences/${encodeURIComponent(code)}/blocks/${encodeURIComponent(blockId)}/family_feud/buckets/${encodeURIComponent(bucketId)}`;
 
       try {
-        const res = await experienceFetch(url, {
+        const res = await adminFetch(url, {
           method: 'PATCH',
           body: JSON.stringify({ question_id: questionId, name }),
         });
@@ -101,7 +102,7 @@ export function useFamilyFeudBuckets(blockId?: string, dispatch?: (action: any) 
         setIsLoading(false);
       }
     },
-    [code, experienceFetch],
+    [code, adminFetch],
   );
 
   const deleteBucket = useCallback(
@@ -116,7 +117,7 @@ export function useFamilyFeudBuckets(blockId?: string, dispatch?: (action: any) 
       const url = `/api/experiences/${encodeURIComponent(code)}/blocks/${encodeURIComponent(blockId)}/family_feud/buckets/${encodeURIComponent(bucketId)}`;
 
       try {
-        const res = await experienceFetch(url, {
+        const res = await adminFetch(url, {
           method: 'DELETE',
           body: JSON.stringify({ question_id: questionId }),
         });
@@ -139,7 +140,7 @@ export function useFamilyFeudBuckets(blockId?: string, dispatch?: (action: any) 
         setIsLoading(false);
       }
     },
-    [code, experienceFetch],
+    [code, adminFetch],
   );
 
   const assignAnswer = useCallback(
@@ -154,7 +155,7 @@ export function useFamilyFeudBuckets(blockId?: string, dispatch?: (action: any) 
       const url = `/api/experiences/${encodeURIComponent(code)}/blocks/${encodeURIComponent(blockId)}/family_feud/answers/${encodeURIComponent(answerId)}/bucket`;
 
       try {
-        const res = await experienceFetch(url, {
+        const res = await adminFetch(url, {
           method: 'PATCH',
           body: JSON.stringify({ question_id: questionId, bucket_id: bucketId }),
         });
@@ -177,7 +178,7 @@ export function useFamilyFeudBuckets(blockId?: string, dispatch?: (action: any) 
         setIsLoading(false);
       }
     },
-    [code, experienceFetch],
+    [code, adminFetch],
   );
 
   const autoCategorize = useCallback(
@@ -192,7 +193,7 @@ export function useFamilyFeudBuckets(blockId?: string, dispatch?: (action: any) 
       const url = `/api/experiences/${encodeURIComponent(code)}/blocks/${encodeURIComponent(blockId)}/family_feud/auto_categorize`;
 
       try {
-        const res = await experienceFetch(url, {
+        const res = await adminFetch(url, {
           method: 'POST',
           body: JSON.stringify({ question_id: questionId }),
         });
@@ -215,7 +216,7 @@ export function useFamilyFeudBuckets(blockId?: string, dispatch?: (action: any) 
         setIsLoading(false);
       }
     },
-    [code, experienceFetch],
+    [code, adminFetch],
   );
 
   return {

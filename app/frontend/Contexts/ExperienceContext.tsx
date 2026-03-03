@@ -1,8 +1,9 @@
 import { ReactNode } from 'react';
 
+import { useExperienceRoute } from '@cctv/hooks/useExperienceRoute';
 import { ExperienceContextType } from '@cctv/types';
 
-import { AuthProvider, useAuth, useExperienceRoute } from './AuthContext';
+import { AuthProvider, useAuth } from './AuthContext';
 import { DispatchRegistryProvider, useDispatchRegistry } from './DispatchRegistryContext';
 import { ExperienceStateProvider, useExperienceState } from './ExperienceStateContext';
 import { WebSocketProvider, useWebSocket } from './WebSocketContext';

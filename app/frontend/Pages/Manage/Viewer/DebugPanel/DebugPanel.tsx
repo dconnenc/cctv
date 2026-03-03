@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { Bug, ChevronDown, ChevronUp, Play, Users } from 'lucide-react';
 
 import { DialogDescription, DialogTitle } from '@cctv/components/ui/dialog';
+import { useAdminAuth } from '@cctv/contexts/AdminAuthContext';
 import { useExperience } from '@cctv/contexts/ExperienceContext';
 import { Button } from '@cctv/core/Button/Button';
 import { useDebugParticipants } from '@cctv/hooks/useDebugParticipants';
@@ -40,7 +41,8 @@ export default function DebugPanel({ selectedBlock }: DebugPanelProps) {
   const [delayMs, setDelayMs] = useState(100);
   const [isOpeningBlocks, setIsOpeningBlocks] = useState(false);
 
-  const { experience, experienceFetch, code } = useExperience();
+  const { experience, code } = useExperience();
+  const { adminFetch } = useAdminAuth();
 
   const {
     createParticipants,
@@ -88,7 +90,7 @@ export default function DebugPanel({ selectedBlock }: DebugPanelProps) {
 
   // Helper to ensure proper block lifecycle before simulation
   const ensureBlocksOpen = async (block: Block): Promise<boolean> => {
-    if (!code || !experienceFetch) return false;
+    if (!code || !adminFetch) return false;
 
     setIsOpeningBlocks(true);
 
@@ -100,7 +102,7 @@ export default function DebugPanel({ selectedBlock }: DebugPanelProps) {
         // This is a child block - ensure parent is open first
         if (parentBlock.status !== 'open') {
           // Open parent first
-          const parentRes = await experienceFetch(
+          const parentRes = await adminFetch(
             `/api/experiences/${encodeURIComponent(code)}/blocks/${encodeURIComponent(parentBlock.id)}/open`,
             { method: 'POST' },
           );
@@ -114,7 +116,7 @@ export default function DebugPanel({ selectedBlock }: DebugPanelProps) {
         const openSiblings =
           parentBlock.children?.filter((c) => c.id !== block.id && c.status === 'open') || [];
         for (const sibling of openSiblings) {
-          await experienceFetch(
+          await adminFetch(
             `/api/experiences/${encodeURIComponent(code)}/blocks/${encodeURIComponent(sibling.id)}/close`,
             { method: 'POST' },
           );
@@ -122,7 +124,7 @@ export default function DebugPanel({ selectedBlock }: DebugPanelProps) {
 
         // Open the target child block
         if (block.status !== 'open') {
-          const res = await experienceFetch(
+          const res = await adminFetch(
             `/api/experiences/${encodeURIComponent(code)}/blocks/${encodeURIComponent(block.id)}/open`,
             { method: 'POST' },
           );
@@ -146,7 +148,7 @@ export default function DebugPanel({ selectedBlock }: DebugPanelProps) {
           if (otherParent.children) {
             for (const child of otherParent.children) {
               if (child.status === 'open') {
-                await experienceFetch(
+                await adminFetch(
                   `/api/experiences/${encodeURIComponent(code)}/blocks/${encodeURIComponent(child.id)}/close`,
                   { method: 'POST' },
                 );
@@ -154,7 +156,7 @@ export default function DebugPanel({ selectedBlock }: DebugPanelProps) {
             }
           }
           // Close the parent
-          await experienceFetch(
+          await adminFetch(
             `/api/experiences/${encodeURIComponent(code)}/blocks/${encodeURIComponent(otherParent.id)}/close`,
             { method: 'POST' },
           );
@@ -162,7 +164,7 @@ export default function DebugPanel({ selectedBlock }: DebugPanelProps) {
 
         // Open the parent block
         if (block.status !== 'open') {
-          const res = await experienceFetch(
+          const res = await adminFetch(
             `/api/experiences/${encodeURIComponent(code)}/blocks/${encodeURIComponent(block.id)}/open`,
             { method: 'POST' },
           );
@@ -175,7 +177,7 @@ export default function DebugPanel({ selectedBlock }: DebugPanelProps) {
         // Open the first child
         const firstChild = block.children[0];
         if (firstChild && firstChild.status !== 'open') {
-          const res = await experienceFetch(
+          const res = await adminFetch(
             `/api/experiences/${encodeURIComponent(code)}/blocks/${encodeURIComponent(firstChild.id)}/open`,
             { method: 'POST' },
           );
@@ -187,7 +189,7 @@ export default function DebugPanel({ selectedBlock }: DebugPanelProps) {
       } else {
         // Simple block with no parent/children - just open it
         if (block.status !== 'open') {
-          const res = await experienceFetch(
+          const res = await adminFetch(
             `/api/experiences/${encodeURIComponent(code)}/blocks/${encodeURIComponent(block.id)}/open`,
             { method: 'POST' },
           );

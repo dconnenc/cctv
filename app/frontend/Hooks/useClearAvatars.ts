@@ -1,9 +1,11 @@
 import { useCallback, useState } from 'react';
 
+import { useAdminAuth } from '@cctv/contexts/AdminAuthContext';
 import { useExperience } from '@cctv/contexts/ExperienceContext';
 
 export function useClearAvatars() {
-  const { code, experienceFetch } = useExperience();
+  const { code } = useExperience();
+  const { adminFetch } = useAdminAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -15,12 +17,9 @@ export function useClearAvatars() {
     setIsLoading(true);
     setError(null);
     try {
-      const res = await experienceFetch(
-        `/api/experiences/${encodeURIComponent(code)}/clear_avatars`,
-        {
-          method: 'POST',
-        },
-      );
+      const res = await adminFetch(`/api/experiences/${encodeURIComponent(code)}/clear_avatars`, {
+        method: 'POST',
+      });
       const data = await res.json();
       if (!res.ok || data?.success === false) {
         const msg = data?.error || 'Failed to clear avatars';
@@ -35,7 +34,7 @@ export function useClearAvatars() {
     } finally {
       setIsLoading(false);
     }
-  }, [code, experienceFetch]);
+  }, [code, adminFetch]);
 
   return { clearAvatars, isLoading, error };
 }

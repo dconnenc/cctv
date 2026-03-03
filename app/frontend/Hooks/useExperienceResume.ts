@@ -1,10 +1,12 @@
 import { useCallback, useState } from 'react';
 
+import { useAdminAuth } from '@cctv/contexts/AdminAuthContext';
 import { useExperience } from '@cctv/contexts/ExperienceContext';
 import { qaLogger } from '@cctv/utils';
 
 export function useExperienceResume() {
-  const { code, experienceFetch } = useExperience();
+  const { code } = useExperience();
+  const { adminFetch } = useAdminAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -20,7 +22,7 @@ export function useExperienceResume() {
     qaLogger(`Resuming experience: ${code}`);
 
     try {
-      const res = await experienceFetch(`/api/experiences/${encodeURIComponent(code)}/resume`, {
+      const res = await adminFetch(`/api/experiences/${encodeURIComponent(code)}/resume`, {
         method: 'POST',
         body: JSON.stringify({ experience: { code: code } }),
       });
@@ -45,7 +47,7 @@ export function useExperienceResume() {
     } finally {
       setIsLoading(false);
     }
-  }, [code, experienceFetch]);
+  }, [code, adminFetch]);
 
   return {
     resumeExperience,

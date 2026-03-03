@@ -1,10 +1,12 @@
 import { useCallback, useState } from 'react';
 
+import { useAdminAuth } from '@cctv/contexts/AdminAuthContext';
 import { useExperience } from '@cctv/contexts/ExperienceContext';
 import { Block, BlockStatus } from '@cctv/types';
 
 export function useChangeBlockStatus() {
-  const { code, experienceFetch } = useExperience();
+  const { code } = useExperience();
+  const { adminFetch } = useAdminAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -35,7 +37,7 @@ export function useChangeBlockStatus() {
           path = `${baseUrl}hide`;
         }
 
-        const res = await experienceFetch(path, { method, body });
+        const res = await adminFetch(path, { method, body });
         const data = await res.json();
         if (!res.ok || data?.success === false) {
           const msg = data?.error || `Failed to set status to ${status}`;
@@ -55,7 +57,7 @@ export function useChangeBlockStatus() {
         setIsLoading(false);
       }
     },
-    [code, experienceFetch],
+    [code, adminFetch],
   );
 
   return { change, isLoading, error, setError };

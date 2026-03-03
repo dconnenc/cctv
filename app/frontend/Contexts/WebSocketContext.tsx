@@ -9,6 +9,7 @@ import {
   useState,
 } from 'react';
 
+import { useExperienceRoute } from '@cctv/hooks/useExperienceRoute';
 import {
   FamilyFeudAction,
   FamilyFeudActionType,
@@ -23,7 +24,7 @@ import {
 } from '@cctv/types';
 import { qaLogger } from '@cctv/utils';
 
-import { useAuth, useExperienceRoute } from './AuthContext';
+import { useAuth } from './AuthContext';
 import { useDispatchRegistry } from './DispatchRegistryContext';
 import { useExperienceState } from './ExperienceStateContext';
 

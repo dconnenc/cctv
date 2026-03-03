@@ -4,7 +4,7 @@ import { Navigate, Outlet } from 'react-router-dom';
 
 import { useExperience } from '@cctv/contexts/ExperienceContext';
 import { useUser } from '@cctv/contexts/UserContext';
-import { getStoredJWT } from '@cctv/utils';
+import { getStoredParticipantJWT } from '@cctv/contexts/jwtStorage';
 
 /**
  * Allow: Host-only (composed after participant/admin guard).
@@ -14,7 +14,7 @@ import { getStoredJWT } from '@cctv/utils';
 const RequireExperienceHostOrAdmin = () => {
   const { user, isAdmin, isLoading: userLoading } = useUser();
   const { experience, participant, code, isLoading: expLoading } = useExperience();
-  const jwt = useMemo(() => (code ? getStoredJWT(code) : null), [code]);
+  const jwt = useMemo(() => (code ? getStoredParticipantJWT(code) : null), [code]);
 
   // Wait until both contexts are loaded
   if (userLoading || expLoading) return null;
