@@ -41,6 +41,7 @@ export default function LobbyAvatars() {
     | { operation: 'stroke_ended' };
   type Action =
     | { type: 'reset' }
+    | { type: 'reset_participant'; participant_id: string }
     | ({ type: 'drawing_update'; participant_id: string } & DrawingData);
 
   const [drawState, dispatch] = useReducer(
@@ -48,6 +49,11 @@ export default function LobbyAvatars() {
       switch (action.type) {
         case 'reset':
           return { strokes: {} };
+        case 'reset_participant': {
+          const next = { ...state.strokes };
+          delete next[action.participant_id];
+          return { strokes: next };
+        }
         case 'drawing_update': {
           const { participant_id, operation } = action;
           const existing = state.strokes[participant_id] || [];
@@ -124,6 +130,21 @@ export default function LobbyAvatars() {
     return () => ro.disconnect();
   }, []);
 
+  // When a participant's committed avatar grows (e.g. after they submit), clear their
+  // live draw state so committed and live strokes aren't rendered twice.
+  const committedStrokeCountsRef = useRef<Record<string, number>>({});
+  useEffect(() => {
+    const all = [...(monitorView?.participants || []), ...(monitorView?.hosts || [])];
+    all.forEach((p) => {
+      const current = p.avatar?.strokes?.length ?? 0;
+      const previous = committedStrokeCountsRef.current[p.id] ?? 0;
+      if (current > previous) {
+        dispatch({ type: 'reset_participant', participant_id: p.id });
+      }
+      committedStrokeCountsRef.current[p.id] = current;
+    });
+  }, [monitorView]);
+
   const participants: ExperienceParticipant[] = useMemo(
     () => [...(monitorView?.participants || []), ...(monitorView?.hosts || [])],
     [monitorView],
@@ -137,10 +158,9 @@ export default function LobbyAvatars() {
         <Stage width={size.w} height={size.h}>
           <Layer>
             {participants.map((p) => {
-              // Prefer live strokes (participant is actively drawing); fall back to committed.
-              const strokes: AvatarStroke[] =
-                (drawState.strokes[p.id]?.length ? drawState.strokes[p.id] : p.avatar?.strokes) ??
-                [];
+              const committed: AvatarStroke[] = p.avatar?.strokes ?? [];
+              const live: AvatarStroke[] = drawState.strokes[p.id] ?? [];
+              const strokes: AvatarStroke[] = [...committed, ...live];
 
               if (!strokes.length) return null;
 

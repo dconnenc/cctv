@@ -69,7 +69,7 @@ class Experience < ApplicationRecord
   end
 
   def register_user(user, name:)
-    experience_participants.create!(user: user, name: name)
+    experience_participants.create!(user: user, name: name, avatar: user.most_recent_avatar || {})
   end
 
   # Add a user to this experience with fingerprint

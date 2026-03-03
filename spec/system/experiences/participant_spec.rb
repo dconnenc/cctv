@@ -59,4 +59,81 @@ RSpec.describe "Managing Blocks", type: :system do
       end
     end
   end
+
+  describe "most recent participant data" do
+    let!(:experience2) do
+      create(
+        :experience,
+        :draft,
+        creator: admin,
+        name: "Second Experience",
+        code: "second-experience"
+      )
+    end
+
+    before do
+      sign_in(admin)
+    end
+
+    def draw_and_submit_avatar
+      find("canvas")
+      rect = page.evaluate_script(
+        "(() => { const r = document.querySelector('canvas').getBoundingClientRect(); " \
+          "return { x: r.x, y: r.y, width: r.width, height: r.height }; })()"
+      )
+      cx = (rect["x"] + rect["width"] / 2).to_i
+      cy = (rect["y"] + rect["height"] / 2).to_i
+      page.driver.browser.mouse.move(x: cx, y: cy)
+      page.driver.browser.mouse.down
+      page.driver.browser.mouse.move(x: cx + 50, y: cy + 50)
+      page.driver.browser.mouse.up
+      click_button "Submit"
+      expect(page).to have_text("Players in Lobby:")
+    end
+
+    it "pre-populates name on the register form from previous participation" do
+      using_session(:participant) do
+        register_participant(
+          code: experience.code_slug,
+          name: "Alice",
+          email: "alice@example.com",
+          experience_name: experience.name
+        )
+        draw_and_submit_avatar
+
+        visit "/join?code=#{experience2.code_slug}"
+        expect(page).to have_text("Enter the secret code")
+        click_button "Submit"
+
+        expect(page).to have_field(placeholder: "Your Name", with: "Alice")
+      end
+    end
+
+    it "pre-populates avatar from previous participation" do
+      using_session(:participant) do
+        register_participant(
+          code: experience.code_slug,
+          name: "Alice",
+          email: "alice@example.com",
+          experience_name: experience.name
+        )
+        draw_and_submit_avatar
+
+        visit "/join?code=#{experience2.code_slug}"
+        expect(page).to have_text("Enter the secret code")
+        click_button "Submit"
+
+        fill_in placeholder: "Your Name", with: "Alice"
+        click_button "Register"
+        wait_for_animation
+
+        # Goes straight to lobby because avatar was pre-populated from previous participation
+        expect(page).to have_text("Players in Lobby:")
+
+        # Edit avatar page shows the pre-populated canvas (Submit is enabled)
+        find("button", text: "Edit Avatar").click
+        expect(page).to have_button("Submit", disabled: false)
+      end
+    end
+  end
 end
