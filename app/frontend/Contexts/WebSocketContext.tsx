@@ -9,6 +9,7 @@ import {
   useState,
 } from 'react';
 
+import { useExperienceRoute } from '@cctv/hooks/useExperienceRoute';
 import {
   FamilyFeudAction,
   FamilyFeudActionType,
@@ -23,7 +24,8 @@ import {
 } from '@cctv/types';
 import { qaLogger } from '@cctv/utils';
 
-import { useAuth, useExperienceRoute } from './AuthContext';
+import { useAdminAuth } from './AdminAuthContext';
+import { useAuth } from './AuthContext';
 import { useDispatchRegistry } from './DispatchRegistryContext';
 import { useExperienceState } from './ExperienceStateContext';
 
@@ -133,6 +135,7 @@ const WebSocketContext = createContext<WebSocketContextType | undefined>(undefin
 export function WebSocketProvider({ children }: { children: ReactNode }) {
   const { code, isManagePage, isMonitorPage } = useExperienceRoute();
   const { jwt, isLoading } = useAuth();
+  const { adminJWT, isAdminLoading } = useAdminAuth();
   const {
     setExperience,
     setParticipant,
@@ -261,7 +264,7 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
   // Does not depend on impersonatedParticipantId so impersonation changes
   // don't tear down and rebuild the stable connections.
   useEffect(() => {
-    if (!code || isLoading) {
+    if (!code || isLoading || (isManagePage && isAdminLoading)) {
       qaLogger('[WS SETUP] No code or auth loading, skipping websocket setup');
       return;
     }
@@ -278,7 +281,7 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
           identifier: {
             channel: 'ExperienceSubscriptionChannel',
             code,
-            ...(jwt ? { token: jwt } : {}),
+            ...((adminJWT ?? jwt) ? { token: adminJWT ?? jwt } : {}),
           },
           onMessage: (msg) => handleMessageRef.current(msg, 'ADMIN WS', 'main'),
           onConnect: () => {
@@ -384,7 +387,7 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
       setWsError(undefined);
       setWsReady(false);
     };
-  }, [jwt, code, isLoading, isManagePage, isMonitorPage, setWsReady]);
+  }, [adminJWT, jwt, code, isLoading, isAdminLoading, isManagePage, isMonitorPage, setWsReady]);
 
   // Impersonation effect: manages the impersonation connection independently.
   // Changing the impersonated participant only affects this connection.
@@ -402,7 +405,7 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
       const impersonationId = {
         channel: 'ExperienceSubscriptionChannel',
         code,
-        ...(jwt ? { token: jwt } : {}),
+        ...((adminJWT ?? jwt) ? { token: adminJWT ?? jwt } : {}),
         as_participant_id: impersonatedParticipantId,
       };
       createWebSocketConnection(
@@ -427,7 +430,7 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
       }
       setParticipantView(undefined);
     };
-  }, [code, isLoading, isManagePage, jwt, impersonatedParticipantId, setParticipantView]);
+  }, [adminJWT, jwt, code, isLoading, isManagePage, impersonatedParticipantId, setParticipantView]);
 
   const experiencePerform = useCallback(
     (

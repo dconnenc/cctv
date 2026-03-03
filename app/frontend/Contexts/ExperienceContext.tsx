@@ -1,8 +1,10 @@
 import { ReactNode } from 'react';
 
+import { useExperienceRoute } from '@cctv/hooks/useExperienceRoute';
 import { ExperienceContextType } from '@cctv/types';
 
-import { AuthProvider, useAuth, useExperienceRoute } from './AuthContext';
+import { AdminAuthProvider } from './AdminAuthContext';
+import { AuthProvider, useAuth } from './AuthContext';
 import { DispatchRegistryProvider, useDispatchRegistry } from './DispatchRegistryContext';
 import { ExperienceStateProvider, useExperienceState } from './ExperienceStateContext';
 import { WebSocketProvider, useWebSocket } from './WebSocketContext';
@@ -14,11 +16,13 @@ interface ExperienceProviderProps {
 export function ExperienceProvider({ children }: ExperienceProviderProps) {
   return (
     <AuthProvider>
-      <ExperienceStateProvider>
-        <DispatchRegistryProvider>
-          <WebSocketProvider>{children}</WebSocketProvider>
-        </DispatchRegistryProvider>
-      </ExperienceStateProvider>
+      <AdminAuthProvider>
+        <ExperienceStateProvider>
+          <DispatchRegistryProvider>
+            <WebSocketProvider>{children}</WebSocketProvider>
+          </DispatchRegistryProvider>
+        </ExperienceStateProvider>
+      </AdminAuthProvider>
     </AuthProvider>
   );
 }

@@ -4,7 +4,7 @@ import { Navigate, Outlet } from 'react-router-dom';
 
 import { useExperience } from '@cctv/contexts/ExperienceContext';
 import { useUser } from '@cctv/contexts/UserContext';
-import { getStoredJWT } from '@cctv/utils';
+import { getStoredParticipantJWT } from '@cctv/contexts/jwtStorage';
 
 /**
  * Allow: Admins OR participants with a valid experience JWT for :code.
@@ -14,7 +14,7 @@ const RequireExperienceParticipantOrAdmin = () => {
   const { user, isAdmin, isLoading } = useUser();
   const { code } = useExperience();
 
-  const jwt = useMemo(() => (code ? getStoredJWT(code) : null), [code]);
+  const jwt = useMemo(() => (code ? getStoredParticipantJWT(code) : null), [code]);
 
   // Admins always allowed
   if (isLoading) return null;

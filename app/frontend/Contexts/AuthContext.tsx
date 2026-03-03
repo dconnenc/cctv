@@ -1,39 +1,15 @@
-import {
-  ReactNode,
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-} from 'react';
+import { ReactNode, createContext, useCallback, useContext, useMemo, useState } from 'react';
 
-import { useLocation, useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 
-import { useUser } from '@cctv/contexts/UserContext';
-import { AuthError } from '@cctv/types';
 import {
-  getJWTKey,
-  getStoredAdminJWT,
-  getStoredJWT,
-  isJWTExpired,
-  qaLogger,
+  getStoredParticipantJWT,
   removeStoredAdminJWT,
-  setStoredAdminJWT,
-} from '@cctv/utils';
-
-const setStoredJWT = (code: string, jwt: string) => localStorage.setItem(getJWTKey(code), jwt);
-const removeStoredJWT = (code: string) => localStorage.removeItem(getJWTKey(code));
-
-export function useExperienceRoute() {
-  const { code } = useParams<{ code: string }>();
-  const { pathname } = useLocation();
-  return {
-    code: code ?? '',
-    isManagePage: pathname.includes('/manage'),
-    isMonitorPage: pathname.includes('/monitor'),
-  };
-}
+  removeStoredParticipantJWT,
+  setStoredParticipantJWT,
+} from '@cctv/contexts/jwtStorage';
+import { AuthError } from '@cctv/types';
+import { qaLogger } from '@cctv/utils';
 
 export interface AuthContextType {
   jwt?: string;
@@ -47,102 +23,50 @@ export interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const { code: currentCode, isManagePage } = useExperienceRoute();
-  const { isAdmin, isLoading: userIsLoading } = useUser();
+  const { code } = useParams<{ code: string }>();
+  const currentCode = code ?? '';
 
-  const [jwt, setJWTState] = useState<string>();
-  const [isLoading, setIsLoading] = useState(true);
+  const [jwt, setJWTState] = useState<string | undefined>(() => {
+    if (!currentCode) return undefined;
+    return getStoredParticipantJWT(currentCode) ?? undefined;
+  });
+  const [isLoading] = useState(false);
 
-  const clearAdminJWT = useCallback(() => {
-    if (currentCode) removeStoredAdminJWT(currentCode);
-  }, [currentCode]);
-
-  const clearParticipantJWT = useCallback(() => {
-    if (currentCode) removeStoredJWT(currentCode);
+  const revokeParticipantJWT = useCallback(() => {
+    if (!currentCode) return;
+    removeStoredParticipantJWT(currentCode);
     setJWTState(undefined);
   }, [currentCode]);
 
   const clearAuth = useCallback(() => {
     if (currentCode) {
-      removeStoredJWT(currentCode);
+      removeStoredParticipantJWT(currentCode);
       removeStoredAdminJWT(currentCode);
     }
     setJWTState(undefined);
   }, [currentCode]);
 
-  const fetchAdminJWT = useCallback(async () => {
-    if (!currentCode || !isAdmin) return;
-
-    try {
-      qaLogger('Fetching admin JWT');
-      const response = await fetch(
-        `/api/experiences/${encodeURIComponent(currentCode)}/admin_token`,
-        {
-          method: 'POST',
-          credentials: 'include',
-          headers: { 'Content-Type': 'application/json' },
-        },
-      );
-
-      if (!response.ok) throw new Error('Failed to fetch admin JWT');
-
-      const data = await response.json();
-
-      if (data?.success && data?.jwt) {
-        qaLogger('Admin JWT received');
-        setStoredAdminJWT(currentCode, data.jwt);
-        setJWTState(data.jwt);
-        return data.jwt as string;
-      } else {
-        throw new Error('Invalid admin JWT response');
-      }
-    } catch (err) {
-      console.error('Error fetching admin JWT:', err);
-      return undefined;
-    }
-  }, [currentCode, isAdmin]);
-
   const experienceFetch = useCallback(
     async (url: string, options: RequestInit = {}) => {
       if (!currentCode) throw new Error('No experience code available');
 
-      const headers: RequestInit['headers'] = jwt
-        ? {
-            Authorization: `Bearer ${jwt}`,
-            'Content-Type': 'application/json',
-            ...options.headers,
-          }
-        : {
-            'Content-Type': 'application/json',
-            ...options.headers,
-          };
+      if (!jwt) {
+        const err: AuthError = new Error('No JWT available');
+        err.code = 401;
+        throw err;
+      }
+
+      const headers: RequestInit['headers'] = {
+        Authorization: `Bearer ${jwt}`,
+        'Content-Type': 'application/json',
+        ...options.headers,
+      };
 
       const response = await fetch(url, { ...options, headers });
 
       if (response.status === 401) {
-        const isAdminJWT = !!(jwt && jwt === getStoredAdminJWT(currentCode));
-        if (isAdminJWT) {
-          qaLogger('401 on admin JWT; clearing and retrying with fresh token');
-          clearAdminJWT();
-          const newJWT = await fetchAdminJWT();
-          if (newJWT) {
-            const retryHeaders: RequestInit['headers'] = {
-              Authorization: `Bearer ${newJWT}`,
-              'Content-Type': 'application/json',
-              ...options.headers,
-            };
-            const retryResponse = await fetch(url, { ...options, headers: retryHeaders });
-            if (retryResponse.ok) return retryResponse;
-            if (retryResponse.status === 401) {
-              qaLogger('401 on retried admin JWT; session also expired');
-              clearAdminJWT();
-              setJWTState(undefined);
-            }
-          }
-        } else {
-          qaLogger('401 on participant JWT; clearing');
-          clearParticipantJWT();
-        }
+        qaLogger('401 on participant JWT; clearing');
+        revokeParticipantJWT();
         const err: AuthError = new Error('Authentication expired');
         err.code = 401;
         throw err;
@@ -150,45 +74,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (!response.ok) {
         qaLogger(`Failed experienceFetch: ${response.status}`);
-        throw new Error(`Failed to load experience (status ${response.status})`);
+        throw new Error(`Failed to fetch ${url} (status ${response.status})`);
       }
 
       return response;
     },
-    [jwt, currentCode, clearAdminJWT, clearParticipantJWT, fetchAdminJWT],
+    [jwt, currentCode, revokeParticipantJWT],
   );
-
-  useEffect(() => {
-    if (!currentCode || userIsLoading) return;
-
-    qaLogger(`Initializing auth for experience: ${currentCode}`);
-    setIsLoading(true);
-
-    if (isManagePage && isAdmin) {
-      const storedAdminJWT = getStoredAdminJWT(currentCode);
-      if (storedAdminJWT && !isJWTExpired(storedAdminJWT)) {
-        qaLogger('Found valid stored admin JWT; setting in context');
-        setJWTState(storedAdminJWT);
-        setIsLoading(false);
-      } else {
-        if (storedAdminJWT) {
-          qaLogger('Stored admin JWT is expired; fetching fresh token');
-        } else {
-          qaLogger('No stored admin JWT; fetching from API');
-        }
-        fetchAdminJWT().finally(() => setIsLoading(false));
-      }
-    } else {
-      const storedJWT = getStoredJWT(currentCode);
-      if (storedJWT) {
-        qaLogger('Found stored participant JWT; setting in context');
-        setJWTState(storedJWT);
-      } else {
-        qaLogger('No stored participant JWT');
-      }
-      setIsLoading(false);
-    }
-  }, [currentCode, isManagePage, isAdmin, userIsLoading, fetchAdminJWT]);
 
   const setParticipantJWT = useCallback(
     (token: string) => {
@@ -196,7 +88,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         console.warn('Cannot set JWT without an experience code');
         return;
       }
-      setStoredJWT(currentCode, token);
+      setStoredParticipantJWT(currentCode, token);
       setJWTState(token);
     },
     [currentCode],
