@@ -48,6 +48,10 @@ class ExperienceSubscriptionChannel < ApplicationCable::Channel
         @participant.update!(avatar: avatar.merge('strokes' => strokes))
         @current_stroke = nil
       end
+    when 'canvas_cleared'
+      @current_stroke = nil
+      @participant.update!(avatar: {})
+      Experiences::Broadcaster.new(@experience).broadcast_experience_update
     end
 
     ActionCable.server.broadcast(

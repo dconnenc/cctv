@@ -60,6 +60,11 @@ export default function LobbyAvatars() {
           switch (operation) {
             case 'clear_all':
               return { strokes: {} };
+            case 'canvas_cleared': {
+              const next = { ...state.strokes };
+              delete next[participant_id];
+              return { strokes: next };
+            }
             case 'stroke_started': {
               const stroke: Stroke = {
                 points: action.data?.points || [],
@@ -138,7 +143,7 @@ export default function LobbyAvatars() {
     all.forEach((p) => {
       const current = p.avatar?.strokes?.length ?? 0;
       const previous = committedStrokeCountsRef.current[p.id] ?? 0;
-      if (current > previous) {
+      if (current !== previous) {
         dispatch({ type: 'reset_participant', participant_id: p.id });
       }
       committedStrokeCountsRef.current[p.id] = current;

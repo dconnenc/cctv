@@ -13,7 +13,7 @@ export interface DrawingCanvasProps {
   brushSizes?: number[];
   drawSize?: { w: number; h: number };
   onStrokeEvent?: (e: {
-    operation: 'stroke_started' | 'stroke_points_appended' | 'stroke_ended';
+    operation: 'stroke_started' | 'stroke_points_appended' | 'stroke_ended' | 'canvas_cleared';
     data?: Record<string, unknown>;
   }) => void;
   onSubmit: (strokes: AvatarStroke[]) => void | Promise<void>;
@@ -228,7 +228,13 @@ export default function DrawingCanvas({
       </div>
 
       <div className={styles.controls}>
-        <Button className={styles.btn} onClick={() => setLines([])}>
+        <Button
+          className={styles.btn}
+          onClick={() => {
+            setLines([]);
+            onStrokeEvent?.({ operation: 'canvas_cleared' });
+          }}
+        >
           Clear
         </Button>
         <Button className={styles.btn} onClick={handleSubmit} disabled={lines.length === 0}>
