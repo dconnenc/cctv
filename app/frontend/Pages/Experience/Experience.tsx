@@ -21,8 +21,7 @@ export default function Experience() {
   const { clearAvatars, isLoading: clearing } = useClearAvatars();
 
   const participants = experience?.participants || [];
-  const currentFullParticipant = participants.find((p) => p.user_id === participant?.user_id);
-  const needsAvatar = !isAdmin && !currentFullParticipant?.avatar?.strokes?.length;
+  const needsAvatar = !isAdmin && !participant?.avatar?.strokes?.length;
   const hasInitialData = !isAdmin ? experience && participant : experience;
 
   useEffect(() => {

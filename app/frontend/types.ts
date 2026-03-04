@@ -775,9 +775,6 @@ export interface ExperienceContextType {
   registerFamilyFeudDispatch?: (blockId: string, dispatch: (action: any) => void) => void;
   unregisterFamilyFeudDispatch?: (blockId: string) => void;
 
-  registerLobbyDrawingDispatch?: (dispatch: (action: DrawingUpdateMessage) => void) => void;
-  unregisterLobbyDrawingDispatch?: () => void;
-
   experiencePerform?: (
     action: string,
     payload?: Record<string, unknown>,

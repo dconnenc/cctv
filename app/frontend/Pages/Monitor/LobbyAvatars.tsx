@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useReducer, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { Group, Layer, Line, Stage } from 'react-konva';
 
 import { useExperience } from '@cctv/contexts/ExperienceContext';
-import { AvatarStroke, DrawingUpdateMessage, ExperienceParticipant } from '@cctv/types';
+import { useLobbyDrawingState } from '@cctv/contexts/LobbyDrawingContext';
+import { ExperienceParticipant } from '@cctv/types';
 
 import styles from './LobbyAvatars.module.scss';
 
@@ -25,101 +26,10 @@ function stableRandomPosition(id: string, w: number, h: number, avatarSize: numb
 }
 
 export default function LobbyAvatars() {
-  const { monitorView, registerLobbyDrawingDispatch, unregisterLobbyDrawingDispatch } =
-    useExperience();
+  const { monitorView } = useExperience();
+  const drawState = useLobbyDrawingState();
   const containerRef = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState<{ w: number; h: number }>({ w: 960, h: 540 });
-
-  type Stroke = { points: number[]; color: string; width: number; ended?: boolean };
-  type State = {
-    strokes: { [participantId: string]: Stroke[] };
-  };
-  type DrawingData =
-    | { operation: 'clear_all' }
-    | { operation: 'stroke_started'; data?: { points: number[]; color: string; width: number } }
-    | { operation: 'stroke_points_appended'; data?: { points: number[] } }
-    | { operation: 'stroke_ended' };
-  type Action =
-    | { type: 'reset' }
-    | { type: 'reset_participant'; participant_id: string }
-    | ({ type: 'drawing_update'; participant_id: string } & DrawingData);
-
-  const [drawState, dispatch] = useReducer(
-    (state: State, action: Action): State => {
-      switch (action.type) {
-        case 'reset':
-          return { strokes: {} };
-        case 'reset_participant': {
-          const next = { ...state.strokes };
-          delete next[action.participant_id];
-          return { strokes: next };
-        }
-        case 'drawing_update': {
-          const { participant_id, operation } = action;
-          const existing = state.strokes[participant_id] || [];
-          switch (operation) {
-            case 'clear_all':
-              return { strokes: {} };
-            case 'canvas_cleared': {
-              const next = { ...state.strokes };
-              delete next[participant_id];
-              return { strokes: next };
-            }
-            case 'stroke_started': {
-              const stroke: Stroke = {
-                points: action.data?.points || [],
-                color: action.data?.color || '#000',
-                width: action.data?.width || 4,
-              };
-              return {
-                strokes: { ...state.strokes, [participant_id]: [...existing, stroke] },
-              };
-            }
-            case 'stroke_points_appended': {
-              const next = existing.slice();
-              if (next.length === 0) {
-                return state;
-              }
-              const s = { ...next[next.length - 1] };
-              s.points = [...s.points, ...(action.data?.points || [])];
-              next[next.length - 1] = s;
-              return {
-                strokes: { ...state.strokes, [participant_id]: next },
-              };
-            }
-            case 'stroke_ended': {
-              const next = existing.slice();
-              if (next.length === 0) return state;
-              const s = { ...next[next.length - 1], ended: true };
-              next[next.length - 1] = s;
-              return {
-                strokes: { ...state.strokes, [participant_id]: next },
-              };
-            }
-            default:
-              return state;
-          }
-        }
-        default:
-          return state;
-      }
-    },
-    { strokes: {} } as State,
-  );
-
-  useEffect(() => {
-    if (!registerLobbyDrawingDispatch || !unregisterLobbyDrawingDispatch) return;
-    const handler = (msg: DrawingUpdateMessage) => {
-      dispatch({
-        type: 'drawing_update',
-        participant_id: msg.participant_id,
-        operation: msg.operation,
-        data: msg.data,
-      } as Action);
-    };
-    registerLobbyDrawingDispatch(handler);
-    return () => unregisterLobbyDrawingDispatch();
-  }, [registerLobbyDrawingDispatch, unregisterLobbyDrawingDispatch]);
 
   useEffect(() => {
     const el = containerRef.current;
@@ -135,21 +45,6 @@ export default function LobbyAvatars() {
     return () => ro.disconnect();
   }, []);
 
-  // When a participant's committed avatar grows (e.g. after they submit), clear their
-  // live draw state so committed and live strokes aren't rendered twice.
-  const committedStrokeCountsRef = useRef<Record<string, number>>({});
-  useEffect(() => {
-    const all = [...(monitorView?.participants || []), ...(monitorView?.hosts || [])];
-    all.forEach((p) => {
-      const current = p.avatar?.strokes?.length ?? 0;
-      const previous = committedStrokeCountsRef.current[p.id] ?? 0;
-      if (current !== previous) {
-        dispatch({ type: 'reset_participant', participant_id: p.id });
-      }
-      committedStrokeCountsRef.current[p.id] = current;
-    });
-  }, [monitorView]);
-
   const participants: ExperienceParticipant[] = useMemo(
     () => [...(monitorView?.participants || []), ...(monitorView?.hosts || [])],
     [monitorView],
@@ -163,9 +58,7 @@ export default function LobbyAvatars() {
         <Stage width={size.w} height={size.h}>
           <Layer>
             {participants.map((p) => {
-              const committed: AvatarStroke[] = p.avatar?.strokes ?? [];
-              const live: AvatarStroke[] = drawState.strokes[p.id] ?? [];
-              const strokes: AvatarStroke[] = [...committed, ...live];
+              const strokes = drawState.strokes[p.id] ?? [];
 
               if (!strokes.length) return null;
 

@@ -1,7 +1,6 @@
 import { ReactNode, createContext, useCallback, useContext, useMemo, useRef } from 'react';
 
 import { FamilyFeudAction } from '@cctv/pages/Block/FamilyFeudManager/familyFeudReducer';
-import { DrawingUpdateMessage } from '@cctv/types';
 
 export interface DispatchRegistryContextType {
   registerFamilyFeudDispatch: (
@@ -10,9 +9,6 @@ export interface DispatchRegistryContextType {
   ) => void;
   unregisterFamilyFeudDispatch: (blockId: string) => void;
   getFamilyFeudDispatch: (blockId: string) => ((action: FamilyFeudAction) => void) | undefined;
-  registerLobbyDrawingDispatch: (dispatch: (action: DrawingUpdateMessage) => void) => void;
-  unregisterLobbyDrawingDispatch: () => void;
-  getLobbyDrawingDispatch: () => ((action: DrawingUpdateMessage) => void) | null;
 }
 
 const DispatchRegistryContext = createContext<DispatchRegistryContextType | undefined>(undefined);
@@ -21,7 +17,6 @@ export function DispatchRegistryProvider({ children }: { children: ReactNode }) 
   const familyFeudDispatchRegistry = useRef<Map<string, (action: FamilyFeudAction) => void>>(
     new Map(),
   );
-  const lobbyDrawingDispatchRef = useRef<((action: DrawingUpdateMessage) => void) | null>(null);
 
   const registerFamilyFeudDispatch = useCallback(
     (blockId: string, dispatch: (action: FamilyFeudAction) => void) => {
@@ -38,38 +33,13 @@ export function DispatchRegistryProvider({ children }: { children: ReactNode }) 
     return familyFeudDispatchRegistry.current.get(blockId);
   }, []);
 
-  const registerLobbyDrawingDispatch = useCallback(
-    (dispatch: (action: DrawingUpdateMessage) => void) => {
-      lobbyDrawingDispatchRef.current = dispatch;
-    },
-    [],
-  );
-
-  const unregisterLobbyDrawingDispatch = useCallback(() => {
-    lobbyDrawingDispatchRef.current = null;
-  }, []);
-
-  const getLobbyDrawingDispatch = useCallback(() => {
-    return lobbyDrawingDispatchRef.current;
-  }, []);
-
   const value = useMemo<DispatchRegistryContextType>(
     () => ({
       registerFamilyFeudDispatch,
       unregisterFamilyFeudDispatch,
       getFamilyFeudDispatch,
-      registerLobbyDrawingDispatch,
-      unregisterLobbyDrawingDispatch,
-      getLobbyDrawingDispatch,
     }),
-    [
-      registerFamilyFeudDispatch,
-      unregisterFamilyFeudDispatch,
-      getFamilyFeudDispatch,
-      registerLobbyDrawingDispatch,
-      unregisterLobbyDrawingDispatch,
-      getLobbyDrawingDispatch,
-    ],
+    [registerFamilyFeudDispatch, unregisterFamilyFeudDispatch, getFamilyFeudDispatch],
   );
 
   return (
