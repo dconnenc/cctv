@@ -11,7 +11,7 @@ import styles from './Experience.module.scss';
 export default function Avatar() {
   const navigate = useNavigate();
   const { isAdmin } = useUser();
-  const { experience, code, isLoading, error } = useExperience();
+  const { experience, code, isLoading, error, wsReady } = useExperience();
 
   useEffect(() => {
     if (isAdmin) {
@@ -19,7 +19,7 @@ export default function Avatar() {
     }
   }, [isAdmin, code, navigate]);
 
-  if (isLoading) {
+  if (isLoading || !wsReady) {
     return (
       <section className="page">
         <h1 className={styles.title}>{code || 'Experience'}</h1>

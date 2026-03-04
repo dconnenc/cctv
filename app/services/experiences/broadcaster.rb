@@ -237,7 +237,8 @@ class Experiences::Broadcaster
         user_id: participant.user_id,
         name: participant.name,
         email: participant.user.email,
-        role: participant.role
+        role: participant.role,
+        avatar: participant.avatar.presence
       }
 
       payload = if preloaded_data

@@ -22,4 +22,8 @@ class User < ApplicationRecord
   def most_recent_participant_name
     experience_participants.order(created_at: :desc).first&.name
   end
+
+  def most_recent_avatar
+    experience_participants.order(created_at: :desc).first&.avatar&.presence
+  end
 end

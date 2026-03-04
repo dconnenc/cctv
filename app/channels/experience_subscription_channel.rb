@@ -29,6 +29,27 @@ class ExperienceSubscriptionChannel < ApplicationCable::Channel
 
     op = data["operation"]
     payload = data["data"] || {}
+
+    case op
+    when 'stroke_started'
+      @current_stroke = {
+        'points' => payload['points'] || [],
+        'color' => payload['color'],
+        'width' => payload['width'],
+      }
+    when 'stroke_points_appended'
+      @current_stroke ||= { 'points' => [], 'color' => nil, 'width' => nil }
+      @current_stroke['points'] = (@current_stroke['points'] || []).concat(payload['points'] || [])
+    when 'stroke_ended'
+      if @current_stroke
+        @participant.reload
+        avatar = (@participant.avatar || {}).dup
+        strokes = (avatar['strokes'] || []) + [@current_stroke]
+        @participant.update!(avatar: avatar.merge('strokes' => strokes))
+        @current_stroke = nil
+      end
+    end
+
     ActionCable.server.broadcast(
       Experiences::Broadcaster.monitor_stream_key(@experience),
       {
@@ -219,7 +240,8 @@ class ExperienceSubscriptionChannel < ApplicationCable::Channel
           user_id: @participant.user_id,
           name: @participant.name,
           email: @participant.user.email,
-          role: @participant.role
+          role: @participant.role,
+          avatar: @participant.avatar.presence
         }
 
         transmit(
@@ -258,7 +280,8 @@ class ExperienceSubscriptionChannel < ApplicationCable::Channel
       user_id: @participant.user_id,
       name: @participant.name,
       email: @participant.user.email,
-      role: @participant.role
+      role: @participant.role,
+      avatar: @participant.avatar.presence
     }
 
     # Preload all data to avoid N+1 queries

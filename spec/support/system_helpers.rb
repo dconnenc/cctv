@@ -107,8 +107,30 @@ module SystemHelpers
     fill_in placeholder: "Your Name", with: name
     click_button "Register"
 
-    wait_for_animation
+    sleep 0.5
 
+    # This assertion ins't super useful as the experience name shows up often
+    # The landing page here is dependent on the state of the experience so the
+    # caller needs to be responsible.
+    #
+    # A toast showing success, would work, but for now the above sleep and this
+    # are workarounds
     expect(page).to have_text(experience_name)
+  end
+
+  def draw_and_submit_avatar
+    find("canvas")
+    rect = page.evaluate_script(
+      "(() => { const r = document.querySelector('canvas').getBoundingClientRect(); " \
+        "return { x: r.x, y: r.y, width: r.width, height: r.height }; })()"
+    )
+    cx = (rect["x"] + rect["width"] / 2).to_i
+    cy = (rect["y"] + rect["height"] / 2).to_i
+    page.driver.browser.mouse.move(x: cx, y: cy)
+    page.driver.browser.mouse.down
+    page.driver.browser.mouse.move(x: cx + 50, y: cy + 50)
+    page.driver.browser.mouse.up
+    click_button "Submit"
+    expect(page).to have_text("Players in Lobby:")
   end
 end

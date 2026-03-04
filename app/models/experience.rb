@@ -69,14 +69,13 @@ class Experience < ApplicationRecord
   end
 
   def register_user(user, name:)
-    experience_participants.create!(user: user, name: name)
-  end
+    return if user_registered?(user)
 
-  # Add a user to this experience with fingerprint
-  def add_user(user)
-    return if has_user?(user)
-
-    experience_participants.create!(user: user)
+    experience_participants.create!(
+      user: user,
+      name: name,
+      avatar: user.most_recent_avatar.presence || {}
+    )
   end
 
   def jwt_for_participant(user)

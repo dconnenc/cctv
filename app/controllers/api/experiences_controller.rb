@@ -135,6 +135,7 @@ class Api::ExperiencesController < Api::BaseController
   end
 
   # PATCH /api/experiences/:id/update_playbill
+  # TODO: this is using non standard auth patterns
   def update_playbill
     is_system_admin = @user&.admin? || @user&.superadmin?
     is_host_or_mod = @experience.experience_participants.where(user_id: @user&.id, role: %w[host moderator]).exists?
@@ -295,6 +296,7 @@ class Api::ExperiencesController < Api::BaseController
 
     unless experience.user_registered?(user)
       experience.register_user(user, name: register_params[:participant_name])
+
       Experiences::Broadcaster.new(experience).broadcast_experience_update
     end
 
