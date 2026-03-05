@@ -1,20 +1,21 @@
 import { useMemo } from 'react';
 
-import { ParticipantsList } from '@cctv/components';
 import { useExperience } from '@cctv/contexts/ExperienceContext';
-import { ExperienceParticipant } from '@cctv/types';
 
 import styles from './ParticipantsMenu.module.scss';
+
+const MAX_VISIBLE = 10;
 
 export default function ParticipantsMenu() {
   const { monitorView } = useExperience();
 
-  const participants: ExperienceParticipant[] = useMemo(
-    () => [...(monitorView?.hosts || []), ...(monitorView?.participants || [])],
+  const participants = useMemo(
+    () => [...(monitorView?.hosts || []), ...(monitorView?.participants || [])].reverse(),
     [monitorView?.hosts, monitorView?.participants],
   );
 
-  const count = participants.length;
+  const visible = participants.slice(0, MAX_VISIBLE);
+  const overflow = participants.length - MAX_VISIBLE;
 
   if (!monitorView) return null;
 
@@ -22,9 +23,17 @@ export default function ParticipantsMenu() {
     <aside className={styles.container} aria-label="Participants in lobby">
       <div className={styles.header}>
         <h4 className={styles.title}>Participants</h4>
-        <span className={styles.count}>{count}</span>
+        <span className={styles.count}>{participants.length}</span>
       </div>
-      <ParticipantsList participants={participants} showRole compact />
+      <ul className={styles.list}>
+        {visible.map((p) => (
+          <li key={p.id} className={styles.item}>
+            <span className={styles.name}>{p.name || p.email}</span>
+            <span className={styles.role}>{p.role}</span>
+          </li>
+        ))}
+        {overflow > 0 && <li className={styles.overflow}>{overflow} More</li>}
+      </ul>
     </aside>
   );
 }

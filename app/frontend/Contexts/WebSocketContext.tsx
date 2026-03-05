@@ -28,6 +28,7 @@ import { useAdminAuth } from './AdminAuthContext';
 import { useAuth } from './AuthContext';
 import { useDispatchRegistry } from './DispatchRegistryContext';
 import { useExperienceState } from './ExperienceStateContext';
+import { DrawingAction, useLobbyDrawingDispatch } from './LobbyDrawingContext';
 
 const ACTION_TYPE_MAP: Record<string, FamilyFeudActionType> = {
   bucket_added: FamilyFeudActionType.BUCKET_ADDED,
@@ -146,7 +147,8 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
     setWsReady,
     impersonatedParticipantId,
   } = useExperienceState();
-  const { getFamilyFeudDispatch, getLobbyDrawingDispatch } = useDispatchRegistry();
+  const { getFamilyFeudDispatch } = useDispatchRegistry();
+  const lobbyDrawingDispatch = useLobbyDrawingDispatch();
 
   const [wsConnected, setWsConnected] = useState(false);
   const [wsError, setWsError] = useState<string>();
@@ -186,8 +188,12 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
         const channelMsg = wsMessage as ExperienceChannelMessage;
 
         if (isDrawingUpdateMessage(channelMsg)) {
-          const dispatch = getLobbyDrawingDispatch();
-          if (dispatch) dispatch(channelMsg);
+          lobbyDrawingDispatch({
+            type: 'drawing_update',
+            participant_id: channelMsg.participant_id,
+            operation: channelMsg.operation,
+            data: channelMsg.data,
+          } as DrawingAction);
         } else if (isExperiencePayloadMessage(channelMsg)) {
           qaLogger(`[${label}] Processing: ${channelMsg.type}`);
           if (channelMsg.experience) {
@@ -251,7 +257,7 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
       setParticipantView,
       setWsReady,
       getFamilyFeudDispatch,
-      getLobbyDrawingDispatch,
+      lobbyDrawingDispatch,
     ],
   );
 

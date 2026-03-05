@@ -1,9 +1,8 @@
 .container {
   position: absolute;
-  top: var(--space-xs);
-  left: var(--space-xs);
+  top: var(--space-sm);
+  left: var(--space-sm);
   z-index: 10;
-  max-height: 60vh;
   width: 220px;
   padding: var(--space-xs) var(--space-xs);
   border-radius: 0.5rem;
@@ -37,8 +36,7 @@
   margin-top: var(--space-xs);
   padding: 0;
   list-style: none;
-  overflow-y: auto;
-  max-height: calc(60vh - 2.5rem);
+  overflow: hidden;
 }
 
 .item {
@@ -47,7 +45,10 @@
   justify-content: space-between;
   gap: var(--space-xs);
   padding: 0.3rem 0.25rem;
-  border-bottom: 1px dashed hsl(var(--border));
+
+  &:not(:last-child) {
+    border-bottom: 1px dashed hsl(var(--border));
+  }
 }
 
 .name {
@@ -60,4 +61,11 @@
 .role {
   font-size: 0.7rem;
   opacity: 0.75;
+}
+
+.overflow {
+  font-size: 0.8rem;
+  opacity: 0.6;
+  padding: 0.3rem 0.25rem;
+  font-style: italic;
 }

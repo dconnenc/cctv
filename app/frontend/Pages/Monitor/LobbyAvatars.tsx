@@ -1,128 +1,67 @@
-import { useEffect, useMemo, useReducer, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { Group, Layer, Line, Stage } from 'react-konva';
 
 import { useExperience } from '@cctv/contexts/ExperienceContext';
-import { AvatarStroke, DrawingUpdateMessage, ExperienceParticipant } from '@cctv/types';
+import { useLobbyDrawingState } from '@cctv/contexts/LobbyDrawingContext';
+import { ExperienceParticipant } from '@cctv/types';
 
 import styles from './LobbyAvatars.module.scss';
 
 const DRAW_SIZE = 320;
 const AVATAR_DISPLAY_SIZE = 128;
+const BASE_SCALE = AVATAR_DISPLAY_SIZE / DRAW_SIZE;
 
-function stableRandomPosition(id: string, w: number, h: number, avatarSize: number) {
+const SPEED_MIN = 25;
+const SPEED_RANGE = 20;
+const SCALE_AMPLITUDE = 0.07;
+const SCALE_FREQ_MIN = 0.3;
+const SCALE_FREQ_RANGE = 0.3;
+
+interface AvatarMotion {
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  scalePhase: number;
+  scaleFreq: number;
+}
+
+function hashId(id: string): number {
   let hash = 0;
   for (let i = 0; i < id.length; i++) {
     hash = ((hash << 5) - hash + id.charCodeAt(i)) | 0;
   }
-  const abs = Math.abs(hash);
-  const maxX = Math.max(0, w - avatarSize);
-  const maxY = Math.max(0, h - avatarSize);
+  return Math.abs(hash);
+}
+
+function initMotion(id: string, w: number, h: number): AvatarMotion {
+  const hash = hashId(id);
+  const maxX = Math.max(0, w - AVATAR_DISPLAY_SIZE);
+  const maxY = Math.max(0, h - AVATAR_DISPLAY_SIZE);
+  const angle = ((hash % 360) * Math.PI) / 180;
+  const speed = SPEED_MIN + ((hash % 100) / 100) * SPEED_RANGE;
   return {
-    x: maxX > 0 ? abs % maxX : 0,
-    y: maxY > 0 ? ((abs >>> 16) * 7919) % maxY : 0,
+    x: maxX > 0 ? hash % maxX : 0,
+    y: maxY > 0 ? ((hash >>> 16) * 7919) % maxY : 0,
+    vx: Math.cos(angle) * speed,
+    vy: Math.sin(angle) * speed,
+    scalePhase: (hash % 628) / 100,
+    scaleFreq: SCALE_FREQ_MIN + (((hash >> 8) % 100) / 100) * SCALE_FREQ_RANGE,
   };
 }
 
 export default function LobbyAvatars() {
-  const { monitorView, registerLobbyDrawingDispatch, unregisterLobbyDrawingDispatch } =
-    useExperience();
+  const { monitorView } = useExperience();
+  const drawState = useLobbyDrawingState();
   const containerRef = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState<{ w: number; h: number }>({ w: 960, h: 540 });
-
-  type Stroke = { points: number[]; color: string; width: number; ended?: boolean };
-  type State = {
-    strokes: { [participantId: string]: Stroke[] };
-  };
-  type DrawingData =
-    | { operation: 'clear_all' }
-    | { operation: 'stroke_started'; data?: { points: number[]; color: string; width: number } }
-    | { operation: 'stroke_points_appended'; data?: { points: number[] } }
-    | { operation: 'stroke_ended' };
-  type Action =
-    | { type: 'reset' }
-    | { type: 'reset_participant'; participant_id: string }
-    | ({ type: 'drawing_update'; participant_id: string } & DrawingData);
-
-  const [drawState, dispatch] = useReducer(
-    (state: State, action: Action): State => {
-      switch (action.type) {
-        case 'reset':
-          return { strokes: {} };
-        case 'reset_participant': {
-          const next = { ...state.strokes };
-          delete next[action.participant_id];
-          return { strokes: next };
-        }
-        case 'drawing_update': {
-          const { participant_id, operation } = action;
-          const existing = state.strokes[participant_id] || [];
-          switch (operation) {
-            case 'clear_all':
-              return { strokes: {} };
-            case 'stroke_started': {
-              const stroke: Stroke = {
-                points: action.data?.points || [],
-                color: action.data?.color || '#000',
-                width: action.data?.width || 4,
-              };
-              return {
-                strokes: { ...state.strokes, [participant_id]: [...existing, stroke] },
-              };
-            }
-            case 'stroke_points_appended': {
-              const next = existing.slice();
-              if (next.length === 0) {
-                return state;
-              }
-              const s = { ...next[next.length - 1] };
-              s.points = [...s.points, ...(action.data?.points || [])];
-              next[next.length - 1] = s;
-              return {
-                strokes: { ...state.strokes, [participant_id]: next },
-              };
-            }
-            case 'stroke_ended': {
-              const next = existing.slice();
-              if (next.length === 0) return state;
-              const s = { ...next[next.length - 1], ended: true };
-              next[next.length - 1] = s;
-              return {
-                strokes: { ...state.strokes, [participant_id]: next },
-              };
-            }
-            default:
-              return state;
-          }
-        }
-        default:
-          return state;
-      }
-    },
-    { strokes: {} } as State,
-  );
-
-  useEffect(() => {
-    if (!registerLobbyDrawingDispatch || !unregisterLobbyDrawingDispatch) return;
-    const handler = (msg: DrawingUpdateMessage) => {
-      dispatch({
-        type: 'drawing_update',
-        participant_id: msg.participant_id,
-        operation: msg.operation,
-        data: msg.data,
-      } as Action);
-    };
-    registerLobbyDrawingDispatch(handler);
-    return () => unregisterLobbyDrawingDispatch();
-  }, [registerLobbyDrawingDispatch, unregisterLobbyDrawingDispatch]);
 
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
     const resize = () => {
-      const w = el.clientWidth;
-      const h = Math.round((w * 9) / 16);
-      setSize({ w, h });
+      setSize({ w: el.clientWidth, h: el.clientHeight });
     };
     resize();
     const ro = new ResizeObserver(resize);
@@ -130,27 +69,70 @@ export default function LobbyAvatars() {
     return () => ro.disconnect();
   }, []);
 
-  // When a participant's committed avatar grows (e.g. after they submit), clear their
-  // live draw state so committed and live strokes aren't rendered twice.
-  const committedStrokeCountsRef = useRef<Record<string, number>>({});
-  useEffect(() => {
-    const all = [...(monitorView?.participants || []), ...(monitorView?.hosts || [])];
-    all.forEach((p) => {
-      const current = p.avatar?.strokes?.length ?? 0;
-      const previous = committedStrokeCountsRef.current[p.id] ?? 0;
-      if (current > previous) {
-        dispatch({ type: 'reset_participant', participant_id: p.id });
-      }
-      committedStrokeCountsRef.current[p.id] = current;
-    });
-  }, [monitorView]);
-
   const participants: ExperienceParticipant[] = useMemo(
     () => [...(monitorView?.participants || []), ...(monitorView?.hosts || [])],
     [monitorView],
   );
 
-  const avatarScale = AVATAR_DISPLAY_SIZE / DRAW_SIZE;
+  const motionsRef = useRef<Map<string, AvatarMotion>>(new Map());
+  const rafRef = useRef<number | null>(null);
+  const lastTimeRef = useRef<number | null>(null);
+  const [, forceUpdate] = useState(0);
+
+  useEffect(() => {
+    const motions = motionsRef.current;
+    for (const p of participants) {
+      if (!motions.has(p.id)) {
+        motions.set(p.id, initMotion(p.id, size.w, size.h));
+      }
+    }
+    for (const id of motions.keys()) {
+      if (!participants.some((p) => p.id === id)) {
+        motions.delete(id);
+      }
+    }
+  }, [participants, size]);
+
+  useEffect(() => {
+    const maxX = Math.max(0, size.w - AVATAR_DISPLAY_SIZE);
+    const maxY = Math.max(0, size.h - AVATAR_DISPLAY_SIZE);
+
+    const animate = (timestamp: number) => {
+      const dt =
+        lastTimeRef.current !== null ? Math.min((timestamp - lastTimeRef.current) / 1000, 0.1) : 0;
+      lastTimeRef.current = timestamp;
+
+      for (const m of motionsRef.current.values()) {
+        m.x += m.vx * dt;
+        m.y += m.vy * dt;
+        m.scalePhase += m.scaleFreq * dt;
+
+        if (m.x < 0) {
+          m.x = 0;
+          m.vx = Math.abs(m.vx);
+        } else if (m.x > maxX) {
+          m.x = maxX;
+          m.vx = -Math.abs(m.vx);
+        }
+        if (m.y < 0) {
+          m.y = 0;
+          m.vy = Math.abs(m.vy);
+        } else if (m.y > maxY) {
+          m.y = maxY;
+          m.vy = -Math.abs(m.vy);
+        }
+      }
+
+      forceUpdate((n) => n + 1);
+      rafRef.current = requestAnimationFrame(animate);
+    };
+
+    rafRef.current = requestAnimationFrame(animate);
+    return () => {
+      if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
+      lastTimeRef.current = null;
+    };
+  }, [size]);
 
   return (
     <div className={styles.root}>
@@ -158,16 +140,16 @@ export default function LobbyAvatars() {
         <Stage width={size.w} height={size.h}>
           <Layer>
             {participants.map((p) => {
-              const committed: AvatarStroke[] = p.avatar?.strokes ?? [];
-              const live: AvatarStroke[] = drawState.strokes[p.id] ?? [];
-              const strokes: AvatarStroke[] = [...committed, ...live];
-
+              const strokes = drawState.strokes[p.id] ?? [];
               if (!strokes.length) return null;
 
-              const pos = stableRandomPosition(p.id, size.w, size.h, AVATAR_DISPLAY_SIZE);
+              const motion = motionsRef.current.get(p.id);
+              if (!motion) return null;
+
+              const scale = BASE_SCALE * (1 + SCALE_AMPLITUDE * Math.sin(motion.scalePhase));
 
               return (
-                <Group key={p.id} x={pos.x} y={pos.y} scaleX={avatarScale} scaleY={avatarScale}>
+                <Group key={p.id} x={motion.x} y={motion.y} scaleX={scale} scaleY={scale}>
                   {strokes.map((s, idx) => (
                     <Line
                       key={idx}

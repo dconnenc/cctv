@@ -7,6 +7,7 @@ import { AdminAuthProvider } from './AdminAuthContext';
 import { AuthProvider, useAuth } from './AuthContext';
 import { DispatchRegistryProvider, useDispatchRegistry } from './DispatchRegistryContext';
 import { ExperienceStateProvider, useExperienceState } from './ExperienceStateContext';
+import { LobbyDrawingProvider } from './LobbyDrawingContext';
 import { WebSocketProvider, useWebSocket } from './WebSocketContext';
 
 interface ExperienceProviderProps {
@@ -19,7 +20,9 @@ export function ExperienceProvider({ children }: ExperienceProviderProps) {
       <AdminAuthProvider>
         <ExperienceStateProvider>
           <DispatchRegistryProvider>
-            <WebSocketProvider>{children}</WebSocketProvider>
+            <LobbyDrawingProvider>
+              <WebSocketProvider>{children}</WebSocketProvider>
+            </LobbyDrawingProvider>
           </DispatchRegistryProvider>
         </ExperienceStateProvider>
       </AdminAuthProvider>
@@ -55,8 +58,6 @@ export function useExperience(): ExperienceContextType {
     setImpersonatedParticipantId: state.setImpersonatedParticipantId,
     registerFamilyFeudDispatch: dispatch.registerFamilyFeudDispatch,
     unregisterFamilyFeudDispatch: dispatch.unregisterFamilyFeudDispatch,
-    registerLobbyDrawingDispatch: dispatch.registerLobbyDrawingDispatch,
-    unregisterLobbyDrawingDispatch: dispatch.unregisterLobbyDrawingDispatch,
     experiencePerform: ws.experiencePerform,
   };
 }

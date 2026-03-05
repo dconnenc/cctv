@@ -48,6 +48,9 @@ class ExperienceSubscriptionChannel < ApplicationCable::Channel
         @participant.update!(avatar: avatar.merge('strokes' => strokes))
         @current_stroke = nil
       end
+    when 'canvas_cleared'
+      @current_stroke = nil
+      @participant.update!(avatar: {})
     end
 
     ActionCable.server.broadcast(
@@ -174,6 +177,21 @@ class ExperienceSubscriptionChannel < ApplicationCable::Channel
           participants: preloaded_data[:participants]
         )
       )
+
+      # TODO: Making this part of the initial experience code path helps show
+      # the default state and start applying live drawing updates. However, it
+      # doesn't scale, so this should be de-coupled from the initial fetch in
+      # the future
+      preloaded_data[:participants].each do |p|
+        next unless p.avatar.present? && p.avatar['strokes'].present?
+
+        transmit({
+          type: 'drawing_update',
+          participant_id: p.id,
+          operation: 'avatar_committed',
+          data: { strokes: p.avatar['strokes'] }
+        })
+      end
     when 'impersonation'
       transmit(
         WebsocketMessageService.experience_state(
@@ -335,6 +353,8 @@ class ExperienceSubscriptionChannel < ApplicationCable::Channel
     participants = @experience.experience_participants.includes(:user).to_a
 
     # Build in-memory cache of submissions
+    # TODO: This will live on the client in the future to avoid participant
+    # specific data showing up in generic streams
     submissions_cache = build_submissions_cache(blocks)
 
     # Build participant lookup by user_id
@@ -348,6 +368,9 @@ class ExperienceSubscriptionChannel < ApplicationCable::Channel
     }
   end
 
+  # TODO: See above, this is an optimization to keep things simple and have
+  # submissions be apart of the generic streams. This will all be client data
+  # in the future
   def build_submissions_cache(blocks)
     cache = {}
 
@@ -396,7 +419,7 @@ class ExperienceSubscriptionChannel < ApplicationCable::Channel
 
   def find_experience_or_reject
     # Frontend sends 'code' param which contains the slug from URL
-    # Accept both 'code' and 'code_slug' for backward compatibility during transition
+    # Accept both 'code' and 'code_slug'
     slug = params[:code_slug] || params[:code]
 
     experience = Experience.find_by(code_slug: slug)

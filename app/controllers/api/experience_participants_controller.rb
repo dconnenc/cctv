@@ -23,6 +23,16 @@ class Api::ExperienceParticipantsController < Api::BaseController
 
     Experiences::Broadcaster.new(@experience).broadcast_experience_update
 
+    ActionCable.server.broadcast(
+      Experiences::Broadcaster.monitor_stream_key(@experience),
+      {
+        type: 'drawing_update',
+        participant_id: participant.id,
+        operation: 'avatar_committed',
+        data: { strokes: participant.avatar['strokes'] || [] }
+      }
+    )
+
     render json: { success: true }
   rescue ActiveRecord::RecordNotFound
     render json: { success: false, error: 'participant not found' }, status: :not_found

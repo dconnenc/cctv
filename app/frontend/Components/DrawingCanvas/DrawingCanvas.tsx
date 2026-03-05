@@ -13,7 +13,7 @@ export interface DrawingCanvasProps {
   brushSizes?: number[];
   drawSize?: { w: number; h: number };
   onStrokeEvent?: (e: {
-    operation: 'stroke_started' | 'stroke_points_appended' | 'stroke_ended';
+    operation: 'stroke_started' | 'stroke_points_appended' | 'stroke_ended' | 'canvas_cleared';
     data?: Record<string, unknown>;
   }) => void;
   onSubmit: (strokes: AvatarStroke[]) => void | Promise<void>;
@@ -58,6 +58,7 @@ export default function DrawingCanvas({
   // Batch points for throttled websocket updates
   const pendingPointsRef = useRef<number[]>([]);
   const throttleTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const isDrawingRef = useRef(false);
 
   useEffect(() => {
     const pal =
@@ -68,13 +69,14 @@ export default function DrawingCanvas({
 
   // Converts a raw canvas pixel position to the fixed drawSize coordinate space.
   const toDrawSpace = (x: number, y: number) => ({
-    x: x * (drawSize.w / drawStageSize.w),
-    y: y * (drawSize.h / drawStageSize.h),
+    x: Math.round(x * (drawSize.w / drawStageSize.w) * 10) / 10,
+    y: Math.round(y * (drawSize.h / drawStageSize.h) * 10) / 10,
   });
 
   const onPointerDown = (e: any) => {
     if (e?.evt?.preventDefault) e.evt.preventDefault();
     setIsDrawing(true);
+    isDrawingRef.current = true;
     const p = e.target.getStage().getPointerPosition();
     if (!p) return;
     const dp = toDrawSpace(p.x, p.y);
@@ -133,6 +135,7 @@ export default function DrawingCanvas({
   const onPointerUp = (e?: any) => {
     if (e?.evt?.preventDefault) e.evt.preventDefault();
     setIsDrawing(false);
+    isDrawingRef.current = false;
 
     // Flush any remaining points before ending stroke
     if (throttleTimerRef.current) {
@@ -152,6 +155,23 @@ export default function DrawingCanvas({
       }
     };
   }, []);
+
+  // End stroke if mouse is released outside the canvas
+  useEffect(() => {
+    const handleGlobalMouseUp = () => {
+      if (!isDrawingRef.current) return;
+      setIsDrawing(false);
+      isDrawingRef.current = false;
+      if (throttleTimerRef.current) {
+        clearTimeout(throttleTimerRef.current);
+        throttleTimerRef.current = null;
+      }
+      flushPendingPoints();
+      onStrokeEvent?.({ operation: 'stroke_ended' });
+    };
+    window.addEventListener('mouseup', handleGlobalMouseUp);
+    return () => window.removeEventListener('mouseup', handleGlobalMouseUp);
+  }, [flushPendingPoints, onStrokeEvent]);
 
   const handleSubmit = async () => {
     await onSubmit(lines);
@@ -199,6 +219,18 @@ export default function DrawingCanvas({
               onClick={() => setPenColor(c)}
             />
           ))}
+          <label
+            className={`${styles.swatch} ${styles.colorPickerLabel} ${!colors.includes(penColor) ? styles.swatchActive : ''}`}
+            style={!colors.includes(penColor) ? { background: penColor } : undefined}
+            title="Custom color"
+          >
+            <input
+              type="color"
+              className={styles.hiddenColorInput}
+              value={penColor}
+              onChange={(e) => setPenColor(e.target.value)}
+            />
+          </label>
         </div>
       </div>
 
@@ -228,15 +260,19 @@ export default function DrawingCanvas({
       </div>
 
       <div className={styles.controls}>
-        <Button className={styles.btn} onClick={() => setLines([])}>
+        <Button
+          className={styles.btn}
+          onClick={() => {
+            setLines([]);
+            onStrokeEvent?.({ operation: 'canvas_cleared' });
+          }}
+        >
           Clear
         </Button>
         <Button className={styles.btn} onClick={handleSubmit} disabled={lines.length === 0}>
-          Submit
+          {initialStrokes.length > 0 ? 'Update' : 'Submit'}
         </Button>
       </div>
-
-      <p className={styles.hint}>Draw your avatar.</p>
     </div>
   );
 }
