@@ -10,18 +10,44 @@ import styles from './LobbyAvatars.module.scss';
 
 const DRAW_SIZE = 320;
 const AVATAR_DISPLAY_SIZE = 128;
+const BASE_SCALE = AVATAR_DISPLAY_SIZE / DRAW_SIZE;
 
-function stableRandomPosition(id: string, w: number, h: number, avatarSize: number) {
+const SPEED_MIN = 25;
+const SPEED_RANGE = 20;
+const SCALE_AMPLITUDE = 0.07;
+const SCALE_FREQ_MIN = 0.3;
+const SCALE_FREQ_RANGE = 0.3;
+
+interface AvatarMotion {
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  scalePhase: number;
+  scaleFreq: number;
+}
+
+function hashId(id: string): number {
   let hash = 0;
   for (let i = 0; i < id.length; i++) {
     hash = ((hash << 5) - hash + id.charCodeAt(i)) | 0;
   }
-  const abs = Math.abs(hash);
-  const maxX = Math.max(0, w - avatarSize);
-  const maxY = Math.max(0, h - avatarSize);
+  return Math.abs(hash);
+}
+
+function initMotion(id: string, w: number, h: number): AvatarMotion {
+  const hash = hashId(id);
+  const maxX = Math.max(0, w - AVATAR_DISPLAY_SIZE);
+  const maxY = Math.max(0, h - AVATAR_DISPLAY_SIZE);
+  const angle = ((hash % 360) * Math.PI) / 180;
+  const speed = SPEED_MIN + ((hash % 100) / 100) * SPEED_RANGE;
   return {
-    x: maxX > 0 ? abs % maxX : 0,
-    y: maxY > 0 ? ((abs >>> 16) * 7919) % maxY : 0,
+    x: maxX > 0 ? hash % maxX : 0,
+    y: maxY > 0 ? ((hash >>> 16) * 7919) % maxY : 0,
+    vx: Math.cos(angle) * speed,
+    vy: Math.sin(angle) * speed,
+    scalePhase: (hash % 628) / 100,
+    scaleFreq: SCALE_FREQ_MIN + (((hash >> 8) % 100) / 100) * SCALE_FREQ_RANGE,
   };
 }
 
@@ -48,7 +74,65 @@ export default function LobbyAvatars() {
     [monitorView],
   );
 
-  const avatarScale = AVATAR_DISPLAY_SIZE / DRAW_SIZE;
+  const motionsRef = useRef<Map<string, AvatarMotion>>(new Map());
+  const rafRef = useRef<number | null>(null);
+  const lastTimeRef = useRef<number | null>(null);
+  const [, forceUpdate] = useState(0);
+
+  useEffect(() => {
+    const motions = motionsRef.current;
+    for (const p of participants) {
+      if (!motions.has(p.id)) {
+        motions.set(p.id, initMotion(p.id, size.w, size.h));
+      }
+    }
+    for (const id of motions.keys()) {
+      if (!participants.some((p) => p.id === id)) {
+        motions.delete(id);
+      }
+    }
+  }, [participants, size]);
+
+  useEffect(() => {
+    const maxX = Math.max(0, size.w - AVATAR_DISPLAY_SIZE);
+    const maxY = Math.max(0, size.h - AVATAR_DISPLAY_SIZE);
+
+    const animate = (timestamp: number) => {
+      const dt =
+        lastTimeRef.current !== null ? Math.min((timestamp - lastTimeRef.current) / 1000, 0.1) : 0;
+      lastTimeRef.current = timestamp;
+
+      for (const m of motionsRef.current.values()) {
+        m.x += m.vx * dt;
+        m.y += m.vy * dt;
+        m.scalePhase += m.scaleFreq * dt;
+
+        if (m.x < 0) {
+          m.x = 0;
+          m.vx = Math.abs(m.vx);
+        } else if (m.x > maxX) {
+          m.x = maxX;
+          m.vx = -Math.abs(m.vx);
+        }
+        if (m.y < 0) {
+          m.y = 0;
+          m.vy = Math.abs(m.vy);
+        } else if (m.y > maxY) {
+          m.y = maxY;
+          m.vy = -Math.abs(m.vy);
+        }
+      }
+
+      forceUpdate((n) => n + 1);
+      rafRef.current = requestAnimationFrame(animate);
+    };
+
+    rafRef.current = requestAnimationFrame(animate);
+    return () => {
+      if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
+      lastTimeRef.current = null;
+    };
+  }, [size]);
 
   return (
     <div className={styles.root}>
@@ -57,13 +141,15 @@ export default function LobbyAvatars() {
           <Layer>
             {participants.map((p) => {
               const strokes = drawState.strokes[p.id] ?? [];
-
               if (!strokes.length) return null;
 
-              const pos = stableRandomPosition(p.id, size.w, size.h, AVATAR_DISPLAY_SIZE);
+              const motion = motionsRef.current.get(p.id);
+              if (!motion) return null;
+
+              const scale = BASE_SCALE * (1 + SCALE_AMPLITUDE * Math.sin(motion.scalePhase));
 
               return (
-                <Group key={p.id} x={pos.x} y={pos.y} scaleX={avatarScale} scaleY={avatarScale}>
+                <Group key={p.id} x={motion.x} y={motion.y} scaleX={scale} scaleY={scale}>
                   {strokes.map((s, idx) => (
                     <Line
                       key={idx}
