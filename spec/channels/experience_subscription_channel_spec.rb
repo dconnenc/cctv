@@ -345,10 +345,14 @@ RSpec.describe ExperienceSubscriptionChannel, type: :channel do
 
     describe "canvas_cleared" do
       context "when the participant has existing avatar strokes" do
-        before do
-          participant.update!(avatar: {
-            "strokes" => [{ "points" => [1, 2, 3, 4], "color" => "#ff0000", "width" => 4 }]
-          })
+        let(:participant) do
+          create(
+            :experience_participant,
+            user: regular_user,
+            experience: experience,
+            role: :audience,
+            avatar: { "strokes" => [{ "points" => [1, 2, 3, 4], "color" => "#ff0000", "width" => 4 }] }
+          )
         end
 
         it "clears the participant's avatar in the database" do
