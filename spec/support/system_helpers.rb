@@ -4,6 +4,8 @@ module SystemHelpers
   # adding overhead to every call, but as it is a negative assertion, it is
   # minimal when there is no animation and won't block the spec.
   def wait_for_animation
+    sleep 0.1
+
     expect(page).to have_no_css(".app--booting")
   end
 
@@ -119,7 +121,8 @@ module SystemHelpers
   end
 
   def draw_and_submit_avatar
-    find("canvas")
+    expect(page).to have_css("canvas")
+
     rect = page.evaluate_script(
       "(() => { const r = document.querySelector('canvas').getBoundingClientRect(); " \
         "return { x: r.x, y: r.y, width: r.width, height: r.height }; })()"
