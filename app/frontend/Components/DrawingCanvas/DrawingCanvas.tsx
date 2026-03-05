@@ -58,6 +58,7 @@ export default function DrawingCanvas({
   // Batch points for throttled websocket updates
   const pendingPointsRef = useRef<number[]>([]);
   const throttleTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const isDrawingRef = useRef(false);
 
   useEffect(() => {
     const pal =
@@ -75,6 +76,7 @@ export default function DrawingCanvas({
   const onPointerDown = (e: any) => {
     if (e?.evt?.preventDefault) e.evt.preventDefault();
     setIsDrawing(true);
+    isDrawingRef.current = true;
     const p = e.target.getStage().getPointerPosition();
     if (!p) return;
     const dp = toDrawSpace(p.x, p.y);
@@ -133,6 +135,7 @@ export default function DrawingCanvas({
   const onPointerUp = (e?: any) => {
     if (e?.evt?.preventDefault) e.evt.preventDefault();
     setIsDrawing(false);
+    isDrawingRef.current = false;
 
     // Flush any remaining points before ending stroke
     if (throttleTimerRef.current) {
@@ -152,6 +155,23 @@ export default function DrawingCanvas({
       }
     };
   }, []);
+
+  // End stroke if mouse is released outside the canvas
+  useEffect(() => {
+    const handleGlobalMouseUp = () => {
+      if (!isDrawingRef.current) return;
+      setIsDrawing(false);
+      isDrawingRef.current = false;
+      if (throttleTimerRef.current) {
+        clearTimeout(throttleTimerRef.current);
+        throttleTimerRef.current = null;
+      }
+      flushPendingPoints();
+      onStrokeEvent?.({ operation: 'stroke_ended' });
+    };
+    window.addEventListener('mouseup', handleGlobalMouseUp);
+    return () => window.removeEventListener('mouseup', handleGlobalMouseUp);
+  }, [flushPendingPoints, onStrokeEvent]);
 
   const handleSubmit = async () => {
     await onSubmit(lines);
