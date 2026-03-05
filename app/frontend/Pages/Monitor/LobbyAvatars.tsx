@@ -35,9 +35,7 @@ export default function LobbyAvatars() {
     const el = containerRef.current;
     if (!el) return;
     const resize = () => {
-      const w = el.clientWidth;
-      const h = Math.round((w * 9) / 16);
-      setSize({ w, h });
+      setSize({ w: el.clientWidth, h: el.clientHeight });
     };
     resize();
     const ro = new ResizeObserver(resize);
