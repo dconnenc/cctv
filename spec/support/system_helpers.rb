@@ -121,7 +121,8 @@ module SystemHelpers
   end
 
   def draw_and_submit_avatar
-    find("canvas")
+    expect(page).to have_css("canvas")
+
     rect = page.evaluate_script(
       "(() => { const r = document.querySelector('canvas').getBoundingClientRect(); " \
         "return { x: r.x, y: r.y, width: r.width, height: r.height }; })()"
