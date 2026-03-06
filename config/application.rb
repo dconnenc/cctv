@@ -38,5 +38,7 @@ module Cctv
 
     # Don't generate system test files.
     config.generators.system_tests = nil
+
+    config.app_base_url = ENV.fetch('APP_BASE_URL', 'http://127.0.0.1:5200')
   end
 end

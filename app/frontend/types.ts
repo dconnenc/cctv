@@ -327,6 +327,8 @@ export interface Experience {
   id: string;
   name: string;
   code: string;
+  code_slug: string;
+  url: string;
   status: ExperienceStatus;
   description?: string;
   creator_id: string;
