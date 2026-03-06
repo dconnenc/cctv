@@ -8,11 +8,14 @@ class ExperienceSerializer
     blocks = visibility_payload&.dig(:experience, :blocks) || []
     next_block = visibility_payload&.dig(:experience, :next_block)
 
+    base_url = Rails.application.config.app_base_url
+
     result = {
       id: experience.id,
       name: experience.name,
       code: experience.code,
       code_slug: experience.code_slug,
+      url: "#{base_url}/experiences/#{experience.code_slug}",
       status: experience.status,
       description: experience.description,
       creator_id: experience.creator_id,
