@@ -155,6 +155,8 @@ module Experiences
           .order(position: :asc)
       end
 
+      parent_blocks = parent_blocks.reject { |block| block.payload['show_on_monitor'] == false }
+
       result = []
       parent_blocks.each do |parent|
         if parent.has_dependencies?
@@ -195,6 +197,7 @@ module Experiences
         end
       end
 
+      parent_blocks = parent_blocks.reject { |block| block.payload['show_on_monitor'] == false }
       parent_blocks = parent_blocks.sort_by(&:position)
 
       result = []

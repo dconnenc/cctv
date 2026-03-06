@@ -887,6 +887,69 @@ RSpec.describe Experiences::Visibility do
     end
   end
 
+  describe ".payload_for_monitor with show_on_monitor" do
+    let(:experience) { create(:experience, status: :live) }
+
+    context "when an open block has show_on_monitor false in its payload" do
+      let!(:hidden_from_monitor_block) do
+        create(
+          :experience_block,
+          experience: experience,
+          status: :open,
+          kind: :announcement,
+          payload: { "message" => "Hello", "show_on_monitor" => false },
+          position: 0
+        )
+      end
+
+      it "excludes the block from the monitor payload" do
+        payload = described_class.payload_for_monitor(experience: experience)
+
+        expect(payload[:experience][:blocks]).to be_empty
+      end
+    end
+
+    context "when an open block has show_on_monitor true in its payload" do
+      let!(:visible_block) do
+        create(
+          :experience_block,
+          experience: experience,
+          status: :open,
+          kind: :announcement,
+          payload: { "message" => "Hello", "show_on_monitor" => true },
+          position: 0
+        )
+      end
+
+      it "includes the block in the monitor payload" do
+        payload = described_class.payload_for_monitor(experience: experience)
+
+        expect(payload[:experience][:blocks].size).to eq(1)
+        expect(payload[:experience][:blocks].first[:id]).to eq(visible_block.id)
+      end
+    end
+
+    context "when an open block has no show_on_monitor key in its payload" do
+      let!(:default_block) do
+        create(
+          :experience_block,
+          experience: experience,
+          status: :open,
+          kind: :announcement,
+          payload: { "message" => "Hello" },
+          position: 0
+        )
+      end
+
+      it "includes the block in the monitor payload" do
+        payload = described_class.payload_for_monitor(experience: experience)
+
+        expect(payload[:experience][:blocks].size).to eq(1)
+        expect(payload[:experience][:blocks].first[:id]).to eq(default_block.id)
+      end
+    end
+  end
+
   describe ".payload_for_monitor with show_in_lobby" do
     let(:experience) { create(:experience, status: :lobby) }
 

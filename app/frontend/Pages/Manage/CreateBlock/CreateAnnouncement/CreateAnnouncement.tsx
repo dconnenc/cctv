@@ -8,6 +8,7 @@ import styles from './CreateAnnouncement.module.scss';
 export const getDefaultAnnouncementState = (): AnnouncementData => {
   return {
     message: '',
+    show_on_monitor: true,
   };
 };
 
@@ -23,6 +24,7 @@ export const buildAnnouncementPayload = (data: AnnouncementData): AnnouncementAp
   return {
     type: BlockKind.ANNOUNCEMENT,
     message: data.message.trim(),
+    show_on_monitor: data.show_on_monitor,
   };
 };
 
@@ -60,6 +62,14 @@ export default function CreateAnnouncement({
       <span className={styles.helpText}>
         {`Include the participant's name with {{ participant_name }}`}
       </span>
+      <label className={sharedStyles.checkboxLabel}>
+        <input
+          type="checkbox"
+          checked={data.show_on_monitor}
+          onChange={(e) => updateData({ show_on_monitor: e.target.checked })}
+        />
+        Show on monitor
+      </label>
     </div>
   );
 }

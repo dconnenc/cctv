@@ -1,7 +1,7 @@
 import { MessageSquare, Monitor, Pause, Play, SkipForward, User } from 'lucide-react';
 
 import { Button } from '@cctv/core/Button/Button';
-import { Block, BlockKind, Experience, ParticipantSummary } from '@cctv/types';
+import { AnnouncementPayload, Block, BlockKind, Experience, ParticipantSummary } from '@cctv/types';
 
 import FamilyFeudManager from '../../Block/FamilyFeudManager/FamilyFeudManager';
 import BlockPreview from '../BlockPreview/BlockPreview';
@@ -192,7 +192,12 @@ export default function BlockDetailPanel({
                     : undefined
                 }
                 emptyMessage={
-                  viewMode === 'monitor' ? 'No block on Monitor' : 'No block for participant'
+                  viewMode === 'monitor'
+                    ? selectedBlock.kind === BlockKind.ANNOUNCEMENT &&
+                      (selectedBlock.payload as AnnouncementPayload).show_on_monitor === false
+                      ? 'This block is not shown on the monitor'
+                      : 'No block on Monitor'
+                    : 'No block for participant'
                 }
                 monitorView={monitorView}
                 viewMode={viewMode}
