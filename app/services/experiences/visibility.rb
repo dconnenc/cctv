@@ -137,7 +137,8 @@ module Experiences
         experience: experience_structure(
           experience,
           serialized_blocks,
-          next_block: serialized_next
+          next_block: serialized_next,
+          participant_block_active: participant_block_active?(experience)
         )
       }
     end
@@ -464,8 +465,15 @@ module Experiences
       )
     end
 
-    def self.experience_structure(experience, blocks, next_block: nil)
-      {
+    def self.participant_block_active?(experience)
+      experience.parent_blocks
+        .where(status: 'open')
+        .where(visible_to_roles: [], visible_to_segments: [], target_user_ids: [])
+        .any? { |block| block.payload['show_on_monitor'] == false }
+    end
+
+    def self.experience_structure(experience, blocks, next_block: nil, participant_block_active: nil)
+      structure = {
         id: experience.id,
         code: experience.code,
         status: experience.status,
@@ -474,6 +482,8 @@ module Experiences
         blocks: blocks,
         next_block: next_block
       }
+      structure[:participant_block_active] = participant_block_active unless participant_block_active.nil?
+      structure
     end
   end
 end

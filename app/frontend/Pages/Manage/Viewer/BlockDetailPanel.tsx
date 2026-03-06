@@ -203,6 +203,12 @@ export default function BlockDetailPanel({
                 viewMode={viewMode}
                 title="Current"
               />
+            ) : viewMode === 'monitor' &&
+              selectedBlock.kind === BlockKind.ANNOUNCEMENT &&
+              (selectedBlock.payload as AnnouncementPayload).show_on_monitor === false ? (
+              <p className="text-sm text-[hsl(var(--muted-foreground))]">
+                This block is not shown on the monitor
+              </p>
             ) : (
               <BlockPreview
                 block={selectedBlock}

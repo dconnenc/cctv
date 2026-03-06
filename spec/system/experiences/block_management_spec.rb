@@ -48,7 +48,16 @@ RSpec.describe "Managing Blocks", type: :system do
       within("li[aria-label='block 1']") do
         find("button", text: /announcement/).click
       end
+
+      # Monitor impersonation view shows empty state even when block is queued but not live
+      within("[aria-label='Preview mode']") { click_button "Monitor" }
+      expect(page).to have_text("This block is not shown on the monitor")
+
       click_button "Present"
+
+      # Monitor impersonation view still shows empty state after block goes live
+      within("[aria-label='Preview mode']") { click_button "Monitor" }
+      expect(page).to have_text("This block is not shown on the monitor")
 
       # Participant impersonation view shows the announcement
       within("[aria-label='Preview mode']") { click_button "Participant" }
@@ -60,13 +69,14 @@ RSpec.describe "Managing Blocks", type: :system do
       within("[aria-label='Preview mode']") { click_button "Monitor" }
       expect(page).to have_text("This block is not shown on the monitor")
 
-      # Actual monitor page still shows lobby state
+      # Actual monitor page still shows lobby state with participant notification
       using_session(:monitor) do
         visit "/experiences/#{experience.code_slug}/monitor"
         expect(page).to have_css(
           "img[alt='QR code for joining Management Experience']"
         )
         expect(page).not_to have_text("Hidden announcement")
+        expect(page).to have_text("Check your devices")
       end
     end
 

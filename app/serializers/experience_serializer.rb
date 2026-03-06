@@ -7,6 +7,7 @@ class ExperienceSerializer
   )
     blocks = visibility_payload&.dig(:experience, :blocks) || []
     next_block = visibility_payload&.dig(:experience, :next_block)
+    participant_block_active = visibility_payload&.dig(:experience, :participant_block_active)
 
     result = {
       id: experience.id,
@@ -22,6 +23,8 @@ class ExperienceSerializer
       next_block: next_block,
       playbill: serialize_playbill(experience.playbill)
     }
+
+    result[:participant_block_active] = participant_block_active unless participant_block_active.nil?
 
     if include_participants
       # Use preloaded participants if available, otherwise query

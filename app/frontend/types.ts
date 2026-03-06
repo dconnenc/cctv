@@ -339,6 +339,7 @@ export interface Experience {
   playbill?: PlaybillSection[];
   created_at: string;
   updated_at: string;
+  participant_block_active?: boolean;
 }
 
 // ===== TYPE FRAGMENTS (using Pick/Omit from complete types) =====
