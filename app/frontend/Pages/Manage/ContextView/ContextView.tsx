@@ -2,7 +2,6 @@ import { Panel } from '@cctv/core/Panel/Panel';
 import { Block, Experience, ParticipantSummary } from '@cctv/types';
 
 import BlockPreview from '../BlockPreview/BlockPreview';
-import QRCodeDisplay from '../QRCodeDisplay/QRCodeDisplay';
 
 import styles from './ContextView.module.scss';
 
@@ -33,7 +32,7 @@ export default function ContextView({
           {monitorBlock ? (
             <BlockPreview block={monitorBlock} viewContext="monitor" />
           ) : (
-            <QRCodeDisplay experience={monitorView} />
+            <div className={styles.emptyState}>{emptyMessage}</div>
           )}
         </div>
       </Panel>

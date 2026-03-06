@@ -41,6 +41,7 @@ export interface MultistepFormPayload {
 
 export interface AnnouncementPayload {
   message: string;
+  show_on_monitor?: boolean;
 }
 
 export interface FamilyFeudBucket {
@@ -148,6 +149,7 @@ export interface MultistepFormApiPayload {
 export interface AnnouncementApiPayload {
   type: 'announcement';
   message: string;
+  show_on_monitor: boolean;
 }
 
 export interface MadLibApiPayload {
@@ -337,6 +339,7 @@ export interface Experience {
   playbill?: PlaybillSection[];
   created_at: string;
   updated_at: string;
+  participant_block_active?: boolean;
 }
 
 // ===== TYPE FRAGMENTS (using Pick/Omit from complete types) =====
@@ -674,6 +677,7 @@ export interface MultistepFormData {
 
 export interface AnnouncementData {
   message: string;
+  show_on_monitor: boolean;
 }
 
 export interface MadLibData {
