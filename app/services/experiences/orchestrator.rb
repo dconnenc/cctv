@@ -224,6 +224,37 @@ module Experiences
       end
     end
 
+    def submit_buzzer_response!(block_id:, answer:)
+      actor_action do
+        block = experience.experience_blocks.find(block_id)
+
+        authorize! block, to: :submit_buzzer_response?, with: ExperienceBlockPolicy
+
+        submission = ExperienceBuzzerSubmission.find_or_initialize_by(
+          experience_block_id: block.id,
+          user_id: actor.id
+        )
+
+        return submission unless submission.new_record?
+
+        submission.answer = answer
+        submission.save!
+
+        submission
+      end
+    end
+
+    def clear_buzzer_responses!(block_id:)
+      actor_action do
+        authorize! experience, to: :manage_blocks?, with: ExperiencePolicy
+
+        block = experience.experience_blocks.find(block_id)
+        block.experience_buzzer_submissions.delete_all
+
+        block
+      end
+    end
+
     def add_family_feud_bucket!(block_id:, question_id:, name:)
       actor_action do
         block = experience.experience_blocks.find(block_id)

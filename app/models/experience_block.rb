@@ -8,7 +8,8 @@ class ExperienceBlock < ApplicationRecord
     ANNOUNCEMENT = "announcement",
     MAD_LIB = "mad_lib",
     FAMILY_FEUD = "family_feud",
-    PHOTO_UPLOAD = "photo_upload"
+    PHOTO_UPLOAD = "photo_upload",
+    BUZZER = "buzzer"
   ]
 
   belongs_to :experience
@@ -27,6 +28,7 @@ class ExperienceBlock < ApplicationRecord
   has_many :experience_multistep_form_submissions, dependent: :destroy
   has_many :experience_mad_lib_submissions, dependent: :destroy
   has_many :experience_photo_upload_submissions, dependent: :destroy
+  has_many :experience_buzzer_submissions, dependent: :destroy
 
   has_many :parent_links,
     class_name: "ExperienceBlockLink",
@@ -55,6 +57,7 @@ class ExperienceBlock < ApplicationRecord
 
   validates :kind, presence: true, inclusion: { in: KINDS }
   validate :visibility_roles
+  validate :visibility_segments
 
   validates :position,
     presence: true,
@@ -196,6 +199,16 @@ class ExperienceBlock < ApplicationRecord
 
     if invalid.any?
       errors.add(:visible_to_roles, "contain invalid roles: #{invalid.join(", ")}")
+    end
+  end
+
+  def visibility_segments
+    return if visible_to_segments.blank?
+
+    defined_names = experience.experience_segments.pluck(:name)
+    invalid = visible_to_segments - defined_names
+    if invalid.any?
+      errors.add(:visible_to_segments, "contain undefined segments: #{invalid.join(', ')}")
     end
   end
 end

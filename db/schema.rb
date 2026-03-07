@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_02_22_214200) do
+ActiveRecord::Schema[7.2].define(version: 2026_03_07_000002) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "citext"
   enable_extension "plpgsql"
@@ -112,6 +112,17 @@ ActiveRecord::Schema[7.2].define(version: 2026_02_22_214200) do
     t.index ["visible_to_segments"], name: "index_experience_blocks_on_visible_to_segments", using: :gin
   end
 
+  create_table "experience_buzzer_submissions", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "experience_block_id", null: false
+    t.uuid "user_id", null: false
+    t.jsonb "answer", default: {}, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["experience_block_id", "user_id"], name: "index_buzzer_submissions_on_block_and_user", unique: true
+    t.index ["experience_block_id"], name: "index_experience_buzzer_submissions_on_experience_block_id"
+    t.index ["user_id"], name: "index_experience_buzzer_submissions_on_user_id"
+  end
+
   create_table "experience_mad_lib_submissions", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.uuid "experience_block_id", null: false
     t.uuid "user_id", null: false
@@ -184,6 +195,17 @@ ActiveRecord::Schema[7.2].define(version: 2026_02_22_214200) do
     t.index ["user_id"], name: "index_experience_question_submissions_on_user_id"
   end
 
+  create_table "experience_segments", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "experience_id", null: false
+    t.string "name", null: false
+    t.string "color", default: "#6B7280", null: false
+    t.integer "position", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["experience_id", "name"], name: "index_experience_segments_on_experience_id_and_name", unique: true
+    t.index ["experience_id", "position"], name: "index_experience_segments_on_experience_id_and_position"
+  end
+
   create_table "experiences", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.string "name", null: false
     t.citext "code", null: false
@@ -236,6 +258,8 @@ ActiveRecord::Schema[7.2].define(version: 2026_02_22_214200) do
   add_foreign_key "experience_block_variables", "experience_blocks", on_delete: :cascade
   add_foreign_key "experience_blocks", "experience_blocks", column: "parent_block_id"
   add_foreign_key "experience_blocks", "experiences", on_delete: :cascade
+  add_foreign_key "experience_buzzer_submissions", "experience_blocks", on_delete: :cascade
+  add_foreign_key "experience_buzzer_submissions", "users", on_delete: :cascade
   add_foreign_key "experience_mad_lib_submissions", "experience_blocks", on_delete: :cascade
   add_foreign_key "experience_mad_lib_submissions", "users", on_delete: :cascade
   add_foreign_key "experience_multistep_form_submissions", "experience_blocks", on_delete: :cascade
@@ -248,5 +272,6 @@ ActiveRecord::Schema[7.2].define(version: 2026_02_22_214200) do
   add_foreign_key "experience_poll_submissions", "users", on_delete: :cascade
   add_foreign_key "experience_question_submissions", "experience_blocks", on_delete: :cascade
   add_foreign_key "experience_question_submissions", "users", on_delete: :cascade
+  add_foreign_key "experience_segments", "experiences", on_delete: :cascade
   add_foreign_key "experiences", "users", column: "creator_id", on_delete: :cascade
 end

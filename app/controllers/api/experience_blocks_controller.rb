@@ -260,6 +260,43 @@ class Api::ExperienceBlocksController < Api::BaseController
     end
   end
 
+  # POST /api/experiences/:experience_id/blocks/:id/submit_buzzer_response
+  def submit_buzzer_response
+    with_experience_orchestration do
+      block = @experience.experience_blocks.find(params[:id])
+
+      Experiences::Orchestrator.new(
+        experience: @experience, actor: @user
+      ).submit_buzzer_response!(
+        block_id: params[:id],
+        answer: params[:answer]
+      )
+
+      updated_block = Experiences::Visibility.serialize_block_for_user(
+        experience: @experience,
+        user: @user,
+        block: block
+      )
+
+      Experiences::Broadcaster.new(@experience).broadcast_experience_update
+
+      render json: { success: true, data: { block: updated_block } }, status: 200
+    end
+  end
+
+  # DELETE /api/experiences/:experience_id/blocks/:id/clear_buzzer_responses
+  def clear_buzzer_responses
+    with_experience_orchestration do
+      Experiences::Orchestrator.new(
+        experience: @experience, actor: @user
+      ).clear_buzzer_responses!(block_id: params[:id])
+
+      Experiences::Broadcaster.new(@experience).broadcast_experience_update
+
+      render json: { success: true }, status: 200
+    end
+  end
+
   # POST /api/experiences/:experience_id/blocks/:id/family_feud/auto_categorize
   def auto_categorize
     with_experience_orchestration do

@@ -20,7 +20,8 @@ class ExperienceSerializer
       updated_at: experience.updated_at,
       blocks: blocks,
       next_block: next_block,
-      playbill: serialize_playbill(experience.playbill)
+      playbill: serialize_playbill(experience.playbill),
+      segments: serialize_segments(experience)
     }
 
     if include_participants
@@ -80,6 +81,7 @@ class ExperienceSerializer
         email: participant.user.email,
         status: participant.status,
         role: participant.role,
+        segments: participant.segments || [],
         joined_at: participant.joined_at,
         fingerprint: participant.fingerprint,
         created_at: participant.created_at,
@@ -96,6 +98,17 @@ class ExperienceSerializer
       email: participant.user.email,
       role: participant.role
     }
+  end
+
+  def self.serialize_segments(experience)
+    experience.experience_segments.order(position: :asc).map do |segment|
+      {
+        id: segment.id,
+        name: segment.name,
+        color: segment.color,
+        position: segment.position
+      }
+    end
   end
 
   def self.serialize_playbill(playbill)

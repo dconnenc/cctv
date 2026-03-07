@@ -1,4 +1,4 @@
 
-vite: bin/vite dev
+vite: ruby bin/vite dev
 tailwind: yarn tailwind:watch
-web: bin/rails s
+web: ruby bin/rails s

@@ -20,6 +20,13 @@ import {
   validateAnnouncement,
 } from './CreateAnnouncement/CreateAnnouncement';
 import {
+  buildBuzzerPayload,
+  canBuzzerOpenImmediately,
+  getDefaultBuzzerState,
+  processBuzzerBeforeSubmit,
+  validateBuzzer,
+} from './CreateBuzzer/CreateBuzzer';
+import {
   buildFamilyFeudPayload,
   buildFamilyFeudQuestions,
   canFamilyFeudOpenImmediately,
@@ -99,6 +106,8 @@ export function CreateBlockProvider({
         return { kind: BlockKind.FAMILY_FEUD, data: getDefaultFamilyFeudState() };
       case BlockKind.PHOTO_UPLOAD:
         return { kind: BlockKind.PHOTO_UPLOAD, data: getDefaultPhotoUploadState() };
+      case BlockKind.BUZZER:
+        return { kind: BlockKind.BUZZER, data: getDefaultBuzzerState() };
       default: {
         const _exhaust: never = blockKind;
         throw new Error(`Unknown block kind: ${_exhaust}`);
@@ -111,7 +120,7 @@ export function CreateBlockProvider({
   );
 
   const [visibleRoles, setVisibleRoles] = useState<ParticipantRole[]>([]);
-  const [visibleSegmentsText, setVisibleSegmentsText] = useState<string>('');
+  const [visibleSegments, setVisibleSegments] = useState<string[]>([]);
   const [targetUserIdsText, setTargetUserIdsText] = useState<string>('');
   const [showInLobby, setShowInLobby] = useState<boolean>(false);
   const [viewAdditionalDetails, setViewAdditionalDetails] = useState<boolean>(false);
@@ -158,6 +167,9 @@ export function CreateBlockProvider({
         case BlockKind.PHOTO_UPLOAD:
           validationError = validatePhotoUpload(blockData.data);
           break;
+        case BlockKind.BUZZER:
+          validationError = validateBuzzer(blockData.data);
+          break;
         default: {
           const _exhaust: never = blockData;
           validationError = `Unknown block kind: ${(_exhaust as FormBlockData).kind}`;
@@ -191,6 +203,9 @@ export function CreateBlockProvider({
           break;
         case BlockKind.PHOTO_UPLOAD:
           canOpenImmediately = canPhotoUploadOpenImmediately(blockData.data, participants);
+          break;
+        case BlockKind.BUZZER:
+          canOpenImmediately = canBuzzerOpenImmediately(blockData.data, participants);
           break;
         default: {
           const _exhaust: never = blockData;
@@ -252,6 +267,12 @@ export function CreateBlockProvider({
             data: processPhotoUploadBeforeSubmit(blockData.data, status, participants),
           };
           break;
+        case BlockKind.BUZZER:
+          processedFormData = {
+            kind: BlockKind.BUZZER,
+            data: processBuzzerBeforeSubmit(blockData.data, status, participants),
+          };
+          break;
         default: {
           const _exhaust: never = blockData;
           processedFormData = _exhaust as FormBlockData;
@@ -285,16 +306,16 @@ export function CreateBlockProvider({
         case BlockKind.PHOTO_UPLOAD:
           payload = buildPhotoUploadPayload(processedFormData.data);
           break;
+        case BlockKind.BUZZER:
+          payload = buildBuzzerPayload(processedFormData.data);
+          break;
         default: {
           const _exhaust: never = processedFormData;
           throw new Error(`Unknown block kind: ${(_exhaust as FormBlockData).kind}`);
         }
       }
 
-      const visible_to_segments = visibleSegmentsText
-        .split(',')
-        .map((s) => s.trim())
-        .filter(Boolean);
+      const visible_to_segments = visibleSegments;
       const target_user_ids = targetUserIdsText
         .split(',')
         .map((s) => s.trim())
@@ -371,7 +392,7 @@ export function CreateBlockProvider({
       // Reset all form state
       setBlockData(getDefaultFormData(blockData.kind));
       setVisibleRoles([]);
-      setVisibleSegmentsText('');
+      setVisibleSegments([]);
       setTargetUserIdsText('');
       setShowInLobby(false);
       setViewAdditionalDetails(false);
@@ -380,7 +401,7 @@ export function CreateBlockProvider({
       blockData,
       participants,
       visibleRoles,
-      visibleSegmentsText,
+      visibleSegments,
       targetUserIdsText,
       createExperienceBlock,
       onClose,
@@ -400,8 +421,8 @@ export function CreateBlockProvider({
     error: createError,
     visibleRoles,
     setVisibleRoles,
-    visibleSegmentsText,
-    setVisibleSegmentsText,
+    visibleSegments,
+    setVisibleSegments,
     targetUserIdsText,
     setTargetUserIdsText,
     showInLobby,

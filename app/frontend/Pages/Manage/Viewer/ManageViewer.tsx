@@ -266,7 +266,10 @@ export default function ManageViewer() {
             </button>
           </div>
           <div className="flex-1 overflow-y-auto">
-            <ParticipantsTab participants={participantsCombined} />
+            <ParticipantsTab
+              participants={participantsCombined}
+              segments={experience?.segments || []}
+            />
           </div>
         </aside>
       </section>

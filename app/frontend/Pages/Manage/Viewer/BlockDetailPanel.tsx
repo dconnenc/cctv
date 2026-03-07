@@ -1,6 +1,8 @@
 import { MessageSquare, Monitor, Pause, Play, SkipForward, User } from 'lucide-react';
 
+import { useExperience } from '@cctv/contexts/ExperienceContext';
 import { Button } from '@cctv/core/Button/Button';
+import { SegmentBadge } from '@cctv/core/SegmentBadge/SegmentBadge';
 import { Block, BlockKind, Experience, ParticipantSummary } from '@cctv/types';
 
 import FamilyFeudManager from '../../Block/FamilyFeudManager/FamilyFeudManager';
@@ -234,16 +236,7 @@ export default function BlockDetailPanel({
           </div>
         </div>
         <div className="space-y-3">
-          <div>
-            <div className="text-xs text-[hsl(var(--muted-foreground))] uppercase tracking-wide">
-              Visible to Segments
-            </div>
-            <div className="text-sm text-white">
-              {selectedBlock.visible_to_segments?.length
-                ? selectedBlock.visible_to_segments.join(', ')
-                : 'All'}
-            </div>
-          </div>
+          <VisibleSegments segments={selectedBlock.visible_to_segments} />
           <div>
             <div className="text-xs text-[hsl(var(--muted-foreground))] uppercase tracking-wide">
               Targeted Users
@@ -259,6 +252,30 @@ export default function BlockDetailPanel({
             <FamilyFeudManager block={selectedBlock} />
           </div>
         )}
+    </div>
+  );
+}
+
+function VisibleSegments({ segments }: { segments?: string[] }) {
+  const { experience } = useExperience();
+  const definedSegments = experience?.segments || [];
+
+  return (
+    <div>
+      <div className="text-xs text-[hsl(var(--muted-foreground))] uppercase tracking-wide">
+        Visible to Segments
+      </div>
+      <div
+        className="text-sm text-white mt-1"
+        style={{ display: 'flex', flexWrap: 'wrap', gap: '0.25rem' }}
+      >
+        {segments?.length
+          ? segments.map((name) => {
+              const seg = definedSegments.find((s) => s.name === name);
+              return <SegmentBadge key={name} name={name} color={seg?.color || '#6B7280'} />;
+            })
+          : 'All'}
+      </div>
     </div>
   );
 }

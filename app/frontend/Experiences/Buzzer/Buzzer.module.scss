@@ -1,0 +1,112 @@
+.participantRoot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2rem;
+  padding: 2rem;
+  min-height: 60vh;
+}
+
+.label {
+  font-size: 1.5rem;
+  text-align: center;
+  color: var(--foreground);
+}
+
+.buzzerButton {
+  width: 200px;
+  height: 200px;
+  border-radius: 50%;
+  background: var(--red);
+  border: 6px solid color-mix(in srgb, var(--red) 60%, black);
+  box-shadow:
+    0 8px 0 color-mix(in srgb, var(--red) 40%, black),
+    0 12px 20px rgba(0, 0, 0, 0.4);
+  cursor: pointer;
+  transition:
+    transform 80ms ease,
+    box-shadow 80ms ease;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+
+  &:active:not(:disabled) {
+    transform: translateY(6px);
+    box-shadow:
+      0 2px 0 color-mix(in srgb, var(--red) 40%, black),
+      0 4px 8px rgba(0, 0, 0, 0.3);
+  }
+
+  &:disabled {
+    opacity: 0.7;
+    cursor: default;
+  }
+}
+
+.buzzedState {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+}
+
+.buzzedText {
+  font-size: 3rem;
+  font-weight: bold;
+  color: var(--red);
+  text-align: center;
+}
+
+// Monitor view
+.monitorWaiting {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5rem;
+  padding: 3rem;
+  min-height: 40vh;
+}
+
+.monitorLabel {
+  font-size: 2rem;
+  text-align: center;
+  color: var(--foreground);
+}
+
+.waitingText {
+  font-size: 1.5rem;
+  color: var(--muted-foreground, #888);
+  text-align: center;
+}
+
+.monitorWinner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5rem;
+  padding: 3rem;
+}
+
+.avatarWrap {
+  border-radius: 50%;
+  overflow: hidden;
+  background: var(--muted, #1a1a1a);
+  width: 280px;
+  height: 280px;
+}
+
+.avatarPlaceholder {
+  width: 280px;
+  height: 280px;
+  border-radius: 50%;
+  background: var(--muted, #1a1a1a);
+}
+
+.winnerName {
+  font-size: 2.5rem;
+  font-weight: bold;
+  text-align: center;
+  color: var(--foreground);
+}
