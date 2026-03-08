@@ -1,0 +1,72 @@
+{
+  "Pages/Block/Block.tsx": {
+    "file": "assets/Block-Cw0HssYm.js",
+    "name": "Block",
+    "src": "Pages/Block/Block.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "entrypoints/application.tsx",
+      "_dialog-C-y_qkUB.js",
+      "_FamilyFeudManager-DvZpiiu3.js"
+    ],
+    "css": ["assets/Block-a028tFvo.css"]
+  },
+  "Pages/Manage/Viewer/ManageViewer.tsx": {
+    "file": "assets/ManageViewer-CDIK9TtU.js",
+    "name": "ManageViewer",
+    "src": "Pages/Manage/Viewer/ManageViewer.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "entrypoints/application.tsx",
+      "_dialog-C-y_qkUB.js",
+      "_CreateBlock-CgwW1au8.js",
+      "_FamilyFeudManager-DvZpiiu3.js"
+    ],
+    "css": ["assets/ManageViewer-K6TQMfJ1.css"]
+  },
+  "Pages/ManageCreateBlock/ManageCreateBlock.tsx": {
+    "file": "assets/ManageCreateBlock-BOIhgKa5.js",
+    "name": "ManageCreateBlock",
+    "src": "Pages/ManageCreateBlock/ManageCreateBlock.tsx",
+    "isDynamicEntry": true,
+    "imports": ["entrypoints/application.tsx", "_CreateBlock-CgwW1au8.js", "_dialog-C-y_qkUB.js"],
+    "css": ["assets/ManageCreateBlock-Du-mrIOP.css"]
+  },
+  "_CreateBlock-!~{007}~.js": {
+    "file": "assets/CreateBlock-BDwM-E47.css",
+    "src": "_CreateBlock-!~{007}~.js"
+  },
+  "_CreateBlock-CgwW1au8.js": {
+    "file": "assets/CreateBlock-CgwW1au8.js",
+    "name": "CreateBlock",
+    "imports": ["entrypoints/application.tsx", "_dialog-C-y_qkUB.js"],
+    "css": ["assets/CreateBlock-BDwM-E47.css"]
+  },
+  "_FamilyFeudManager-!~{006}~.js": {
+    "file": "assets/FamilyFeudManager-BCFQtviM.css",
+    "src": "_FamilyFeudManager-!~{006}~.js"
+  },
+  "_FamilyFeudManager-DvZpiiu3.js": {
+    "file": "assets/FamilyFeudManager-DvZpiiu3.js",
+    "name": "FamilyFeudManager",
+    "imports": ["entrypoints/application.tsx"],
+    "css": ["assets/FamilyFeudManager-BCFQtviM.css"]
+  },
+  "_dialog-C-y_qkUB.js": {
+    "file": "assets/dialog-C-y_qkUB.js",
+    "name": "dialog",
+    "imports": ["entrypoints/application.tsx"]
+  },
+  "entrypoints/application.tsx": {
+    "file": "assets/application-BWXX6fgN.js",
+    "name": "entrypoints\\application.tsx",
+    "src": "entrypoints/application.tsx",
+    "isEntry": true,
+    "dynamicImports": [
+      "Pages/Block/Block.tsx",
+      "Pages/ManageCreateBlock/ManageCreateBlock.tsx",
+      "Pages/Manage/Viewer/ManageViewer.tsx"
+    ],
+    "css": ["assets/application-FG3EnIqv.css"]
+  }
+}
