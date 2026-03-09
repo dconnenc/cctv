@@ -35,6 +35,7 @@ export interface PollPayload {
   question: string;
   options: string[];
   pollType?: 'single' | 'multiple';
+  segmentAssignments?: Record<string, string>;
 }
 
 export interface QuestionPayload {
@@ -143,6 +144,7 @@ export interface PollApiPayload {
   question: string;
   options: string[];
   pollType: 'single' | 'multiple';
+  segmentAssignments?: Record<string, string>;
 }
 
 export interface QuestionApiPayload {
@@ -698,6 +700,7 @@ export interface PollData {
   question: string;
   options: string[];
   pollType: 'single' | 'multiple';
+  segmentAssignments: Record<string, string>;
 }
 
 export interface QuestionData {

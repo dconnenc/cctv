@@ -131,8 +131,12 @@ module Experiences
           user_id: actor.id
         )
 
+        old_selected = submission.persisted? ? Array(submission.answer&.dig("selectedOptions")) : []
+
         submission.answer = answer
         submission.save!
+
+        apply_poll_segment_assignments(block, old_selected, Array(answer&.dig("selectedOptions")))
 
         submission
       end
@@ -728,6 +732,39 @@ module Experiences
       )
 
       child_block
+    end
+
+    def apply_poll_segment_assignments(block, old_selected, new_selected)
+      assignments = block.payload&.dig("segmentAssignments")
+      return if assignments.blank?
+
+      participant = experience.experience_participants.find_by(user_id: actor.id)
+      return unless participant
+
+      # Remove segments from previously selected options that are no longer selected
+      removed_options = old_selected - new_selected
+      segments_to_remove = removed_options.filter_map { |opt| assignments[opt] }
+      if segments_to_remove.any?
+        ExperienceParticipantSegment
+          .where(experience_participant_id: participant.id, experience_segment_id: segments_to_remove)
+          .delete_all
+      end
+
+      # Add segments for newly selected options
+      added_options = new_selected - old_selected
+      segments_to_add = added_options.filter_map { |opt| assignments[opt] }
+      if segments_to_add.any?
+        existing = ExperienceParticipantSegment
+          .where(experience_participant_id: participant.id, experience_segment_id: segments_to_add)
+          .pluck(:experience_segment_id)
+
+        new_segments = segments_to_add - existing
+        if new_segments.any?
+          ExperienceParticipantSegment.insert_all(
+            new_segments.map { |sid| { experience_participant_id: participant.id, experience_segment_id: sid } }
+          )
+        end
+      end
     end
 
     def copy_block_segments(from:, to:)
