@@ -19,19 +19,12 @@ module Experiences
         authorize! experience, to: :manage_blocks?, with: ExperiencePolicy
 
         segment = experience.experience_segments.find(segment_id)
-        old_name = segment.name
 
         attrs = {}
         attrs[:name] = name if name.present?
         attrs[:color] = color if color.present?
 
-        transaction do
-          segment.update!(attrs)
-
-          if name.present? && name != old_name
-            cascade_rename(old_name, name)
-          end
-        end
+        segment.update!(attrs)
 
         segment
       end
@@ -42,12 +35,7 @@ module Experiences
         authorize! experience, to: :manage_blocks?, with: ExperiencePolicy
 
         segment = experience.experience_segments.find(segment_id)
-        segment_name = segment.name
-
-        transaction do
-          cascade_remove(segment_name)
-          segment.destroy!
-        end
+        segment.destroy!
       end
     end
 
@@ -56,17 +44,18 @@ module Experiences
         authorize! experience, to: :manage_blocks?, with: ExperiencePolicy
 
         segment = experience.experience_segments.find(segment_id)
-        participants = experience.experience_participants.where(id: participant_ids)
 
-        transaction do
-          participants.each do |participant|
-            unless participant.segments.include?(segment.name)
-              participant.update!(segments: participant.segments + [segment.name])
-            end
-          end
+        existing_ids = ExperienceParticipantSegment
+          .where(experience_segment_id: segment.id, experience_participant_id: participant_ids)
+          .pluck(:experience_participant_id)
+
+        new_ids = participant_ids - existing_ids
+
+        if new_ids.any?
+          ExperienceParticipantSegment.insert_all(
+            new_ids.map { |id| { experience_participant_id: id, experience_segment_id: segment.id } }
+          )
         end
-
-        trigger_resubscription(participants)
       end
     end
 
@@ -75,81 +64,10 @@ module Experiences
         authorize! experience, to: :manage_blocks?, with: ExperiencePolicy
 
         segment = experience.experience_segments.find(segment_id)
-        participants = experience.experience_participants.where(id: participant_ids)
 
-        transaction do
-          participants.each do |participant|
-            if participant.segments.include?(segment.name)
-              participant.update!(segments: participant.segments - [segment.name])
-            end
-          end
-        end
-
-        trigger_resubscription(participants)
-      end
-    end
-
-    private
-
-    def cascade_rename(old_name, new_name)
-      experience.experience_participants
-        .where("? = ANY(segments)", old_name)
-        .update_all(
-          Arel.sql(
-            ActiveRecord::Base.sanitize_sql_array([
-              "segments = array_replace(segments, ?, ?)",
-              old_name, new_name
-            ])
-          )
-        )
-
-      experience.experience_blocks
-        .where("? = ANY(visible_to_segments)", old_name)
-        .update_all(
-          Arel.sql(
-            ActiveRecord::Base.sanitize_sql_array([
-              "visible_to_segments = array_replace(visible_to_segments, ?, ?)",
-              old_name, new_name
-            ])
-          )
-        )
-    end
-
-    def cascade_remove(segment_name)
-      experience.experience_participants
-        .where("? = ANY(segments)", segment_name)
-        .update_all(
-          Arel.sql(
-            ActiveRecord::Base.sanitize_sql_array([
-              "segments = array_remove(segments, ?)",
-              segment_name
-            ])
-          )
-        )
-
-      experience.experience_blocks
-        .where("? = ANY(visible_to_segments)", segment_name)
-        .update_all(
-          Arel.sql(
-            ActiveRecord::Base.sanitize_sql_array([
-              "visible_to_segments = array_remove(visible_to_segments, ?)",
-              segment_name
-            ])
-          )
-        )
-    end
-
-    def trigger_resubscription(participants)
-      participants.each do |participant|
-        stream_key = Experiences::Broadcaster.stream_key_for_participant(participant)
-        ActionCable.server.broadcast(stream_key, {
-          type: "resubscribe_required",
-          reason: "segment_changed",
-          metadata: {
-            participant_id: participant.id,
-            timestamp: Time.current.to_f
-          }
-        })
+        ExperienceParticipantSegment
+          .where(experience_segment_id: segment.id, experience_participant_id: participant_ids)
+          .delete_all
       end
     end
   end

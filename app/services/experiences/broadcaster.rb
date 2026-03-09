@@ -39,21 +39,6 @@ class Experiences::Broadcaster
     send_broadcast(self.class.admin_stream_key(experience), message)
   end
 
-  def self.trigger_resubscription_for_participant(participant)
-    Rails.logger.info(
-      "[Broadcaster] Triggering resubscription for participant " \
-        "#{participant.id} in experience #{participant.experience.code}"
-    )
-
-    ActionCable.server.broadcast(
-      stream_key_for_participant(participant),
-      WebsocketMessageService.resubscribe_required(
-        participant_id: participant.id,
-        reason: 'segments_changed'
-      )
-    )
-  end
-
   def self.monitor_stream_key(experience)
     "experience_#{experience.id}_monitor"
   end
@@ -72,6 +57,7 @@ class Experiences::Broadcaster
         :experience_question_submissions,
         :experience_multistep_form_submissions,
         :experience_mad_lib_submissions,
+        :experience_segments,
         :child_links,
         :parent_links,
         children: [
@@ -79,6 +65,7 @@ class Experiences::Broadcaster
           :experience_question_submissions,
           :experience_multistep_form_submissions,
           :experience_mad_lib_submissions,
+          :experience_segments,
           :child_links,
           :parent_links
         ],
@@ -88,8 +75,8 @@ class Experiences::Broadcaster
       .order(position: :asc)
       .to_a
 
-    # Load all participants with users
-    participants = experience.experience_participants.includes(:user).to_a
+    # Load all participants with users and segments
+    participants = experience.experience_participants.includes(:user, :experience_segments).to_a
 
     # Build in-memory cache of submissions by block_id and user_id
     submissions_cache = build_submissions_cache(blocks)
@@ -266,7 +253,7 @@ class Experiences::Broadcaster
           stream_type: :direct,
           participant_id: participant.id,
           role: participant.role.to_sym,
-          segments: participant.segments || [],
+          segments: participant.segment_names,
           participant: participant_summary,
           include_participants: true,
           participants: preloaded_data&.dig(:participants)

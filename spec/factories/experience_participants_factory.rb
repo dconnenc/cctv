@@ -9,6 +9,22 @@ FactoryBot.define do
 
     name { user&.name || "Test Participant" }
 
+    transient do
+      segments { [] }
+    end
+
+    after(:create) do |participant, evaluator|
+      if evaluator.segments.any?
+        evaluator.segments.each do |name|
+          segment = participant.experience.experience_segments.find_or_create_by!(name: name) do |s|
+            s.color = '#6B7280'
+            s.position = participant.experience.experience_segments.count
+          end
+          ExperienceParticipantSegment.create!(experience_participant: participant, experience_segment: segment)
+        end
+      end
+    end
+
     trait :with_avatar do
       avatar do
         {
