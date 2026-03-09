@@ -4,7 +4,6 @@ module Experiences
       kind:,
       payload: {},
       visible_to_roles: [],
-      visible_to_segments: [],
       target_user_ids: [],
       status: :hidden,
       open_immediately: false,
@@ -21,7 +20,6 @@ module Experiences
             status: status,
             payload: payload,
             visible_to_roles: visible_to_roles,
-            visible_to_segments: visible_to_segments,
             target_user_ids: target_user_ids,
             position: max_position + 1
           )
@@ -591,7 +589,6 @@ module Experiences
       kind:,
       payload: {},
       visible_to_roles: [],
-      visible_to_segments: [],
       target_user_ids: [],
       status: :hidden,
       variables: [],
@@ -608,7 +605,6 @@ module Experiences
             status: status,
             payload: payload.except(:variables, :questions),
             visible_to_roles: visible_to_roles,
-            visible_to_segments: visible_to_segments,
             target_user_ids: target_user_ids,
             position: max_position + 1
           )
@@ -673,11 +669,12 @@ module Experiences
           inputType: variable.datatype == "number" ? "number" : "text"
         },
         visible_to_roles: parent_block.visible_to_roles,
-        visible_to_segments: parent_block.visible_to_segments,
         target_user_ids: [participant.user_id],
         parent_block_id: parent_block.id,
         position: position
       )
+
+      copy_block_segments(from: parent_block, to: child_block)
 
       ExperienceBlockLink.create!(
         parent_block: parent_block,
@@ -694,11 +691,12 @@ module Experiences
         status: parent_block.status,
         payload: source_spec["payload"] || {},
         visible_to_roles: parent_block.visible_to_roles,
-        visible_to_segments: parent_block.visible_to_segments,
         target_user_ids: source_spec["target_user_ids"] || [],
         parent_block_id: parent_block.id,
         position: position
       )
+
+      copy_block_segments(from: parent_block, to: child_block)
 
       ExperienceBlockLink.create!(
         parent_block: parent_block,
@@ -715,12 +713,13 @@ module Experiences
         status: parent_block.status,
         payload: question_spec["payload"] || {},
         visible_to_roles: parent_block.visible_to_roles,
-        visible_to_segments: parent_block.visible_to_segments,
         target_user_ids: [],
         parent_block_id: parent_block.id,
         position: position,
         show_in_lobby: true
       )
+
+      copy_block_segments(from: parent_block, to: child_block)
 
       ExperienceBlockLink.create!(
         parent_block: parent_block,
@@ -729,6 +728,15 @@ module Experiences
       )
 
       child_block
+    end
+
+    def copy_block_segments(from:, to:)
+      segment_ids = from.experience_segment_ids
+      return if segment_ids.empty?
+
+      ExperienceBlockSegment.insert_all(
+        segment_ids.map { |sid| { experience_block_id: to.id, experience_segment_id: sid } }
+      )
     end
 
     def guard_state!(allowed)

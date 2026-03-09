@@ -66,7 +66,7 @@ module Experiences
       return true if moderator_or_host?
 
       targeting_rules_exist = block.visible_to_roles.present? ||
-        block.visible_to_segments.present? ||
+        block.experience_segments.any? ||
         block.target_user_ids.present?
 
       return true unless targeting_rules_exist
@@ -81,7 +81,7 @@ module Experiences
     end
 
     def allowed_from_segments?(block)
-      (block.visible_to_segments & participant.segments).any?
+      (block.visible_to_segment_names & participant.segment_names).any?
     end
 
     def allowed_from_user_target?(block)

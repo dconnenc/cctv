@@ -49,6 +49,9 @@ class ExperienceBlock < ApplicationRecord
     class_name: "ExperienceBlockVariable",
     dependent: :destroy
 
+  has_many :experience_block_segments, dependent: :destroy
+  has_many :experience_segments, through: :experience_block_segments
+
   enum status: {
     hidden: HIDDEN = "hidden",
     open: OPEN = "open",
@@ -57,7 +60,6 @@ class ExperienceBlock < ApplicationRecord
 
   validates :kind, presence: true, inclusion: { in: KINDS }
   validate :visibility_roles
-  validate :visibility_segments
 
   validates :position,
     presence: true,
@@ -202,13 +204,7 @@ class ExperienceBlock < ApplicationRecord
     end
   end
 
-  def visibility_segments
-    return if visible_to_segments.blank?
-
-    defined_names = experience.experience_segments.pluck(:name)
-    invalid = visible_to_segments - defined_names
-    if invalid.any?
-      errors.add(:visible_to_segments, "contain undefined segments: #{invalid.join(', ')}")
-    end
+  def visible_to_segment_names
+    experience_segments.pluck(:name)
   end
 end
