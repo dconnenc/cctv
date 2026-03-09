@@ -37,7 +37,7 @@ RSpec.describe Experiences::Visibility do
           create(
             :experience_block,
             experience: experience,
-            visible_to_segments: [],
+            visible_to_segment_names: [],
             visible_to_roles: [],
             target_user_ids: []
           )
@@ -59,7 +59,7 @@ RSpec.describe Experiences::Visibility do
           create(
             :experience_block,
             experience: experience,
-            visible_to_segments: [user_segment]
+            visible_to_segment_names: [user_segment]
           )
         end
 
@@ -67,7 +67,7 @@ RSpec.describe Experiences::Visibility do
           create(
             :experience_block,
             experience: experience,
-            visible_to_segments: [other_segment]
+            visible_to_segment_names: [other_segment]
           )
         end
 
@@ -176,7 +176,7 @@ RSpec.describe Experiences::Visibility do
             status: closed_block.status,
             payload: closed_block.payload,
             visible_to_roles: closed_block.visible_to_roles,
-            visible_to_segments: closed_block.visible_to_segments
+            visible_to_segments: closed_block.visible_to_segment_names
           })
         end
 
@@ -207,7 +207,7 @@ RSpec.describe Experiences::Visibility do
             status: closed_block.status,
             payload: closed_block.payload,
             visible_to_roles: closed_block.visible_to_roles,
-            visible_to_segments: closed_block.visible_to_segments
+            visible_to_segments: closed_block.visible_to_segment_names
           })
         end
 
@@ -282,7 +282,7 @@ RSpec.describe Experiences::Visibility do
       create(
         :experience_block,
         experience: experience,
-        visible_to_segments: ["vip"]
+        visible_to_segment_names: ["vip"]
       )
     end
 
@@ -290,7 +290,7 @@ RSpec.describe Experiences::Visibility do
       create(
         :experience_block,
         experience: experience,
-        visible_to_segments: ["premium"]
+        visible_to_segment_names: ["premium"]
       )
     end
 
@@ -373,10 +373,10 @@ RSpec.describe Experiences::Visibility do
     let(:visibility) { described_class.new(experience: experience, participant_role: :player, segments: ["vip"]) }
 
     let!(:vip_block) do
-      create(:experience_block, experience: experience, status: :open, visible_to_segments: ["vip"])
+      create(:experience_block, experience: experience, status: :open, visible_to_segment_names: ["vip"])
     end
     let!(:premium_block) do
-      create(:experience_block, experience: experience, status: :open, visible_to_segments: ["premium"])
+      create(:experience_block, experience: experience, status: :open, visible_to_segment_names: ["premium"])
     end
 
     it "returns true for visible blocks" do
@@ -451,10 +451,10 @@ RSpec.describe Experiences::Visibility do
         create(:experience_block, experience: experience, status: :open)
       end
       let!(:vip_block) do
-        create(:experience_block, experience: experience, status: :open, visible_to_segments: ["vip"])
+        create(:experience_block, experience: experience, status: :open, visible_to_segment_names: ["vip"])
       end
       let!(:premium_block) do
-        create(:experience_block, experience: experience, status: :open, visible_to_segments: ["premium"])
+        create(:experience_block, experience: experience, status: :open, visible_to_segment_names: ["premium"])
       end
 
       it "shows global and segment-specific blocks" do
@@ -474,16 +474,16 @@ RSpec.describe Experiences::Visibility do
         create(:experience_block, experience: experience, status: :open)
       end
       let!(:vip_block) do
-        create(:experience_block, experience: experience, status: :open, visible_to_segments: ["vip"])
+        create(:experience_block, experience: experience, status: :open, visible_to_segment_names: ["vip"])
       end
       let!(:premium_block) do
-        create(:experience_block, experience: experience, status: :open, visible_to_segments: ["premium"])
+        create(:experience_block, experience: experience, status: :open, visible_to_segment_names: ["premium"])
       end
       let!(:beta_block) do
-        create(:experience_block, experience: experience, status: :open, visible_to_segments: ["beta"])
+        create(:experience_block, experience: experience, status: :open, visible_to_segment_names: ["beta"])
       end
       let!(:vip_premium_block) do
-        create(:experience_block, experience: experience, status: :open, visible_to_segments: ["vip", "premium"])
+        create(:experience_block, experience: experience, status: :open, visible_to_segment_names: ["vip", "premium"])
       end
 
       it "shows blocks from ALL segments (AND logic)" do
@@ -647,7 +647,7 @@ RSpec.describe Experiences::Visibility do
         experience: experience,
         user_role: user.role,
         participant_role: participant.role,
-        segments: participant.segments,
+        segments: participant.segment_names,
         target_user_ids: [user.id]
       )
     end
@@ -706,7 +706,7 @@ RSpec.describe Experiences::Visibility do
         experience: experience,
         user_role: user.role,
         participant_role: participant.role,
-        segments: participant.segments,
+        segments: participant.segment_names,
         target_user_ids: [user.id]
       )
     end

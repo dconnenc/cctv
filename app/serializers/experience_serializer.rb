@@ -81,7 +81,7 @@ class ExperienceSerializer
         email: participant.user.email,
         status: participant.status,
         role: participant.role,
-        segments: participant.segments || [],
+        segments: participant.segment_names,
         joined_at: participant.joined_at,
         fingerprint: participant.fingerprint,
         created_at: participant.created_at,

@@ -9,12 +9,13 @@ class Api::ExperienceBlocksController < Api::BaseController
         experience: @experience, actor: @user
       )
 
+      segment_ids = create_params[:visible_to_segment_ids] || []
+
       block = if create_params[:variables].present? || create_params[:questions].present?
         orchestrator.add_block_with_dependencies!(
           kind: create_params[:kind],
           payload: create_params[:payload] || {},
           visible_to_roles: create_params[:visible_to_roles] || [],
-          visible_to_segments: create_params[:visible_to_segments] || [],
           target_user_ids: create_params[:target_user_ids] || [],
           status: create_params[:status] || :hidden,
           variables: create_params[:variables] || [],
@@ -25,11 +26,16 @@ class Api::ExperienceBlocksController < Api::BaseController
           kind: create_params[:kind],
           payload: create_params[:payload] || {},
           visible_to_roles: create_params[:visible_to_roles] || [],
-          visible_to_segments: create_params[:visible_to_segments] || [],
           target_user_ids: create_params[:target_user_ids] || [],
           status: create_params[:status] || :hidden,
           open_immediately: create_params[:open_immediately] || false,
           show_in_lobby: create_params[:show_in_lobby] || false
+        )
+      end
+
+      if segment_ids.any?
+        ExperienceBlockSegment.insert_all(
+          segment_ids.map { |sid| { experience_block_id: block.id, experience_segment_id: sid } }
         )
       end
 
@@ -582,7 +588,7 @@ class Api::ExperienceBlocksController < Api::BaseController
       :open_immediately,
       :show_in_lobby,
       visible_to_roles: [],
-      visible_to_segments: [],
+      visible_to_segment_ids: [],
       target_user_ids: []
     )
 
