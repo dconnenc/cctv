@@ -8,4 +8,5 @@ tmp
 app/frontend/tailwind.output.css
 public/vite-test
 public/vite
+public/vite-dev
 storage/
