@@ -20,6 +20,7 @@ class ExperienceSerializer
       updated_at: experience.updated_at,
       blocks: blocks,
       next_block: next_block,
+      playbill_enabled: experience.playbill_enabled,
       playbill: serialize_playbill(experience.playbill),
       segments: serialize_segments(experience)
     }
