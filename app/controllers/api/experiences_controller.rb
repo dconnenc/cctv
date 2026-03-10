@@ -146,6 +146,7 @@ class Api::ExperiencesController < Api::BaseController
     end
 
     @experience.playbill = params[:playbill] || []
+    @experience.playbill_enabled = params[:playbill_enabled] unless params[:playbill_enabled].nil?
 
     if @experience.save
       (params[:playbill] || []).each do |section|
