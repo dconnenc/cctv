@@ -70,11 +70,13 @@ export default function Experience() {
               </div>
             </div>
 
-            <div className={styles.playbillCta}>
-              <Link to={`/experiences/${code}/playbill`}>
-                <Button>Open Playbill</Button>
-              </Link>
-            </div>
+            {experience?.playbill_enabled !== false && (
+              <div className={styles.playbillCta}>
+                <Link to={`/experiences/${code}/playbill`}>
+                  <Button>Open Playbill</Button>
+                </Link>
+              </div>
+            )}
           </div>
         </section>
       );
@@ -137,7 +139,7 @@ export default function Experience() {
                 <Button className={`${styles.actionButton} ${styles.ghostButton}`}>Manage</Button>
               </Link>
             )}
-            {!needsAvatar && (
+            {!needsAvatar && experience?.playbill_enabled !== false && (
               <Link to={`/experiences/${code}/playbill`} className={styles.actionLink}>
                 <Button className={styles.actionButton}>Open Playbill</Button>
               </Link>

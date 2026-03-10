@@ -14,7 +14,8 @@
     "prepare": "husky",
     "shadcn": "yarn dlx shadcn@latest",
     "tailwind:build": "tailwindcss -i ./app/frontend/tailwind.css -o ./app/frontend/tailwind.output.css",
-    "tailwind:watch": "tailwindcss -i ./app/frontend/tailwind.css -o ./app/frontend/tailwind.output.css -w"
+    "tailwind:watch": "tailwindcss -i ./app/frontend/tailwind.css -o ./app/frontend/tailwind.output.css -w",
+    "clean": "taskkill //F //IM ruby.exe"
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx,css,scss,md,json,yml,yaml}": [
