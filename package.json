@@ -7,7 +7,7 @@
     "yarn": ">=1.22.0"
   },
   "scripts": {
-    "dev": "foreman start -f Procfile.dev",
+    "dev": "concurrently --kill-others -n vite,tailwind,web -c blue,magenta,green \"ruby bin/vite dev\" \"yarn tailwind:watch\" \"ruby bin/rails s\"",
     "format": "prettier --write \"{app,config,lib,public}/**/*.{js,jsx,ts,tsx,css,scss,md,json,yml,yaml}\"",
     "format:check": "prettier --check \"{app,config,lib,public}/**/*.{js,jsx,ts,tsx,css,scss,md,json,yml,yaml}\"",
     "typecheck": "tsc --noEmit",
@@ -15,7 +15,7 @@
     "shadcn": "yarn dlx shadcn@latest",
     "tailwind:build": "tailwindcss -i ./app/frontend/tailwind.css -o ./app/frontend/tailwind.output.css",
     "tailwind:watch": "tailwindcss -i ./app/frontend/tailwind.css -o ./app/frontend/tailwind.output.css -w",
-    "clean": "taskkill //F //IM ruby.exe"
+    "clean": "taskkill /F /IM ruby.exe || echo No ruby processes found"
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx,css,scss,md,json,yml,yaml}": [
@@ -53,6 +53,7 @@
     "@types/react": "^19.2.7",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^4.0.2",
+    "concurrently": "^9.2.1",
     "husky": "^9.1.7",
     "lint-staged": "^16.2.0",
     "prettier": "^3.3.3",
