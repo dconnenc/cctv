@@ -223,7 +223,7 @@ class BlockSerializer
       response
 
     when ExperienceBlock::BUZZER
-      submissions = block.experience_buzzer_submissions.order("answer->>'buzzed_at' ASC")
+      submissions = block.experience_buzzer_submissions.order(Arel.sql("answer->>'buzzed_at' ASC"))
       total = submissions.count
       user_response = submissions.find { |s| s.user_id == user&.id }
 
@@ -378,7 +378,7 @@ class BlockSerializer
       response
 
     when ExperienceBlock::BUZZER
-      submissions = block.experience_buzzer_submissions.order("answer->>'buzzed_at' ASC")
+      submissions = block.experience_buzzer_submissions.order(Arel.sql("answer->>'buzzed_at' ASC"))
       total = submissions.count
 
       {
