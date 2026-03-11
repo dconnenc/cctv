@@ -32,16 +32,14 @@ export default function Poll({
   disabled = false,
   viewContext = 'participant',
 }: PollProps) {
-  const [submittedValue, setSubmittedValue] = useState<string[]>([]);
-  const { submitPollResponse, isLoading, error } = useSubmitPollResponse();
-  const userAlreadyResponded = responses?.user_responded || false;
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { submitPollResponse, error } = useSubmitPollResponse();
 
   const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = getFormData<{ selectedOptions: string[] }>(e.currentTarget);
     const selectedOptions = formData.selectedOptions;
 
-    // Get the block ID from props or URL query params
     const actualBlockId = blockId || new URLSearchParams(window.location.search).get('blockId');
 
     if (!actualBlockId) {
@@ -54,6 +52,8 @@ export default function Poll({
       return;
     }
 
+    setIsSubmitting(true);
+
     const response = await submitPollResponse({
       blockId: actualBlockId,
       answer: {
@@ -62,22 +62,29 @@ export default function Poll({
       },
     });
 
-    if (response?.success) {
-      setSubmittedValue(selectedOptions);
+    if (!response?.success) {
+      setIsSubmitting(false);
     }
   };
 
-  if (submittedValue.length > 0 || userAlreadyResponded) {
+  if (responses?.user_responded) {
     const displayValue =
-      submittedValue.length > 0
-        ? submittedValue.join(', ')
-        : responses?.user_response?.answer?.selectedOptions?.join(', ') ||
-          'You have already responded to this poll.';
+      responses?.user_response?.answer?.selectedOptions?.join(', ') ||
+      'You have already responded to this poll.';
 
     return (
       <div className={styles.submittedValue}>
         <p className={styles.legend}>{question}</p>
         <p className={styles.value}>{displayValue}</p>
+      </div>
+    );
+  }
+
+  if (isSubmitting) {
+    return (
+      <div className={styles.submittedValue}>
+        <p className={styles.legend}>{question}</p>
+        <p className={styles.value}>Submitting...</p>
       </div>
     );
   }
@@ -104,9 +111,7 @@ export default function Poll({
             disabled={disabled}
           />
         ))}
-        <Button type="submit" loading={isLoading} loadingText="Submitting...">
-          Submit
-        </Button>
+        <Button type="submit">Submit</Button>
       </fieldset>
     </form>
   );

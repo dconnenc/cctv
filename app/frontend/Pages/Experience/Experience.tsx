@@ -2,6 +2,8 @@ import { useEffect } from 'react';
 
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 
+import { BookOpen } from 'lucide-react';
+
 import { ParticipantsList } from '@cctv/components';
 import { useExperience } from '@cctv/contexts/ExperienceContext';
 import { useUser } from '@cctv/contexts/UserContext';
@@ -71,11 +73,13 @@ export default function Experience() {
             </div>
 
             {experience?.playbill_enabled !== false && (
-              <div className={styles.playbillCta}>
-                <Link to={`/experiences/${code}/playbill`}>
-                  <Button>Open Playbill</Button>
-                </Link>
-              </div>
+              <Link
+                to={`/experiences/${code}/playbill`}
+                className={styles.fab}
+                aria-label="Open Playbill"
+              >
+                <BookOpen size={22} />
+              </Link>
             )}
           </div>
         </section>
@@ -188,6 +192,14 @@ export default function Experience() {
               </div>
             )}
           </div>
+
+          <Link
+            to={`/experiences/${code}/playbill`}
+            className={styles.fab}
+            aria-label="Open Playbill"
+          >
+            <BookOpen size={22} />
+          </Link>
         </div>
       </section>
     );
