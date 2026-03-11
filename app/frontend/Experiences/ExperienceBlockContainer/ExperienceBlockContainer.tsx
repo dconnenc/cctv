@@ -69,7 +69,7 @@ export default function ExperienceBlockContainer({
     case BlockKind.MAD_LIB:
       return <MadLib responses={block.responses} parts={block.payload.parts} />;
     case BlockKind.FAMILY_FEUD:
-      return <FamilyFeud {...block.payload} />;
+      return <FamilyFeud {...block.payload} contained={viewContext !== 'participant'} />;
     case BlockKind.PHOTO_UPLOAD:
       return (
         <PhotoUpload

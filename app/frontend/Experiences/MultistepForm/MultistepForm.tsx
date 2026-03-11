@@ -64,7 +64,7 @@ export default function MultistepForm({
 
     setIsSubmitting(true);
 
-    const response = await submitMultistepFormResponse({
+    await submitMultistepFormResponse({
       blockId: actualBlockId,
       answer: {
         responses: formData as Record<string, string>,
@@ -72,9 +72,7 @@ export default function MultistepForm({
       },
     });
 
-    if (!response?.success) {
-      setIsSubmitting(false);
-    }
+    setIsSubmitting(false);
   };
 
   const handleInvalidForm = (e: FormEvent<HTMLFormElement>) => {

@@ -124,22 +124,53 @@
   position: fixed;
   inset: 0;
   z-index: 1001;
-  background: hsl(var(--foreground) / 0.18);
+  background: hsl(var(--foreground) / 0.18) !important;
   backdrop-filter: blur(2px);
+  padding: 0 !important;
+  border: none !important;
 }
 
-.topnav__dropdownInner .link {
+.mobileBackdrop:hover {
+  background: hsl(var(--foreground) / 0.18) !important;
+}
+
+.topnav__dropdownInner :global(.link) {
   width: 100%;
-  text-align: center;
+  text-align: left;
+  font-size: 1.25rem;
   color: hsl(var(--popover-foreground));
   text-shadow: none;
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
 }
 
-/* Ensure dropdown trigger line centers like other items in mobile menu */
+.topnav__dropdownInner :global(.link):last-child {
+  justify-content: center;
+}
+
+.topnav__dropdownInner .switch {
+  width: 3.25rem;
+  height: 1.75rem;
+}
+
+.topnav__dropdownInner .switch :global(.switchThumb) {
+  width: 1.375rem;
+  height: 1.375rem;
+}
+
+.topnav__dropdownInner .switch :global(.switchThumb[data-state='checked']) {
+  --tw-translate-x: 1.5rem !important;
+}
+
+.topnav__dropdownInner .switch :global(.switchThumb[data-state='unchecked']) {
+  --tw-translate-x: 0.125rem !important;
+}
+
 .topnav__dropdownInner .dropdown {
   width: 100%;
   display: flex;
-  justify-content: center;
+  justify-content: flex-start;
 }
 
 .topnav__controlRow {
@@ -173,8 +204,8 @@
 .switchLabel {
   display: flex;
   align-items: center;
-  height: 20px; /* match switch track height (h-5) */
-  font-size: 0.5rem;
+  height: 20px;
+  font-size: 1.25rem;
   line-height: 1;
   opacity: 0.85;
 }
