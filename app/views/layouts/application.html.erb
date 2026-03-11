@@ -4,6 +4,8 @@
     <title><%= content_for(:title) || "cctv" %></title>
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#1a1a1a">
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
 
@@ -19,6 +21,8 @@
           }
           d.setAttribute('data-theme', t);
           if (t === 'dark') d.classList.add('dark'); else d.classList.remove('dark');
+          var tc = document.querySelector('meta[name="theme-color"]');
+          if (tc) tc.setAttribute('content', t === 'dark' ? '#1a1a1a' : '#ffffff');
           var bg = localStorage.getItem('ui.bgAnimated');
           d.setAttribute('data-bg', bg === 'false' ? 'solid' : 'animated');
         } catch (e) { /* no-op */ }

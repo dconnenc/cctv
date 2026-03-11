@@ -5,9 +5,11 @@ import XAnimation from './XAnimation';
 
 import styles from './FamilyFeud.module.scss';
 
-interface FamilyFeudProps extends FamilyFeudPayload {}
+interface FamilyFeudProps extends FamilyFeudPayload {
+  contained?: boolean;
+}
 
-export default function FamilyFeud({ title, game_state }: FamilyFeudProps) {
+export default function FamilyFeud({ title, game_state, contained }: FamilyFeudProps) {
   if (!game_state || game_state.phase === 'gathering') {
     return (
       <div className={styles.root}>
@@ -35,7 +37,7 @@ export default function FamilyFeud({ title, game_state }: FamilyFeudProps) {
           <BucketCard key={bucket.bucket_id} bucket={bucket} index={index} />
         ))}
       </div>
-      <XAnimation show={game_state.show_x} />
+      <XAnimation show={game_state.show_x} contained={contained} />
     </div>
   );
 }
