@@ -186,6 +186,10 @@ class ExperienceBlock < ApplicationRecord
     result.map { |row| row['id'] }
   end
 
+  def visible_to_segment_names
+    experience_segments.pluck(:name)
+  end
+
   private
 
   def sync_parent_from_links
@@ -202,9 +206,5 @@ class ExperienceBlock < ApplicationRecord
     if invalid.any?
       errors.add(:visible_to_roles, "contain invalid roles: #{invalid.join(", ")}")
     end
-  end
-
-  def visible_to_segment_names
-    experience_segments.pluck(:name)
   end
 end
