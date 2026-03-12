@@ -11,33 +11,30 @@ export interface SubmitMultistepFormResponseParams {
   };
 }
 
-export interface SubmitMultistepFormResponseResponse {
+export interface SubmitMultistepFormResponseResult {
   success: boolean;
-  data?: any;
   error?: string;
 }
 
 export function useSubmitMultistepFormResponse() {
   const { code, experienceFetch } = useExperience();
-  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const submitMultistepFormResponse = useCallback(
     async ({
       blockId,
       answer,
-    }: SubmitMultistepFormResponseParams): Promise<SubmitMultistepFormResponseResponse | null> => {
+    }: SubmitMultistepFormResponseParams): Promise<SubmitMultistepFormResponseResult> => {
       if (!code) {
         setError('Missing experience code');
-        return null;
+        return { success: false, error: 'Missing experience code' };
       }
 
       if (!blockId) {
         setError('Missing block ID');
-        return null;
+        return { success: false, error: 'Missing block ID' };
       }
 
-      setIsLoading(true);
       setError(null);
 
       qaLogger(`Submitting multistep form response for block ${blockId} in experience ${code}`);
@@ -51,7 +48,7 @@ export function useSubmitMultistepFormResponse() {
           },
         );
 
-        const data: SubmitMultistepFormResponseResponse = await res.json();
+        const data = await res.json();
 
         if (!data?.success) {
           const msg = data?.error || 'Multistep form submission failed';
@@ -60,7 +57,7 @@ export function useSubmitMultistepFormResponse() {
         }
 
         qaLogger('Successfully submitted multistep form response');
-        return data;
+        return { success: true };
       } catch (e: any) {
         const msg =
           e?.message === 'Authentication expired'
@@ -68,17 +65,10 @@ export function useSubmitMultistepFormResponse() {
             : 'Connection error. Please try again.';
         setError(msg);
         return { success: false, error: msg };
-      } finally {
-        setIsLoading(false);
       }
     },
     [code, experienceFetch],
   );
 
-  return {
-    submitMultistepFormResponse,
-    isLoading,
-    error,
-    setError,
-  };
+  return { submitMultistepFormResponse, error, setError };
 }

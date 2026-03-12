@@ -11,33 +11,27 @@ export interface SubmitPollResponseParams {
   };
 }
 
-export interface SubmitPollResponseResponse {
+export interface SubmitPollResponseResult {
   success: boolean;
-  data?: any;
   error?: string;
 }
 
 export function useSubmitPollResponse() {
   const { code, experienceFetch } = useExperience();
-  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const submitPollResponse = useCallback(
-    async ({
-      blockId,
-      answer,
-    }: SubmitPollResponseParams): Promise<SubmitPollResponseResponse | null> => {
+    async ({ blockId, answer }: SubmitPollResponseParams): Promise<SubmitPollResponseResult> => {
       if (!code) {
         setError('Missing experience code');
-        return null;
+        return { success: false, error: 'Missing experience code' };
       }
 
       if (!blockId) {
         setError('Missing block ID');
-        return null;
+        return { success: false, error: 'Missing block ID' };
       }
 
-      setIsLoading(true);
       setError(null);
 
       qaLogger(`Submitting poll response for block ${blockId} in experience ${code}`);
@@ -51,7 +45,7 @@ export function useSubmitPollResponse() {
           },
         );
 
-        const data: SubmitPollResponseResponse = await res.json();
+        const data = await res.json();
 
         if (!data?.success) {
           const msg = data?.error || 'Poll submission failed';
@@ -60,7 +54,7 @@ export function useSubmitPollResponse() {
         }
 
         qaLogger('Successfully submitted poll response');
-        return data;
+        return { success: true };
       } catch (e: any) {
         const msg =
           e?.message === 'Authentication expired'
@@ -68,17 +62,10 @@ export function useSubmitPollResponse() {
             : 'Connection error. Please try again.';
         setError(msg);
         return { success: false, error: msg };
-      } finally {
-        setIsLoading(false);
       }
     },
     [code, experienceFetch],
   );
 
-  return {
-    submitPollResponse,
-    isLoading,
-    error,
-    setError,
-  };
+  return { submitPollResponse, error, setError };
 }
