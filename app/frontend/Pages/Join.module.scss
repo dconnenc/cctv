@@ -18,3 +18,36 @@
 .error {
   margin-top: var(--space-xs);
 }
+
+.qrSection {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-sm);
+  margin-top: var(--space-md);
+  width: 100%;
+  max-width: 20rem;
+}
+
+.qrReader {
+  width: 100%;
+  border-radius: 0.5rem;
+  overflow: hidden;
+}
+
+.qrButton {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: var(--space-xs) var(--space-sm);
+  border-radius: 0.5rem;
+  border: 1px solid hsl(var(--border));
+  background: transparent;
+  color: hsl(var(--foreground));
+  cursor: pointer;
+  font-size: 0.875rem;
+}
+
+.qrButton:hover {
+  background: hsl(var(--muted));
+}

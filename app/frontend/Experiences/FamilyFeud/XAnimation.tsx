@@ -6,9 +6,10 @@ import styles from './XAnimation.module.scss';
 
 interface XAnimationProps {
   show: boolean;
+  contained?: boolean;
 }
 
-export default function XAnimation({ show }: XAnimationProps) {
+export default function XAnimation({ show, contained }: XAnimationProps) {
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
@@ -22,7 +23,7 @@ export default function XAnimation({ show }: XAnimationProps) {
   if (!isVisible) return null;
 
   return (
-    <div className={styles.overlay}>
+    <div className={`${styles.overlay} ${contained ? styles.contained : ''}`}>
       <div className={styles.xContainer}>
         <X className={styles.xIcon} size={200} strokeWidth={8} />
       </div>

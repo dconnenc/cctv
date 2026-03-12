@@ -109,14 +109,7 @@ module SystemHelpers
     fill_in placeholder: "Your Name", with: name
     click_button "Register"
 
-    sleep 0.5
-
-    # This assertion ins't super useful as the experience name shows up often
-    # The landing page here is dependent on the state of the experience so the
-    # caller needs to be responsible.
-    #
-    # A toast showing success, would work, but for now the above sleep and this
-    # are workarounds
+    expect(page).not_to have_current_path(/register/)
     expect(page).to have_text(experience_name)
   end
 
