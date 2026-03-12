@@ -118,7 +118,7 @@ export function useAssignSegment() {
   const [error, setError] = useState<string | null>(null);
 
   const assignSegment = useCallback(
-    async (segmentId: string, participantIds: string[], action: 'add' | 'remove' = 'add') => {
+    async (segmentId: string, participantIds: string[], assignAction: 'add' | 'remove' = 'add') => {
       if (!code) return false;
       setIsLoading(true);
       setError(null);
@@ -127,7 +127,7 @@ export function useAssignSegment() {
           `/api/experiences/${encodeURIComponent(code)}/segments/${segmentId}/assign`,
           {
             method: 'POST',
-            body: JSON.stringify({ participant_ids: participantIds, action }),
+            body: JSON.stringify({ participant_ids: participantIds, assign_action: assignAction }),
           },
         );
         const data = await res.json();

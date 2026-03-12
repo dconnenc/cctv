@@ -4,12 +4,12 @@ module Experiences
       actor_action do
         authorize! experience, to: :manage_blocks?, with: ExperiencePolicy
 
-        max_position = experience.experience_segments.maximum(:position) || -1
+        position = (experience.experience_segments.maximum(:position) || -1) + 1
 
         experience.experience_segments.create!(
           name: name,
           color: color,
-          position: max_position + 1
+          position: position
         )
       end
     end
@@ -46,14 +46,18 @@ module Experiences
         segment = experience.experience_segments.find(segment_id)
 
         existing_ids = ExperienceParticipantSegment
-          .where(experience_segment_id: segment.id, experience_participant_id: participant_ids)
-          .pluck(:experience_participant_id)
+          .where(
+            experience_segment_id: segment.id,
+            experience_participant_id: participant_ids
+          ).pluck(:experience_participant_id)
 
         new_ids = participant_ids - existing_ids
 
         if new_ids.any?
           ExperienceParticipantSegment.insert_all(
-            new_ids.map { |id| { experience_participant_id: id, experience_segment_id: segment.id } }
+            new_ids.map do |id|
+              { experience_participant_id: id, experience_segment_id: segment.id }
+            end
           )
         end
       end
@@ -66,8 +70,10 @@ module Experiences
         segment = experience.experience_segments.find(segment_id)
 
         ExperienceParticipantSegment
-          .where(experience_segment_id: segment.id, experience_participant_id: participant_ids)
-          .delete_all
+          .where(
+            experience_segment_id: segment.id,
+            experience_participant_id: participant_ids
+          ).delete_all
       end
     end
   end
