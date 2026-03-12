@@ -51,7 +51,7 @@ class Api::ExperienceSegmentsController < Api::BaseController
   # POST /api/experiences/:experience_id/segments/:id/assign
   def assign
     with_experience_orchestration do
-      if assign_params[:action] == 'remove'
+      if assign_params[:assign_action] == 'remove'
         orchestrator.remove_participants!(
           segment_id: params[:id],
           participant_ids: assign_params[:participant_ids]
@@ -84,7 +84,7 @@ class Api::ExperienceSegmentsController < Api::BaseController
   end
 
   def assign_params
-    params.permit(:action, participant_ids: [])
+    params.permit(:assign_action, participant_ids: [])
   end
 
   def serialize_segment(segment)

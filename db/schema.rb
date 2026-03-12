@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_03_10_000001) do
+ActiveRecord::Schema[7.2].define(version: 2026_03_12_143222) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "citext"
   enable_extension "plpgsql"
@@ -219,7 +219,7 @@ ActiveRecord::Schema[7.2].define(version: 2026_03_10_000001) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["experience_id", "name"], name: "index_experience_segments_on_experience_id_and_name", unique: true
-    t.index ["experience_id", "position"], name: "index_experience_segments_on_experience_id_and_position"
+    t.index ["experience_id", "position"], name: "index_experience_segments_on_experience_id_and_position", unique: true
   end
 
   create_table "experiences", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|

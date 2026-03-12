@@ -10,3 +10,4 @@ public/vite-test
 public/vite
 public/vite-dev
 storage/
+.claude/settings.local.json
