@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { ChevronLeft } from 'lucide-react';
 
 import { useExperience } from '@cctv/contexts/ExperienceContext';
+import { Button } from '@cctv/core';
 
 import styles from './Playbill.module.scss';
 
