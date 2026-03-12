@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { ChevronLeft } from 'lucide-react';
 
 import { useExperience } from '@cctv/contexts/ExperienceContext';
+import { Button } from '@cctv/core';
 
 import styles from './Playbill.module.scss';
 
@@ -23,6 +24,18 @@ export default function Playbill() {
       <section className="page">
         <h1 className={styles.title}>{code || 'Playbill'}</h1>
         <p className={styles.subtitle}>{error}</p>
+      </section>
+    );
+  }
+
+  if (experience?.playbill_enabled === false) {
+    return (
+      <section className={styles.root}>
+        <Link to={`/experiences/${code}`} className={styles.backLink}>
+          <Button className={styles.backButton}>Back to Experience</Button>
+        </Link>
+        <h1 className={styles.title}>{experience?.name || code}</h1>
+        <p className={styles.subtitle}>The playbill is not available for this experience.</p>
       </section>
     );
   }

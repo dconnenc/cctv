@@ -97,7 +97,7 @@ export default function Join() {
       await scanner.start(
         { facingMode: 'environment' },
         { fps: 10, qrbox: 200 },
-        (decodedText) => {
+        (decodedText: string) => {
           const extracted = extractCodeFromQr(decodedText);
           setCode(extracted);
           stopScanner();

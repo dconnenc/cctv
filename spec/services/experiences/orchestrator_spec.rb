@@ -227,7 +227,7 @@ RSpec.describe Experiences::Orchestrator do
     let(:kind) { "poll" }
     let(:payload) { { question: "Test question?" } }
     let(:visible_to_roles) { [] }
-    let(:visible_to_segments) { [] }
+
     let(:target_user_ids) { [] }
     let(:status) { :hidden }
     let(:open_immediately) { false }
@@ -238,7 +238,7 @@ RSpec.describe Experiences::Orchestrator do
         kind: kind,
         payload: payload,
         visible_to_roles: visible_to_roles,
-        visible_to_segments: visible_to_segments,
+
         target_user_ids: target_user_ids,
         status: status,
         open_immediately: open_immediately,
@@ -298,7 +298,7 @@ RSpec.describe Experiences::Orchestrator do
     let(:kind) { "mad_lib" }
     let(:payload) { { template: "Hello {name}!" } }
     let(:visible_to_roles) { [] }
-    let(:visible_to_segments) { [] }
+
     let(:target_user_ids) { [] }
     let(:status) { :hidden }
     let(:variables) { [] }
@@ -308,7 +308,7 @@ RSpec.describe Experiences::Orchestrator do
         kind: kind,
         payload: payload,
         visible_to_roles: visible_to_roles,
-        visible_to_segments: visible_to_segments,
+
         target_user_ids: target_user_ids,
         status: status,
         variables: variables
@@ -587,7 +587,7 @@ RSpec.describe Experiences::Orchestrator do
 
     context "when updating an existing submission" do
       let(:participant_role) { ExperienceParticipant.roles[:audience] }
-      let(:old_answer) { block_kind == "poll" ? "old_answer" : { "name" => "old_name" } }
+      let(:old_answer) { { "name" => "old_name" } }
 
       before do
         create(
@@ -607,7 +607,7 @@ RSpec.describe Experiences::Orchestrator do
   end
 
   describe "#submit_poll_response!" do
-    let(:answer) { "option_a" }
+    let(:answer) { { "selectedOptions" => ["option_a"], "submittedAt" => "2026-01-01T00:00:00.000Z" } }
 
     it_behaves_like "a submission method",
       :submit_poll_response!,

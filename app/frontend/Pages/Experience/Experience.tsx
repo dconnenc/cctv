@@ -72,13 +72,15 @@ export default function Experience() {
               </div>
             </div>
 
-            <Link
-              to={`/experiences/${code}/playbill`}
-              className={styles.fab}
-              aria-label="Open Playbill"
-            >
-              <BookOpen size={22} />
-            </Link>
+            {experience?.playbill_enabled !== false && (
+              <Link
+                to={`/experiences/${code}/playbill`}
+                className={styles.fab}
+                aria-label="Open Playbill"
+              >
+                <BookOpen size={22} />
+              </Link>
+            )}
           </div>
         </section>
       );
@@ -141,7 +143,7 @@ export default function Experience() {
                 <Button className={`${styles.actionButton} ${styles.ghostButton}`}>Manage</Button>
               </Link>
             )}
-            {!needsAvatar && (
+            {!needsAvatar && experience?.playbill_enabled !== false && (
               <Link to={`/experiences/${code}/playbill`} className={styles.actionLink}>
                 <Button className={styles.actionButton}>Open Playbill</Button>
               </Link>

@@ -4,7 +4,6 @@ module Experiences
       kind:,
       payload: {},
       visible_to_roles: [],
-      visible_to_segments: [],
       target_user_ids: [],
       status: :hidden,
       open_immediately: false,
@@ -21,7 +20,6 @@ module Experiences
             status: status,
             payload: payload,
             visible_to_roles: visible_to_roles,
-            visible_to_segments: visible_to_segments,
             target_user_ids: target_user_ids,
             position: max_position + 1
           )
@@ -133,8 +131,12 @@ module Experiences
           user_id: actor.id
         )
 
+        old_selected = submission.persisted? ? Array(submission.answer&.dig("selectedOptions")) : []
+
         submission.answer = answer
         submission.save!
+
+        apply_poll_segment_assignments(block, old_selected, Array(answer&.dig("selectedOptions")))
 
         submission
       end
@@ -221,6 +223,37 @@ module Experiences
         end
 
         submission
+      end
+    end
+
+    def submit_buzzer_response!(block_id:, answer:)
+      actor_action do
+        block = experience.experience_blocks.find(block_id)
+
+        authorize! block, to: :submit_buzzer_response?, with: ExperienceBlockPolicy
+
+        submission = ExperienceBuzzerSubmission.find_or_initialize_by(
+          experience_block_id: block.id,
+          user_id: actor.id
+        )
+
+        return submission unless submission.new_record?
+
+        submission.answer = answer
+        submission.save!
+
+        submission
+      end
+    end
+
+    def clear_buzzer_responses!(block_id:)
+      actor_action do
+        authorize! experience, to: :manage_blocks?, with: ExperiencePolicy
+
+        block = experience.experience_blocks.find(block_id)
+        block.experience_buzzer_submissions.delete_all
+
+        block
       end
     end
 
@@ -560,7 +593,6 @@ module Experiences
       kind:,
       payload: {},
       visible_to_roles: [],
-      visible_to_segments: [],
       target_user_ids: [],
       status: :hidden,
       variables: [],
@@ -577,7 +609,6 @@ module Experiences
             status: status,
             payload: payload.except(:variables, :questions),
             visible_to_roles: visible_to_roles,
-            visible_to_segments: visible_to_segments,
             target_user_ids: target_user_ids,
             position: max_position + 1
           )
@@ -642,11 +673,12 @@ module Experiences
           inputType: variable.datatype == "number" ? "number" : "text"
         },
         visible_to_roles: parent_block.visible_to_roles,
-        visible_to_segments: parent_block.visible_to_segments,
         target_user_ids: [participant.user_id],
         parent_block_id: parent_block.id,
         position: position
       )
+
+      copy_block_segments(from: parent_block, to: child_block)
 
       ExperienceBlockLink.create!(
         parent_block: parent_block,
@@ -663,11 +695,12 @@ module Experiences
         status: parent_block.status,
         payload: source_spec["payload"] || {},
         visible_to_roles: parent_block.visible_to_roles,
-        visible_to_segments: parent_block.visible_to_segments,
         target_user_ids: source_spec["target_user_ids"] || [],
         parent_block_id: parent_block.id,
         position: position
       )
+
+      copy_block_segments(from: parent_block, to: child_block)
 
       ExperienceBlockLink.create!(
         parent_block: parent_block,
@@ -684,12 +717,13 @@ module Experiences
         status: parent_block.status,
         payload: question_spec["payload"] || {},
         visible_to_roles: parent_block.visible_to_roles,
-        visible_to_segments: parent_block.visible_to_segments,
         target_user_ids: [],
         parent_block_id: parent_block.id,
         position: position,
         show_in_lobby: true
       )
+
+      copy_block_segments(from: parent_block, to: child_block)
 
       ExperienceBlockLink.create!(
         parent_block: parent_block,
@@ -698,6 +732,48 @@ module Experiences
       )
 
       child_block
+    end
+
+    def apply_poll_segment_assignments(block, old_selected, new_selected)
+      assignments = block.payload&.dig("segmentAssignments")
+      return if assignments.blank?
+
+      participant = experience.experience_participants.find_by(user_id: actor.id)
+      return unless participant
+
+      # Remove segments from previously selected options that are no longer selected
+      removed_options = old_selected - new_selected
+      segments_to_remove = removed_options.filter_map { |opt| assignments[opt] }
+      if segments_to_remove.any?
+        ExperienceParticipantSegment
+          .where(experience_participant_id: participant.id, experience_segment_id: segments_to_remove)
+          .delete_all
+      end
+
+      # Add segments for newly selected options
+      added_options = new_selected - old_selected
+      segments_to_add = added_options.filter_map { |opt| assignments[opt] }
+      if segments_to_add.any?
+        existing = ExperienceParticipantSegment
+          .where(experience_participant_id: participant.id, experience_segment_id: segments_to_add)
+          .pluck(:experience_segment_id)
+
+        new_segments = segments_to_add - existing
+        if new_segments.any?
+          ExperienceParticipantSegment.insert_all(
+            new_segments.map { |sid| { experience_participant_id: participant.id, experience_segment_id: sid } }
+          )
+        end
+      end
+    end
+
+    def copy_block_segments(from:, to:)
+      segment_ids = from.experience_segment_ids
+      return if segment_ids.empty?
+
+      ExperienceBlockSegment.insert_all(
+        segment_ids.map { |sid| { experience_block_id: to.id, experience_segment_id: sid } }
+      )
     end
 
     def guard_state!(allowed)

@@ -222,6 +222,25 @@ class BlockSerializer
 
       response
 
+    when ExperienceBlock::BUZZER
+      submissions = block.experience_buzzer_submissions.order(Arel.sql("answer->>'buzzed_at' ASC"))
+      total = submissions.count
+      user_response = submissions.find { |s| s.user_id == user&.id }
+
+      {
+        total: total,
+        user_responded: user_response.present?,
+        user_response: user_response ? { id: user_response.id, answer: user_response.answer } : nil,
+        all_responses: submissions.map do |submission|
+          {
+            id: submission.id,
+            user_id: submission.user_id,
+            answer: submission.answer,
+            created_at: submission.created_at
+          }
+        end
+      }
+
     else
       {}
     end
@@ -358,6 +377,24 @@ class BlockSerializer
 
       response
 
+    when ExperienceBlock::BUZZER
+      submissions = block.experience_buzzer_submissions.order(Arel.sql("answer->>'buzzed_at' ASC"))
+      total = submissions.count
+
+      {
+        total: total,
+        user_response: nil,
+        user_responded: false,
+        all_responses: submissions.map do |submission|
+          {
+            id: submission.id,
+            user_id: submission.user_id,
+            answer: submission.answer,
+            created_at: submission.created_at
+          }
+        end
+      }
+
     else
       {}
     end
@@ -368,7 +405,7 @@ class BlockSerializer
 
     {
       visible_to_roles: block.visible_to_roles,
-      visible_to_segments: block.visible_to_segments,
+      visible_to_segments: block.visible_to_segment_names,
       target_user_ids: block.target_user_ids,
       show_in_lobby: block.show_in_lobby
     }

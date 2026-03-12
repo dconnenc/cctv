@@ -1,6 +1,7 @@
 import { Block, BlockKind, ParticipantSummary } from '@cctv/types';
 
 import Announcement from '../Announcement/Announcement';
+import Buzzer from '../Buzzer/Buzzer';
 import FamilyFeud from '../FamilyFeud/FamilyFeud';
 import MadLib from '../MadLib/MadLib';
 import MultistepForm from '../MultistepForm/MultistepForm';
@@ -79,6 +80,8 @@ export default function ExperienceBlockContainer({
           disabled={disabled}
         />
       );
+    case BlockKind.BUZZER:
+      return <Buzzer block={block} viewContext={viewContext} />;
     default:
       const exhaustiveCheck: never = block;
       return (

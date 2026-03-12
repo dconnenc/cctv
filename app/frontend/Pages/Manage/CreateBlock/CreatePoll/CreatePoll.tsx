@@ -1,3 +1,4 @@
+import { useExperience } from '@cctv/contexts/ExperienceContext';
 import { Button } from '@cctv/core/Button/Button';
 import { Dropdown } from '@cctv/core/Dropdown/Dropdown';
 import { TextInput } from '@cctv/core/TextInput/TextInput';
@@ -18,6 +19,7 @@ export const getDefaultPollState = (): PollData => {
     question: '',
     options: ['', ''],
     pollType: 'single',
+    segmentAssignments: {},
   };
 };
 
@@ -38,12 +40,25 @@ export const validatePoll = (data: PollData): string | null => {
 export const buildPollPayload = (data: PollData): PollApiPayload => {
   const validOptions = data.options.filter((opt) => opt.trim() !== '');
 
-  return {
+  const payload: PollApiPayload = {
     type: BlockKind.POLL,
     question: data.question.trim(),
     options: validOptions,
     pollType: data.pollType,
   };
+
+  // Only include segment assignments that map to valid options
+  const validAssignments: Record<string, string> = {};
+  for (const option of validOptions) {
+    if (data.segmentAssignments[option]) {
+      validAssignments[option] = data.segmentAssignments[option];
+    }
+  }
+  if (Object.keys(validAssignments).length > 0) {
+    payload.segmentAssignments = validAssignments;
+  }
+
+  return payload;
 };
 
 export const canPollOpenImmediately = (
@@ -62,6 +77,9 @@ export const processPollBeforeSubmit = (
 };
 
 export default function CreatePoll({ data, onChange }: BlockComponentProps<PollData>) {
+  const { experience } = useExperience();
+  const definedSegments = experience?.segments || [];
+
   const updateData = (updates: Partial<PollData>) => {
     onChange?.(updates);
   };
@@ -76,15 +94,41 @@ export default function CreatePoll({ data, onChange }: BlockComponentProps<PollD
       return; // Don't remove if only 2 options left
     }
 
+    const removedOption = data.options[index];
     const newOptions = data.options.filter((_, i) => i !== index);
-    onChange?.({ options: newOptions });
+
+    // Clean up segment assignment for removed option
+    const newAssignments = { ...data.segmentAssignments };
+    delete newAssignments[removedOption];
+
+    onChange?.({ options: newOptions, segmentAssignments: newAssignments });
   };
 
   const updateOption = (index: number, value: string) => {
+    const oldValue = data.options[index];
     const newOptions = [...data.options];
     newOptions[index] = value;
-    onChange?.({ options: newOptions });
+
+    // Move segment assignment to new option name
+    const newAssignments = { ...data.segmentAssignments };
+    if (oldValue in newAssignments) {
+      newAssignments[value] = newAssignments[oldValue];
+      delete newAssignments[oldValue];
+    }
+
+    onChange?.({ options: newOptions, segmentAssignments: newAssignments });
   };
+
+  const updateSegmentAssignment = (option: string, segmentId: string) => {
+    const newAssignments = { ...data.segmentAssignments };
+    if (segmentId) {
+      newAssignments[option] = segmentId;
+    } else {
+      delete newAssignments[option];
+    }
+    updateData({ segmentAssignments: newAssignments });
+  };
+
   return (
     <div className={sharedStyles.columns}>
       <div className={sharedStyles.column}>
@@ -119,6 +163,17 @@ export default function CreatePoll({ data, onChange }: BlockComponentProps<PollD
                 value={option}
                 onChange={(e) => updateOption(index, e.target.value)}
               />
+              {definedSegments.length > 0 && option.trim() !== '' && (
+                <Dropdown
+                  label="Assign segment"
+                  options={[
+                    { label: 'None', value: '' },
+                    ...definedSegments.map((s) => ({ label: s.name, value: s.id })),
+                  ]}
+                  value={data.segmentAssignments[option] || ''}
+                  onChange={(value) => updateSegmentAssignment(option, value)}
+                />
+              )}
               {data.options.length > 2 && (
                 <Button type="button" onClick={() => removeOption(index)}>
                   Remove
