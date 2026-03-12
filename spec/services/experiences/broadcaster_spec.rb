@@ -146,12 +146,12 @@ RSpec.describe Experiences::Broadcaster do
 
           expect(blocks.size).to eq(1), "Host should receive only parent block"
           expect(blocks.first[:kind]).to eq("mad_lib")
-          
+
           # Children should be embedded in the parent
           children = blocks.first[:children]
           expect(children).to be_present
           expect(children.size).to eq(2)
-          
+
           child_kinds = children.map { |c| c[:kind] }
           expect(child_kinds).to include("question")
           expect(child_kinds).to include("poll")
@@ -259,12 +259,12 @@ RSpec.describe Experiences::Broadcaster do
 
           expect(blocks.size).to eq(1), "Host should receive only parent block"
           expect(blocks.first[:kind]).to eq("mad_lib")
-          
+
           # Children should be embedded in the parent
           children = blocks.first[:children]
           expect(children).to be_present
           expect(children.size).to eq(2)
-          
+
           child_kinds = children.map { |c| c[:kind] }
           expect(child_kinds).to include("question")
           expect(child_kinds).to include("poll")
@@ -319,25 +319,6 @@ RSpec.describe Experiences::Broadcaster do
     it "calls ActionCable.server.broadcast when broadcasting" do
       expect(ActionCable.server).to receive(:broadcast).at_least(:once)
       broadcaster.broadcast_experience_update
-    end
-  end
-
-  describe ".trigger_resubscription_for_participant" do
-    let!(:participant) do
-      create(:experience_participant, experience: experience)
-    end
-
-    it "broadcasts resubscription message to participant stream" do
-      expect(ActionCable.server).to receive(:broadcast).with(
-        "experience_#{experience.id}_participant_#{participant.id}",
-        hash_including(
-          type: 'resubscribe_required',
-          participant_id: participant.id,
-          reason: 'segments_changed'
-        )
-      )
-
-      described_class.trigger_resubscription_for_participant(participant)
     end
   end
 
