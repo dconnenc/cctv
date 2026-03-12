@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-import { ChevronDown, ChevronRight, Eye, RotateCcw, Trash2, X } from 'lucide-react';
+import { ChevronDown, ChevronRight, Eye, RotateCcw, Trash2 } from 'lucide-react';
 
 import { Button } from '@cctv/components/ui/button';
 import {
@@ -155,7 +155,6 @@ export default function FamilyFeudPlayingControls({
                 : 'bg-red-500 text-white hover:bg-red-600'
             }`}
           >
-            <X size={16} />
             {showingX ? 'Showing X...' : 'Show X'}
           </button>
 

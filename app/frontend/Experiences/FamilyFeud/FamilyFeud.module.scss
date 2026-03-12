@@ -23,12 +23,13 @@
 
 .playingRoot {
   position: relative;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
   align-items: center;
   padding: var(--space-sm);
   gap: var(--space-md);
-  min-height: 100vh;
+  min-height: 0;
   width: 100%;
   max-width: 1200px;
   margin: 0 auto;

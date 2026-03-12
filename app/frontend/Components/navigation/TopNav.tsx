@@ -2,7 +2,7 @@ import { useState } from 'react';
 
 import { NavLink } from 'react-router-dom';
 
-import { Settings } from 'lucide-react';
+import { Home, Info, LogIn, LogOut, Plus, Settings, Ticket } from 'lucide-react';
 
 import { Switch } from '@cctv/components/ui/switch';
 import { useTheme } from '@cctv/contexts/ThemeContext';
@@ -166,21 +166,21 @@ export const TopNav = () => {
                 className={({ isActive }) => (isActive ? 'link link--active' : 'link')}
                 onClick={() => setOpen(false)}
               >
-                Home
+                <Home size={18} /> Home
               </NavLink>
               <NavLink
                 to="/about"
                 className={({ isActive }) => (isActive ? 'link link--active' : 'link')}
                 onClick={() => setOpen(false)}
               >
-                About
+                <Info size={18} /> About
               </NavLink>
               <NavLink
                 to="/join"
                 className={({ isActive }) => (isActive ? 'link link--active' : 'link')}
                 onClick={() => setOpen(false)}
               >
-                Join
+                <Ticket size={18} /> Join
               </NavLink>
               {isAdmin && (
                 <>
@@ -210,7 +210,7 @@ export const TopNav = () => {
                     className={({ isActive }) => (isActive ? 'link link--active' : 'link')}
                     onClick={() => setOpen(false)}
                   >
-                    Create
+                    <Plus size={18} /> Create
                   </NavLink>
                 </>
               )}
@@ -246,11 +246,11 @@ export const TopNav = () => {
                       void logOut();
                     }}
                   >
-                    Logout
+                    <LogOut size={18} /> Logout
                   </button>
                 ) : (
                   <a className="link" href="/users/sign_in" onClick={() => setOpen(false)}>
-                    Sign in
+                    <LogIn size={18} /> Sign in
                   </a>
                 ))}
             </div>
