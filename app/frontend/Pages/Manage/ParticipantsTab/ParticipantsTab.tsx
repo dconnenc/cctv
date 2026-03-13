@@ -1,9 +1,8 @@
 import { useCallback, useMemo, useState } from 'react';
 
-import { Pill } from '@cctv/core/Pill/Pill';
 import { SegmentBadge } from '@cctv/core/SegmentBadge/SegmentBadge';
 import { Column, Table } from '@cctv/core/Table/Table';
-import { useAssignSegment } from '@cctv/hooks';
+import { useAssignSegment, useKickParticipant } from '@cctv/hooks';
 import { ExperienceSegment, ParticipantSummary } from '@cctv/types';
 
 import SegmentManager from './SegmentManager/SegmentManager';
@@ -17,6 +16,7 @@ interface ParticipantsTabProps {
 
 export default function ParticipantsTab({ participants, segments }: ParticipantsTabProps) {
   const { assignSegment } = useAssignSegment();
+  const { kickParticipant } = useKickParticipant();
   const [assigningFor, setAssigningFor] = useState<string | null>(null);
 
   const handleAssign = useCallback(
@@ -48,11 +48,6 @@ export default function ParticipantsTab({ participants, segments }: Participants
         key: 'email',
         label: 'Email',
         Cell: (p) => <span>{p.email || '\u2014'}</span>,
-      },
-      {
-        key: 'role',
-        label: 'Role',
-        Cell: (p) => <Pill label={p.role} />,
       },
       {
         key: 'segments',
@@ -103,8 +98,22 @@ export default function ParticipantsTab({ participants, segments }: Participants
           </div>
         ),
       },
+      {
+        key: 'actions',
+        label: '',
+        Cell: (p) => (
+          <button
+            className={styles.kickBtn}
+            onClick={() => kickParticipant(p.id)}
+            title="Remove participant"
+            aria-label={`Remove ${p.name || p.email}`}
+          >
+            ✕
+          </button>
+        ),
+      },
     ];
-  }, [segments, assigningFor, handleAssign, handleRemoveSegment]);
+  }, [segments, assigningFor, handleAssign, handleRemoveSegment, kickParticipant]);
 
   return (
     <div className={styles.root}>

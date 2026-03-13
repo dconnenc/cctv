@@ -91,6 +91,7 @@ Rails.application.routes.draw do
       resources :participants, controller: 'experience_participants', only: [] do
         member do
           post :avatar
+          delete :kick
         end
       end
 

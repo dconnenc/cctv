@@ -1,6 +1,32 @@
 class Api::ExperienceParticipantsController < Api::BaseController
   before_action :authenticate_and_set_user_and_experience
 
+  # DELETE /api/experiences/:experience_id/participants/:id/kick
+  def kick
+    participant = @experience.experience_participants.find(params[:id])
+
+    is_system_admin = @user&.admin? || @user&.superadmin?
+    is_host_or_mod = @experience.experience_participants.where(user_id: @user&.id, role: %w[host moderator]).exists?
+
+    unless is_system_admin || is_host_or_mod
+      render json: { success: false, error: 'forbidden' }, status: :forbidden
+      return
+    end
+
+    # TODO: Cleanup anything related to the removed participant
+    # (e.g. active websocket connections, cached state, block responses, etc.)
+
+    participant.destroy!
+
+    Experiences::Broadcaster.new(@experience).broadcast_experience_update
+
+    render json: { success: true }
+  rescue ActiveRecord::RecordNotFound
+    render json: { success: false, error: 'participant not found' }, status: :not_found
+  rescue StandardError => e
+    render json: { success: false, error: e.message }, status: :unprocessable_entity
+  end
+
   # POST /api/experiences/:experience_id/participants/:id/avatar
   def avatar
     participant = @experience.experience_participants.find(params[:id])
