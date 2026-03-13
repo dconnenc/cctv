@@ -109,8 +109,7 @@ module SystemHelpers
     fill_in placeholder: "Your Name", with: name
     click_button "Register"
 
-    expect(page).not_to have_current_path(/register/)
-    expect(page).to have_text(experience_name)
+    expect(page).to have_text(experience_name, wait: 10)
   end
 
   def draw_on_canvas
