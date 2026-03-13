@@ -26,8 +26,7 @@ export function ThemeProvider({ children }: PropsWithChildren) {
       setThemeState(stored);
       return;
     }
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    setThemeState(prefersDark ? 'dark' : 'light');
+    setThemeState('dark');
   }, []);
 
   useEffect(() => {

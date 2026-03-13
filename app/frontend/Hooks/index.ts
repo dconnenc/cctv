@@ -24,6 +24,7 @@ export { useSubmitPhotoUploadResponse } from './useSubmitPhotoUploadResponse';
 export { useBlockPresentation } from './useBlockPresentation';
 export { useSubmitBuzzerResponse } from './useSubmitBuzzerResponse';
 export { useClearBuzzerResponses } from './useClearBuzzerResponses';
+export { useKickParticipant } from './useKickParticipant';
 export {
   useCreateSegment,
   useUpdateSegment,

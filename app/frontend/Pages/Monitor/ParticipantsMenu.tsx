@@ -29,7 +29,6 @@ export default function ParticipantsMenu() {
         {visible.map((p) => (
           <li key={p.id} className={styles.item}>
             <span className={styles.name}>{p.name || p.email}</span>
-            <span className={styles.role}>{p.role}</span>
           </li>
         ))}
         {overflow > 0 && <li className={styles.overflow}>{overflow} More</li>}

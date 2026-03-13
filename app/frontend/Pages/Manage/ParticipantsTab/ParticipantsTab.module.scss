@@ -51,6 +51,25 @@
   }
 }
 
+.kickBtn {
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  border: none;
+  background: transparent;
+  color: hsl(var(--muted-foreground));
+  font-size: 0.85rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  &:hover {
+    background: hsl(var(--destructive) / 0.1);
+    color: hsl(var(--destructive));
+  }
+}
+
 .assignSelect {
   font-size: 0.7rem;
   padding: 0.15rem 0.3rem;
