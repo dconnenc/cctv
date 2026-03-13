@@ -272,7 +272,13 @@ export default function DrawingCanvas({
           Clear
         </Button>
         {onBack ? (
-          <Button className={styles.btn} onClick={onBack}>
+          <Button
+            className={styles.btn}
+            onClick={async () => {
+              await onSubmit(lines);
+              onBack();
+            }}
+          >
             Back
           </Button>
         ) : (

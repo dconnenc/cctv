@@ -25,7 +25,7 @@ export default function LobbyAvatarEditor({
       onSubmit={async (strokes: AvatarStroke[]) => {
         if (!participant?.id) return;
         await saveAvatar({ participantId: participant.id, strokes });
-        onFinalize?.();
+        if (!onBack) onFinalize?.();
       }}
       onBack={onBack}
     />

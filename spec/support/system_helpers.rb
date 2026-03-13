@@ -113,7 +113,7 @@ module SystemHelpers
     expect(page).to have_text(experience_name)
   end
 
-  def draw_and_submit_avatar
+  def draw_on_canvas
     expect(page).to have_css("canvas")
 
     rect = page.evaluate_script(
@@ -126,6 +126,10 @@ module SystemHelpers
     page.driver.browser.mouse.down
     page.driver.browser.mouse.move(x: cx + 50, y: cy + 50)
     page.driver.browser.mouse.up
+  end
+
+  def draw_and_submit_avatar
+    draw_on_canvas
     click_button "Submit"
     expect(page).to have_text("Players in Lobby:")
   end

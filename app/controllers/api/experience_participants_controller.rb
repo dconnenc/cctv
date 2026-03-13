@@ -17,7 +17,7 @@ class Api::ExperienceParticipantsController < Api::BaseController
 
     avatar = participant.avatar || {}
     strokes = params.dig(:avatar, :strokes)
-    avatar[:strokes] = strokes if strokes.present?
+    avatar[:strokes] = strokes unless strokes.nil?
 
     participant.update!(avatar: avatar)
 
