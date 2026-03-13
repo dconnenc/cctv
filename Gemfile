@@ -1,5 +1,7 @@
 source "https://rubygems.org"
 
+ruby File.read(".ruby-version").strip
+
 gem "rails", "~> 7.2.2", ">= 7.2.2.2"
 gem "pg", "~> 1.1"
 gem "puma", ">= 5.0"
