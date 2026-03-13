@@ -470,7 +470,8 @@ module Experiences
     def self.participant_block_active?(experience)
       experience.parent_blocks
         .where(status: 'open')
-        .where(visible_to_roles: [], visible_to_segments: [], target_user_ids: [])
+        .where(visible_to_roles: [], target_user_ids: [])
+        .where.missing(:experience_block_segments)
         .any? { |block| block.payload['show_on_monitor'] == false }
     end
 

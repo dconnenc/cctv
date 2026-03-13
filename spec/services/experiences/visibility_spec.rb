@@ -962,7 +962,6 @@ RSpec.describe Experiences::Visibility do
           kind: :announcement,
           payload: { "message" => "Hello", "show_on_monitor" => false },
           visible_to_roles: [],
-          visible_to_segments: [],
           target_user_ids: []
         )
       end
@@ -1000,7 +999,7 @@ RSpec.describe Experiences::Visibility do
           status: :open,
           kind: :announcement,
           payload: { "message" => "Hello", "show_on_monitor" => false },
-          visible_to_segments: ["vip"]
+          visible_to_segment_names: ["vip"]
         )
       end
 
