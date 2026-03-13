@@ -2,10 +2,8 @@ import { SelectHTMLAttributes } from 'react';
 
 import styles from './Dropdown.module.scss';
 
-interface DropdownProps<T extends string> extends Omit<
-  SelectHTMLAttributes<HTMLSelectElement>,
-  'onChange'
-> {
+interface DropdownProps<T extends string>
+  extends Omit<SelectHTMLAttributes<HTMLSelectElement>, 'onChange'> {
   label: string;
   options: { label: string; value: T }[];
   onChange: (value: T) => void;

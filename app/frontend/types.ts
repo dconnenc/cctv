@@ -638,32 +638,22 @@ export interface ExperienceWebSocketMessage<
 }
 
 // Specific message types
-export interface ExperienceStateMessage extends ExperienceWebSocketMessage<
-  'experience_state',
-  ExperienceStateMessageMetadata
-> {}
+export interface ExperienceStateMessage
+  extends ExperienceWebSocketMessage<'experience_state', ExperienceStateMessageMetadata> {}
 
-export interface ExperienceUpdatedMessage extends ExperienceWebSocketMessage<
-  'experience_updated',
-  ExperienceUpdatedMessageMetadata
-> {}
+export interface ExperienceUpdatedMessage
+  extends ExperienceWebSocketMessage<'experience_updated', ExperienceUpdatedMessageMetadata> {}
 
-export interface StreamChangedMessage extends ExperienceWebSocketMessage<
-  'stream_changed',
-  StreamChangedMessageMetadata
-> {}
+export interface StreamChangedMessage
+  extends ExperienceWebSocketMessage<'stream_changed', StreamChangedMessageMetadata> {}
 
-export interface ResubscribeRequiredMessage extends BaseWebSocketMessage<
-  'resubscribe_required',
-  ResubscribeRequiredMessageMetadata
-> {
+export interface ResubscribeRequiredMessage
+  extends BaseWebSocketMessage<'resubscribe_required', ResubscribeRequiredMessageMetadata> {
   reason: string;
 }
 
-export interface FamilyFeudUpdatedMessage extends BaseWebSocketMessage<
-  'family_feud_updated',
-  FamilyFeudUpdatedMessageMetadata
-> {
+export interface FamilyFeudUpdatedMessage
+  extends BaseWebSocketMessage<'family_feud_updated', FamilyFeudUpdatedMessageMetadata> {
   block_id: string;
   operation: string;
   data: FamilyFeudDispatchPayload;
