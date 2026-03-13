@@ -16,7 +16,7 @@ export interface CreateExperienceBlockParams {
   kind: BlockKind;
   payload?: ApiPayload;
   visible_to_roles?: ParticipantRole[];
-  visible_to_segments?: string[];
+  visible_to_segment_ids?: string[];
   target_user_ids?: string[];
   status?: BlockStatus;
   open_immediately?: boolean;
@@ -45,7 +45,7 @@ export function useCreateExperienceBlock() {
       kind,
       payload,
       visible_to_roles = [],
-      visible_to_segments = [],
+      visible_to_segment_ids = [],
       target_user_ids = [],
       status = 'hidden',
       open_immediately = false,
@@ -74,7 +74,7 @@ export function useCreateExperienceBlock() {
         kind,
         payload: payload as CreateBlockPayload['payload'],
         visible_to_roles,
-        visible_to_segments,
+        visible_to_segment_ids,
         target_user_ids,
         status,
         open_immediately,

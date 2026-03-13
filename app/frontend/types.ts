@@ -424,7 +424,7 @@ export interface CreateBlockPayload {
     | PhotoUploadPayload
     | BuzzerPayload;
   visible_to_roles?: ParticipantRole[];
-  visible_to_segments?: string[];
+  visible_to_segment_ids?: string[];
   target_user_ids?: string[];
   status?: BlockStatus;
   open_immediately?: boolean;

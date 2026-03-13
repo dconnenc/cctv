@@ -1,5 +1,6 @@
 import { ReactNode, createContext, useCallback, useContext, useState } from 'react';
 
+import { useExperience } from '@cctv/contexts/ExperienceContext';
 import { useCreateExperienceBlock } from '@cctv/hooks/useCreateExperienceBlock';
 import {
   ApiPayload,
@@ -124,6 +125,8 @@ export function CreateBlockProvider({
   const [targetUserIdsText, setTargetUserIdsText] = useState<string>('');
   const [showInLobby, setShowInLobby] = useState<boolean>(false);
   const [viewAdditionalDetails, setViewAdditionalDetails] = useState<boolean>(false);
+
+  const { experience } = useExperience();
 
   const {
     createExperienceBlock,
@@ -315,7 +318,10 @@ export function CreateBlockProvider({
         }
       }
 
-      const visible_to_segments = visibleSegments;
+      const definedSegments = experience?.segments || [];
+      const visible_to_segment_ids = visibleSegments
+        .map((name) => definedSegments.find((s) => s.name === name)?.id)
+        .filter((id): id is string => id !== undefined);
       const target_user_ids = targetUserIdsText
         .split(',')
         .map((s) => s.trim())
@@ -325,7 +331,7 @@ export function CreateBlockProvider({
         kind: BlockKind;
         payload: ApiPayload;
         visible_to_roles: ParticipantRole[];
-        visible_to_segments: string[];
+        visible_to_segment_ids: string[];
         target_user_ids: string[];
         status: BlockStatus;
         open_immediately: boolean;
@@ -345,7 +351,7 @@ export function CreateBlockProvider({
         kind: blockData.kind,
         payload,
         visible_to_roles: visibleRoles,
-        visible_to_segments,
+        visible_to_segment_ids,
         target_user_ids,
         status: status,
         open_immediately: status === 'open',
