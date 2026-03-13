@@ -101,8 +101,9 @@ Rails.application.routes.draw do
     end
   end
 
+  get '/experiences/:code/register', to: 'spa#index', as: :experience_register
   get '/experiences/register', to: 'spa#index'
-  get '/experiences/:code', to: 'spa#index'
+  get '/experiences/:code', to: 'spa#index', as: :experience_lobby
 
   get '*path', to: 'spa#index', constraints: ->(request) do
     !request.xhr? && request.format.html?
