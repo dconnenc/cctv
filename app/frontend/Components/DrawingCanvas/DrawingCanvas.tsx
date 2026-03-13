@@ -17,6 +17,7 @@ export interface DrawingCanvasProps {
     data?: Record<string, unknown>;
   }) => void;
   onSubmit: (strokes: AvatarStroke[]) => void | Promise<void>;
+  onBack?: () => void;
 }
 
 const DEFAULT_PALETTE_VARS = [
@@ -41,6 +42,7 @@ export default function DrawingCanvas({
   drawSize = { w: 320, h: 320 },
   onStrokeEvent,
   onSubmit,
+  onBack,
 }: DrawingCanvasProps) {
   const [lines, setLines] = useState<AvatarStroke[]>(initialStrokes);
   const [isDrawing, setIsDrawing] = useState(false);
@@ -269,9 +271,15 @@ export default function DrawingCanvas({
         >
           Clear
         </Button>
-        <Button className={styles.btn} onClick={handleSubmit} disabled={lines.length === 0}>
-          {initialStrokes.length > 0 ? 'Update' : 'Submit'}
-        </Button>
+        {onBack ? (
+          <Button className={styles.btn} onClick={onBack}>
+            Back
+          </Button>
+        ) : (
+          <Button className={styles.btn} onClick={handleSubmit} disabled={lines.length === 0}>
+            Submit
+          </Button>
+        )}
       </div>
     </div>
   );

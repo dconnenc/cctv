@@ -5,7 +5,13 @@ import { AvatarStroke } from '@cctv/types';
 
 import DrawingCanvas from '../DrawingCanvas/DrawingCanvas';
 
-export default function LobbyAvatarEditor({ onFinalize }: { onFinalize?: () => void }) {
+export default function LobbyAvatarEditor({
+  onFinalize,
+  onBack,
+}: {
+  onFinalize?: () => void;
+  onBack?: () => void;
+}) {
   const { participant, experiencePerform } = useExperience();
   const { user } = useUser();
   const { saveAvatar } = useSaveAvatar();
@@ -21,6 +27,7 @@ export default function LobbyAvatarEditor({ onFinalize }: { onFinalize?: () => v
         await saveAvatar({ participantId: participant.id, strokes });
         onFinalize?.();
       }}
+      onBack={onBack}
     />
   );
 }

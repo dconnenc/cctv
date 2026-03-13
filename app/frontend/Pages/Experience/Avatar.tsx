@@ -11,7 +11,10 @@ import styles from './Experience.module.scss';
 export default function Avatar() {
   const navigate = useNavigate();
   const { isAdmin } = useUser();
-  const { experience, code, isLoading, error, wsReady } = useExperience();
+  const { experience, participant, code, isLoading, error, wsReady, experienceStatus } =
+    useExperience();
+
+  const isLobbyGate = experienceStatus === 'lobby' && !participant?.avatar?.strokes?.length;
 
   useEffect(() => {
     if (isAdmin) {
@@ -41,11 +44,14 @@ export default function Avatar() {
     <section className="page">
       <div className={styles.experienceInfo}>
         <h2 className={styles.experienceName}>{experience?.name || code}</h2>
-        <p className={styles.experienceStatus}>Draw your avatar to enter the lobby</p>
+        {isLobbyGate && (
+          <p className={styles.experienceStatus}>Draw your avatar to enter the lobby</p>
+        )}
       </div>
       <div className={styles.avatarEditor}>
         <LobbyAvatarEditor
           onFinalize={() => navigate(`/experiences/${code}`, { state: { avatarSubmitted: true } })}
+          onBack={isLobbyGate ? undefined : () => navigate(`/experiences/${code}`)}
         />
       </div>
     </section>

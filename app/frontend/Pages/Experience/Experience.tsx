@@ -10,10 +10,43 @@ import { useUser } from '@cctv/contexts/UserContext';
 import { Button } from '@cctv/core/Button/Button';
 import ExperienceBlockContainer from '@cctv/experiences/ExperienceBlockContainer/ExperienceBlockContainer';
 import { useClearAvatars } from '@cctv/hooks/useClearAvatars';
+import { AvatarStroke } from '@cctv/types';
 
 import AdminNotification from './AdminNotification/AdminNotification';
 
 import styles from './Experience.module.scss';
+
+function AvatarCircle({ strokes }: { strokes: AvatarStroke[] }) {
+  if (!strokes.length) {
+    return (
+      <svg viewBox="0 0 100 100" width="100%" height="100%" aria-hidden>
+        <circle cx="50" cy="36" r="18" fill="currentColor" opacity="0.45" />
+        <ellipse cx="50" cy="82" rx="28" ry="22" fill="currentColor" opacity="0.45" />
+      </svg>
+    );
+  }
+  return (
+    <svg viewBox="0 0 320 320" width="100%" height="100%" aria-hidden>
+      {strokes.map((stroke, i) => {
+        const pts: string[] = [];
+        for (let j = 0; j < stroke.points.length; j += 2) {
+          pts.push(`${stroke.points[j]},${stroke.points[j + 1]}`);
+        }
+        return (
+          <polyline
+            key={i}
+            points={pts.join(' ')}
+            stroke={stroke.color}
+            strokeWidth={stroke.width}
+            fill="none"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        );
+      })}
+    </svg>
+  );
+}
 
 export default function Experience() {
   const navigate = useNavigate();
@@ -25,6 +58,18 @@ export default function Experience() {
   const participants = experience?.participants || [];
   const needsAvatar = !isAdmin && !participant?.avatar?.strokes?.length;
   const hasInitialData = !isAdmin ? experience && participant : experience;
+
+  const avatarBtn =
+    !isAdmin && participant ? (
+      <button
+        className={styles.avatarToggleBtn}
+        aria-label="Edit avatar"
+        title="Edit avatar"
+        onClick={() => navigate(`/experiences/${code}/avatar`)}
+      >
+        <AvatarCircle strokes={participant.avatar?.strokes ?? []} />
+      </button>
+    ) : null;
 
   useEffect(() => {
     if (locationState?.avatarSubmitted) return;
@@ -82,6 +127,7 @@ export default function Experience() {
               </Link>
             )}
           </div>
+          {avatarBtn}
         </section>
       );
     }
@@ -150,16 +196,7 @@ export default function Experience() {
             )}
           </div>
         </div>
-        {!isAdmin && !needsAvatar && (
-          <button
-            className={styles.avatarToggleBtn}
-            aria-label="Edit avatar"
-            title="Edit avatar"
-            onClick={() => navigate(`/experiences/${code}/avatar`)}
-          >
-            Edit Avatar
-          </button>
-        )}
+        {avatarBtn}
       </section>
     );
   }
@@ -201,6 +238,7 @@ export default function Experience() {
             <BookOpen size={22} />
           </Link>
         </div>
+        {avatarBtn}
       </section>
     );
   }
