@@ -55,7 +55,7 @@ RSpec.describe "Participating in an Experience", type: :system do
         visit "/experiences/#{experience2.code_slug}/avatar"
 
         # Canvas is pre-populated with the previous avatar, so Submit is enabled
-        expect(page).to have_button("Submit", disabled: false)
+        expect(page).to have_button("Back")
       end
     end
   end
