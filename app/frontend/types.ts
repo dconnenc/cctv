@@ -91,6 +91,7 @@ export interface PhotoUploadPayload {
 
 export interface BuzzerPayload {
   label?: string;
+  prompt?: string;
 }
 
 export interface BlockLink {
@@ -184,6 +185,7 @@ export interface PhotoUploadApiPayload {
 export interface BuzzerApiPayload {
   type: 'buzzer';
   label?: string;
+  prompt?: string;
 }
 
 // Discriminated union for API payloads (what gets sent to backend)
@@ -738,6 +740,7 @@ export interface PhotoUploadData {
 
 export interface BuzzerData {
   label: string;
+  prompt: string;
 }
 
 // Union type for all block component data
