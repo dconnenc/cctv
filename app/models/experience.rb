@@ -48,6 +48,10 @@ class Experience < ApplicationRecord
     end
   end
 
+  def self.find_by_code_or_slug(code_or_slug)
+    find_by_code(code_or_slug) || find_by_slug(code_or_slug)
+  end
+
   # Find by user-entered code (case-insensitive via citext)
   def self.find_by_code(code)
     find_by(code: code)
