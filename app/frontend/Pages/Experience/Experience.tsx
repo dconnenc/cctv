@@ -1,5 +1,7 @@
 import { useEffect } from 'react';
 
+import { createPortal } from 'react-dom';
+
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 
 import { BookOpen } from 'lucide-react';
@@ -19,14 +21,34 @@ import styles from './Experience.module.scss';
 function AvatarCircle({ strokes }: { strokes: AvatarStroke[] }) {
   if (!strokes.length) {
     return (
-      <svg viewBox="0 0 100 100" width="100%" height="100%" aria-hidden>
+      <svg viewBox="0 0 100 100" className={styles.avatarCircleSvg} aria-hidden>
         <circle cx="50" cy="36" r="18" fill="currentColor" opacity="0.45" />
         <ellipse cx="50" cy="82" rx="28" ry="22" fill="currentColor" opacity="0.45" />
       </svg>
     );
   }
+
+  let minX = Infinity,
+    minY = Infinity,
+    maxX = -Infinity,
+    maxY = -Infinity;
+  for (const stroke of strokes) {
+    for (let j = 0; j < stroke.points.length; j += 2) {
+      minX = Math.min(minX, stroke.points[j]);
+      maxX = Math.max(maxX, stroke.points[j]);
+      minY = Math.min(minY, stroke.points[j + 1]);
+      maxY = Math.max(maxY, stroke.points[j + 1]);
+    }
+  }
+
+  const pad = 12;
+  const cx = (minX + maxX) / 2;
+  const cy = (minY + maxY) / 2;
+  const half = Math.max(maxX - minX, maxY - minY) / 2 + pad;
+  const viewBox = `${cx - half} ${cy - half} ${half * 2} ${half * 2}`;
+
   return (
-    <svg viewBox="0 0 320 320" width="100%" height="100%" aria-hidden>
+    <svg viewBox={viewBox} className={styles.avatarCircleSvg} aria-hidden>
       {strokes.map((stroke, i) => {
         const pts: string[] = [];
         for (let j = 0; j < stroke.points.length; j += 2) {
@@ -37,7 +59,8 @@ function AvatarCircle({ strokes }: { strokes: AvatarStroke[] }) {
             key={i}
             points={pts.join(' ')}
             stroke={stroke.color}
-            strokeWidth={stroke.width}
+            strokeWidth={Math.max(Math.min(stroke.width * 0.25, 4), 1)}
+            vectorEffect="non-scaling-stroke"
             fill="none"
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -60,16 +83,19 @@ export default function Experience() {
   const hasInitialData = !isAdmin ? experience && participant : experience;
 
   const avatarBtn =
-    !isAdmin && participant ? (
-      <button
-        className={styles.avatarToggleBtn}
-        aria-label="Edit avatar"
-        title="Edit avatar"
-        onClick={() => navigate(`/experiences/${code}/avatar`)}
-      >
-        <AvatarCircle strokes={participant.avatar?.strokes ?? []} />
-      </button>
-    ) : null;
+    !isAdmin && participant
+      ? createPortal(
+          <button
+            className={styles.avatarToggleBtn}
+            aria-label="Edit avatar"
+            title="Edit avatar"
+            onClick={() => navigate(`/experiences/${code}/avatar`)}
+          >
+            <AvatarCircle strokes={participant.avatar?.strokes ?? []} />
+          </button>,
+          document.body,
+        )
+      : null;
 
   useEffect(() => {
     if (locationState?.avatarSubmitted) return;
