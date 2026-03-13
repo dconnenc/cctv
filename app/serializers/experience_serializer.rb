@@ -7,6 +7,7 @@ class ExperienceSerializer
   )
     blocks = visibility_payload&.dig(:experience, :blocks) || []
     next_block = visibility_payload&.dig(:experience, :next_block)
+    participant_block_active = visibility_payload&.dig(:experience, :participant_block_active)
 
     base_url = Rails.application.config.app_base_url
 
@@ -27,6 +28,8 @@ class ExperienceSerializer
       playbill: serialize_playbill(experience.playbill),
       segments: serialize_segments(experience)
     }
+
+    result[:participant_block_active] = participant_block_active unless participant_block_active.nil?
 
     if include_participants
       # Use preloaded participants if available, otherwise query

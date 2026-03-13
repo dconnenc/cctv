@@ -40,6 +40,7 @@ export default function Monitor() {
   const currentBlock = monitorView.blocks[0];
 
   const showProgramBlock = !!currentBlock;
+  const showParticipantNotification = !showProgramBlock && !!monitorView.participant_block_active;
 
   return (
     <section className={styles.root}>
@@ -49,6 +50,9 @@ export default function Monitor() {
         </div>
       ) : (
         <>
+          {showParticipantNotification && (
+            <div className={styles.participantNotification}>Check your devices</div>
+          )}
           <ParticipantsMenu />
           <LobbyAvatars />
           <div className={styles.qrContainer}>

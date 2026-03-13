@@ -137,7 +137,8 @@ module Experiences
         experience: experience_structure(
           experience,
           serialized_blocks,
-          next_block: serialized_next
+          next_block: serialized_next,
+          participant_block_active: participant_block_active?(experience)
         )
       }
     end
@@ -156,6 +157,8 @@ module Experiences
           .where.not(id: ExperienceBlockSegment.select(:experience_block_id))
           .order(position: :asc)
       end
+
+      parent_blocks = parent_blocks.reject { |block| block.payload['show_on_monitor'] == false }
 
       result = []
       parent_blocks.each do |parent|
@@ -197,6 +200,7 @@ module Experiences
         end
       end
 
+      parent_blocks = parent_blocks.reject { |block| block.payload['show_on_monitor'] == false }
       parent_blocks = parent_blocks.sort_by(&:position)
 
       result = []
@@ -463,8 +467,16 @@ module Experiences
       )
     end
 
-    def self.experience_structure(experience, blocks, next_block: nil)
-      {
+    def self.participant_block_active?(experience)
+      experience.parent_blocks
+        .where(status: 'open')
+        .where(visible_to_roles: [], target_user_ids: [])
+        .where.missing(:experience_block_segments)
+        .any? { |block| block.payload['show_on_monitor'] == false }
+    end
+
+    def self.experience_structure(experience, blocks, next_block: nil, participant_block_active: nil)
+      structure = {
         id: experience.id,
         code: experience.code,
         status: experience.status,
@@ -473,6 +485,8 @@ module Experiences
         blocks: blocks,
         next_block: next_block
       }
+      structure[:participant_block_active] = participant_block_active unless participant_block_active.nil?
+      structure
     end
   end
 end

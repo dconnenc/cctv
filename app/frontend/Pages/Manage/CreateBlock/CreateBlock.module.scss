@@ -89,3 +89,13 @@
   padding-top: 0.75rem;
   font-size: 16px;
 }
+
+.checkboxLabel {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  font-size: 16px;
+  color: var(--white);
+  width: 100%;
+}

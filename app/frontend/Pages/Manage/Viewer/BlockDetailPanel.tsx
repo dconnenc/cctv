@@ -3,7 +3,7 @@ import { MessageSquare, Monitor, Pause, Play, SkipForward, User } from 'lucide-r
 import { useExperience } from '@cctv/contexts/ExperienceContext';
 import { Button } from '@cctv/core/Button/Button';
 import { SegmentBadge } from '@cctv/core/SegmentBadge/SegmentBadge';
-import { Block, BlockKind, Experience, ParticipantSummary } from '@cctv/types';
+import { AnnouncementPayload, Block, BlockKind, Experience, ParticipantSummary } from '@cctv/types';
 
 import FamilyFeudManager from '../../Block/FamilyFeudManager/FamilyFeudManager';
 import BlockPreview from '../BlockPreview/BlockPreview';
@@ -194,12 +194,23 @@ export default function BlockDetailPanel({
                     : undefined
                 }
                 emptyMessage={
-                  viewMode === 'monitor' ? 'No block on Monitor' : 'No block for participant'
+                  viewMode === 'monitor'
+                    ? selectedBlock.kind === BlockKind.ANNOUNCEMENT &&
+                      (selectedBlock.payload as AnnouncementPayload).show_on_monitor === false
+                      ? 'This block is not shown on the monitor'
+                      : 'No block on Monitor'
+                    : 'No block for participant'
                 }
                 monitorView={monitorView}
                 viewMode={viewMode}
                 title="Current"
               />
+            ) : viewMode === 'monitor' &&
+              selectedBlock.kind === BlockKind.ANNOUNCEMENT &&
+              (selectedBlock.payload as AnnouncementPayload).show_on_monitor === false ? (
+              <p className="text-sm text-[hsl(var(--muted-foreground))]">
+                This block is not shown on the monitor
+              </p>
             ) : (
               <BlockPreview
                 block={selectedBlock}
