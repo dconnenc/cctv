@@ -202,8 +202,8 @@ class Api::ExperiencesController < Api::BaseController
   # Handles code submission - checks if user exists and is registered
   def join
     code = join_params
-    # Allow lookup by code (as entered by user)
-    experience = Experience.find_by_code(code)
+    # TODO: I don't know which this should be. Doing both for now
+    experience = Experience.find_by_code_or_slug(code)
 
     if experience.nil?
       render json: { type: 'error', error: "Invalid experience code" }, status: :not_found
