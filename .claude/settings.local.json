@@ -1,5 +1,0 @@
-{
-  "permissions": {
-    "allow": ["Bash(xargs grep:*)", "Bash(pg_isready:*)", "Bash(psql:*)", "Bash(ruby:*)"]
-  }
-}
