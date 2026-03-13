@@ -1,3 +1,5 @@
+import { useMemo } from 'react';
+
 import { useExperience } from '@cctv/contexts/ExperienceContext';
 import { useUser } from '@cctv/contexts/UserContext';
 import { useSaveAvatar } from '@cctv/hooks/useSaveAvatar';
@@ -16,7 +18,10 @@ export default function LobbyAvatarEditor({
   const { user } = useUser();
   const { saveAvatar } = useSaveAvatar();
 
-  const initialStrokes = participant?.avatar?.strokes ?? user?.most_recent_avatar?.strokes ?? [];
+  const initialStrokes = useMemo(
+    () => participant?.avatar?.strokes ?? user?.most_recent_avatar?.strokes ?? [],
+    [participant?.avatar, user?.most_recent_avatar],
+  );
 
   return (
     <DrawingCanvas

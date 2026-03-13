@@ -14,7 +14,7 @@ export default function Avatar() {
   const { experience, participant, code, isLoading, error, wsReady, experienceStatus } =
     useExperience();
 
-  const isLobbyGate = experienceStatus === 'lobby' && !participant?.avatar?.strokes?.length;
+  const isLobbyGate = experienceStatus === 'lobby' && !participant?.avatar;
 
   useEffect(() => {
     if (isAdmin) {

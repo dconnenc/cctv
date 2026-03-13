@@ -46,6 +46,7 @@ export default function DrawingCanvas({
 }: DrawingCanvasProps) {
   const [lines, setLines] = useState<AvatarStroke[]>(initialStrokes);
   const [isDrawing, setIsDrawing] = useState(false);
+  const hasLoadedInitialRef = useRef(false);
 
   const [penWidth, setPenWidth] = useState<number>(4);
   const [penColor, setPenColor] = useState<string>('#000000');
@@ -68,6 +69,13 @@ export default function DrawingCanvas({
     setColors(pal);
     if (!penColor || penColor === '#000000') setPenColor(pal[0] || '#000000');
   }, [palette]);
+
+  useEffect(() => {
+    if (!hasLoadedInitialRef.current && initialStrokes.length > 0) {
+      hasLoadedInitialRef.current = true;
+      setLines(initialStrokes);
+    }
+  }, [initialStrokes]);
 
   // Converts a raw canvas pixel position to the fixed drawSize coordinate space.
   const toDrawSpace = (x: number, y: number) => ({

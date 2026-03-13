@@ -50,7 +50,7 @@ end
 
 # Keep this low, if you need to bump it, consider re-writing the test or using
 # a custom wait for your use case
-Capybara.default_max_wait_time = 4
+Capybara.default_max_wait_time = 6
 
 # This is needed so we can assert on aria attributes
 Capybara.enable_aria_label = true

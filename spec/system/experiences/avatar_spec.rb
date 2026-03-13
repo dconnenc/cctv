@@ -24,7 +24,7 @@ RSpec.describe "Avatar flow", type: :system do
 
         expect(page).to have_current_path("/experiences/#{experience.code_slug}/avatar")
         expect(page).to have_text("Draw your avatar to enter the lobby")
-        expect(page).to have_button("Submit")
+        expect(page).to have_button("Submit", disabled: true)
         expect(page).not_to have_button("Back")
       end
     end

@@ -79,7 +79,7 @@ export default function Experience() {
   const { clearAvatars, isLoading: clearing } = useClearAvatars();
 
   const participants = experience?.participants || [];
-  const needsAvatar = !isAdmin && !participant?.avatar?.strokes?.length;
+  const needsAvatar = !isAdmin && !participant?.avatar;
   const hasInitialData = !isAdmin ? experience && participant : experience;
 
   const avatarBtn =
