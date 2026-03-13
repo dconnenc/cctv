@@ -1,5 +1,7 @@
 import { useEffect } from 'react';
 
+import { createPortal } from 'react-dom';
+
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 
 import { BookOpen } from 'lucide-react';
@@ -10,10 +12,64 @@ import { useUser } from '@cctv/contexts/UserContext';
 import { Button } from '@cctv/core/Button/Button';
 import ExperienceBlockContainer from '@cctv/experiences/ExperienceBlockContainer/ExperienceBlockContainer';
 import { useClearAvatars } from '@cctv/hooks/useClearAvatars';
+import { AvatarStroke } from '@cctv/types';
 
 import AdminNotification from './AdminNotification/AdminNotification';
 
 import styles from './Experience.module.scss';
+
+function AvatarCircle({ strokes }: { strokes: AvatarStroke[] }) {
+  if (!strokes.length) {
+    return (
+      <svg viewBox="0 0 100 100" className={styles.avatarCircleSvg} aria-hidden>
+        <circle cx="50" cy="36" r="18" fill="currentColor" opacity="0.45" />
+        <ellipse cx="50" cy="82" rx="28" ry="22" fill="currentColor" opacity="0.45" />
+      </svg>
+    );
+  }
+
+  let minX = Infinity,
+    minY = Infinity,
+    maxX = -Infinity,
+    maxY = -Infinity;
+  for (const stroke of strokes) {
+    for (let j = 0; j < stroke.points.length; j += 2) {
+      minX = Math.min(minX, stroke.points[j]);
+      maxX = Math.max(maxX, stroke.points[j]);
+      minY = Math.min(minY, stroke.points[j + 1]);
+      maxY = Math.max(maxY, stroke.points[j + 1]);
+    }
+  }
+
+  const pad = 12;
+  const cx = (minX + maxX) / 2;
+  const cy = (minY + maxY) / 2;
+  const half = Math.max(maxX - minX, maxY - minY) / 2 + pad;
+  const viewBox = `${cx - half} ${cy - half} ${half * 2} ${half * 2}`;
+
+  return (
+    <svg viewBox={viewBox} className={styles.avatarCircleSvg} aria-hidden>
+      {strokes.map((stroke, i) => {
+        const pts: string[] = [];
+        for (let j = 0; j < stroke.points.length; j += 2) {
+          pts.push(`${stroke.points[j]},${stroke.points[j + 1]}`);
+        }
+        return (
+          <polyline
+            key={i}
+            points={pts.join(' ')}
+            stroke={stroke.color}
+            strokeWidth={Math.max(Math.min(stroke.width * 0.25, 4), 1)}
+            vectorEffect="non-scaling-stroke"
+            fill="none"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        );
+      })}
+    </svg>
+  );
+}
 
 export default function Experience() {
   const navigate = useNavigate();
@@ -23,8 +79,30 @@ export default function Experience() {
   const { clearAvatars, isLoading: clearing } = useClearAvatars();
 
   const participants = experience?.participants || [];
-  const needsAvatar = !isAdmin && !participant?.avatar?.strokes?.length;
+  const needsAvatar = !isAdmin && !participant?.avatar;
   const hasInitialData = !isAdmin ? experience && participant : experience;
+
+  useEffect(() => {
+    if (!isAdmin && participant) {
+      document.body.classList.add('has-avatar-btn');
+      return () => document.body.classList.remove('has-avatar-btn');
+    }
+  }, [isAdmin, participant]);
+
+  const avatarBtn =
+    !isAdmin && participant
+      ? createPortal(
+          <button
+            className={styles.avatarToggleBtn}
+            aria-label="Edit avatar"
+            title="Edit avatar"
+            onClick={() => navigate(`/experiences/${code}/avatar`)}
+          >
+            <AvatarCircle strokes={participant.avatar?.strokes ?? []} />
+          </button>,
+          document.body,
+        )
+      : null;
 
   useEffect(() => {
     if (locationState?.avatarSubmitted) return;
@@ -82,6 +160,7 @@ export default function Experience() {
               </Link>
             )}
           </div>
+          {avatarBtn}
         </section>
       );
     }
@@ -150,16 +229,7 @@ export default function Experience() {
             )}
           </div>
         </div>
-        {!isAdmin && !needsAvatar && (
-          <button
-            className={styles.avatarToggleBtn}
-            aria-label="Edit avatar"
-            title="Edit avatar"
-            onClick={() => navigate(`/experiences/${code}/avatar`)}
-          >
-            Edit Avatar
-          </button>
-        )}
+        {avatarBtn}
       </section>
     );
   }
@@ -201,6 +271,7 @@ export default function Experience() {
             <BookOpen size={22} />
           </Link>
         </div>
+        {avatarBtn}
       </section>
     );
   }

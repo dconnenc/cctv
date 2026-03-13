@@ -17,6 +17,7 @@ export interface DrawingCanvasProps {
     data?: Record<string, unknown>;
   }) => void;
   onSubmit: (strokes: AvatarStroke[]) => void | Promise<void>;
+  onBack?: () => void;
 }
 
 const DEFAULT_PALETTE_VARS = [
@@ -41,9 +42,11 @@ export default function DrawingCanvas({
   drawSize = { w: 320, h: 320 },
   onStrokeEvent,
   onSubmit,
+  onBack,
 }: DrawingCanvasProps) {
   const [lines, setLines] = useState<AvatarStroke[]>(initialStrokes);
   const [isDrawing, setIsDrawing] = useState(false);
+  const hasLoadedInitialRef = useRef(false);
 
   const [penWidth, setPenWidth] = useState<number>(4);
   const [penColor, setPenColor] = useState<string>('#000000');
@@ -66,6 +69,13 @@ export default function DrawingCanvas({
     setColors(pal);
     if (!penColor || penColor === '#000000') setPenColor(pal[0] || '#000000');
   }, [palette]);
+
+  useEffect(() => {
+    if (!hasLoadedInitialRef.current && initialStrokes.length > 0) {
+      hasLoadedInitialRef.current = true;
+      setLines(initialStrokes);
+    }
+  }, [initialStrokes]);
 
   // Converts a raw canvas pixel position to the fixed drawSize coordinate space.
   const toDrawSpace = (x: number, y: number) => ({
@@ -269,9 +279,21 @@ export default function DrawingCanvas({
         >
           Clear
         </Button>
-        <Button className={styles.btn} onClick={handleSubmit} disabled={lines.length === 0}>
-          {initialStrokes.length > 0 ? 'Update' : 'Submit'}
-        </Button>
+        {onBack ? (
+          <Button
+            className={styles.btn}
+            onClick={async () => {
+              await onSubmit(lines);
+              onBack();
+            }}
+          >
+            Back
+          </Button>
+        ) : (
+          <Button className={styles.btn} onClick={handleSubmit} disabled={lines.length === 0}>
+            Submit
+          </Button>
+        )}
       </div>
     </div>
   );
