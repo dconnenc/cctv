@@ -8,7 +8,8 @@ class ExperienceBlock < ApplicationRecord
     ANNOUNCEMENT = "announcement",
     MAD_LIB = "mad_lib",
     FAMILY_FEUD = "family_feud",
-    PHOTO_UPLOAD = "photo_upload"
+    PHOTO_UPLOAD = "photo_upload",
+    BUZZER = "buzzer"
   ]
 
   belongs_to :experience
@@ -27,6 +28,7 @@ class ExperienceBlock < ApplicationRecord
   has_many :experience_multistep_form_submissions, dependent: :destroy
   has_many :experience_mad_lib_submissions, dependent: :destroy
   has_many :experience_photo_upload_submissions, dependent: :destroy
+  has_many :experience_buzzer_submissions, dependent: :destroy
 
   has_many :parent_links,
     class_name: "ExperienceBlockLink",
@@ -46,6 +48,9 @@ class ExperienceBlock < ApplicationRecord
   has_many :variables,
     class_name: "ExperienceBlockVariable",
     dependent: :destroy
+
+  has_many :experience_block_segments, dependent: :destroy
+  has_many :experience_segments, through: :experience_block_segments
 
   enum status: {
     hidden: HIDDEN = "hidden",
@@ -179,6 +184,10 @@ class ExperienceBlock < ApplicationRecord
     )
 
     result.map { |row| row['id'] }
+  end
+
+  def visible_to_segment_names
+    experience_segments.pluck(:name)
   end
 
   private

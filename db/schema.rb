@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_02_22_214200) do
+ActiveRecord::Schema[7.2].define(version: 2026_03_12_143222) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "citext"
   enable_extension "plpgsql"
@@ -66,6 +66,16 @@ ActiveRecord::Schema[7.2].define(version: 2026_02_22_214200) do
     t.index ["parent_block_id"], name: "index_experience_block_links_on_parent_block_id"
   end
 
+  create_table "experience_block_segments", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "experience_block_id", null: false
+    t.uuid "experience_segment_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["experience_block_id", "experience_segment_id"], name: "idx_block_segments_unique", unique: true
+    t.index ["experience_block_id"], name: "index_experience_block_segments_on_experience_block_id"
+    t.index ["experience_segment_id"], name: "index_experience_block_segments_on_experience_segment_id"
+  end
+
   create_table "experience_block_variable_bindings", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.uuid "variable_id", null: false
     t.uuid "source_block_id", null: false
@@ -94,7 +104,6 @@ ActiveRecord::Schema[7.2].define(version: 2026_02_22_214200) do
     t.enum "status", default: "hidden", null: false, enum_type: "experience_block_statuses"
     t.jsonb "payload", default: {}, null: false
     t.string "visible_to_roles", default: [], array: true
-    t.string "visible_to_segments", default: [], array: true
     t.uuid "target_user_ids", default: [], null: false, array: true
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
@@ -109,7 +118,17 @@ ActiveRecord::Schema[7.2].define(version: 2026_02_22_214200) do
     t.index ["parent_block_id"], name: "index_experience_blocks_on_parent_block_id"
     t.index ["target_user_ids"], name: "index_experience_blocks_on_target_user_ids", using: :gin
     t.index ["visible_to_roles"], name: "index_experience_blocks_on_visible_to_roles", using: :gin
-    t.index ["visible_to_segments"], name: "index_experience_blocks_on_visible_to_segments", using: :gin
+  end
+
+  create_table "experience_buzzer_submissions", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "experience_block_id", null: false
+    t.uuid "user_id", null: false
+    t.jsonb "answer", default: {}, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["experience_block_id", "user_id"], name: "index_buzzer_submissions_on_block_and_user", unique: true
+    t.index ["experience_block_id"], name: "index_experience_buzzer_submissions_on_experience_block_id"
+    t.index ["user_id"], name: "index_experience_buzzer_submissions_on_user_id"
   end
 
   create_table "experience_mad_lib_submissions", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -132,6 +151,16 @@ ActiveRecord::Schema[7.2].define(version: 2026_02_22_214200) do
     t.index ["user_id"], name: "index_experience_multistep_form_submissions_on_user_id"
   end
 
+  create_table "experience_participant_segments", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "experience_participant_id", null: false
+    t.uuid "experience_segment_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["experience_participant_id", "experience_segment_id"], name: "idx_participant_segments_unique", unique: true
+    t.index ["experience_participant_id"], name: "idx_on_experience_participant_id_8a3a1e02cd"
+    t.index ["experience_segment_id"], name: "index_experience_participant_segments_on_experience_segment_id"
+  end
+
   create_table "experience_participants", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.uuid "user_id", null: false
     t.uuid "experience_id", null: false
@@ -141,7 +170,6 @@ ActiveRecord::Schema[7.2].define(version: 2026_02_22_214200) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.enum "role", default: "audience", null: false, enum_type: "experience_participant_roles"
-    t.string "segments", default: [], null: false, array: true
     t.string "name", null: false
     t.jsonb "avatar", default: {}, null: false
     t.index ["avatar"], name: "index_experience_participants_on_avatar", using: :gin
@@ -149,7 +177,6 @@ ActiveRecord::Schema[7.2].define(version: 2026_02_22_214200) do
     t.index ["experience_id"], name: "index_experience_participants_on_experience_id"
     t.index ["fingerprint"], name: "index_experience_participants_on_fingerprint"
     t.index ["role"], name: "index_experience_participants_on_role"
-    t.index ["segments"], name: "index_experience_participants_on_segments", using: :gin
     t.index ["user_id", "experience_id"], name: "index_experience_participants_on_user_id_and_experience_id", unique: true
     t.index ["user_id"], name: "index_experience_participants_on_user_id"
   end
@@ -184,6 +211,17 @@ ActiveRecord::Schema[7.2].define(version: 2026_02_22_214200) do
     t.index ["user_id"], name: "index_experience_question_submissions_on_user_id"
   end
 
+  create_table "experience_segments", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "experience_id", null: false
+    t.string "name", null: false
+    t.string "color", default: "#6B7280", null: false
+    t.integer "position", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["experience_id", "name"], name: "index_experience_segments_on_experience_id_and_name", unique: true
+    t.index ["experience_id", "position"], name: "index_experience_segments_on_experience_id_and_position", unique: true
+  end
+
   create_table "experiences", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.string "name", null: false
     t.citext "code", null: false
@@ -197,6 +235,7 @@ ActiveRecord::Schema[7.2].define(version: 2026_02_22_214200) do
     t.text "description"
     t.string "code_slug", null: false
     t.jsonb "playbill", default: [], null: false
+    t.boolean "playbill_enabled", default: true, null: false
     t.index ["code_slug"], name: "index_experiences_on_code_slug", unique: true
     t.index ["creator_id"], name: "index_experiences_on_creator_id"
     t.index ["status"], name: "index_experiences_on_status"
@@ -231,15 +270,21 @@ ActiveRecord::Schema[7.2].define(version: 2026_02_22_214200) do
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "experience_block_links", "experience_blocks", column: "child_block_id", on_delete: :cascade
   add_foreign_key "experience_block_links", "experience_blocks", column: "parent_block_id", on_delete: :cascade
+  add_foreign_key "experience_block_segments", "experience_blocks", on_delete: :cascade
+  add_foreign_key "experience_block_segments", "experience_segments", on_delete: :cascade
   add_foreign_key "experience_block_variable_bindings", "experience_block_variables", column: "variable_id", on_delete: :cascade
   add_foreign_key "experience_block_variable_bindings", "experience_blocks", column: "source_block_id", on_delete: :cascade
   add_foreign_key "experience_block_variables", "experience_blocks", on_delete: :cascade
   add_foreign_key "experience_blocks", "experience_blocks", column: "parent_block_id"
   add_foreign_key "experience_blocks", "experiences", on_delete: :cascade
+  add_foreign_key "experience_buzzer_submissions", "experience_blocks", on_delete: :cascade
+  add_foreign_key "experience_buzzer_submissions", "users", on_delete: :cascade
   add_foreign_key "experience_mad_lib_submissions", "experience_blocks", on_delete: :cascade
   add_foreign_key "experience_mad_lib_submissions", "users", on_delete: :cascade
   add_foreign_key "experience_multistep_form_submissions", "experience_blocks", on_delete: :cascade
   add_foreign_key "experience_multistep_form_submissions", "users", on_delete: :cascade
+  add_foreign_key "experience_participant_segments", "experience_participants", on_delete: :cascade
+  add_foreign_key "experience_participant_segments", "experience_segments", on_delete: :cascade
   add_foreign_key "experience_participants", "experiences", on_delete: :cascade
   add_foreign_key "experience_participants", "users", on_delete: :cascade
   add_foreign_key "experience_photo_upload_submissions", "experience_blocks", on_delete: :cascade
@@ -248,5 +293,6 @@ ActiveRecord::Schema[7.2].define(version: 2026_02_22_214200) do
   add_foreign_key "experience_poll_submissions", "users", on_delete: :cascade
   add_foreign_key "experience_question_submissions", "experience_blocks", on_delete: :cascade
   add_foreign_key "experience_question_submissions", "users", on_delete: :cascade
+  add_foreign_key "experience_segments", "experiences", on_delete: :cascade
   add_foreign_key "experiences", "users", column: "creator_id", on_delete: :cascade
 end

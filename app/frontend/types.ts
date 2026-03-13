@@ -19,6 +19,14 @@ export enum BlockKind {
   MAD_LIB = 'mad_lib',
   FAMILY_FEUD = 'family_feud',
   PHOTO_UPLOAD = 'photo_upload',
+  BUZZER = 'buzzer',
+}
+
+export interface ExperienceSegment {
+  id: string;
+  name: string;
+  color: string;
+  position: number;
 }
 
 // ===== BLOCK PAYLOAD TYPES =====
@@ -27,6 +35,7 @@ export interface PollPayload {
   question: string;
   options: string[];
   pollType?: 'single' | 'multiple';
+  segmentAssignments?: Record<string, string>;
 }
 
 export interface QuestionPayload {
@@ -77,6 +86,10 @@ export interface FamilyFeudPayload {
 
 export interface PhotoUploadPayload {
   prompt: string;
+}
+
+export interface BuzzerPayload {
+  label?: string;
 }
 
 export interface BlockLink {
@@ -131,6 +144,7 @@ export interface PollApiPayload {
   question: string;
   options: string[];
   pollType: 'single' | 'multiple';
+  segmentAssignments?: Record<string, string>;
 }
 
 export interface QuestionApiPayload {
@@ -165,6 +179,11 @@ export interface PhotoUploadApiPayload {
   prompt: string;
 }
 
+export interface BuzzerApiPayload {
+  type: 'buzzer';
+  label?: string;
+}
+
 // Discriminated union for API payloads (what gets sent to backend)
 export type ApiPayload =
   | PollApiPayload
@@ -173,7 +192,8 @@ export type ApiPayload =
   | AnnouncementApiPayload
   | MadLibApiPayload
   | FamilyFeudApiPayload
-  | PhotoUploadApiPayload;
+  | PhotoUploadApiPayload
+  | BuzzerApiPayload;
 
 // ===== PLAYBILL TYPES =====
 
@@ -211,6 +231,7 @@ export interface ExperienceParticipant {
   email: string;
   status: ParticipantStatus;
   role: ParticipantRole;
+  segments?: string[];
   joined_at: string | null;
   fingerprint: string | null;
   created_at: string;
@@ -314,6 +335,22 @@ export interface PhotoUploadBlock extends BaseBlock {
   };
 }
 
+export interface BuzzerBlock extends BaseBlock {
+  kind: BlockKind.BUZZER;
+  payload: BuzzerPayload;
+  responses?: {
+    total: number;
+    user_responded: boolean;
+    user_response?: { id: string; answer: { buzzed_at: string } } | null;
+    all_responses?: Array<{
+      id: string;
+      user_id: string;
+      answer: { buzzed_at: string };
+      created_at: string;
+    }>;
+  };
+}
+
 export type Block =
   | PollBlock
   | QuestionBlock
@@ -321,7 +358,8 @@ export type Block =
   | AnnouncementBlock
   | MadLibBlock
   | FamilyFeudBlock
-  | PhotoUploadBlock;
+  | PhotoUploadBlock
+  | BuzzerBlock;
 
 export interface Experience {
   id: string;
@@ -336,7 +374,9 @@ export interface Experience {
   participants: ExperienceParticipant[];
   blocks: Block[];
   next_block?: Block | null;
+  playbill_enabled?: boolean;
   playbill?: PlaybillSection[];
+  segments?: ExperienceSegment[];
   created_at: string;
   updated_at: string;
 }
@@ -347,7 +387,7 @@ export type UserSummary = Pick<User, 'id' | 'name' | 'email'>;
 
 export type ParticipantSummary = Pick<
   ExperienceParticipant,
-  'id' | 'user_id' | 'name' | 'email' | 'role' | 'avatar'
+  'id' | 'user_id' | 'name' | 'email' | 'role' | 'avatar' | 'segments'
 >;
 
 // ===== API REQUEST TYPES =====
@@ -378,7 +418,8 @@ export interface CreateBlockPayload {
     | AnnouncementPayload
     | MadLibPayload
     | FamilyFeudPayload
-    | PhotoUploadPayload;
+    | PhotoUploadPayload
+    | BuzzerPayload;
   visible_to_roles?: ParticipantRole[];
   visible_to_segments?: string[];
   target_user_ids?: string[];
@@ -662,6 +703,7 @@ export interface PollData {
   question: string;
   options: string[];
   pollType: 'single' | 'multiple';
+  segmentAssignments: Record<string, string>;
 }
 
 export interface QuestionData {
@@ -692,6 +734,10 @@ export interface PhotoUploadData {
   prompt: string;
 }
 
+export interface BuzzerData {
+  label: string;
+}
+
 // Union type for all block component data
 export type BlockComponentData =
   | PollData
@@ -700,7 +746,8 @@ export type BlockComponentData =
   | AnnouncementData
   | MadLibData
   | FamilyFeudData
-  | PhotoUploadData;
+  | PhotoUploadData
+  | BuzzerData;
 
 // Discriminated union for form block data
 export type FormBlockData =
@@ -710,7 +757,8 @@ export type FormBlockData =
   | { kind: BlockKind.ANNOUNCEMENT; data: AnnouncementData }
   | { kind: BlockKind.MAD_LIB; data: MadLibData }
   | { kind: BlockKind.FAMILY_FEUD; data: FamilyFeudData }
-  | { kind: BlockKind.PHOTO_UPLOAD; data: PhotoUploadData };
+  | { kind: BlockKind.PHOTO_UPLOAD; data: PhotoUploadData }
+  | { kind: BlockKind.BUZZER; data: BuzzerData };
 
 export interface CreateBlockContextValue {
   // Form block data with discriminated union
@@ -729,8 +777,8 @@ export interface CreateBlockContextValue {
   // Additional form state
   visibleRoles: ParticipantRole[];
   setVisibleRoles: (roles: ParticipantRole[]) => void;
-  visibleSegmentsText: string;
-  setVisibleSegmentsText: (text: string) => void;
+  visibleSegments: string[];
+  setVisibleSegments: (segments: string[]) => void;
   targetUserIdsText: string;
   setTargetUserIdsText: (text: string) => void;
   showInLobby: boolean;

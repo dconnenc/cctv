@@ -8,6 +8,10 @@ class Experience < ApplicationRecord
 
   has_many_attached :attachments
 
+  has_many :experience_segments,
+    -> { order(position: :asc) },
+    dependent: :destroy
+
   has_many :experience_blocks,
     -> { order(position: :asc) },
     dependent: :destroy

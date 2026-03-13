@@ -30,13 +30,13 @@ export function useJoinExperience() {
     // Handle different response types
     switch (response.type) {
       case 'success':
-        // User is already registered - redirect to experience
         qaLogger(`User already registrated, redirecting to: ${response.url}`);
+        sessionStorage.setItem('cctv_last_join_code', code.trim());
         window.location.href = response.url;
         break;
       case 'needs_registration':
-        // User needs to register - redirect to registration page
         qaLogger(`User needs registration, redirecting to: ${response.url}`);
+        sessionStorage.setItem('cctv_last_join_code', code.trim());
         window.location.href = response.url;
         break;
       case 'error':

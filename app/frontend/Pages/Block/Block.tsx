@@ -4,6 +4,7 @@ import { DialogDescription, DialogTitle } from '@cctv/components/ui/dialog';
 import { useExperience } from '@cctv/contexts/ExperienceContext';
 import { BlockKind, type Block as BlockType } from '@cctv/types';
 
+import BuzzerManager from './BuzzerManager/BuzzerManager';
 import FamilyFeudManager from './FamilyFeudManager/FamilyFeudManager';
 
 import styles from './Block.module.scss';
@@ -52,9 +53,13 @@ export default function Block({ blockId }: BlockProps) {
     );
   }
 
-  // Render family feud manager for family_feud blocks
   if (block.kind === BlockKind.FAMILY_FEUD) {
     return <FamilyFeudManager block={block} />;
+  }
+
+  if (block.kind === BlockKind.BUZZER) {
+    const allParticipants = [...(experience.hosts || []), ...(experience.participants || [])];
+    return <BuzzerManager block={block} participants={allParticipants} />;
   }
 
   // Default view for other block types

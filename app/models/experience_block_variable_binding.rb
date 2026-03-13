@@ -29,8 +29,8 @@ class ExperienceBlockVariableBinding < ApplicationRecord
       end
     end
 
-    if source_block.visible_to_segments.present?
-      invalid_segments = source_block.visible_to_segments - variable_block.visible_to_segments
+    if source_block.experience_segments.any?
+      invalid_segments = source_block.visible_to_segment_names - variable_block.visible_to_segment_names
 
       if invalid_segments.any?
         errors.add(

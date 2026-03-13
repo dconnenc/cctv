@@ -4,7 +4,8 @@
   left: 50%;
   transform: translate(-50%, -50%);
   width: 100%;
-  max-width: 400px;
+  padding: 0 var(--space-sm);
+  box-sizing: border-box;
   display: flex;
   flex-direction: column;
   gap: var(--space-xs);
@@ -12,6 +13,7 @@
   transition: opacity 0.3s ease-in-out;
   pointer-events: auto;
   z-index: 3;
+  overflow-wrap: break-word;
 }
 .questionHidden {
   opacity: 0;
@@ -31,10 +33,12 @@
   gap: var(--space-xs);
   align-items: center;
   justify-content: center;
+  width: 75%;
+  max-width: 600px;
 }
 .questions {
   position: relative;
-  height: 400px;
+  min-height: 300px;
   width: 100%;
   display: flex;
   align-items: center;
@@ -51,10 +55,12 @@
   font-size: 28px;
   width: 100%;
   color: var(--yellow);
+  overflow-wrap: break-word;
 }
 .legend {
   font-size: 32px;
   color: white;
+  overflow-wrap: break-word;
 }
 .value {
   padding: var(--space-xs) 0;

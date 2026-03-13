@@ -266,7 +266,10 @@ export default function ManageViewer() {
             </button>
           </div>
           <div className="flex-1 overflow-y-auto">
-            <ParticipantsTab participants={participantsCombined} />
+            <ParticipantsTab
+              participants={participantsCombined}
+              segments={experience?.segments || []}
+            />
           </div>
         </aside>
       </section>
@@ -292,7 +295,10 @@ export default function ManageViewer() {
 
       <Dialog open={isPlaybillDialogOpen} onOpenChange={setIsPlaybillDialogOpen}>
         <DialogContent className="sm:max-w-2xl w-full">
-          <PlaybillTab playbill={experience?.playbill || []} />
+          <PlaybillTab
+            playbill={experience?.playbill || []}
+            playbillEnabled={experience?.playbill_enabled !== false}
+          />
         </DialogContent>
       </Dialog>
     </>

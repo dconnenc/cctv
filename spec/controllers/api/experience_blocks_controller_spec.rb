@@ -28,7 +28,7 @@ RSpec.describe Api::ExperienceBlocksController, type: :controller do
       status: status,
       variables: variables,
       visible_to_roles: [],
-      visible_to_segments: [],
+      visible_to_segment_ids: [],
       target_user_ids: []
     }
   }

@@ -60,6 +60,8 @@ Rails.application.routes.draw do
           post :submit_multistep_form_response
           post :submit_mad_lib_response
           post :submit_photo_upload_response
+          post :submit_buzzer_response
+          delete :clear_buzzer_responses
 
           post 'family_feud/auto_categorize', action: :auto_categorize
           post 'family_feud/add_bucket', action: :add_bucket
@@ -78,6 +80,12 @@ Rails.application.routes.draw do
         # collection do
         #   post :batch_open
         # end
+      end
+
+      resources :segments, controller: 'experience_segments', only: [:index, :create, :update, :destroy] do
+        member do
+          post :assign
+        end
       end
 
       resources :participants, controller: 'experience_participants', only: [] do

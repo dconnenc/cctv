@@ -4,8 +4,24 @@ FactoryBot.define do
 
     kind { "poll" }
     status { ExperienceBlock.statuses[:open] }
-    
+
     sequence(:position) { |n| n }
+
+    transient do
+      visible_to_segment_names { [] }
+    end
+
+    after(:create) do |block, evaluator|
+      if evaluator.visible_to_segment_names.any?
+        evaluator.visible_to_segment_names.each do |name|
+          segment = block.experience.experience_segments.find_or_create_by!(name: name) do |s|
+            s.color = '#6B7280'
+            s.position = block.experience.experience_segments.count
+          end
+          ExperienceBlockSegment.create!(experience_block: block, experience_segment: segment)
+        end
+      end
+    end
 
     trait :family_feud do
       kind { ExperienceBlock::FAMILY_FEUD }
@@ -31,7 +47,6 @@ FactoryBot.define do
               inputType: "text"
             },
             visible_to_roles: block.visible_to_roles,
-            visible_to_segments: block.visible_to_segments,
             target_user_ids: [],
             parent_block_id: block.id,
             position: index,
