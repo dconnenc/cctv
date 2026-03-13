@@ -1,6 +1,6 @@
 source "https://rubygems.org"
 
-ruby File.read(".ruby-version").strip
+ruby ENV["RUBY_VERSION"] || File.read(".ruby-version").strip
 
 gem "rails", "~> 7.2.2", ">= 7.2.2.2"
 gem "pg", "~> 1.1"
