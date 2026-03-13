@@ -273,6 +273,127 @@ RSpec.describe Experiences::Visibility do
       expect(subject[:experience][:blocks].size).to eq(1)
       expect(subject[:experience][:blocks].first[:id]).to eq(open_block.id)
     end
+
+  end
+
+  describe ".payload_for_user segment visibility" do
+    let(:experience_status) { Experience.statuses[:live] }
+
+    let!(:team_a_block) do
+      create(
+        :experience_block,
+        experience: experience,
+        status: :open,
+        visible_to_segment_names: [user_segment]
+      )
+    end
+
+    let!(:team_b_block) do
+      create(
+        :experience_block,
+        experience: experience,
+        status: :open,
+        visible_to_segment_names: [other_segment]
+      )
+    end
+
+    it "shows a segment-scoped block to a participant in that segment" do
+      result = described_class.payload_for_user(experience: experience, user: user)
+      block_ids = result[:experience][:blocks].map { |b| b[:id] }
+      expect(block_ids).to include(team_a_block.id)
+      expect(block_ids).not_to include(team_b_block.id)
+    end
+
+    it "does not show a segment-scoped block to a participant not in that segment" do
+      other_user = create(:user, :user)
+      create(
+        :experience_participant,
+        user: other_user,
+        experience: experience,
+        role: participant_role,
+        segments: [other_segment]
+      )
+
+      result = described_class.payload_for_user(experience: experience, user: other_user)
+      block_ids = result[:experience][:blocks].map { |b| b[:id] }
+      expect(block_ids).to include(team_b_block.id)
+      expect(block_ids).not_to include(team_a_block.id)
+    end
+  end
+
+  describe ".payload_for_user poll-to-segment-to-announcement flow" do
+    let(:experience_status) { Experience.statuses[:live] }
+    let(:alice) { create(:user, :user) }
+    let(:bob) { create(:user, :user) }
+    let(:team_a_segment) do
+      pos = (experience.experience_segments.maximum(:position) || -1) + 1
+      experience.experience_segments.create!(name: "Team A", color: "#ff0000", position: pos)
+    end
+    let(:team_b_segment) do
+      pos = (experience.experience_segments.maximum(:position) || -1) + 1
+      experience.experience_segments.create!(name: "Team B", color: "#0000ff", position: pos)
+    end
+
+    let!(:alice_participant) do
+      create(:experience_participant, user: alice, experience: experience, role: :player)
+    end
+
+    let!(:bob_participant) do
+      create(:experience_participant, user: bob, experience: experience, role: :player)
+    end
+
+    let!(:poll_block) do
+      create(
+        :experience_block,
+        experience: experience,
+        kind: "poll",
+        status: :closed,
+        payload: {
+          "question" => "Pick your team",
+          "options" => ["Team A", "Team B"],
+          "segmentAssignments" => {
+            "Team A" => team_a_segment.id,
+            "Team B" => team_b_segment.id
+          }
+        }
+      )
+    end
+
+    let!(:announcement_block) do
+      block = create(
+        :experience_block,
+        experience: experience,
+        kind: "announcement",
+        status: :open
+      )
+      ExperienceBlockSegment.create!(experience_block: block, experience_segment: team_a_segment)
+      block
+    end
+
+    before do
+      # Alice picks Team A → assigned to team_a_segment
+      ExperienceParticipantSegment.create!(
+        experience_participant: alice_participant,
+        experience_segment: team_a_segment
+      )
+      # Bob picks Team B → assigned to team_b_segment
+      ExperienceParticipantSegment.create!(
+        experience_participant: bob_participant,
+        experience_segment: team_b_segment
+      )
+    end
+
+    it "shows the Team A announcement only to Alice" do
+      alice_result = described_class.payload_for_user(experience: experience, user: alice)
+      alice_block_ids = alice_result[:experience][:blocks].map { |b| b[:id] }
+      expect(alice_block_ids).to include(announcement_block.id)
+    end
+
+    it "does not show the Team A announcement to Bob" do
+      bob_result = described_class.payload_for_user(experience: experience, user: bob)
+      bob_block_ids = bob_result[:experience][:blocks].map { |b| b[:id] }
+      expect(bob_block_ids).not_to include(announcement_block.id)
+    end
   end
 
   describe ".payload_for_stream" do

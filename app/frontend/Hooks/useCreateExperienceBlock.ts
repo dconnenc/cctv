@@ -8,16 +8,13 @@ import {
   BlockStatus,
   CreateBlockPayload,
   CreateExperienceApiResponse,
-  ParticipantRole,
 } from '@cctv/types';
 import { qaLogger } from '@cctv/utils';
 
 export interface CreateExperienceBlockParams {
   kind: BlockKind;
   payload?: ApiPayload;
-  visible_to_roles?: ParticipantRole[];
-  visible_to_segments?: string[];
-  target_user_ids?: string[];
+  visible_to_segment_ids?: string[];
   status?: BlockStatus;
   open_immediately?: boolean;
   variables?: Array<{
@@ -44,9 +41,7 @@ export function useCreateExperienceBlock() {
     async ({
       kind,
       payload,
-      visible_to_roles = [],
-      visible_to_segments = [],
-      target_user_ids = [],
+      visible_to_segment_ids = [],
       status = 'hidden',
       open_immediately = false,
       variables,
@@ -73,9 +68,7 @@ export function useCreateExperienceBlock() {
       const submitPayload: CreateBlockPayload = {
         kind,
         payload: payload as CreateBlockPayload['payload'],
-        visible_to_roles,
-        visible_to_segments,
-        target_user_ids,
+        visible_to_segment_ids,
         status,
         open_immediately,
         ...(variables && { variables }),

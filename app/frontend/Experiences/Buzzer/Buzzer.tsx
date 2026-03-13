@@ -118,7 +118,9 @@ export default function Buzzer({ block, viewContext = 'participant' }: BuzzerPro
     if (!firstResponse) {
       return (
         <div className={styles.monitorWaiting}>
-          <p className={styles.monitorLabel}>Contestants be ready to buzz in!</p>
+          <p className={styles.monitorLabel}>
+            {block.payload.prompt || 'Contestants be ready to buzz in!'}
+          </p>
         </div>
       );
     }

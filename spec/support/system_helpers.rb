@@ -133,4 +133,14 @@ module SystemHelpers
     click_button "Submit"
     expect(page).to have_text("Players in Lobby:")
   end
+
+  def within_participants_panel(&block)
+    expect(page).to have_current_path(/\/manage$/)
+    click_button "Participants"
+    expect(page).to have_button("Close participants panel")
+    yield
+    click_button "Close participants panel"
+    expect(page).to have_button("Participants", exact: true)
+    page.evaluate_script("document.activeElement.blur()")
+  end
 end

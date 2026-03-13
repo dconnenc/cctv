@@ -1,5 +1,29 @@
 module Experiences
   class Orchestrator < BaseService
+    def kick_participant!(participant_id)
+      actor_action do
+        authorize! experience, to: :manage?, with: ExperiencePolicy
+
+        participant = experience.experience_participants.find(participant_id)
+        participant.destroy!
+      end
+    end
+
+    def update_participant_avatar!(participant_id:, strokes:)
+      actor_action do
+        participant = experience.experience_participants.find(participant_id)
+        is_self = participant.user_id == user&.id
+        unless is_self || allowed_to?(:manage?, experience, with: ExperiencePolicy)
+          raise Experiences::ForbiddenError, "forbidden"
+        end
+
+        avatar = participant.avatar || {}
+        avatar[:strokes] = strokes unless strokes.nil?
+        participant.update!(avatar: avatar)
+        participant
+      end
+    end
+
     def add_block!(
       kind:,
       payload: {},

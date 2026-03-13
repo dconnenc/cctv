@@ -27,32 +27,52 @@ function ExperienceActionButton() {
 
   if (!experience) return null;
 
-  switch (experience.status) {
-    case 'draft':
-    case 'lobby':
-      return (
-        <Button onClick={startExperience} loading={starting} loadingText="Starting...">
-          <Play size={16} />
-          <span>Start</span>
-        </Button>
-      );
-    case 'live':
-      return (
-        <Button onClick={pauseExperience} loading={pausing} loadingText="Pausing...">
-          <Pause size={16} />
-          <span>Pause</span>
-        </Button>
-      );
-    case 'paused':
-      return (
-        <Button onClick={resumeExperience} loading={resuming} loadingText="Resuming...">
-          <Play size={16} />
-          <span>Resume</span>
-        </Button>
-      );
-    default:
-      return null;
-  }
+  const config = ((): {
+    onClick: () => void;
+    loading: boolean;
+    loadingText: string;
+    icon: React.ReactNode;
+    label: string;
+  } | null => {
+    switch (experience.status) {
+      case 'draft':
+      case 'lobby':
+        return {
+          onClick: startExperience,
+          loading: starting,
+          loadingText: 'Starting...',
+          icon: <Play size={16} />,
+          label: 'Start',
+        };
+      case 'live':
+        return {
+          onClick: pauseExperience,
+          loading: pausing,
+          loadingText: 'Pausing...',
+          icon: <Pause size={16} />,
+          label: 'Pause',
+        };
+      case 'paused':
+        return {
+          onClick: resumeExperience,
+          loading: resuming,
+          loadingText: 'Resuming...',
+          icon: <Play size={16} />,
+          label: 'Resume',
+        };
+      default:
+        return null;
+    }
+  })();
+
+  if (!config) return null;
+
+  return (
+    <Button onClick={config.onClick} loading={config.loading} loadingText={config.loadingText}>
+      {config.icon}
+      <span>{config.label}</span>
+    </Button>
+  );
 }
 
 export default function ManageViewer() {
@@ -249,29 +269,26 @@ export default function ManageViewer() {
           </div>
         </main>
 
-        <aside
-          className={`z-10 absolute h-full top-0 right-0 w-[420px] shrink-0 border-l border-[hsl(var(--border))] bg-[hsl(var(--card))] flex flex-col transition-all duration-300 ease-in-out ${
-            showParticipantDetails
-              ? 'translate-x-0'
-              : 'translate-x-full w-0 border-0 overflow-hidden'
-          }`}
-        >
-          <div className="p-4 h-20 border-b border-[hsl(var(--border))] flex items-center justify-between">
-            <div className="text-sm font-semibold text-white">Participants</div>
-            <button
-              onClick={() => setShowParticipantDetails(false)}
-              className="p-1 rounded hover:bg-[hsl(var(--muted))] transition-colors text-[hsl(var(--muted-foreground))]"
-            >
-              <X size={16} />
-            </button>
-          </div>
-          <div className="flex-1 overflow-y-auto">
-            <ParticipantsTab
-              participants={participantsCombined}
-              segments={experience?.segments || []}
-            />
-          </div>
-        </aside>
+        {showParticipantDetails && (
+          <aside className="z-10 absolute h-full top-0 right-0 w-[420px] shrink-0 border-l border-[hsl(var(--border))] bg-[hsl(var(--card))] flex flex-col">
+            <div className="p-4 h-20 border-b border-[hsl(var(--border))] flex items-center justify-between">
+              <div className="text-sm font-semibold text-white">Participants</div>
+              <button
+                onClick={() => setShowParticipantDetails(false)}
+                className="p-1 rounded hover:bg-[hsl(var(--muted))] transition-colors text-[hsl(var(--muted-foreground))]"
+                aria-label="Close participants panel"
+              >
+                <X size={16} />
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto">
+              <ParticipantsTab
+                participants={participantsCombined}
+                segments={experience?.segments || []}
+              />
+            </div>
+          </aside>
+        )}
       </section>
 
       <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
