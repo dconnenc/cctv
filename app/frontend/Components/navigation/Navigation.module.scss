@@ -450,3 +450,7 @@
   color: hsl(var(--foreground));
   text-shadow: none;
 }
+
+:global(.has-avatar-btn) .drawer {
+  padding-right: calc(44px + var(--space-sm) * 2);
+}

@@ -82,6 +82,13 @@ export default function Experience() {
   const needsAvatar = !isAdmin && !participant?.avatar;
   const hasInitialData = !isAdmin ? experience && participant : experience;
 
+  useEffect(() => {
+    if (!isAdmin && participant) {
+      document.body.classList.add('has-avatar-btn');
+      return () => document.body.classList.remove('has-avatar-btn');
+    }
+  }, [isAdmin, participant]);
+
   const avatarBtn =
     !isAdmin && participant
       ? createPortal(
