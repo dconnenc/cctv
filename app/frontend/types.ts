@@ -423,9 +423,7 @@ export interface CreateBlockPayload {
     | FamilyFeudPayload
     | PhotoUploadPayload
     | BuzzerPayload;
-  visible_to_roles?: ParticipantRole[];
   visible_to_segment_ids?: string[];
-  target_user_ids?: string[];
   status?: BlockStatus;
   open_immediately?: boolean;
   variables?: Array<{
@@ -779,14 +777,8 @@ export interface CreateBlockContextValue {
   error: string | null;
 
   // Additional form state
-  visibleRoles: ParticipantRole[];
-  setVisibleRoles: (roles: ParticipantRole[]) => void;
   visibleSegments: string[];
   setVisibleSegments: (segments: string[]) => void;
-  targetUserIdsText: string;
-  setTargetUserIdsText: (text: string) => void;
-  showInLobby: boolean;
-  setShowInLobby: (show: boolean) => void;
   viewAdditionalDetails: boolean;
   setViewAdditionalDetails: (view: boolean) => void;
 }

@@ -3,7 +3,7 @@ import { useExperience } from '@cctv/contexts/ExperienceContext';
 import { Button } from '@cctv/core/Button/Button';
 import { Dropdown } from '@cctv/core/Dropdown/Dropdown';
 import { SegmentBadge } from '@cctv/core/SegmentBadge/SegmentBadge';
-import { BlockKind, ParticipantRole, ParticipantSummary } from '@cctv/types';
+import { BlockKind, ParticipantSummary } from '@cctv/types';
 
 import CreateAnnouncement from './CreateAnnouncement/CreateAnnouncement';
 import { CreateBlockProvider, useCreateBlockContext } from './CreateBlockContext';
@@ -129,33 +129,12 @@ function BlockEditor() {
 }
 
 function AdditionalDetails() {
-  const {
-    participants,
-    visibleRoles,
-    setVisibleRoles,
-    visibleSegments,
-    setVisibleSegments,
-    targetUserIdsText,
-    setTargetUserIdsText,
-    showInLobby,
-    setShowInLobby,
-  } = useCreateBlockContext();
+  const { visibleSegments, setVisibleSegments } = useCreateBlockContext();
   const { experience } = useExperience();
   const definedSegments = experience?.segments || [];
 
   return (
     <div className={styles.additionalDetails}>
-      <Dropdown
-        label="Visible to roles"
-        options={[
-          { label: 'Audience', value: 'audience' },
-          { label: 'Player', value: 'player' },
-          { label: 'Moderator', value: 'moderator' },
-          { label: 'Host', value: 'host' },
-        ]}
-        value={visibleRoles}
-        onChange={(value) => setVisibleRoles([value as ParticipantRole])}
-      />
       <div>
         <label style={{ fontSize: '0.85rem' }}>Visible to segments</label>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.25rem', marginTop: '0.25rem' }}>
@@ -192,20 +171,6 @@ function AdditionalDetails() {
           )}
         </div>
       </div>
-      <Dropdown
-        label="Target user IDs"
-        options={participants.map((p) => ({ label: p.name, value: p.id }))}
-        value={targetUserIdsText}
-        onChange={setTargetUserIdsText}
-      />
-      <label className={styles.checkboxLabel}>
-        <input
-          type="checkbox"
-          checked={showInLobby}
-          onChange={(e) => setShowInLobby(e.target.checked)}
-        />
-        Show in lobby
-      </label>
     </div>
   );
 }

@@ -9,7 +9,6 @@ import {
   CreateBlockContextValue,
   FormBlockData,
   MadLibData,
-  ParticipantRole,
   ParticipantSummary,
 } from '@cctv/types';
 
@@ -120,10 +119,7 @@ export function CreateBlockProvider({
     getDefaultFormData(BlockKind.POLL),
   );
 
-  const [visibleRoles, setVisibleRoles] = useState<ParticipantRole[]>([]);
   const [visibleSegments, setVisibleSegments] = useState<string[]>([]);
-  const [targetUserIdsText, setTargetUserIdsText] = useState<string>('');
-  const [showInLobby, setShowInLobby] = useState<boolean>(false);
   const [viewAdditionalDetails, setViewAdditionalDetails] = useState<boolean>(false);
 
   const { experience } = useExperience();
@@ -322,20 +318,14 @@ export function CreateBlockProvider({
       const visible_to_segment_ids = visibleSegments
         .map((name) => definedSegments.find((s) => s.name === name)?.id)
         .filter((id): id is string => id !== undefined);
-      const target_user_ids = targetUserIdsText
-        .split(',')
-        .map((s) => s.trim())
-        .filter(Boolean);
 
       const submitPayload: {
         kind: BlockKind;
         payload: ApiPayload;
-        visible_to_roles: ParticipantRole[];
         visible_to_segment_ids: string[];
         target_user_ids: string[];
         status: BlockStatus;
         open_immediately: boolean;
-        show_in_lobby: boolean;
         variables?: Array<{
           key: string;
           label: string;
@@ -350,12 +340,10 @@ export function CreateBlockProvider({
       } = {
         kind: blockData.kind,
         payload,
-        visible_to_roles: visibleRoles,
         visible_to_segment_ids,
-        target_user_ids,
+        target_user_ids: [],
         status: status,
         open_immediately: status === 'open',
-        show_in_lobby: showInLobby,
       };
 
       if (blockData.kind === BlockKind.MAD_LIB) {
@@ -397,18 +385,13 @@ export function CreateBlockProvider({
 
       // Reset all form state
       setBlockData(getDefaultFormData(blockData.kind));
-      setVisibleRoles([]);
       setVisibleSegments([]);
-      setTargetUserIdsText('');
-      setShowInLobby(false);
       setViewAdditionalDetails(false);
     },
     [
       blockData,
       participants,
-      visibleRoles,
       visibleSegments,
-      targetUserIdsText,
       createExperienceBlock,
       onClose,
       onEndCurrentBlock,
@@ -425,14 +408,8 @@ export function CreateBlockProvider({
     submit,
     isSubmitting,
     error: createError,
-    visibleRoles,
-    setVisibleRoles,
     visibleSegments,
     setVisibleSegments,
-    targetUserIdsText,
-    setTargetUserIdsText,
-    showInLobby,
-    setShowInLobby,
     viewAdditionalDetails,
     setViewAdditionalDetails,
   };
