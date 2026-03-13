@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { ArrowDown, ArrowUp, ImagePlus, Plus, Trash2, X } from 'lucide-react';
 
+import { Switch } from '@cctv/components/ui/switch';
 import { Button, TextInput } from '@cctv/core';
 import { useDirectUpload, useUpdatePlaybill } from '@cctv/hooks';
 import { PlaybillSection } from '@cctv/types';
@@ -18,10 +19,12 @@ function makeEmptySection(): PlaybillSection {
 
 interface PlaybillTabProps {
   playbill: PlaybillSection[];
+  playbillEnabled: boolean;
 }
 
-export default function PlaybillTab({ playbill }: PlaybillTabProps) {
+export default function PlaybillTab({ playbill, playbillEnabled }: PlaybillTabProps) {
   const [sections, setSections] = useState<PlaybillSection[]>(playbill);
+  const [enabled, setEnabled] = useState(playbillEnabled);
   const { updatePlaybill, isLoading, error } = useUpdatePlaybill();
   const { upload: directUpload, isUploading, progress, error: uploadError } = useDirectUpload();
   const [uploadingSectionId, setUploadingSectionId] = useState<string | null>(null);
@@ -31,7 +34,12 @@ export default function PlaybillTab({ playbill }: PlaybillTabProps) {
     setSections(playbill);
   }, [playbill]);
 
-  const isDirty = JSON.stringify(sections) !== JSON.stringify(playbill);
+  useEffect(() => {
+    setEnabled(playbillEnabled);
+  }, [playbillEnabled]);
+
+  const isDirty =
+    JSON.stringify(sections) !== JSON.stringify(playbill) || enabled !== playbillEnabled;
 
   const handleAdd = useCallback(() => {
     setSections((prev) => [...prev, makeEmptySection()]);
@@ -92,17 +100,23 @@ export default function PlaybillTab({ playbill }: PlaybillTabProps) {
 
   const handleSave = useCallback(async () => {
     const payload = sections.map(({ image_url: _url, ...rest }) => rest);
-    await updatePlaybill(payload);
-  }, [updatePlaybill, sections]);
+    await updatePlaybill(payload, enabled);
+  }, [updatePlaybill, sections, enabled]);
 
   return (
     <div className={styles.container}>
       <div className={styles.header}>
         <span className={styles.headerTitle}>Playbill Sections</span>
-        <Button onClick={handleAdd}>
-          <Plus size={14} />
-          <span>Add Section</span>
-        </Button>
+        <div className="flex items-center gap-3">
+          <label className="flex items-center gap-2 text-sm text-[hsl(var(--muted-foreground))]">
+            <Switch checked={enabled} onCheckedChange={setEnabled} />
+            <span>{enabled ? 'Visible' : 'Hidden'}</span>
+          </label>
+          <Button onClick={handleAdd}>
+            <Plus size={14} />
+            <span>Add Section</span>
+          </Button>
+        </div>
       </div>
 
       {sections.length === 0 && (

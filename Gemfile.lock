@@ -120,7 +120,9 @@ GEM
       concurrent-ruby (~> 1.1)
       webrick (~> 1.7)
       websocket-driver (~> 0.7)
-    ffi (1.17.3)
+    ffi (1.17.3-arm64-darwin)
+    ffi (1.17.3-x64-mingw-ucrt)
+    ffi (1.17.3-x86_64-linux-gnu)
     globalid (1.2.1)
       activesupport (>= 6.1)
     i18n (1.14.7)
@@ -160,7 +162,6 @@ GEM
     mini_magick (5.3.1)
       logger
     mini_mime (1.1.5)
-    mini_portile2 (2.8.9)
     minitest (5.25.5)
     msgpack (1.8.0)
     mutex_m (0.3.0)
@@ -174,19 +175,17 @@ GEM
     net-smtp (0.5.1)
       net-protocol
     nio4r (2.7.4)
-    nokogiri (1.18.9)
-      mini_portile2 (~> 2.8.2)
-      racc (~> 1.4)
     nokogiri (1.18.9-arm64-darwin)
       racc (~> 1.4)
-    nokogiri (1.18.9-x86_64-darwin)
+    nokogiri (1.18.9-x64-mingw-ucrt)
+      racc (~> 1.4)
+    nokogiri (1.18.9-x86_64-linux-gnu)
       racc (~> 1.4)
     passwordless (1.8.1)
       bcrypt (>= 3.1.11)
       rails (>= 5.1.4)
-    pg (1.6.2-aarch64-linux)
     pg (1.6.2-arm64-darwin)
-    pg (1.6.2-x86_64-darwin)
+    pg (1.6.2-x64-mingw-ucrt)
     pg (1.6.2-x86_64-linux)
     pp (0.6.2)
       prettyprint
@@ -276,6 +275,8 @@ GEM
     timeout (0.4.3)
     tzinfo (2.0.6)
       concurrent-ruby (~> 1.0)
+    tzinfo-data (1.2026.1)
+      tzinfo (>= 1.0.0)
     useragent (0.16.11)
     vite_rails (3.0.19)
       railties (>= 5.1, < 9)
@@ -301,9 +302,8 @@ GEM
     zeitwerk (2.6.18)
 
 PLATFORMS
-  aarch64-linux
-  arm64-darwin
-  x86_64-darwin
+  arm64-darwin-21
+  x64-mingw-ucrt
   x86_64-linux
 
 DEPENDENCIES

@@ -1,6 +1,7 @@
 .title {
   margin-bottom: var(--space-xs);
-  font-size: 1.5rem;
+  font-size: 2rem;
+  font-weight: 800;
 }
 
 // Subtitle and general text styles
@@ -13,12 +14,18 @@
   opacity: 0.85;
 }
 
-/* Active block wrapper (participant view): center block content vertically */
+.activeExperience {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: calc(100dvh - var(--nav-h) - var(--space-sm) * 2);
+}
+
 .experienceContent {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: calc(100dvh - var(--nav-h) - calc(var(--space-sm) * 2));
+  flex: 1;
 }
 
 .activeBlock {
@@ -172,18 +179,26 @@
   transform: scale(0.98);
 }
 
-// Mobile-only Playbill CTA
-.playbillCta {
-  display: none;
-  margin-top: var(--space-sm);
+.fab {
+  position: fixed;
+  bottom: calc(var(--space-sm) + env(safe-area-inset-bottom));
+  right: calc(var(--space-sm) + env(safe-area-inset-right));
+  z-index: 100;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--yellow);
+  color: #000;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  text-decoration: none;
 }
 
 @media (max-width: 768px) {
-  .playbillCta {
-    display: flex;
-    justify-content: center;
-  }
-
   .adminControls {
     display: none !important;
   }

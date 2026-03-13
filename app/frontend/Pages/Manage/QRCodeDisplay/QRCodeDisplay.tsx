@@ -10,17 +10,12 @@ interface QRCodeDisplayProps {
 }
 
 export default function QRCodeDisplay({ experience, compact = false }: QRCodeDisplayProps) {
-  const experienceUrl = useMemo(() => {
-    const baseUrl = `${window.location.protocol}//${window.location.host}`;
-    return `${baseUrl}/experiences/${experience.code}`;
-  }, [experience.code]);
-
   const qrCode = useMemo(() => {
     const size = compact ? 110 : 220;
     return `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(
-      experienceUrl,
+      experience.url,
     )}`;
-  }, [experienceUrl, compact]);
+  }, [experience.url, compact]);
 
   return (
     <div className={`${styles.root} ${compact ? styles.compact : ''}`}>

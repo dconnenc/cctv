@@ -51,7 +51,7 @@ RSpec.describe ExperienceBlockPolicy do
                  kind: "poll", 
                  status: "open",
                  visible_to_roles: [],
-                 visible_to_segments: [],
+                 visible_to_segment_names: [],
                  target_user_ids: [])
         end
 
@@ -127,7 +127,7 @@ RSpec.describe ExperienceBlockPolicy do
                  experience: experience, 
                  kind: "poll", 
                  status: "open",
-                 visible_to_segments: ["segment_a"])
+                 visible_to_segment_names: ["segment_a"])
         end
 
         # Since segments are not implemented yet, this should return false

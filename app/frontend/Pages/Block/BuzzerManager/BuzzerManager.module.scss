@@ -1,0 +1,74 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  padding: 1rem;
+}
+
+.title {
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.summary {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+.count {
+  font-size: 2.5rem;
+  font-weight: bold;
+  color: var(--red);
+}
+
+.countLabel {
+  font-size: 1rem;
+  color: var(--muted-foreground, #888);
+}
+
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.listItem {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  background: var(--muted, #1a1a1a);
+
+  &:first-child .position {
+    color: var(--yellow, gold);
+  }
+}
+
+.position {
+  font-weight: bold;
+  font-size: 1rem;
+  width: 1.5rem;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.name {
+  flex: 1;
+  font-size: 1rem;
+}
+
+.time {
+  font-size: 0.875rem;
+  color: var(--muted-foreground, #888);
+  flex-shrink: 0;
+}
+
+.empty {
+  color: var(--muted-foreground, #888);
+  font-size: 0.9rem;
+}

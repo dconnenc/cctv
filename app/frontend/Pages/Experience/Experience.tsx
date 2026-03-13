@@ -2,6 +2,8 @@ import { useEffect } from 'react';
 
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 
+import { BookOpen } from 'lucide-react';
+
 import { ParticipantsList } from '@cctv/components';
 import { useExperience } from '@cctv/contexts/ExperienceContext';
 import { useUser } from '@cctv/contexts/UserContext';
@@ -70,11 +72,15 @@ export default function Experience() {
               </div>
             </div>
 
-            <div className={styles.playbillCta}>
-              <Link to={`/experiences/${code}/playbill`}>
-                <Button>Open Playbill</Button>
+            {experience?.playbill_enabled !== false && (
+              <Link
+                to={`/experiences/${code}/playbill`}
+                className={styles.fab}
+                aria-label="Open Playbill"
+              >
+                <BookOpen size={22} />
               </Link>
-            </div>
+            )}
           </div>
         </section>
       );
@@ -137,7 +143,7 @@ export default function Experience() {
                 <Button className={`${styles.actionButton} ${styles.ghostButton}`}>Manage</Button>
               </Link>
             )}
-            {!needsAvatar && (
+            {!needsAvatar && experience?.playbill_enabled !== false && (
               <Link to={`/experiences/${code}/playbill`} className={styles.actionLink}>
                 <Button className={styles.actionButton}>Open Playbill</Button>
               </Link>
@@ -186,6 +192,14 @@ export default function Experience() {
               </div>
             )}
           </div>
+
+          <Link
+            to={`/experiences/${code}/playbill`}
+            className={styles.fab}
+            aria-label="Open Playbill"
+          >
+            <BookOpen size={22} />
+          </Link>
         </div>
       </section>
     );

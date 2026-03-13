@@ -34,9 +34,8 @@ export default function MultistepForm({
 }: MultistepFormProps) {
   const [stepIndex, setStepIndex] = useState(0);
   const [stepErrors, setStepErrors] = useState<Set<string>>(new Set());
-  const [submittedValue, setSubmittedValue] = useState<Record<string, string>>();
-  const { submitMultistepFormResponse, isLoading, error } = useSubmitMultistepFormResponse();
-  const userAlreadyResponded = responses?.user_responded || false;
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { submitMultistepFormResponse, error } = useSubmitMultistepFormResponse();
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     const form = e.currentTarget;
@@ -56,7 +55,6 @@ export default function MultistepForm({
       return;
     }
 
-    // Get the block ID from props or URL query params
     const actualBlockId = blockId || new URLSearchParams(window.location.search).get('blockId');
 
     if (!actualBlockId) {
@@ -64,7 +62,9 @@ export default function MultistepForm({
       return;
     }
 
-    const response = await submitMultistepFormResponse({
+    setIsSubmitting(true);
+
+    await submitMultistepFormResponse({
       blockId: actualBlockId,
       answer: {
         responses: formData as Record<string, string>,
@@ -72,9 +72,7 @@ export default function MultistepForm({
       },
     });
 
-    if (response?.success) {
-      setSubmittedValue(formData as Record<string, string>);
-    }
+    setIsSubmitting(false);
   };
 
   const handleInvalidForm = (e: FormEvent<HTMLFormElement>) => {
@@ -97,8 +95,8 @@ export default function MultistepForm({
 
   const isLastQuestion = stepIndex === questions.length - 1;
 
-  if (submittedValue || userAlreadyResponded) {
-    const responseData = submittedValue || responses?.user_response?.answer?.responses;
+  if (responses?.user_responded) {
+    const responseData = responses?.user_response?.answer?.responses;
 
     return (
       <div className={styles.submittedValue}>
@@ -112,6 +110,14 @@ export default function MultistepForm({
         ) : (
           <p className={styles.value}>You have already responded to this form.</p>
         )}
+      </div>
+    );
+  }
+
+  if (isSubmitting) {
+    return (
+      <div className={styles.submittedValue}>
+        <p className={styles.value}>Submitting...</p>
       </div>
     );
   }
@@ -162,18 +168,10 @@ export default function MultistepForm({
       </div>
 
       <div className={styles.buttons}>
-        {stepIndex > 0 && (
-          <Button onClick={goBack} loading={isLoading} loadingText="Loading...">
-            Back
-          </Button>
-        )}
-        {stepIndex < questions.length - 1 && (
-          <Button onClick={goForward} loading={isLoading} loadingText="Loading...">
-            Next
-          </Button>
-        )}
+        {stepIndex > 0 && <Button onClick={goBack}>Back</Button>}
+        {stepIndex < questions.length - 1 && <Button onClick={goForward}>Next</Button>}
         {isLastQuestion && (
-          <Button disabled={disabled} type="submit" loading={isLoading} loadingText="Submitting...">
+          <Button disabled={disabled} type="submit">
             Submit
           </Button>
         )}

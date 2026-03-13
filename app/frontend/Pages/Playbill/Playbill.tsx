@@ -1,5 +1,7 @@
 import { Link } from 'react-router-dom';
 
+import { ChevronLeft } from 'lucide-react';
+
 import { useExperience } from '@cctv/contexts/ExperienceContext';
 import { Button } from '@cctv/core';
 
@@ -26,15 +28,28 @@ export default function Playbill() {
     );
   }
 
+  if (experience?.playbill_enabled === false) {
+    return (
+      <section className={styles.root}>
+        <Link to={`/experiences/${code}`} className={styles.backLink}>
+          <Button className={styles.backButton}>Back to Experience</Button>
+        </Link>
+        <h1 className={styles.title}>{experience?.name || code}</h1>
+        <p className={styles.subtitle}>The playbill is not available for this experience.</p>
+      </section>
+    );
+  }
+
   const sections = experience?.playbill || [];
 
   return (
     <section className={styles.root}>
-      <Link to={`/experiences/${code}`} className={styles.backLink}>
-        <Button className={styles.backButton}>Back to Experience</Button>
-      </Link>
       <h1 className={styles.title}>{experience?.name || code}</h1>
       <p className={styles.subtitle}>Playbill</p>
+
+      <Link to={`/experiences/${code}`} className={styles.fab} aria-label="Back to Experience">
+        <ChevronLeft size={22} />
+      </Link>
 
       {sections.length === 0 ? (
         <div className={styles.sections}>

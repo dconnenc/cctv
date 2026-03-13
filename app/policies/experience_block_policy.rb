@@ -19,6 +19,10 @@ class ExperienceBlockPolicy < ApplicationPolicy
     user_allowed_to_interact_with_block?
   end
 
+  def submit_buzzer_response?
+    user_allowed_to_interact_with_block?
+  end
+
   private
 
   def user_allowed_to_interact_with_block?

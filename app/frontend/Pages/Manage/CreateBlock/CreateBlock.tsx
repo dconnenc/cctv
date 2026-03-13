@@ -1,11 +1,13 @@
 import { DialogDescription, DialogTitle } from '@cctv/components/ui/dialog';
+import { useExperience } from '@cctv/contexts/ExperienceContext';
 import { Button } from '@cctv/core/Button/Button';
 import { Dropdown } from '@cctv/core/Dropdown/Dropdown';
-import { TextInput } from '@cctv/core/TextInput/TextInput';
+import { SegmentBadge } from '@cctv/core/SegmentBadge/SegmentBadge';
 import { BlockKind, ParticipantRole, ParticipantSummary } from '@cctv/types';
 
 import CreateAnnouncement from './CreateAnnouncement/CreateAnnouncement';
 import { CreateBlockProvider, useCreateBlockContext } from './CreateBlockContext';
+import CreateBuzzer from './CreateBuzzer/CreateBuzzer';
 import CreateFamilyFeud from './CreateFamilyFeud/CreateFamilyFeud';
 import CreateMadLib from './CreateMadLib/CreateMadLib';
 import CreateMultistepForm from './CreateMultistepForm/CreateMultistepForm';
@@ -62,6 +64,7 @@ function CreateBlockForm({ onClose }: CreateBlockFormProps) {
           { label: 'Mad Lib', value: BlockKind.MAD_LIB },
           { label: 'Family Feud', value: BlockKind.FAMILY_FEUD },
           { label: 'Photo Upload', value: BlockKind.PHOTO_UPLOAD },
+          { label: 'Buzzer', value: BlockKind.BUZZER },
         ]}
         value={blockData.kind}
         onChange={setKind}
@@ -117,6 +120,8 @@ function BlockEditor() {
       return <CreateFamilyFeud data={blockData.data} onChange={onChange} />;
     case BlockKind.PHOTO_UPLOAD:
       return <CreatePhotoUpload data={blockData.data} onChange={onChange} />;
+    case BlockKind.BUZZER:
+      return <CreateBuzzer data={blockData.data} onChange={onChange} />;
     default:
       const exhaustiveCheck: never = blockData;
       return <div className={styles.details}>Unknown block type: {exhaustiveCheck}</div>;
@@ -128,13 +133,16 @@ function AdditionalDetails() {
     participants,
     visibleRoles,
     setVisibleRoles,
-    visibleSegmentsText,
-    setVisibleSegmentsText,
+    visibleSegments,
+    setVisibleSegments,
     targetUserIdsText,
     setTargetUserIdsText,
     showInLobby,
     setShowInLobby,
   } = useCreateBlockContext();
+  const { experience } = useExperience();
+  const definedSegments = experience?.segments || [];
+
   return (
     <div className={styles.additionalDetails}>
       <Dropdown
@@ -148,12 +156,42 @@ function AdditionalDetails() {
         value={visibleRoles}
         onChange={(value) => setVisibleRoles([value as ParticipantRole])}
       />
-      <TextInput
-        label="Visible to segments (comma-separated)"
-        placeholder="segment-a, segment-b"
-        value={visibleSegmentsText}
-        onChange={(e) => setVisibleSegmentsText(e.target.value)}
-      />
+      <div>
+        <label style={{ fontSize: '0.85rem' }}>Visible to segments</label>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.25rem', marginTop: '0.25rem' }}>
+          {visibleSegments.map((name) => {
+            const seg = definedSegments.find((s) => s.name === name);
+            return (
+              <SegmentBadge
+                key={name}
+                name={name}
+                color={seg?.color || '#6B7280'}
+                onRemove={() => setVisibleSegments(visibleSegments.filter((n) => n !== name))}
+              />
+            );
+          })}
+          {definedSegments.filter((s) => !visibleSegments.includes(s.name)).length > 0 && (
+            <select
+              style={{ fontSize: '0.75rem', padding: '0.15rem 0.3rem' }}
+              value=""
+              onChange={(e) => {
+                if (e.target.value) {
+                  setVisibleSegments([...visibleSegments, e.target.value]);
+                }
+              }}
+            >
+              <option value="">+ Add segment...</option>
+              {definedSegments
+                .filter((s) => !visibleSegments.includes(s.name))
+                .map((s) => (
+                  <option key={s.id} value={s.name}>
+                    {s.name}
+                  </option>
+                ))}
+            </select>
+          )}
+        </div>
+      </div>
       <Dropdown
         label="Target user IDs"
         options={participants.map((p) => ({ label: p.name, value: p.id }))}

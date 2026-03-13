@@ -11,7 +11,7 @@ export function useUpdatePlaybill() {
   const [error, setError] = useState<string | null>(null);
 
   const updatePlaybill = useCallback(
-    async (playbill: PlaybillSection[]) => {
+    async (playbill: PlaybillSection[], playbill_enabled?: boolean) => {
       if (!code) {
         setError('Missing experience code');
         return { success: false, error: 'Missing experience code' } as const;
@@ -19,11 +19,13 @@ export function useUpdatePlaybill() {
       setIsLoading(true);
       setError(null);
       try {
+        const body: Record<string, unknown> = { playbill };
+        if (playbill_enabled !== undefined) body.playbill_enabled = playbill_enabled;
         const res = await adminFetch(
           `/api/experiences/${encodeURIComponent(code)}/update_playbill`,
           {
             method: 'PATCH',
-            body: JSON.stringify({ playbill }),
+            body: JSON.stringify(body),
           },
         );
         const data = await res.json();

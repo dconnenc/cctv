@@ -350,7 +350,7 @@ class ExperienceSubscriptionChannel < ApplicationCable::Channel
       .to_a
 
     # Load all participants with users
-    participants = @experience.experience_participants.includes(:user).to_a
+    participants = @experience.experience_participants.includes(:user, :experience_segments).to_a
 
     # Build in-memory cache of submissions
     # TODO: This will live on the client in the future to avoid participant
@@ -519,7 +519,7 @@ class ExperienceSubscriptionChannel < ApplicationCable::Channel
   end
 
   def find_target_participant_or_reject
-    target = @experience.experience_participants.find_by(
+    target = @experience.experience_participants.includes(:user, :experience_segments).find_by(
       id: params[:as_participant_id]
     )
 

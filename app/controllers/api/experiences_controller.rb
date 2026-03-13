@@ -25,7 +25,7 @@ class Api::ExperiencesController < Api::BaseController
             code: experience.code,
             code_slug: experience.code_slug,
             created_at: experience.created_at,
-            url: generate_experience_path(experience.code_slug)
+            url: experience_lobby_url(code: experience.code_slug)
           },
         }, status: :created
       else
@@ -146,6 +146,7 @@ class Api::ExperiencesController < Api::BaseController
     end
 
     @experience.playbill = params[:playbill] || []
+    @experience.playbill_enabled = params[:playbill_enabled] unless params[:playbill_enabled].nil?
 
     if @experience.save
       (params[:playbill] || []).each do |section|
@@ -212,7 +213,7 @@ class Api::ExperiencesController < Api::BaseController
     if current_user && experience.user_registered?(current_user)
       render json: {
         type: 'success',
-        url: generate_experience_path(experience.code_slug),
+        url: experience_lobby_path(code: experience.code_slug),
         status: "registered"
       }
     else
@@ -220,7 +221,7 @@ class Api::ExperiencesController < Api::BaseController
         type: 'needs_registration',
         experience_code: code,
         status: "needs_registration",
-        url: "/experiences/#{experience.code_slug}/register"
+        url: experience_register_path(code: experience.code_slug)
       }
     end
   end
@@ -303,7 +304,7 @@ class Api::ExperiencesController < Api::BaseController
     render json: {
       type: 'success',
       jwt: experience.jwt_for_participant(user),
-      url: generate_experience_path(experience.code_slug),
+      url: experience_lobby_path(code: experience.code_slug),
       status: "registered"
     }
   end
@@ -316,10 +317,6 @@ class Api::ExperiencesController < Api::BaseController
 
   def register_params
     params.permit(:email, :name, :participant_name)
-  end
-
-  def generate_experience_path(code)
-    "/experiences/#{code}"
   end
 
   # Authenticate user for experience show - handles both JWT and session auth

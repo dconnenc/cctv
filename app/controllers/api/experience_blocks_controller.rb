@@ -9,12 +9,13 @@ class Api::ExperienceBlocksController < Api::BaseController
         experience: @experience, actor: @user
       )
 
+      segment_ids = create_params[:visible_to_segment_ids] || []
+
       block = if create_params[:variables].present? || create_params[:questions].present?
         orchestrator.add_block_with_dependencies!(
           kind: create_params[:kind],
           payload: create_params[:payload] || {},
           visible_to_roles: create_params[:visible_to_roles] || [],
-          visible_to_segments: create_params[:visible_to_segments] || [],
           target_user_ids: create_params[:target_user_ids] || [],
           status: create_params[:status] || :hidden,
           variables: create_params[:variables] || [],
@@ -25,11 +26,16 @@ class Api::ExperienceBlocksController < Api::BaseController
           kind: create_params[:kind],
           payload: create_params[:payload] || {},
           visible_to_roles: create_params[:visible_to_roles] || [],
-          visible_to_segments: create_params[:visible_to_segments] || [],
           target_user_ids: create_params[:target_user_ids] || [],
           status: create_params[:status] || :hidden,
           open_immediately: create_params[:open_immediately] || false,
           show_in_lobby: create_params[:show_in_lobby] || false
+        )
+      end
+
+      if segment_ids.any?
+        ExperienceBlockSegment.insert_all(
+          segment_ids.map { |sid| { experience_block_id: block.id, experience_segment_id: sid } }
         )
       end
 
@@ -257,6 +263,43 @@ class Api::ExperienceBlocksController < Api::BaseController
           block: updated_block
         },
       }, status: 200
+    end
+  end
+
+  # POST /api/experiences/:experience_id/blocks/:id/submit_buzzer_response
+  def submit_buzzer_response
+    with_experience_orchestration do
+      block = @experience.experience_blocks.find(params[:id])
+
+      Experiences::Orchestrator.new(
+        experience: @experience, actor: @user
+      ).submit_buzzer_response!(
+        block_id: params[:id],
+        answer: params[:answer]
+      )
+
+      updated_block = Experiences::Visibility.serialize_block_for_user(
+        experience: @experience,
+        user: @user,
+        block: block
+      )
+
+      Experiences::Broadcaster.new(@experience).broadcast_experience_update
+
+      render json: { success: true, data: { block: updated_block } }, status: 200
+    end
+  end
+
+  # DELETE /api/experiences/:experience_id/blocks/:id/clear_buzzer_responses
+  def clear_buzzer_responses
+    with_experience_orchestration do
+      Experiences::Orchestrator.new(
+        experience: @experience, actor: @user
+      ).clear_buzzer_responses!(block_id: params[:id])
+
+      Experiences::Broadcaster.new(@experience).broadcast_experience_update
+
+      render json: { success: true }, status: 200
     end
   end
 
@@ -545,7 +588,7 @@ class Api::ExperienceBlocksController < Api::BaseController
       :open_immediately,
       :show_in_lobby,
       visible_to_roles: [],
-      visible_to_segments: [],
+      visible_to_segment_ids: [],
       target_user_ids: []
     )
 

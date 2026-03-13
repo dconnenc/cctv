@@ -79,7 +79,7 @@ module Experiences
           experience: experience,
           user_role: user.role,
           participant_role: participant_record&.role,
-          segments: participant_record&.segments || [],
+          segments: participant_record&.segment_names || [],
           target_user_ids: [user.id],
           preloaded_blocks: blocks,
           submissions_cache: submissions_cache,
@@ -96,7 +96,7 @@ module Experiences
         experience: experience,
         user_role: user.role,
         participant_role: participant_record.role,
-        segments: participant_record.segments,
+        segments: participant_record.segment_names,
         target_user_ids: [user.id],
         preloaded_blocks: blocks,
         submissions_cache: submissions_cache,
@@ -147,12 +147,14 @@ module Experiences
       parent_blocks = if experience.status == 'lobby'
         experience.parent_blocks
           .where(show_in_lobby: true)
-          .where(visible_to_roles: [], visible_to_segments: [], target_user_ids: [])
+          .where(visible_to_roles: [], target_user_ids: [])
+          .where.not(id: ExperienceBlockSegment.select(:experience_block_id))
           .order(position: :asc)
       else
         experience.parent_blocks
           .where(status: 'open')
-          .where(visible_to_roles: [], visible_to_segments: [], target_user_ids: [])
+          .where(visible_to_roles: [], target_user_ids: [])
+          .where.not(id: ExperienceBlockSegment.select(:experience_block_id))
           .order(position: :asc)
       end
 
@@ -186,14 +188,14 @@ module Experiences
         parent_blocks.select do |block|
           block.show_in_lobby? &&
             block.visible_to_roles.empty? &&
-            block.visible_to_segments.empty? &&
+            block.experience_segments.empty? &&
             block.target_user_ids.empty?
         end
       else
         parent_blocks.select do |block|
           block.status == 'open' &&
             block.visible_to_roles.empty? &&
-            block.visible_to_segments.empty? &&
+            block.experience_segments.empty? &&
             block.target_user_ids.empty?
         end
       end
@@ -224,7 +226,7 @@ module Experiences
 
     def self.has_visibility_rules?(block)
       block.visible_to_roles.present? ||
-        block.visible_to_segments.present? ||
+        block.experience_segments.any? ||
         block.target_user_ids.present?
     end
 
@@ -269,7 +271,7 @@ module Experiences
         experience: block.experience,
         user_role: user.role,
         participant_role: participant_record.role,
-        segments: participant_record.segments,
+        segments: participant_record.segment_names,
         target_user_ids: [user.id]
       ).block_visible?(block)
     end
@@ -431,7 +433,7 @@ module Experiences
       return true if moderator_or_host?
 
       targeting_rules_exist = block.visible_to_roles.present? ||
-        block.visible_to_segments.present? ||
+        block.experience_segments.any? ||
         block.target_user_ids.present?
 
       return true unless targeting_rules_exist
@@ -446,7 +448,7 @@ module Experiences
     end
 
     def allowed_from_segments?(block)
-      (block.visible_to_segments & segments).any?
+      (block.visible_to_segment_names & segments).any?
     end
 
     def allowed_from_user_target?(block)
