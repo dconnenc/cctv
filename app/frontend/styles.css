@@ -332,8 +332,6 @@ button {
   font-size: 1rem;
   font-weight: 600;
   font-family: var(--font-ui);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
   border: 1px solid hsl(var(--border));
   border-radius: var(--radius);
   background-color: transparent;
