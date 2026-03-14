@@ -1,7 +1,7 @@
 import { useParams } from 'react-router-dom';
 
-import { DialogDescription, DialogTitle } from '@cctv/components/ui/dialog';
 import { useExperience } from '@cctv/contexts/ExperienceContext';
+import { DialogDescription, DialogTitle } from '@cctv/core';
 import { BlockKind, type Block as BlockType } from '@cctv/types';
 
 import BuzzerManager from './BuzzerManager/BuzzerManager';

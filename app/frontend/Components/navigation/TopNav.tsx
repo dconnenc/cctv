@@ -4,9 +4,9 @@ import { NavLink, useLocation } from 'react-router-dom';
 
 import { Home, Info, LogIn, LogOut, Plus, Settings, Ticket, Tv } from 'lucide-react';
 
-import { Switch } from '@cctv/components/ui/switch';
 import { useTheme } from '@cctv/contexts/ThemeContext';
 import { useUser } from '@cctv/contexts/UserContext';
+import { Switch } from '@cctv/core';
 import { getSessionCreatedExperiences } from '@cctv/utils';
 
 import styles from './Navigation.module.scss';

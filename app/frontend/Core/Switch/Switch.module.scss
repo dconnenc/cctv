@@ -1,0 +1,73 @@
+.root {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  height: 1.5rem;
+  width: 2.5rem;
+  flex-shrink: 0;
+  cursor: pointer;
+  border-radius: 9999px;
+  border: 1px solid hsl(var(--border));
+  background: hsl(var(--muted));
+  padding: 0.125rem;
+  transition:
+    border-color 0.15s ease,
+    background-color 0.15s ease;
+
+  &:focus-visible {
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 2px;
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+}
+
+.thumb {
+  pointer-events: none;
+  display: block;
+  height: 1rem;
+  width: 1rem;
+  border-radius: 9999px;
+  background: hsl(var(--foreground));
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  z-index: 10;
+  transition:
+    transform 0.15s cubic-bezier(0.16, 1, 0.3, 1),
+    background-color 0.15s ease,
+    box-shadow 0.15s ease;
+
+  &[data-state='checked'] {
+    transform: translateX(1rem);
+    background: hsl(var(--ring));
+    box-shadow: 0 0 6px rgba(200, 240, 96, 0.5);
+  }
+
+  &[data-state='unchecked'] {
+    transform: translateX(0);
+  }
+}
+
+.iconLeft {
+  pointer-events: none;
+  position: absolute;
+  left: 0.25rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 0.75rem;
+  height: 0.75rem;
+  color: hsl(var(--foreground) / 0.7);
+}
+
+.iconRight {
+  pointer-events: none;
+  position: absolute;
+  right: 0.25rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 0.75rem;
+  height: 0.75rem;
+  color: hsl(var(--foreground) / 0.7);
+}

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { ArrowDown, ArrowUp, ImagePlus, Plus, Trash2, X } from 'lucide-react';
 
-import { Switch } from '@cctv/components/ui/switch';
+import { Switch } from '@cctv/core';
 import { Button, TextInput } from '@cctv/core';
 import { useDirectUpload, useUpdatePlaybill } from '@cctv/hooks';
 import { PlaybillSection } from '@cctv/types';

@@ -9,6 +9,11 @@
   font-size: 1.25rem;
   font-weight: 600;
   color: hsl(var(--foreground));
+  transition: color 0.12s ease;
+}
+
+.root:focus-within {
+  color: var(--phosphor);
 }
 
 .input {
@@ -21,12 +26,23 @@
   padding: 0.25rem;
   border-radius: var(--radius);
   cursor: pointer;
-  transition: border-color 0.2s ease;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
 }
+
 .input:hover {
   border-color: hsl(var(--ring));
 }
 
+.input:focus {
+  outline: none;
+  border-color: var(--phosphor);
+  box-shadow:
+    0 0 0 2px var(--phosphor-glow),
+    0 0 8px rgba(200, 240, 96, 0.2);
+}
+
 .labelText {
-  color: hsl(var(--foreground));
+  color: inherit;
 }

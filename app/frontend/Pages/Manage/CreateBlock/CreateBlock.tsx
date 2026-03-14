@@ -1,5 +1,5 @@
-import { DialogDescription, DialogTitle } from '@cctv/components/ui/dialog';
 import { useExperience } from '@cctv/contexts/ExperienceContext';
+import { DialogDescription, DialogTitle } from '@cctv/core';
 import { Button } from '@cctv/core/Button/Button';
 import { Dropdown } from '@cctv/core/Dropdown/Dropdown';
 import { SegmentBadge } from '@cctv/core/SegmentBadge/SegmentBadge';

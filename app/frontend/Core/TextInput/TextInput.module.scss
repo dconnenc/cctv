@@ -14,6 +14,11 @@
   color: hsl(var(--foreground));
   text-align: left;
   align-self: flex-start;
+  transition: color 0.12s ease;
+}
+
+.input:focus-within .label {
+  color: var(--phosphor);
 }
 
 .input input {
@@ -23,6 +28,9 @@
   border-radius: var(--radius);
   background: hsl(var(--input));
   color: hsl(var(--foreground));
+  transition:
+    border-color 0.12s ease,
+    box-shadow 0.12s ease;
 }
 
 .input input::placeholder {
@@ -31,6 +39,8 @@
 
 .input input:focus {
   outline: none;
-  border-color: hsl(var(--ring));
-  box-shadow: 0 0 0 2px hsl(var(--ring) / 0.3);
+  border-color: var(--phosphor);
+  box-shadow:
+    0 0 0 2px var(--phosphor-glow),
+    0 0 8px rgba(200, 240, 96, 0.2);
 }

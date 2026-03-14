@@ -2,8 +2,8 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { BookOpen, Bug, Pause, Play, X } from 'lucide-react';
 
-import { Dialog, DialogContent } from '@cctv/components/ui/dialog';
 import { useExperience } from '@cctv/contexts/ExperienceContext';
+import { Dialog, DialogContent } from '@cctv/core';
 import { Button } from '@cctv/core/Button/Button';
 import { Pill } from '@cctv/core/Pill/Pill';
 import { useBlockPresentation } from '@cctv/hooks/useBlockPresentation';
@@ -299,7 +299,7 @@ export default function ManageViewer() {
       </section>
 
       <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-        <DialogContent className="sm:max-w-3xl w-full">
+        <DialogContent style={{ maxWidth: '48rem', width: '100%' }}>
           <CreateBlock
             onClose={() => setIsCreateDialogOpen(false)}
             participants={participantsCombined}
@@ -312,13 +312,13 @@ export default function ManageViewer() {
       </Dialog>
 
       <Dialog open={showDebugPanel} onOpenChange={setShowDebugPanel}>
-        <DialogContent className="sm:max-w-2xl w-full">
+        <DialogContent style={{ maxWidth: '42rem', width: '100%' }}>
           <DebugPanel selectedBlock={selectedBlock} />
         </DialogContent>
       </Dialog>
 
       <Dialog open={isPlaybillDialogOpen} onOpenChange={setIsPlaybillDialogOpen}>
-        <DialogContent className="sm:max-w-2xl w-full">
+        <DialogContent style={{ maxWidth: '42rem', width: '100%' }}>
           <PlaybillTab
             playbill={experience?.playbill || []}
             playbillEnabled={experience?.playbill_enabled !== false}

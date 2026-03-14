@@ -2,7 +2,7 @@ import { useState } from 'react';
 
 import { ChevronDown, ChevronRight, Eye, RotateCcw, Trash2 } from 'lucide-react';
 
-import { Button } from '@cctv/components/ui/button';
+import { Button } from '@cctv/core';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -132,7 +132,7 @@ export default function FamilyFeudPlayingControls({
                   <span className={styles.percentage}>{bucket.percentage}%</span>
                 </div>
                 <Button
-                  variant={bucket.revealed ? 'outline' : 'default'}
+                  variant={bucket.revealed ? 'outline' : 'primary'}
                   size="sm"
                   onClick={() => handleRevealBucket(index)}
                   disabled={bucket.revealed || isRevealing}

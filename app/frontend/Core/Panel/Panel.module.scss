@@ -13,6 +13,13 @@
   z-index: 3;
   height: 100%;
   width: 100%;
+  transition:
+    border-top-color 0.3s ease,
+    box-shadow 0.3s ease;
+
+  &:hover {
+    border-top-color: hsl(var(--primary) / 0.5);
+  }
 }
 
 .header {
