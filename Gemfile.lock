@@ -137,6 +137,8 @@ GEM
       reline (>= 0.4.2)
     jwt (3.1.2)
       base64
+    knapsack (4.0.0)
+      rake
     launchy (3.1.1)
       addressable (~> 2.8)
       childprocess (~> 5.0)
@@ -314,6 +316,7 @@ DEPENDENCIES
   factory_bot_rails
   image_processing (~> 1.2)
   jwt
+  knapsack
   letter_opener
   letter_opener_web
   passwordless
