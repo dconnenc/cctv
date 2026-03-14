@@ -114,7 +114,7 @@ module SystemHelpers
   end
 
   def draw_on_canvas
-    expect(page).to have_css("canvas")
+    expect(page).to have_css("canvas", wait: 10)
 
     rect = page.evaluate_script(
       "(() => { const r = document.querySelector('canvas').getBoundingClientRect(); " \
