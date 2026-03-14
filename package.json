@@ -17,7 +17,9 @@
     "tailwind:watch": "tailwindcss -i ./app/frontend/tailwind.css -o ./app/frontend/tailwind.output.css -w",
     "clean": "taskkill /F /IM ruby.exe || echo No ruby processes found",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "storybook": "storybook dev -p 6006",
+    "build-storybook": "storybook build"
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx,css,scss,md,json,yml,yaml}": [
@@ -71,6 +73,10 @@
     "typescript": "^5.9.3",
     "vite": "^5.4.21",
     "vite-plugin-ruby": "^5.1.1",
-    "vitest": "^4.0.18"
+    "vitest": "^4.0.18",
+    "storybook": "^10.2.19",
+    "@storybook/react-vite": "^10.2.19",
+    "@storybook/addon-a11y": "^10.2.19",
+    "@storybook/addon-docs": "^10.2.19"
   }
 }
