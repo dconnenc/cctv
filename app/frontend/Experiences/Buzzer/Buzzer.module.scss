@@ -34,11 +34,21 @@
   -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;
 
+  &:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--red) 85%, black) !important;
+    border-color: color-mix(in srgb, var(--red) 60%, black) !important;
+    box-shadow:
+      0 8px 0 color-mix(in srgb, var(--red) 40%, black),
+      0 12px 20px rgba(0, 0, 0, 0.4) !important;
+  }
+
   &:active:not(:disabled) {
-    transform: translateY(6px);
+    transform: translateY(6px) !important;
+    background: color-mix(in srgb, var(--red) 80%, black) !important;
+    border-color: color-mix(in srgb, var(--red) 60%, black) !important;
     box-shadow:
       0 2px 0 color-mix(in srgb, var(--red) 40%, black),
-      0 4px 8px rgba(0, 0, 0, 0.3);
+      0 4px 8px rgba(0, 0, 0, 0.3) !important;
   }
 
   &:disabled {
@@ -54,13 +64,6 @@
   z-index: 9999;
 }
 
-.particle {
-  position: absolute;
-  border-radius: 50%;
-  pointer-events: none;
-  transform: translate(-50%, -50%);
-}
-
 .buzzedState {
   display: flex;
   align-items: center;
@@ -70,9 +73,12 @@
 
 .buzzedText {
   font-size: 3rem;
+  font-family: var(--font-display);
   font-weight: bold;
-  color: var(--red);
+  color: var(--phosphor);
   text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 // Monitor view
