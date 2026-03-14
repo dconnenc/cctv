@@ -19,7 +19,7 @@
   background: hsl(var(--background));
   border: 1px solid hsl(var(--border));
   padding: 0.25rem;
-  border-radius: 0.75rem;
+  border-radius: var(--radius);
   cursor: pointer;
   transition: border-color 0.2s ease;
 }

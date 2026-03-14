@@ -59,7 +59,7 @@
 }
 
 .error {
-  color: var(--yellow);
+  color: var(--phosphor);
   text-shadow: none;
 }
 .participantNotification {
@@ -70,7 +70,7 @@
   z-index: 10;
   font-size: clamp(2rem, 5vw, 4rem);
   font-weight: 700;
-  color: var(--white);
+  color: var(--hot-white);
   text-align: center;
   padding: var(--space-md) var(--space-lg);
   background: hsl(var(--popover) / 0.85);

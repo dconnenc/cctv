@@ -33,6 +33,7 @@ function ExperienceActionButton() {
     loadingText: string;
     icon: React.ReactNode;
     label: string;
+    variant?: 'primary' | 'secondary' | 'ghost';
   } | null => {
     switch (experience.status) {
       case 'draft':
@@ -51,6 +52,7 @@ function ExperienceActionButton() {
           loadingText: 'Pausing...',
           icon: <Pause size={16} />,
           label: 'Pause',
+          variant: 'secondary',
         };
       case 'paused':
         return {
@@ -68,7 +70,12 @@ function ExperienceActionButton() {
   if (!config) return null;
 
   return (
-    <Button onClick={config.onClick} loading={config.loading} loadingText={config.loadingText}>
+    <Button
+      variant={config.variant}
+      onClick={config.onClick}
+      loading={config.loading}
+      loadingText={config.loadingText}
+    >
       {config.icon}
       <span>{config.label}</span>
     </Button>

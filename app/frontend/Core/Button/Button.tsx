@@ -2,11 +2,14 @@ import { ButtonHTMLAttributes, PropsWithChildren, Ref } from 'react';
 
 import styles from './Button.module.scss';
 
+type ButtonVariant = 'primary' | 'secondary' | 'ghost';
+
 type ButtonProps = PropsWithChildren &
   ButtonHTMLAttributes<HTMLButtonElement> & {
     ref?: Ref<HTMLButtonElement>;
     loading?: boolean;
     loadingText?: string;
+    variant?: ButtonVariant;
   };
 
 export function Button({
@@ -16,6 +19,8 @@ export function Button({
   loadingText,
   disabled,
   ref,
+  variant = 'primary',
+  className,
   ...props
 }: ButtonProps) {
   const isDisabled = disabled || loading;
@@ -27,10 +32,12 @@ export function Button({
     return children;
   };
 
+  const variantClass = variant !== 'primary' ? styles[variant] : '';
+
   return (
     <button
       ref={ref}
-      className={`${styles.button} ${loading ? styles.loading : ''}`}
+      className={`${styles.button} ${variantClass} ${loading ? styles.loading : ''} ${className ?? ''}`}
       type={type}
       disabled={isDisabled}
       {...props}

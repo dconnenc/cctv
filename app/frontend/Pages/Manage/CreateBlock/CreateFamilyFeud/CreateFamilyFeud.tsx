@@ -104,6 +104,7 @@ export default function CreateFamilyFeud({ data, onChange }: BlockComponentProps
             />
           </div>
           <Button
+            variant="ghost"
             type="button"
             onClick={() => removeQuestion(index)}
             className={styles.removeButton}
@@ -113,7 +114,7 @@ export default function CreateFamilyFeud({ data, onChange }: BlockComponentProps
         </div>
       ))}
 
-      <Button type="button" onClick={addQuestion}>
+      <Button variant="secondary" type="button" onClick={addQuestion}>
         Add Question
       </Button>
     </div>

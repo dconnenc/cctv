@@ -10,7 +10,7 @@
   gap: 0.5rem;
   font-size: 1.125rem;
   font-weight: 600;
-  color: var(--yellow);
+  color: var(--phosphor);
 }
 
 .content {
@@ -79,7 +79,7 @@
 
   &:focus {
     outline: none;
-    border-color: var(--yellow);
+    border-color: var(--phosphor);
   }
 }
 
@@ -209,7 +209,7 @@
   text-transform: capitalize;
 
   &[data-status='open'] {
-    background: rgba(47, 255, 47, 0.15);
+    background: var(--phosphor-glow);
     color: var(--green);
   }
 }

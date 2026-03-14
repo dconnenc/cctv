@@ -75,11 +75,21 @@ function CreateBlockForm({ onClose }: CreateBlockFormProps) {
       {viewAdditionalDetails && <AdditionalDetails />}
 
       <div className={styles.actions}>
-        <Button onClick={onClose}>Back</Button>
-        <Button onClick={() => setViewAdditionalDetails(!viewAdditionalDetails)}>
+        <Button variant="secondary" onClick={onClose}>
+          Back
+        </Button>
+        <Button
+          variant="secondary"
+          onClick={() => setViewAdditionalDetails(!viewAdditionalDetails)}
+        >
           {viewAdditionalDetails ? 'Hide Additional Details' : 'View Additional Details'}
         </Button>
-        <Button onClick={() => submit('hidden')} loading={isSubmitting} loadingText="Creating...">
+        <Button
+          variant="secondary"
+          onClick={() => submit('hidden')}
+          loading={isSubmitting}
+          loadingText="Creating..."
+        >
           Queue block
         </Button>
         <Button onClick={() => submit('open')} loading={isSubmitting} loadingText="Creating...">

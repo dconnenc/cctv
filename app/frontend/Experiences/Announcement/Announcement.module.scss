@@ -5,8 +5,8 @@
 }
 
 .content {
-  background: #f8f9fa;
-  border: 2px solid #e9ecef;
+  background: hsl(var(--card));
+  border: 2px solid hsl(var(--border));
   border-radius: 8px;
   padding: 1.5rem;
   text-align: center;
@@ -16,7 +16,7 @@
 .message {
   font-size: 1.1rem;
   line-height: 1.5;
-  color: #333;
+  color: hsl(var(--card-foreground));
   margin: 0;
   white-space: pre-wrap;
 }

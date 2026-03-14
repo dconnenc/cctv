@@ -3,11 +3,11 @@
   position: relative;
 
   font-size: 16px;
-  color: var(--white);
+  color: var(--hot-white);
 
-  border: 2px solid var(--white);
+  border: 2px solid var(--dim);
   padding: var(--space-xs);
-  border-radius: 0.25rem;
+  border-radius: var(--radius);
   cursor: pointer;
   transition: border-color 0.2s ease;
 
@@ -15,12 +15,12 @@
   max-width: 300px;
 
   &:hover {
-    border-color: var(--yellow);
+    border-color: var(--phosphor);
   }
 
   &:has(.input:checked) {
-    color: var(--yellow);
-    border-color: var(--yellow);
+    color: var(--phosphor);
+    border-color: var(--phosphor);
   }
 }
 

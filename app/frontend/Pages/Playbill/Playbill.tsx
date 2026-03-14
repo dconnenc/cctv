@@ -32,7 +32,9 @@ export default function Playbill() {
     return (
       <section className={styles.root}>
         <Link to={`/experiences/${code}`} className={styles.backLink}>
-          <Button className={styles.backButton}>Back to Experience</Button>
+          <Button variant="secondary" className={styles.backButton}>
+            Back to Experience
+          </Button>
         </Link>
         <h1 className={styles.title}>{experience?.name || code}</h1>
         <p className={styles.subtitle}>The playbill is not available for this experience.</p>

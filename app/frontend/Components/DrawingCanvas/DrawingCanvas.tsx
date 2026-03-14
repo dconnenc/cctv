@@ -21,13 +21,12 @@ export interface DrawingCanvasProps {
 }
 
 const DEFAULT_PALETTE_VARS = [
-  '--blue',
-  '--pink',
-  '--teal',
-  '--yellow',
+  '--phosphor',
+  '--amber',
   '--red',
-  '--green',
-  '--white',
+  '--hot-white',
+  '--dim',
+  '--deep',
 ] as const;
 
 function resolveCssVar(name: string) {
@@ -271,6 +270,7 @@ export default function DrawingCanvas({
 
       <div className={styles.controls}>
         <Button
+          variant="secondary"
           className={styles.btn}
           onClick={() => {
             setLines([]);
@@ -281,6 +281,7 @@ export default function DrawingCanvas({
         </Button>
         {onBack ? (
           <Button
+            variant="secondary"
             className={styles.btn}
             onClick={async () => {
               await onSubmit(lines);

@@ -164,7 +164,7 @@ export default function Join() {
         <div className={styles.qrSection}>
           <div id="qr-reader" ref={readerRef} className={styles.qrReader} />
           {scanning ? (
-            <Button type="button" onClick={stopScanner}>
+            <Button variant="secondary" type="button" onClick={stopScanner}>
               Stop Scanner
             </Button>
           ) : (

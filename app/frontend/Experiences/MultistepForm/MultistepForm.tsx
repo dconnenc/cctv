@@ -168,7 +168,11 @@ export default function MultistepForm({
       </div>
 
       <div className={styles.buttons}>
-        {stepIndex > 0 && <Button onClick={goBack}>Back</Button>}
+        {stepIndex > 0 && (
+          <Button variant="secondary" onClick={goBack}>
+            Back
+          </Button>
+        )}
         {stepIndex < questions.length - 1 && <Button onClick={goForward}>Next</Button>}
         {isLastQuestion && (
           <Button disabled={disabled} type="submit">

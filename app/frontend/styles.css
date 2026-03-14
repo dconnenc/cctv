@@ -1,100 +1,93 @@
 :root {
-  --white: #ffffff;
-  --yellow: #ffff00;
+  --phosphor: #c8f060;
+  --amber: #f5a623;
+  --hot-white: #f0ede4;
+  --black: #080808;
+  --deep: #0d0d0f;
+  --dim: #3a3a3a;
   --red: #ff4911;
-  --blue: #3300ff;
-  --green: #2fff2f;
-  --pink: #ff00f5;
-  --teal: #7df9ff;
-  --font-primary: 'VCR OSD Mono', 'Poppins', sans-serif;
+  --green: #c8f060;
+  --phosphor-glow: rgba(200, 240, 96, 0.15);
+  --amber-glow: rgba(245, 166, 35, 0.2);
+  --font-display: 'Bebas Neue', sans-serif;
+  --font-body: 'DM Mono', monospace;
+  --font-ui: 'Barlow Condensed', sans-serif;
+  --font-primary: var(--font-body);
   --nav-h: 3.5rem;
   --space-xs: 0.5rem;
   --space-sm: 1rem;
   --space-md: 2rem;
   --space-lg: 4rem;
-  --tv-glow:
-    0 0 4px rgba(255, 255, 255, 0.45), 0 0 10px rgba(255, 255, 255, 0.3),
-    0.5px 0 1px rgba(255, 0, 0, 0.25), -0.5px 0 1px rgba(0, 255, 255, 0.25);
-}
-
-@font-face {
-  font-family: 'VCR OSD Mono';
-  src: url('/fonts/VCR_OSD_MONO.ttf') format('truetype');
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
+  --tv-glow: 0 0 4px rgba(200, 240, 96, 0.45), 0 0 10px rgba(200, 240, 96, 0.3);
 }
 
 /* Shadcn theme tokens (HSL triplets) */
 :root[data-theme='light'] {
-  --background: 0 0% 100%;
-  --foreground: 240 10% 3.9%;
-  --card: 0 0% 100%;
-  --card-foreground: 240 10% 3.9%;
-  --popover: 0 0% 100%;
-  --popover-foreground: 240 10% 3.9%;
-  --primary: 259 100% 50%; /* approx var(--blue) */
+  --background: 42 15% 94%;
+  --foreground: 0 0% 6%;
+  --card: 42 10% 97%;
+  --card-foreground: 0 0% 6%;
+  --popover: 42 10% 97%;
+  --popover-foreground: 0 0% 6%;
+  --primary: 78 86% 40%;
   --primary-foreground: 0 0% 100%;
-  --secondary: 240 4.8% 95.9%;
-  --secondary-foreground: 240 5.9% 10%;
-  --muted: 240 4.8% 95.9%;
-  --muted-foreground: 240 3.8% 46.1%;
-  --accent: 300 100% 50%; /* approx var(--pink) */
+  --secondary: 42 10% 90%;
+  --secondary-foreground: 0 0% 10%;
+  --muted: 42 10% 90%;
+  --muted-foreground: 0 0% 40%;
+  --accent: 37 91% 45%;
   --accent-foreground: 0 0% 100%;
-  --destructive: 13 100% 53%; /* approx var(--red) */
+  --destructive: 13 100% 53%;
   --destructive-foreground: 0 0% 100%;
-  --border: 240 5.9% 90%;
-  --input: 240 5.9% 90%;
-  --ring: 52 100% 50%; /* approx var(--yellow) */
-  --radius: 0.5rem;
+  --border: 42 10% 82%;
+  --input: 42 10% 90%;
+  --ring: 78 86% 40%;
+  --radius: 0.75rem;
   --shadow-1: 0 8px 16px hsl(var(--foreground) / 0.08);
 }
 
 :root[data-theme='dark'] {
-  --background: 0 0% 5%;
-  --foreground: 0 0% 98%;
-  --card: 0 0% 7.5%;
-  --card-foreground: 0 0% 98%;
-  --popover: 0 0% 7.5%;
-  --popover-foreground: 0 0% 98%;
-  --primary: 248 100% 53%; /* var(--blue) vibe */
-  --primary-foreground: 0 0% 100%;
-  --secondary: 240 3.7% 15.9%;
-  --secondary-foreground: 0 0% 98%;
-  --muted: 240 3.7% 15.9%;
-  --muted-foreground: 240 5% 64.9%;
-  --accent: 305 100% 50%; /* var(--pink) vibe */
-  --accent-foreground: 0 0% 100%;
+  --background: 0 0% 3.1%;
+  --foreground: 42 15% 91%;
+  --card: 60 4% 5.5%;
+  --card-foreground: 42 15% 91%;
+  --popover: 60 4% 5.5%;
+  --popover-foreground: 42 15% 91%;
+  --primary: 78 86% 60%;
+  --primary-foreground: 0 0% 3%;
+  --secondary: 0 0% 10%;
+  --secondary-foreground: 42 15% 91%;
+  --muted: 0 0% 12%;
+  --muted-foreground: 0 0% 50%;
+  --accent: 37 91% 55%;
+  --accent-foreground: 0 0% 3%;
   --destructive: 13 100% 53%;
   --destructive-foreground: 0 0% 100%;
-  --border: 240 3.7% 22%;
-  --input: 240 3.7% 22%;
-  --ring: 52 100% 50%;
-  --radius: 0.5rem;
-  --shadow-1: 0 8px 16px hsl(var(--foreground) / 0.18);
+  --border: 50 8% 16%;
+  --input: 0 0% 10%;
+  --ring: 78 86% 60%;
+  --radius: 0.75rem;
+  --shadow-1: 0 8px 16px rgba(0, 0, 0, 0.4);
 }
 
 .app {
   top: 0;
   left: 0;
-  min-height: 100dvh; /* mobile-friendly viewport height */
+  min-height: 100dvh;
   width: 100%;
   display: flex;
   flex-direction: column;
   position: relative;
-  z-index: 3; /* sit above static background and vignette */
+  z-index: 3;
 }
 
-/* Vignette, static, and tear styles moved to src/static.css */
-
-/* Reset default page margins to allow full-bleed layout */
 html,
 body {
   margin: 0;
   padding: 0;
 }
 
-/* Shadcn utility bindings if needed without Tailwind */
+/* Shadcn utility bindings */
 .bg-background {
   background-color: hsl(var(--background));
 }
@@ -159,7 +152,6 @@ body {
   width: 100%;
 }
 
-/* Reusable hero styles */
 h1,
 h2,
 h3,
@@ -173,7 +165,7 @@ h6 {
   font-weight: 800;
   text-align: center;
   line-height: 1;
-  font-family: var(--font-primary);
+  font-family: var(--font-display);
   color: hsl(var(--foreground));
   text-shadow: none;
 }
@@ -223,9 +215,6 @@ body {
   text-shadow: var(--tv-glow);
 }
 
-/* Alternating tear overlays: single- then double-band */
-
-/* Full-size route pages */
 .page {
   width: 100%;
   max-width: 78.75rem;
@@ -238,7 +227,7 @@ body {
 .link {
   font-weight: 400;
   font-size: clamp(16px, 4vw, 20px);
-  color: var(--yellow);
+  color: var(--phosphor);
   text-decoration: none;
 }
 
@@ -249,16 +238,15 @@ body {
   font-weight: 800;
 }
 
-/* Theme-aware global link color */
 :root[data-theme='light'] .link {
   color: hsl(var(--foreground));
   text-shadow: none;
 }
 :root[data-theme='dark'] .link {
-  color: var(--yellow);
+  color: var(--phosphor);
 }
 
-/* Route wink (content-only) transition: out then in */
+/* Route wink transition */
 .wink-container {
   width: 100%;
   height: 100%;
@@ -303,7 +291,6 @@ body {
     padding-right: var(--space-xs);
   }
 
-  /* Ensure paragraphs don't overflow horizontally */
   .hero-subtitle,
   .page p {
     max-width: 20rem;
@@ -320,7 +307,7 @@ input {
   padding: var(--space-xs) var(--space-xs);
   font-size: 1rem;
   border: 1px solid hsl(var(--border));
-  border-radius: 0.375rem;
+  border-radius: var(--radius);
   background-color: hsl(var(--input));
   color: hsl(var(--foreground));
 }
@@ -338,25 +325,37 @@ button {
   padding: var(--space-xs) var(--space-sm);
   font-size: 1rem;
   font-weight: 600;
+  font-family: var(--font-ui);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
   border: 1px solid hsl(var(--border));
-  border-radius: 0.375rem;
-  background-color: hsl(var(--background));
+  border-radius: var(--radius);
+  background-color: transparent;
   color: hsl(var(--foreground));
   cursor: pointer;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    transform 0.08s ease;
 }
 
 button:hover {
-  background-color: hsl(var(--muted));
+  border-color: var(--phosphor);
+  background-color: var(--phosphor-glow);
+}
+
+button:active {
+  transform: scale(0.98);
 }
 
 .glitch {
-  color: white;
+  color: var(--hot-white);
   text-shadow:
-    0px -5px 10px rgba(255, 255, 255, 1),
-    0px 0px 5px rgba(255, 255, 255, 0),
-    0px 0px 10px rgba(255, 255, 255, 0),
-    0px 0px 15px rgba(255, 255, 255, 0),
-    0px 0px 20px rgba(255, 255, 255, 0);
+    0px -5px 10px rgba(200, 240, 96, 0.8),
+    0px 0px 5px rgba(200, 240, 96, 0),
+    0px 0px 10px rgba(200, 240, 96, 0),
+    0px 0px 15px rgba(200, 240, 96, 0),
+    0px 0px 20px rgba(200, 240, 96, 0);
   animation:
     noise-anim-2 3s infinite linear alternate-reverse,
     shift 2s ease-in-out infinite alternate,
@@ -368,7 +367,7 @@ button:hover {
   content: attr(data-text);
   position: absolute;
   left: 3px;
-  text-shadow: -1px 0 red;
+  text-shadow: -1px 0 var(--phosphor);
   top: 0;
   color: transparent;
   background: transparent;
@@ -386,7 +385,7 @@ button:hover {
   content: attr(data-text);
   position: absolute;
   left: 1px;
-  text-shadow: -3px 0 cyan;
+  text-shadow: -3px 0 var(--amber);
   top: 0;
   color: transparent;
   background: transparent;
@@ -409,28 +408,28 @@ button:hover {
   95%,
   100% {
     text-shadow:
-      0px -5px 10px rgba(255, 255, 255, 1),
-      0px 0px 5px rgba(255, 255, 255, 0),
-      0px 0px 10px rgba(255, 255, 255, 0),
-      2px 1px 15px rgba(100, 240, 255, 0),
-      0px 0px 20px rgba(255, 255, 255, 0);
+      0px -5px 10px rgba(200, 240, 96, 0.8),
+      0px 0px 5px rgba(200, 240, 96, 0),
+      0px 0px 10px rgba(200, 240, 96, 0),
+      2px 1px 15px rgba(200, 240, 96, 0),
+      0px 0px 20px rgba(200, 240, 96, 0);
   }
   45%,
   75% {
     text-shadow:
-      0px -5px 10px rgba(255, 255, 255, 1),
-      0px 0px 5px rgba(255, 255, 255, 1),
-      0px 0px 10px rgba(255, 255, 255, 1),
-      2px 1px 15px rgba(100, 240, 255, 1),
-      0px 0px 20px rgba(255, 255, 255, 1);
+      0px -5px 10px rgba(200, 240, 96, 0.8),
+      0px 0px 5px rgba(200, 240, 96, 0.8),
+      0px 0px 10px rgba(200, 240, 96, 0.8),
+      2px 1px 15px rgba(245, 166, 35, 0.8),
+      0px 0px 20px rgba(200, 240, 96, 0.8);
   }
   97.5% {
     text-shadow:
-      0px -5px 10px rgba(255, 255, 255, 0),
-      0px 0px 5px rgba(255, 255, 255, 0),
-      0px 0px 10px rgba(255, 255, 255, 0),
-      2px 1px 4px rgba(255, 100, 100, 1),
-      0px 0px 20px rgba(255, 255, 255, 0);
+      0px -5px 10px rgba(200, 240, 96, 0),
+      0px 0px 5px rgba(200, 240, 96, 0),
+      0px 0px 10px rgba(200, 240, 96, 0),
+      2px 1px 4px rgba(245, 166, 35, 0.8),
+      0px 0px 20px rgba(200, 240, 96, 0);
   }
 }
 
@@ -535,7 +534,6 @@ button:hover {
   }
 }
 
-/* Responsive adjustments */
 @media (max-width: 768px) {
   .glitch {
     font-size: 3.75rem;
@@ -558,7 +556,6 @@ button:hover {
   z-index: 10;
 }
 
-/* Theme-friendly error message utility */
 .error-message {
   color: hsl(var(--destructive));
   text-shadow: none;

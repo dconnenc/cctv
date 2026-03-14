@@ -175,7 +175,7 @@
 
 .avatarToggleBtn:hover,
 .avatarToggleBtn:focus-visible {
-  border-color: var(--yellow);
+  border-color: var(--phosphor);
   box-shadow: var(--tv-glow);
 }
 
@@ -194,7 +194,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--yellow);
+  background: var(--phosphor);
   color: #000;
   border: none;
   cursor: pointer;
@@ -267,23 +267,7 @@
 }
 
 .disconnected {
-  color: var(--yellow);
-}
-
-/* Ghost button global treatment */
-.ghostButton {
-  background: transparent !important;
-  color: var(--white) !important;
-  border: 1px solid var(--white) !important;
-  transition:
-    border-color 0.2s ease,
-    box-shadow 0.2s ease,
-    color 0.2s ease;
-  &:hover,
-  &:focus-visible {
-    border-color: var(--yellow) !important;
-    box-shadow: var(--tv-glow);
-  }
+  color: var(--phosphor);
 }
 
 // Admin manage link styling

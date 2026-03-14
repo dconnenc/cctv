@@ -25,7 +25,7 @@
 .sectionTitle {
   font-size: 20px;
   font-weight: 600;
-  color: var(--white);
+  color: var(--hot-white);
   text-align: center;
   width: 100%;
 }
@@ -72,7 +72,7 @@
 
 .helpText {
   font-size: 16px;
-  color: var(--yellow);
+  color: var(--phosphor);
   padding-top: 1.5rem;
 }
 
@@ -85,7 +85,7 @@
 
 .error {
   text-shadow: none;
-  color: var(--yellow);
+  color: var(--phosphor);
   padding-top: 0.75rem;
   font-size: 16px;
 }
@@ -96,6 +96,6 @@
   gap: 0.5rem;
   cursor: pointer;
   font-size: 16px;
-  color: var(--white);
+  color: var(--hot-white);
   width: 100%;
 }

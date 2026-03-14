@@ -3,10 +3,11 @@
   flex-direction: column;
   gap: 1rem;
   padding: 1.5rem;
-  background: hsl(var(--card));
+  background: linear-gradient(160deg, hsl(var(--card)), hsl(var(--background)));
   color: hsl(var(--card-foreground));
-  border-radius: 0.75rem;
+  border-radius: 1rem;
   border: 1px solid hsl(var(--border));
+  border-top: 2px solid hsl(var(--primary) / 0.3);
   box-shadow: var(--shadow-1, 0 8px 12px rgba(0, 0, 0, 0.12));
   position: relative;
   z-index: 3;
@@ -27,6 +28,9 @@
 .title {
   font-size: 1.25rem;
   font-weight: 600;
+  font-family: var(--font-ui);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
   margin: 0;
   position: relative;
   z-index: 3;

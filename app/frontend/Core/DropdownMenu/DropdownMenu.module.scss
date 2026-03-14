@@ -3,7 +3,7 @@
   z-index: 50;
   min-width: 8rem;
   overflow: hidden;
-  border-radius: 0.5rem;
+  border-radius: var(--radius);
   background: hsl(var(--popover));
   padding: 0.25rem;
   box-shadow: var(--shadow-1, 0 8px 12px rgba(0, 0, 0, 0.12));
@@ -50,6 +50,7 @@
   padding: var(--space-xs) var(--space-xs) 0.25rem;
   font-size: 0.75rem;
   font-weight: 600;
+  font-family: var(--font-ui);
   color: hsl(var(--muted-foreground));
   text-transform: uppercase;
   letter-spacing: 0.5px;
