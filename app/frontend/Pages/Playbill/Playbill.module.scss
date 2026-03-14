@@ -90,7 +90,7 @@
 
 @media (max-width: 768px) {
   .fab {
-    bottom: calc(4.25rem + env(safe-area-inset-bottom) + var(--space-sm));
+    bottom: calc(var(--bottom-nav-h) + env(safe-area-inset-bottom) + var(--space-sm));
   }
 
   .section {

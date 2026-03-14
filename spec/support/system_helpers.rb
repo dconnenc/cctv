@@ -111,7 +111,7 @@ module SystemHelpers
     expect(page).to have_current_path(/avatar/, wait: 10)
     draw_on_canvas
     click_button "Submit"
-    expect(page).to have_text("Players in Lobby:")
+    expect(page).to have_text("Players in Lobby:", wait: 10)
   end
 
   def within_participants_panel(&block)

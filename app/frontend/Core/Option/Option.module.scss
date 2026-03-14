@@ -9,18 +9,25 @@
   padding: var(--space-xs);
   border-radius: var(--radius);
   cursor: pointer;
-  transition: border-color 0.2s ease;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    color 0.15s ease;
 
   min-width: 200px;
   max-width: 300px;
 
   &:hover {
     border-color: var(--phosphor);
+    box-shadow: 0 0 4px var(--phosphor-glow);
   }
 
   &:has(.input:checked) {
     color: var(--phosphor);
     border-color: var(--phosphor);
+    box-shadow:
+      0 0 6px var(--phosphor-glow-medium),
+      inset 0 0 12px var(--phosphor-glow-faint);
   }
 }
 

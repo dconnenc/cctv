@@ -13,25 +13,32 @@
   background: var(--phosphor);
   color: var(--black);
   border: none;
+  cursor: pointer;
   transition:
     filter 0.15s ease,
-    transform 0.08s ease,
-    opacity 0.2s ease;
+    transform 0.04s ease,
+    opacity 0.2s ease,
+    box-shadow 0.15s ease;
 
   &:hover {
     filter: brightness(1.1);
     background: var(--phosphor);
     border-color: transparent;
+    box-shadow:
+      0 0 8px var(--phosphor-glow-medium),
+      0 0 20px var(--phosphor-glow);
   }
 
   &:active {
-    transform: scale(0.98);
+    transform: scale(0.97);
+    filter: brightness(0.95);
   }
 }
 
 .button:disabled {
-  opacity: 0.6;
+  opacity: 0.5;
   cursor: not-allowed;
+  filter: grayscale(0.5);
 }
 
 .secondary {
@@ -39,11 +46,13 @@
   color: var(--hot-white);
   border: 1px solid var(--hot-white);
   transition:
-    border-color 0.2s ease,
+    border-color 0.15s ease,
     box-shadow 0.2s ease,
-    color 0.2s ease;
+    color 0.15s ease,
+    transform 0.04s ease;
 
   &:hover {
+    color: var(--phosphor);
     border-color: var(--phosphor);
     box-shadow: var(--tv-glow);
     background: transparent;
@@ -59,7 +68,39 @@
   &:hover {
     background: hsl(var(--muted));
     filter: none;
+    box-shadow: none;
   }
+}
+
+.outline {
+  background: transparent;
+  color: hsl(var(--foreground));
+  border: 1px solid hsl(var(--border));
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.2s ease,
+    color 0.15s ease,
+    transform 0.04s ease;
+
+  &:hover {
+    color: var(--phosphor);
+    border-color: var(--phosphor);
+    box-shadow: 0 0 6px var(--phosphor-glow-light);
+    background: transparent;
+    filter: none;
+  }
+}
+
+.sm {
+  padding: 0.25rem 0.75rem;
+  font-size: 0.75rem;
+  height: 2rem;
+}
+
+.lg {
+  padding: 0.75rem 2rem;
+  font-size: 1rem;
+  height: 2.5rem;
 }
 
 .loading {

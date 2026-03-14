@@ -49,11 +49,11 @@ interface Particle {
 const PARTICLE_COLORS = ['#ff4911', '#ff6b3d', '#ffaa00', '#ffe066', '#ffffff'];
 
 function createParticles(cx: number, cy: number): Particle[] {
-  return Array.from({ length: 24 }, (_, i) => ({
+  return Array.from({ length: 16 }, (_, i) => ({
     id: i,
     x: cx,
     y: cy,
-    angle: (Math.PI * 2 * i) / 24 + (Math.random() - 0.5) * 0.4,
+    angle: (Math.PI * 2 * i) / 16 + (Math.random() - 0.5) * 0.4,
     speed: 3 + Math.random() * 5,
     size: 4 + Math.random() * 6,
     opacity: 1,
@@ -70,7 +70,9 @@ export default function Buzzer({ block, viewContext = 'participant' }: BuzzerPro
   const { experience, monitorView } = useExperience();
   const { submitBuzzerResponse, isLoading } = useSubmitBuzzerResponse();
   const [buzzed, setBuzzed] = useState(block.responses?.user_responded ?? false);
-  const [particles, setParticles] = useState<Particle[]>([]);
+  const [showBuzzed, setShowBuzzed] = useState(block.responses?.user_responded ?? false);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const particlesRef = useRef<Particle[]>([]);
   const animRef = useRef<number>(0);
 
   const allResponses = block.responses?.all_responses ?? [];
@@ -83,36 +85,59 @@ export default function Buzzer({ block, viewContext = 'participant' }: BuzzerPro
     const result = await submitBuzzerResponse(block.id);
     if (!result?.success) {
       setBuzzed(false);
+      setShowBuzzed(false);
+    } else {
+      setTimeout(() => setShowBuzzed(true), 800);
     }
   };
 
   const spawnExplosion = useCallback((cx: number, cy: number) => {
-    setParticles(createParticles(cx, cy));
-  }, []);
+    if (particlesRef.current.length > 0) return;
+    particlesRef.current = createParticles(cx, cy);
 
-  useEffect(() => {
-    if (particles.length === 0) return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
 
     const tick = () => {
-      setParticles((prev) => {
-        const next = prev
-          .map((p) => ({
-            ...p,
-            x: p.x + Math.cos(p.angle) * p.speed,
-            y: p.y + Math.sin(p.angle) * p.speed,
-            speed: p.speed * 0.92,
-            opacity: p.opacity - 0.03,
-            size: p.size * 0.96,
-          }))
-          .filter((p) => p.opacity > 0);
-        return next;
-      });
-      animRef.current = requestAnimationFrame(tick);
+      const currentCanvas = canvasRef.current;
+      if (!currentCanvas) return;
+
+      particlesRef.current = particlesRef.current
+        .map((p) => ({
+          ...p,
+          x: p.x + Math.cos(p.angle) * p.speed,
+          y: p.y + Math.sin(p.angle) * p.speed,
+          speed: p.speed * 0.92,
+          opacity: p.opacity - 0.04,
+          size: p.size * 0.96,
+        }))
+        .filter((p) => p.opacity > 0);
+
+      ctx.clearRect(0, 0, currentCanvas.width, currentCanvas.height);
+      for (const p of particlesRef.current) {
+        ctx.globalAlpha = p.opacity;
+        ctx.fillStyle = p.color;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size / 2, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+
+      if (particlesRef.current.length > 0) {
+        animRef.current = requestAnimationFrame(tick);
+      }
     };
 
     animRef.current = requestAnimationFrame(tick);
+  }, []);
+
+  useEffect(() => {
     return () => cancelAnimationFrame(animRef.current);
-  }, [particles.length > 0]);
+  }, []);
 
   if (viewContext === 'monitor') {
     if (!firstResponse) {
@@ -160,7 +185,7 @@ export default function Buzzer({ block, viewContext = 'participant' }: BuzzerPro
   }
 
   if (viewContext === 'participant') {
-    if (buzzed) {
+    if (showBuzzed) {
       return (
         <div className={styles.buzzedState}>
           <p className={styles.buzzedText}>Buzzed!</p>
@@ -174,7 +199,7 @@ export default function Buzzer({ block, viewContext = 'participant' }: BuzzerPro
         <div className={styles.buzzerArea}>
           <button
             className={styles.buzzerButton}
-            onPointerDown={(e) => {
+            onClick={(e) => {
               const rect = e.currentTarget.getBoundingClientRect();
               spawnExplosion(rect.left + rect.width / 2, rect.top + rect.height / 2);
               handleBuzz();
@@ -182,24 +207,7 @@ export default function Buzzer({ block, viewContext = 'participant' }: BuzzerPro
             disabled={isLoading}
             aria-label="Buzz in"
           />
-          {particles.length > 0 && (
-            <div className={styles.particleLayer}>
-              {particles.map((p) => (
-                <div
-                  key={p.id}
-                  className={styles.particle}
-                  style={{
-                    left: p.x,
-                    top: p.y,
-                    width: p.size,
-                    height: p.size,
-                    opacity: p.opacity,
-                    backgroundColor: p.color,
-                  }}
-                />
-              ))}
-            </div>
-          )}
+          <canvas ref={canvasRef} className={styles.particleLayer} />
         </div>
       </div>
     );

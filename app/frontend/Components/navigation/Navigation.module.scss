@@ -223,7 +223,7 @@
   display: flex;
   justify-content: space-around;
   align-items: center;
-  height: 4.25rem;
+  height: var(--bottom-nav-h);
   max-width: 100%;
   padding: 0 var(--space-xs);
 }
@@ -265,7 +265,7 @@
 /* ── Bottom bar popover panel ── */
 .bottomPanel {
   position: fixed;
-  bottom: calc(4.25rem + env(safe-area-inset-bottom));
+  bottom: calc(var(--bottom-nav-h) + env(safe-area-inset-bottom));
   left: var(--space-sm);
   right: var(--space-sm);
   z-index: 1003;
@@ -327,7 +327,7 @@
     display: block;
   }
   :global(.page) {
-    padding-bottom: calc(4.25rem + env(safe-area-inset-bottom) + var(--space-sm));
+    padding-bottom: calc(var(--bottom-nav-h) + env(safe-area-inset-bottom) + var(--space-sm));
     padding-top: var(--space-sm);
   }
 }

@@ -1,4 +1,4 @@
-import { DialogDescription, DialogTitle } from '@cctv/components/ui/dialog';
+import { DialogDescription, DialogTitle } from '@cctv/core';
 import { Button } from '@cctv/core/Button/Button';
 import { useClearBuzzerResponses } from '@cctv/hooks/useClearBuzzerResponses';
 import { BuzzerBlock, ExperienceParticipant } from '@cctv/types';

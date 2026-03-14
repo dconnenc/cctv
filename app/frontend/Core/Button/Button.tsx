@@ -2,7 +2,8 @@ import { ButtonHTMLAttributes, PropsWithChildren, Ref } from 'react';
 
 import styles from './Button.module.scss';
 
-type ButtonVariant = 'primary' | 'secondary' | 'ghost';
+type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'outline';
+type ButtonSize = 'default' | 'sm' | 'lg';
 
 type ButtonProps = PropsWithChildren &
   ButtonHTMLAttributes<HTMLButtonElement> & {
@@ -10,6 +11,7 @@ type ButtonProps = PropsWithChildren &
     loading?: boolean;
     loadingText?: string;
     variant?: ButtonVariant;
+    size?: ButtonSize;
   };
 
 export function Button({
@@ -20,6 +22,7 @@ export function Button({
   disabled,
   ref,
   variant = 'primary',
+  size = 'default',
   className,
   ...props
 }: ButtonProps) {
@@ -33,11 +36,12 @@ export function Button({
   };
 
   const variantClass = variant !== 'primary' ? styles[variant] : '';
+  const sizeClass = size !== 'default' ? styles[size] : '';
 
   return (
     <button
       ref={ref}
-      className={`${styles.button} ${variantClass} ${loading ? styles.loading : ''} ${className ?? ''}`}
+      className={`${styles.button} ${variantClass} ${sizeClass} ${loading ? styles.loading : ''} ${className ?? ''}`}
       type={type}
       disabled={isDisabled}
       {...props}

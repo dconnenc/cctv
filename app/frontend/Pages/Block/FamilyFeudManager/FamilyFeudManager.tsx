@@ -42,8 +42,8 @@ import { useCallback, useEffect, useReducer, useRef, useState } from 'react';
 import { DragDropContext, Draggable, Droppable } from '@hello-pangea/dnd';
 import { ChevronDown, ChevronRight, Loader2, Play, Plus, Sparkles, Trash2 } from 'lucide-react';
 
-import { Button } from '@cctv/components/ui/button';
 import { useExperience } from '@cctv/contexts/ExperienceContext';
+import { Button } from '@cctv/core';
 import { useFamilyFeudBuckets } from '@cctv/hooks/useFamilyFeudBuckets';
 import { useScrollFade } from '@cctv/hooks/useScrollFade';
 import { Block, BlockKind, BlockResponse } from '@cctv/types';
@@ -421,7 +421,7 @@ export default function FamilyFeudManager({ block }: FamilyFeudManagerProps) {
     <div className={styles.root}>
       <div className={styles.headerRow}>
         <h2 className={styles.title}>{payload?.title ?? 'Family Feud'}</h2>
-        <Button variant="default" size="lg" onClick={handleStartPlaying} disabled={startingPlaying}>
+        <Button variant="primary" size="lg" onClick={handleStartPlaying} disabled={startingPlaying}>
           <Play size={20} />
           {startingPlaying ? 'Starting...' : 'Start Playing'}
         </Button>

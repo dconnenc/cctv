@@ -7,13 +7,18 @@
   --dim: #3a3a3a;
   --red: #ff4911;
   --green: #c8f060;
+  --phosphor-glow-faint: rgba(200, 240, 96, 0.05);
   --phosphor-glow: rgba(200, 240, 96, 0.15);
+  --phosphor-glow-light: rgba(200, 240, 96, 0.2);
+  --phosphor-glow-medium: rgba(200, 240, 96, 0.35);
+  --phosphor-glow-strong: rgba(200, 240, 96, 0.5);
   --amber-glow: rgba(245, 166, 35, 0.2);
   --font-display: 'Bebas Neue', sans-serif;
   --font-body: 'DM Mono', monospace;
   --font-ui: 'Barlow Condensed', sans-serif;
   --font-primary: var(--font-body);
   --nav-h: 3.5rem;
+  --bottom-nav-h: 4.75rem;
   --space-xs: 0.5rem;
   --space-sm: 1rem;
   --space-md: 2rem;
@@ -327,8 +332,6 @@ button {
   font-size: 1rem;
   font-weight: 600;
   font-family: var(--font-ui);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
   border: 1px solid hsl(var(--border));
   border-radius: var(--radius);
   background-color: transparent;

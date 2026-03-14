@@ -2,7 +2,7 @@ import { useState } from 'react';
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
-import { Switch } from '@cctv/components/ui/switch';
+import { Switch } from '@cctv/core';
 
 const meta: Meta<typeof Switch> = {
   title: 'Core/Switch',

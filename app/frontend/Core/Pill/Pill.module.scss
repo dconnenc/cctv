@@ -11,4 +11,24 @@
   color: var(--pill-fg, var(--phosphor));
   border: 1px solid var(--pill-border, rgba(200, 240, 96, 0.2));
   margin-right: 0.25rem;
+  animation: pillIn 0.15s cubic-bezier(0.16, 1, 0.3, 1) both;
+  transition:
+    box-shadow 0.15s ease,
+    border-color 0.15s ease;
+
+  &:hover {
+    box-shadow: 0 0 6px var(--phosphor-glow-light);
+    border-color: var(--phosphor-glow-medium);
+  }
+}
+
+@keyframes pillIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }

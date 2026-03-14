@@ -2,9 +2,9 @@ import { useEffect, useState } from 'react';
 
 import { Bug, ChevronDown, ChevronUp, Play, Users } from 'lucide-react';
 
-import { DialogDescription, DialogTitle } from '@cctv/components/ui/dialog';
 import { useAdminAuth } from '@cctv/contexts/AdminAuthContext';
 import { useExperience } from '@cctv/contexts/ExperienceContext';
+import { DialogDescription, DialogTitle } from '@cctv/core';
 import { Button } from '@cctv/core/Button/Button';
 import { useDebugParticipants } from '@cctv/hooks/useDebugParticipants';
 import { useSimulateResponses } from '@cctv/hooks/useSimulateResponses';
