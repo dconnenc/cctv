@@ -33,11 +33,11 @@ RSpec.describe "Poll Block", type: :system do
     all("label", text: /Assign segment/i)[0].find("select").select("Team A")
     all("label", text: /Assign segment/i)[1].find("select").select("Team B")
 
-    click_button "QUEUE BLOCK"
+    click_button "Queue block"
     expect(page).to have_css("li[aria-label='block 1']")
 
-    click_button "START"
-    expect(page).to have_button("PAUSE")
+    click_button "Start"
+    expect(page).to have_button("Pause")
 
     using_session(:participant) do
       register_participant(
@@ -62,19 +62,19 @@ RSpec.describe "Poll Block", type: :system do
     # Present the poll block
     visit current_path
     within("li[aria-label='block 1']") { find("button", text: /poll/i).click }
-    click_button "PRESENT"
+    click_button "Present"
 
     ## Each participant selects a different option
     using_session(:participant) do
       find("label", text: "Team A").click
-      click_button "SUBMIT"
+      click_button "Submit"
 
       expect(page).to have_text(/Team A/i)
     end
 
     using_session(:participant_two) do
       find("label", text: "Team B").click
-      click_button "SUBMIT"
+      click_button "Submit"
 
       expect(page).to have_text(/Team B/i)
     end
@@ -95,13 +95,13 @@ RSpec.describe "Poll Block", type: :system do
     expect(page).to have_text("Create Block")
     select "Announcement", from: "Kind"
     fill_in "Announcement Message", with: "Hello Team A!"
-    click_button "VIEW ADDITIONAL DETAILS"
+    click_button "View Additional Details"
     find(:xpath, '//label[contains(., "Visible to segments")]/following-sibling::div/select').select("Team A")
-    click_button "QUEUE BLOCK"
+    click_button "Queue block"
     expect(page).to have_css("li[aria-label='block 2']")
 
     within("li[aria-label='block 2']") { find("button", text: /announcement/i).click }
-    click_button "PRESENT"
+    click_button "Present"
 
     using_session(:participant) do
       expect(page).to have_text("Hello Team A!")
@@ -117,13 +117,13 @@ RSpec.describe "Poll Block", type: :system do
     expect(page).to have_text("Create Block")
     select "Announcement", from: "Kind"
     fill_in "Announcement Message", with: "Hello Team B!"
-    click_button "VIEW ADDITIONAL DETAILS"
+    click_button "View Additional Details"
     find(:xpath, '//label[contains(., "Visible to segments")]/following-sibling::div/select').select("Team B")
-    click_button "QUEUE BLOCK"
+    click_button "Queue block"
     expect(page).to have_css("li[aria-label='block 3']")
 
     within("li[aria-label='block 3']") { find("button", text: /announcement/i).click }
-    click_button "PRESENT"
+    click_button "Present"
 
     using_session(:participant_two) do
       expect(page).to have_text("Hello Team B!")

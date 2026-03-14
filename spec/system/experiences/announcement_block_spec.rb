@@ -17,12 +17,12 @@ RSpec.describe "Announcement Block", type: :system do
       "Announcement Message",
       with: "Welcome {{ participant_name }} to the show!"
     )
-    click_button "QUEUE BLOCK"
+    click_button "Queue block"
 
     expect(page).to have_css("li[aria-label='block 1']")
 
-    click_button "START"
-    expect(page).to have_button("PAUSE")
+    click_button "Start"
+    expect(page).to have_button("Pause")
 
     using_session(:participant) do
       register_participant(
@@ -38,7 +38,7 @@ RSpec.describe "Announcement Block", type: :system do
     visit current_path
     expect(page).to have_css("li[aria-label='block 1']")
     within("li[aria-label='block 1']") { find("button", text: /announcement/i).click }
-    click_button "PRESENT"
+    click_button "Present"
 
     using_session(:participant) do
       expect(page).to have_text("Welcome Alice to the show!")
