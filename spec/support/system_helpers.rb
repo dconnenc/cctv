@@ -27,28 +27,8 @@ module SystemHelpers
   end
   # Base method overrides END
 
-  # If the menu needs expanding and animation will occur. This method accounts
-  # for the various menu states and animations
   def click_menu_link(link)
-    expect(page).to have_button("Menu")
-
-    # Check if the menu is expanded. If not, click Menu to expand
-    unless page.has_css?("[aria-expanded='true']", wait: 0)
-      click_button "Menu"
-      sleep 0.5
-      expect(page).to have_css("[aria-expanded='true']")
-    end
-
-    # Precondition check to assert the link actually exists in the menu
     expect(page).to have_link(link)
-
-    # The menu opens with an animation, this check forces the driver to move to
-    # the center of the element and for it to be interactable. Without this the
-    # click may work, but not actually hit the correct dom element as it is
-    # moving on the page. This is needed for the state where the menu starts
-    # closed, and doesn't impact the case where it is already open
-    find_link(link).hover
-
     click_link(link)
   end
 
@@ -63,9 +43,7 @@ module SystemHelpers
     fill_in "email", with: user.email
     click_button "Sign in"
 
-    # The sign-in page doesn't render a menu so we can use it as a post
-    # condition.
-    expect(page).to have_button("Menu")
+    expect(page).to have_button("Logout")
   end
 
   def create_experience(name:, code:)
