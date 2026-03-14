@@ -109,12 +109,12 @@ module SystemHelpers
     fill_in placeholder: "Your Name", with: name
     click_button "Register"
 
-    expect(page).not_to have_current_path(/register/)
+    expect(page).to have_current_path(%r{/experiences/#{code}(/|$)}, wait: 10)
     expect(page).to have_text(experience_name)
   end
 
   def draw_on_canvas
-    expect(page).to have_css("canvas")
+    expect(page).to have_css("canvas", wait: 10)
 
     rect = page.evaluate_script(
       "(() => { const r = document.querySelector('canvas').getBoundingClientRect(); " \
@@ -129,6 +129,7 @@ module SystemHelpers
   end
 
   def draw_and_submit_avatar
+    expect(page).to have_current_path(/avatar/, wait: 10)
     draw_on_canvas
     click_button "Submit"
     expect(page).to have_text("Players in Lobby:")
