@@ -76,6 +76,26 @@ class Api::ExperienceBlocksController < Api::BaseController
     }, status: 200
   end
 
+  # POST /api/experiences/:experience_id/blocks/:id/reorder
+  def reorder
+    with_experience_orchestration do
+      block = Experiences::Orchestrator.new(
+        experience: @experience, actor: @user
+      ).reorder_block!(
+        block_id: params[:id],
+        position: params[:position].to_i
+      )
+
+      @experience.reload
+      Experiences::Broadcaster.new(@experience).broadcast_experience_update
+
+      render json: {
+        success: true,
+        data: block,
+      }, status: 200
+    end
+  end
+
   # POST /api/experiences/:experience_id/blocks/:id/open
   def open
     with_experience_orchestration do
