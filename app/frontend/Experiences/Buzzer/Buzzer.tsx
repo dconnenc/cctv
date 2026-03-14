@@ -128,10 +128,13 @@ export default function Buzzer({ block, viewContext = 'participant' }: BuzzerPro
     const sourceView = monitorView ?? experience;
     const allParticipants = [...(sourceView?.participants ?? []), ...(sourceView?.hosts ?? [])];
     const winner = allParticipants.find((p) => p.user_id === firstResponse.user_id);
-    const strokes = winner?.avatar?.strokes ?? [];
+    const strokes = firstResponse.avatar?.strokes ?? [];
 
     return (
       <div className={styles.monitorWinner}>
+        <p className={styles.monitorLabel}>
+          {block.payload.prompt || 'Contestants be ready to buzz in!'}
+        </p>
         {strokes.length > 0 ? (
           <div className={styles.avatarWrap}>
             <Stage width={AVATAR_DISPLAY_SIZE} height={AVATAR_DISPLAY_SIZE}>
