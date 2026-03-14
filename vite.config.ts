@@ -1,3 +1,4 @@
+/// <reference types="vitest/config" />
 import tailwindcss from '@tailwindcss/vite';
 import ReactPlugin from '@vitejs/plugin-react';
 import { URL, fileURLToPath } from 'node:url';
@@ -16,7 +17,11 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     setupFiles: ['./test-setup.ts'],
-    css: { modules: { classNameStrategy: 'non-scoped' } },
+    css: {
+      modules: {
+        classNameStrategy: 'non-scoped',
+      },
+    },
   },
   resolve: {
     alias: {
