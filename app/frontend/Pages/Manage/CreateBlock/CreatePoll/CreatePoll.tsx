@@ -175,14 +175,14 @@ export default function CreatePoll({ data, onChange }: BlockComponentProps<PollD
                 />
               )}
               {data.options.length > 2 && (
-                <Button type="button" onClick={() => removeOption(index)}>
+                <Button variant="ghost" type="button" onClick={() => removeOption(index)}>
                   Remove
                 </Button>
               )}
             </div>
           ))}
         </div>
-        <Button type="button" onClick={addOption}>
+        <Button variant="secondary" type="button" onClick={addOption}>
           Add Option
         </Button>
       </div>

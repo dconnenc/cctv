@@ -17,9 +17,8 @@ export default function Home() {
       >
         <Button
           style={{
-            fontSize: '0.875rem',
-            opacity: 0.7,
-            padding: '0.375rem 1rem',
+            fontSize: '1rem',
+            padding: '0.75rem 2rem',
           }}
         >
           Join Show

@@ -3,11 +3,13 @@ import React from 'react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 
 import type { Preview } from '@storybook/react-vite';
+import { themes } from 'storybook/theming';
 
 import { ExperienceProvider } from '../app/frontend/Contexts/ExperienceContext';
 import { UserProvider } from '../app/frontend/Contexts/UserContext';
 
 import '../app/frontend/styles.css';
+import '../app/frontend/tailwind.css';
 
 const preview: Preview = {
   parameters: {
@@ -20,9 +22,12 @@ const preview: Preview = {
     backgrounds: {
       default: 'dark',
       values: [
-        { name: 'dark', value: 'hsl(0 0% 5%)' },
-        { name: 'light', value: 'hsl(0 0% 100%)' },
+        { name: 'dark', value: '#0d0d0f' },
+        { name: 'light', value: '#f0ede4' },
       ],
+    },
+    docs: {
+      theme: themes.dark,
     },
     a11y: {
       test: 'todo',

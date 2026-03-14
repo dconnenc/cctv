@@ -37,7 +37,7 @@ RSpec.describe "Announcement Block", type: :system do
 
     visit current_path
     expect(page).to have_css("li[aria-label='block 1']")
-    within("li[aria-label='block 1']") { find("button", text: /announcement/).click }
+    within("li[aria-label='block 1']") { find("button", text: /announcement/i).click }
     click_button "Present"
 
     using_session(:participant) do
@@ -56,7 +56,7 @@ RSpec.describe "Announcement Block", type: :system do
     end
 
     visit current_path
-    within("li[aria-label='block 1']") { find("button", text: /announcement/).click }
+    within("li[aria-label='block 1']") { find("button", text: /announcement/i).click }
 
     within("[aria-label='Preview mode']") { click_button "Participant" }
     expect(page).to have_select("View as participant")

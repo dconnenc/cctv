@@ -47,6 +47,7 @@ export default function BuzzerManager({ block, participants }: BuzzerManagerProp
       )}
 
       <Button
+        variant="secondary"
         onClick={() => clearBuzzerResponses(block.id)}
         loading={isLoading}
         loadingText="Resetting…"

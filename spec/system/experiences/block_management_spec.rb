@@ -46,7 +46,7 @@ RSpec.describe "Managing Blocks", type: :system do
       expect(page).to have_css("li[aria-label='block 1']")
 
       within("li[aria-label='block 1']") do
-        find("button", text: /announcement/).click
+        find("button", text: /announcement/i).click
       end
 
       # Monitor impersonation view shows empty state even when block is queued but not live
@@ -108,7 +108,7 @@ RSpec.describe "Managing Blocks", type: :system do
 
       # Start presenting the block
       within("li[aria-label='block 1']") do
-        find("button", text: /announcement/).click
+        find("button", text: /announcement/i).click
       end
       click_button "Present"
 
@@ -137,7 +137,7 @@ RSpec.describe "Managing Blocks", type: :system do
 
       # Present new block
       within("li[aria-label='block 2']") do
-        find("button", text: /announcement/).click
+        find("button", text: /announcement/i).click
       end
       click_button "Present"
 

@@ -8,3 +8,9 @@
   align-items: stretch;
   overflow: hidden;
 }
+
+@media (max-width: 768px) {
+  .root {
+    padding-top: 0;
+  }
+}

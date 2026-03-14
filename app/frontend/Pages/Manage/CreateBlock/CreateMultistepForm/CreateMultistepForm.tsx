@@ -116,7 +116,12 @@ export default function CreateMultistepForm({
       </div>
       <div className={styles.actions}>
         {questionIndexToFocus > 0 && (
-          <Button onClick={() => setQuestionIndexToFocus(questionIndexToFocus - 1)}>Back</Button>
+          <Button
+            variant="secondary"
+            onClick={() => setQuestionIndexToFocus(questionIndexToFocus - 1)}
+          >
+            Back
+          </Button>
         )}
         {questionIndexToFocus < multistepQuestions.length - 1 && (
           <Button onClick={() => setQuestionIndexToFocus(questionIndexToFocus + 1)}>Next</Button>

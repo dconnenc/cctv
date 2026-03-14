@@ -70,6 +70,7 @@ export default function BlockDetailPanel({
           {selectedBlock.status === 'open' ? (
             <>
               <Button
+                variant="secondary"
                 onClick={() => onStopPresenting(selectedBlock)}
                 loading={busyBlockId === selectedBlock.id}
                 loadingText="Stopping..."

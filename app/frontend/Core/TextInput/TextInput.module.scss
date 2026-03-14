@@ -6,8 +6,11 @@
 }
 
 .label {
+  font-family: var(--font-ui);
   font-size: 20px;
   font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
   color: hsl(var(--foreground));
   text-align: left;
   align-self: flex-start;
@@ -17,7 +20,7 @@
   padding: var(--space-xs) var(--space-xs);
   font-size: 16px;
   border: 1px solid hsl(var(--border));
-  border-radius: 0.375rem;
+  border-radius: var(--radius);
   background: hsl(var(--input));
   color: hsl(var(--foreground));
 }

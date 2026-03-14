@@ -188,10 +188,15 @@ export default function CreateMadLib({ data, onChange }: BlockComponentProps<Mad
         ))}
       </div>
       <div className={styles.buttonGroup}>
-        <Button type="button" onClick={addTextPart} disabled={!canAddTextPart()}>
+        <Button
+          variant="secondary"
+          type="button"
+          onClick={addTextPart}
+          disabled={!canAddTextPart()}
+        >
           Add Text
         </Button>
-        <Button type="button" onClick={addVariablePart}>
+        <Button variant="secondary" type="button" onClick={addVariablePart}>
           Add Variable
         </Button>
       </div>
@@ -265,7 +270,7 @@ export default function CreateMadLib({ data, onChange }: BlockComponentProps<Mad
             </div>
           )}
           <div className={styles.partActions}>
-            <Button type="button" onClick={() => removePart(index)}>
+            <Button variant="ghost" type="button" onClick={() => removePart(index)}>
               Remove
             </Button>
           </div>

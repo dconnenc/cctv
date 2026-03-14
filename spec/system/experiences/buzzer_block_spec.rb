@@ -31,7 +31,7 @@ RSpec.describe "Buzzer Block", type: :system do
     end
 
     visit current_path
-    within("li[aria-label='block 1']") { find("button", text: /buzzer/).click }
+    within("li[aria-label='block 1']") { find("button", text: /buzzer/i).click }
     click_button "Present"
 
     # Monitor impersonation view shows the custom prompt
