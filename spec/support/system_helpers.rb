@@ -43,7 +43,7 @@ module SystemHelpers
     fill_in "email", with: user.email
     click_button "Sign in"
 
-    expect(page).to have_button("Logout")
+    expect(page).to have_button("LOGOUT")
   end
 
   def create_experience(name:, code:)
@@ -52,7 +52,7 @@ module SystemHelpers
     expect(page).to have_text("Create Experience")
     fill_in "Name", with: name
     fill_in "Code", with: code
-    click_button "Create"
+    click_button "CREATE"
 
     # Assert a QR code is rendered. This is a positive assertion to check the
     # create action worked
@@ -80,14 +80,14 @@ module SystemHelpers
     # navigate went to a valid code
     expect(page).to have_text("Enter the secret code")
 
-    click_button "Submit"
+    click_button "SUBMIT"
 
-    expect(page).to have_button("Register", disabled: :all)
+    expect(page).to have_button("REGISTER", disabled: :all)
     fill_in placeholder: "Your Email", with: email
     fill_in placeholder: "Your Name", with: name
-    click_button "Register"
+    click_button "REGISTER"
 
-    expect(page).to have_no_button("Register", wait: 10)
+    expect(page).to have_no_button("REGISTER", wait: 10)
     expect(page).to have_current_path(%r{/experiences/#{code}(?!/register)}, wait: 10)
     expect(page).to have_text(experience_name)
   end
@@ -110,7 +110,7 @@ module SystemHelpers
   def draw_and_submit_avatar
     expect(page).to have_current_path(/avatar/, wait: 10)
     draw_on_canvas
-    click_button "Submit"
+    click_button "SUBMIT"
     expect(page).to have_text("Players in Lobby:")
   end
 

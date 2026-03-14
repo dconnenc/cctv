@@ -14,11 +14,11 @@ RSpec.describe "Buzzer Block", type: :system do
     select "Buzzer", from: "Kind"
     fill_in "Prompt", with: "Get ready to buzz in!"
     fill_in "Button Label (optional)", with: "Hit it!"
-    click_button "Queue block"
+    click_button "QUEUE BLOCK"
     expect(page).to have_css("li[aria-label='block 1']")
 
-    click_button "Start"
-    expect(page).to have_button("Pause")
+    click_button "START"
+    expect(page).to have_button("PAUSE")
 
     using_session(:participant) do
       register_participant(
@@ -32,7 +32,7 @@ RSpec.describe "Buzzer Block", type: :system do
 
     visit current_path
     within("li[aria-label='block 1']") { find("button", text: /buzzer/i).click }
-    click_button "Present"
+    click_button "PRESENT"
 
     # Monitor impersonation view shows the custom prompt
     within("[aria-label='Preview mode']") { click_button "Monitor" }
@@ -62,11 +62,11 @@ RSpec.describe "Buzzer Block", type: :system do
     select "Buzzer", from: "Kind"
     fill_in "Prompt", with: "Get ready to buzz in!"
     fill_in "Button Label (optional)", with: "Hit it!"
-    click_button "Queue block"
+    click_button "QUEUE BLOCK"
     expect(page).to have_css("li[aria-label='block 1']")
 
-    click_button "Start"
-    expect(page).to have_button("Pause")
+    click_button "START"
+    expect(page).to have_button("PAUSE")
 
     using_session(:participant) do
       register_participant(
@@ -90,7 +90,7 @@ RSpec.describe "Buzzer Block", type: :system do
 
     visit current_path
     within("li[aria-label='block 1']") { find("button", text: /buzzer/i).click }
-    click_button "Present"
+    click_button "PRESENT"
 
     using_session(:participant) do
       expect(page).to have_css("button[aria-label='Buzz in']")

@@ -42,7 +42,7 @@ RSpec.describe "Participating in an Experience", type: :system do
         # active session
         visit "/join?code=#{experience2.code_slug}"
         expect(page).to have_text("Enter the secret code")
-        click_button "Submit"
+        click_button "SUBMIT"
 
         # Assert the most recent user name was used
         expect(page).to have_field(placeholder: "Your Name", with: "Alice")
@@ -50,12 +50,12 @@ RSpec.describe "Participating in an Experience", type: :system do
         # No email field as the user has an active session
         expect(page).to_not have_field(placeholder: "Your Email")
 
-        click_button "Register"
+        click_button "REGISTER"
 
         visit "/experiences/#{experience2.code_slug}/avatar"
 
         # Canvas is pre-populated with the previous avatar, so Submit is enabled
-        expect(page).to have_button("Back")
+        expect(page).to have_button("BACK")
       end
     end
   end

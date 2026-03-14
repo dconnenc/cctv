@@ -31,8 +31,8 @@ RSpec.describe "Managing Blocks", type: :system do
     it "hides announcement from monitor when show_on_monitor is disabled" do
       visit "/experiences/#{experience.code_slug}/manage"
 
-      click_button "Start"
-      expect(page).to have_button("Pause")
+      click_button "START"
+      expect(page).to have_button("PAUSE")
 
       click_button "Block"
       expect(page).to have_text("Create Block")
@@ -42,7 +42,7 @@ RSpec.describe "Managing Blocks", type: :system do
         with: "Hidden announcement {{ participant_name }}"
       )
       uncheck "Show on monitor"
-      click_button "Queue block"
+      click_button "QUEUE BLOCK"
       expect(page).to have_css("li[aria-label='block 1']")
 
       within("li[aria-label='block 1']") do
@@ -53,7 +53,7 @@ RSpec.describe "Managing Blocks", type: :system do
       within("[aria-label='Preview mode']") { click_button "Monitor" }
       expect(page).to have_text("This block is not shown on the monitor")
 
-      click_button "Present"
+      click_button "PRESENT"
 
       # Monitor impersonation view still shows empty state after block goes live
       within("[aria-label='Preview mode']") { click_button "Monitor" }
@@ -84,8 +84,8 @@ RSpec.describe "Managing Blocks", type: :system do
       visit "/experiences/#{experience.code_slug}/manage"
 
       # Start the experience
-      click_button "Start"
-      expect(page).to have_button("Pause")
+      click_button "START"
+      expect(page).to have_button("PAUSE")
 
       # Enqueue new block
       click_button "Block"
@@ -95,7 +95,7 @@ RSpec.describe "Managing Blocks", type: :system do
         "Announcement Message",
         with: "Welcome {{ participant_name }}"
       )
-      click_button "Queue block"
+      click_button "QUEUE BLOCK"
       expect(page).to have_css("li[aria-label='block 1']")
 
       # Assert UI isn't showing anything (no block is live)
@@ -110,7 +110,7 @@ RSpec.describe "Managing Blocks", type: :system do
       within("li[aria-label='block 1']") do
         find("button", text: /announcement/i).click
       end
-      click_button "Present"
+      click_button "PRESENT"
 
       # Assert impersonation and monitor views
       within("[aria-label='Preview mode']") { click_button "Participant" }
@@ -128,7 +128,7 @@ RSpec.describe "Managing Blocks", type: :system do
         "Announcement Message",
         with: "Welcome {{ participant_name }} again"
       )
-      click_button "Queue block"
+      click_button "QUEUE BLOCK"
       expect(page).to have_css("li[aria-label='block 2']")
 
       # Assert original block is still displayed. New block is only enqueued
@@ -139,7 +139,7 @@ RSpec.describe "Managing Blocks", type: :system do
       within("li[aria-label='block 2']") do
         find("button", text: /announcement/i).click
       end
-      click_button "Present"
+      click_button "PRESENT"
 
       # Assert new block is now visible in the impersonation views
       within("[aria-label='Preview mode']") { click_button "Participant" }
