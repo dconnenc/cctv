@@ -162,7 +162,7 @@ export default function Join() {
 
       {cameraSupported && (
         <div className={styles.qrSection}>
-          <div id="qr-reader" ref={readerRef} className={scanning ? styles.qrReader : ''} />
+          <div id="qr-reader" ref={readerRef} className={styles.qrReader} />
           {scanning ? (
             <Button type="button" onClick={stopScanner}>
               Stop Scanner
