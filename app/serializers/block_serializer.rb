@@ -380,18 +380,26 @@ class BlockSerializer
     when ExperienceBlock::BUZZER
       submissions = block.experience_buzzer_submissions.order(Arel.sql("answer->>'buzzed_at' ASC"))
       total = submissions.count
+      winner_user_id = submissions.first&.user_id
+      winner_avatar = winner_user_id &&
+        block.experience.experience_participants
+          .find_by(user_id: winner_user_id)
+          &.avatar
+          &.presence
 
       {
         total: total,
         user_response: nil,
         user_responded: false,
-        all_responses: submissions.map do |submission|
-          {
+        all_responses: submissions.map.with_index do |submission, index|
+          entry = {
             id: submission.id,
             user_id: submission.user_id,
             answer: submission.answer,
             created_at: submission.created_at
           }
+          entry[:avatar] = winner_avatar if index == 0 && winner_avatar
+          entry
         end
       }
 

@@ -351,6 +351,7 @@ export interface BuzzerBlock extends BaseBlock {
       user_id: string;
       answer: { buzzed_at: string };
       created_at: string;
+      avatar?: { strokes?: AvatarStroke[] } | null;
     }>;
   };
 }
