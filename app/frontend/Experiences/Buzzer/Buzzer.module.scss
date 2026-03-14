@@ -54,6 +54,8 @@
   &:disabled {
     opacity: 0.7;
     cursor: default;
+    background: var(--red) !important;
+    border-color: color-mix(in srgb, var(--red) 60%, black) !important;
   }
 }
 

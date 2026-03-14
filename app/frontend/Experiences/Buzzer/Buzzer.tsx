@@ -103,6 +103,9 @@ export default function Buzzer({ block, viewContext = 'participant' }: BuzzerPro
     if (!ctx) return;
 
     const tick = () => {
+      const currentCanvas = canvasRef.current;
+      if (!currentCanvas) return;
+
       particlesRef.current = particlesRef.current
         .map((p) => ({
           ...p,
@@ -114,7 +117,7 @@ export default function Buzzer({ block, viewContext = 'participant' }: BuzzerPro
         }))
         .filter((p) => p.opacity > 0);
 
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.clearRect(0, 0, currentCanvas.width, currentCanvas.height);
       for (const p of particlesRef.current) {
         ctx.globalAlpha = p.opacity;
         ctx.fillStyle = p.color;
@@ -196,7 +199,7 @@ export default function Buzzer({ block, viewContext = 'participant' }: BuzzerPro
         <div className={styles.buzzerArea}>
           <button
             className={styles.buzzerButton}
-            onPointerDown={(e) => {
+            onClick={(e) => {
               const rect = e.currentTarget.getBoundingClientRect();
               spawnExplosion(rect.left + rect.width / 2, rect.top + rect.height / 2);
               handleBuzz();
