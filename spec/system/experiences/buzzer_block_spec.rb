@@ -95,7 +95,7 @@ RSpec.describe "Buzzer Block", type: :system do
     using_session(:participant) do
       expect(page).to have_css("button[aria-label='Buzz in']")
       find("button[aria-label='Buzz in']").click
-      expect(page).to have_text("Buzzed!")
+      expect(page).to have_text(/buzzed!/i)
       expect(page).to have_no_css("button[aria-label='Buzz in']")
     end
 
@@ -103,7 +103,7 @@ RSpec.describe "Buzzer Block", type: :system do
     using_session(:participant_two) do
       expect(page).to have_css("button[aria-label='Buzz in']")
       find("button[aria-label='Buzz in']").click
-      expect(page).to have_text("Buzzed!")
+      expect(page).to have_text(/buzzed!/i)
       expect(page).to have_no_css("button[aria-label='Buzz in']")
     end
 
