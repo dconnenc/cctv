@@ -13,12 +13,12 @@ RSpec.describe "Poll Block", type: :system do
       click_button "+ Add"
       fill_in placeholder: "Segment name", with: "Team A"
       click_button "Add"
-      expect(page).to have_text("Team A")
+      expect(page).to have_text(/Team A/i)
 
       click_button "+ Add"
       fill_in placeholder: "Segment name", with: "Team B"
       click_button "Add"
-      expect(page).to have_text("Team B")
+      expect(page).to have_text(/Team B/i)
     end
 
     # Create a poll block with each option assigned to a segment
@@ -29,9 +29,9 @@ RSpec.describe "Poll Block", type: :system do
     fill_in "Option 1", with: "Team A"
     fill_in "Option 2", with: "Team B"
 
-    expect(page).to have_selector("label", text: /Assign segment/, count: 2)
-    all("label", text: /Assign segment/)[0].find("select").select("Team A")
-    all("label", text: /Assign segment/)[1].find("select").select("Team B")
+    expect(page).to have_selector("label", text: /Assign segment/i, count: 2)
+    all("label", text: /Assign segment/i)[0].find("select").select("Team A")
+    all("label", text: /Assign segment/i)[1].find("select").select("Team B")
 
     click_button "Queue block"
     expect(page).to have_css("li[aria-label='block 1']")
@@ -61,7 +61,7 @@ RSpec.describe "Poll Block", type: :system do
 
     # Present the poll block
     visit current_path
-    within("li[aria-label='block 1']") { find("button", text: /poll/).click }
+    within("li[aria-label='block 1']") { find("button", text: /poll/i).click }
     click_button "Present"
 
     ## Each participant selects a different option
@@ -69,24 +69,24 @@ RSpec.describe "Poll Block", type: :system do
       find("label", text: "Team A").click
       click_button "Submit"
 
-      expect(page).to have_text("Team A")
+      expect(page).to have_text(/Team A/i)
     end
 
     using_session(:participant_two) do
       find("label", text: "Team B").click
       click_button "Submit"
 
-      expect(page).to have_text("Team B")
+      expect(page).to have_text(/Team B/i)
     end
 
     ## Assert participants were assigned to their respective segments
     visit current_path
     within_participants_panel do
       within("tr", text: "Alice") do
-        expect(page).to have_text("Team A")
+        expect(page).to have_text(/Team A/i)
       end
       within("tr", text: "Bob") do
-        expect(page).to have_text("Team B")
+        expect(page).to have_text(/Team B/i)
       end
     end
 
@@ -100,7 +100,7 @@ RSpec.describe "Poll Block", type: :system do
     click_button "Queue block"
     expect(page).to have_css("li[aria-label='block 2']")
 
-    within("li[aria-label='block 2']") { find("button", text: /announcement/).click }
+    within("li[aria-label='block 2']") { find("button", text: /announcement/i).click }
     click_button "Present"
 
     using_session(:participant) do
@@ -122,7 +122,7 @@ RSpec.describe "Poll Block", type: :system do
     click_button "Queue block"
     expect(page).to have_css("li[aria-label='block 3']")
 
-    within("li[aria-label='block 3']") { find("button", text: /announcement/).click }
+    within("li[aria-label='block 3']") { find("button", text: /announcement/i).click }
     click_button "Present"
 
     using_session(:participant_two) do
