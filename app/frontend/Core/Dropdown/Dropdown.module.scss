@@ -40,7 +40,7 @@
   border-color: var(--phosphor);
   box-shadow:
     0 0 0 2px var(--phosphor-glow),
-    0 0 8px rgba(200, 240, 96, 0.2);
+    0 0 8px var(--phosphor-glow-light);
 }
 
 .labelText {

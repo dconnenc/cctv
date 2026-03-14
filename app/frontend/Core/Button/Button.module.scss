@@ -25,8 +25,8 @@
     background: var(--phosphor);
     border-color: transparent;
     box-shadow:
-      0 0 8px rgba(200, 240, 96, 0.4),
-      0 0 20px rgba(200, 240, 96, 0.15);
+      0 0 8px var(--phosphor-glow-medium),
+      0 0 20px var(--phosphor-glow);
   }
 
   &:active {
@@ -85,7 +85,7 @@
   &:hover {
     color: var(--phosphor);
     border-color: var(--phosphor);
-    box-shadow: 0 0 6px rgba(200, 240, 96, 0.25);
+    box-shadow: 0 0 6px var(--phosphor-glow-light);
     background: transparent;
     filter: none;
   }

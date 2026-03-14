@@ -17,8 +17,8 @@
     border-color 0.15s ease;
 
   &:hover {
-    box-shadow: 0 0 6px rgba(200, 240, 96, 0.25);
-    border-color: rgba(200, 240, 96, 0.35);
+    box-shadow: 0 0 6px var(--phosphor-glow-light);
+    border-color: var(--phosphor-glow-medium);
   }
 }
 

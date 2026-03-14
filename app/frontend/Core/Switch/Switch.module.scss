@@ -42,7 +42,7 @@
   &[data-state='checked'] {
     transform: translateX(1rem);
     background: hsl(var(--ring));
-    box-shadow: 0 0 6px rgba(200, 240, 96, 0.5);
+    box-shadow: 0 0 6px var(--phosphor-glow-strong);
   }
 
   &[data-state='unchecked'] {

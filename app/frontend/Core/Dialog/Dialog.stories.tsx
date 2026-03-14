@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
-import { Button } from '@cctv/core/Button/Button';
 import {
+  Button,
   Dialog,
   DialogContent,
   DialogDescription,
@@ -9,7 +9,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@cctv/core/Dialog/Dialog';
+} from '@cctv/core';
 
 const meta: Meta<typeof Dialog> = {
   title: 'Core/Dialog',
