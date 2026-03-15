@@ -51,7 +51,6 @@ export function useRegisterExperience() {
     );
 
     if (!response) {
-      setError('Connection error. Please try again.');
       return;
     }
 

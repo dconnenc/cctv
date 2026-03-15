@@ -189,9 +189,13 @@ export default function DrawingCanvas({
   useEffect(() => {
     const updateSize = () => {
       if (drawWrapRef.current) {
+        drawWrapRef.current.style.width = '';
+        drawWrapRef.current.style.height = '';
         const rect = drawWrapRef.current.getBoundingClientRect();
-        const w = Math.floor(rect.width);
-        setDrawStageSize({ w, h: w });
+        const side = Math.floor(Math.min(rect.width, rect.height));
+        drawWrapRef.current.style.width = `${side}px`;
+        drawWrapRef.current.style.height = `${side}px`;
+        setDrawStageSize({ w: side, h: side });
       }
     };
     updateSize();
@@ -288,7 +292,7 @@ export default function DrawingCanvas({
               onBack();
             }}
           >
-            Back
+            Save
           </Button>
         ) : (
           <Button className={styles.btn} onClick={handleSubmit} disabled={lines.length === 0}>
