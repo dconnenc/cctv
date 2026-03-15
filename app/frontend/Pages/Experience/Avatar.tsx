@@ -41,7 +41,7 @@ export default function Avatar() {
   }
 
   return (
-    <section className="page">
+    <section className={`page ${styles.avatarPage}`}>
       <div className={styles.experienceInfo}>
         <h2 className={styles.experienceName}>{experience?.name || code}</h2>
         {isLobbyGate && (
