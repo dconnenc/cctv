@@ -189,12 +189,7 @@ export default function DrawingCanvas({
   useEffect(() => {
     const updateSize = () => {
       if (drawWrapRef.current) {
-        drawWrapRef.current.style.width = '';
-        drawWrapRef.current.style.height = '';
-        const rect = drawWrapRef.current.getBoundingClientRect();
-        const side = Math.floor(Math.min(rect.width, rect.height));
-        drawWrapRef.current.style.width = `${side}px`;
-        drawWrapRef.current.style.height = `${side}px`;
+        const side = Math.floor(drawWrapRef.current.getBoundingClientRect().width);
         setDrawStageSize({ w: side, h: side });
       }
     };

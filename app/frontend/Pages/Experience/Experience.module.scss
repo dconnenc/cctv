@@ -125,8 +125,7 @@
 .avatarPage {
   display: flex;
   flex-direction: column;
-  height: calc(100dvh - var(--nav-h) - var(--bottom-nav-h));
-  overflow: hidden;
+  padding-bottom: calc(var(--bottom-nav-h) + var(--space-sm)) !important;
 }
 
 .avatarEditor {
@@ -280,8 +279,18 @@
 .lobbyGrid {
   display: grid;
   grid-template-rows: auto 1fr auto;
-  height: calc(100dvh - var(--nav-h) - var(--bottom-nav-h) - calc(var(--space-sm) * 2));
+  height: calc(100dvh - var(--nav-h) - calc(var(--space-sm) * 2));
   gap: var(--space-xs);
+}
+
+@media (max-width: 768px) {
+  .lobbyGrid {
+    height: calc(
+      100dvh - var(--nav-h) - var(--bottom-nav-h) - env(safe-area-inset-bottom) - calc(
+          var(--space-sm) * 2
+        )
+    );
+  }
 }
 
 .topArea {
