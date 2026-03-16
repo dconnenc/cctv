@@ -500,7 +500,16 @@ module Experiences
         end
       else
         block_ids = active_blocks.flat_map { |b| [b.id] + all_blocks.select { |c| c.parent_block_id == b.id }.map(&:id) }
-        responded_user_ids = ExperienceBlockSubmission.where(experience_block_id: block_ids).distinct.pluck(:user_id).to_set
+        [
+          ExperiencePollSubmission,
+          ExperienceQuestionSubmission,
+          ExperienceMultistepFormSubmission,
+          ExperienceMadLibSubmission
+        ].each do |klass|
+          klass.where(experience_block_id: block_ids).distinct.pluck(:user_id).each do |uid|
+            responded_user_ids.add(uid)
+          end
+        end
       end
 
       user_to_participant = participant_list.each_with_object({}) { |p, h| h[p.user_id] = p.id }
