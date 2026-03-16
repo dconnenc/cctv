@@ -385,6 +385,7 @@ export interface Experience {
   created_at: string;
   updated_at: string;
   participant_block_active?: boolean;
+  responded_participant_ids?: string[];
 }
 
 // ===== TYPE FRAGMENTS (using Pick/Omit from complete types) =====

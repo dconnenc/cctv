@@ -31,6 +31,9 @@ class ExperienceSerializer
 
     result[:participant_block_active] = participant_block_active unless participant_block_active.nil?
 
+    responded_participant_ids = visibility_payload&.dig(:experience, :responded_participant_ids)
+    result[:responded_participant_ids] = responded_participant_ids unless responded_participant_ids.nil?
+
     if include_participants
       # Use preloaded participants if available, otherwise query
       all_participants = participants || experience.experience_participants.includes(:user)
