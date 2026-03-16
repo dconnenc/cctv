@@ -137,10 +137,10 @@ class Api::ExperienceBlocksController < Api::BaseController
       )
 
       # Get updated block with response data
-      updated_block = Experiences::Visibility.serialize_block_for_user(
+      updated_block = BlockSerializer.for_participant(
+        block: block,
         experience: @experience,
-        user: @user,
-        block: block
+        user: @user
       )
 
       Experiences::Broadcaster.new(@experience).broadcast_experience_update
@@ -186,10 +186,10 @@ class Api::ExperienceBlocksController < Api::BaseController
       end
 
       # Get updated block with response data
-      updated_block = Experiences::Visibility.serialize_block_for_user(
+      updated_block = BlockSerializer.for_participant(
+        block: block,
         experience: @experience,
-        user: @user,
-        block: block
+        user: @user
       )
 
       Experiences::Broadcaster.new(@experience).broadcast_experience_update
@@ -217,10 +217,10 @@ class Api::ExperienceBlocksController < Api::BaseController
       )
 
       # Get updated block with response data
-      updated_block = Experiences::Visibility.serialize_block_for_user(
+      updated_block = BlockSerializer.for_participant(
+        block: block,
         experience: @experience,
-        user: @user,
-        block: block
+        user: @user
       )
 
       # TODO: Potential bug: not broadcast call here
@@ -248,10 +248,10 @@ class Api::ExperienceBlocksController < Api::BaseController
       )
 
       # Get updated block with response data
-      updated_block = Experiences::Visibility.serialize_block_for_user(
+      updated_block = BlockSerializer.for_participant(
+        block: block,
         experience: @experience,
-        user: @user,
-        block: block
+        user: @user
       )
 
       Experiences::Broadcaster.new(@experience).broadcast_experience_update
@@ -278,10 +278,10 @@ class Api::ExperienceBlocksController < Api::BaseController
         answer: params[:answer]
       )
 
-      updated_block = Experiences::Visibility.serialize_block_for_user(
+      updated_block = BlockSerializer.for_participant(
+        block: block,
         experience: @experience,
-        user: @user,
-        block: block
+        user: @user
       )
 
       Experiences::Broadcaster.new(@experience).broadcast_experience_update
@@ -334,10 +334,10 @@ class Api::ExperienceBlocksController < Api::BaseController
         answer: params[:answer] || {}
       )
 
-      updated_block = Experiences::Visibility.serialize_block_for_user(
+      updated_block = BlockSerializer.for_participant(
+        block: block,
         experience: @experience,
-        user: @user,
-        block: block
+        user: @user
       )
 
       Experiences::Broadcaster.new(@experience).broadcast_experience_update

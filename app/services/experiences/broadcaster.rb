@@ -145,16 +145,12 @@ class Experiences::Broadcaster
 
   def broadcast_monitor_view(preloaded_data = nil)
     begin
-      payload = if preloaded_data
-        Experiences::Visibility.payload_for_monitor(
-          experience: experience,
-          blocks: preloaded_data[:blocks],
-          participants: preloaded_data[:participants],
-          submissions_cache: preloaded_data[:submissions_cache]
-        )
-      else
-        Experiences::Visibility.payload_for_monitor(experience: experience)
-      end
+      payload = ExperienceSerializer.for_monitor(
+        experience: experience,
+        blocks: preloaded_data&.dig(:blocks),
+        participants: preloaded_data&.dig(:participants),
+        submissions_cache: preloaded_data&.dig(:submissions_cache)
+      )
 
       send_broadcast(
         self.class.monitor_stream_key(experience),
@@ -181,15 +177,11 @@ class Experiences::Broadcaster
 
   def broadcast_admin_view(preloaded_data = nil)
     begin
-      payload = if preloaded_data
-        Experiences::Visibility.payload_for_admin(
-          experience: experience,
-          blocks: preloaded_data[:blocks],
-          submissions_cache: preloaded_data[:submissions_cache]
-        )
-      else
-        Experiences::Visibility.payload_for_admin(experience: experience)
-      end
+      payload = ExperienceSerializer.for_admin(
+        experience: experience,
+        blocks: preloaded_data&.dig(:blocks),
+        submissions_cache: preloaded_data&.dig(:submissions_cache)
+      )
 
       send_broadcast(
         self.class.admin_stream_key(experience),
@@ -228,21 +220,14 @@ class Experiences::Broadcaster
         avatar: participant.avatar.presence
       }
 
-      payload = if preloaded_data
-        Experiences::Visibility.payload_for_user(
-          experience: experience,
-          user: participant.user,
-          participant: participant,
-          blocks: preloaded_data[:blocks],
-          submissions_cache: preloaded_data[:submissions_cache],
-          participants_by_user_id: preloaded_data[:participants_by_user_id]
-        )
-      else
-        Experiences::Visibility.payload_for_user(
-          experience: experience,
-          user: participant.user
-        )
-      end
+      payload = ExperienceSerializer.for_participant(
+        experience: experience,
+        user: participant.user,
+        participant: participant,
+        blocks: preloaded_data&.dig(:blocks),
+        submissions_cache: preloaded_data&.dig(:submissions_cache),
+        participants_by_user_id: preloaded_data&.dig(:participants_by_user_id)
+      )
 
       send_broadcast(
         self.class.stream_key_for_participant(participant),

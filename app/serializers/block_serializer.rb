@@ -36,6 +36,19 @@ class BlockSerializer
     serialize_block(block, participant_role: participant_role, context: :stream, submissions_cache: submissions_cache, depth: depth)
   end
 
+  def self.for_participant(block:, experience:, user:)
+    participant_record = experience.experience_participants.find_by(user_id: user.id)
+
+    if user.admin? || user.superadmin?
+      effective_role = participant_record&.role || "host"
+      return serialize_for_user(block, participant_role: effective_role, user: user)
+    end
+
+    return nil if participant_record.blank?
+
+    serialize_for_user(block, participant_role: participant_record.role, user: user)
+  end
+
   def self.serialize_user_response_data(block, participant_role, user, submissions_cache = nil)
     case block.kind
     when ExperienceBlock::POLL
