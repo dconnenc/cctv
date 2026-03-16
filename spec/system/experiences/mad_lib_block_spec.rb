@@ -45,7 +45,6 @@ RSpec.describe "Mad Lib Block", type: :system do
     click_button "Queue block"
     expect(page).to have_css("li[aria-label='block 1']")
 
-    sleep 2
     within("li[aria-label='block 1']") { find("button", text: /mad_lib/i).click }
     click_button "Present"
 

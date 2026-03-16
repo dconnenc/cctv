@@ -120,7 +120,7 @@ RSpec.describe Api::ExperienceBlocksController, type: :controller do
               required: true,
               source: {
                 type: "participant",
-                participant_id: participant.user_id
+                participant_id: participant.id
               }
             },
             {
