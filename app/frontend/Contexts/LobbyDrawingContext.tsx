@@ -9,7 +9,9 @@ type DrawingData =
   | { operation: 'canvas_cleared' }
   | { operation: 'stroke_started'; data?: { points: number[]; color: string; width: number } }
   | { operation: 'stroke_points_appended'; data?: { points: number[] } }
-  | { operation: 'stroke_ended' };
+  | { operation: 'stroke_ended' }
+  | { operation: 'stroke_undone' }
+  | { operation: 'canvas_clear_undone'; data?: { strokes: Stroke[] } };
 
 export type DrawingAction = { type: 'drawing_update'; participant_id: string } & DrawingData;
 
@@ -46,8 +48,21 @@ function reducer(state: DrawingState, action: DrawingAction): DrawingState {
     case 'stroke_ended': {
       if (existing.length === 0) return state;
       const next = existing.slice();
-      next[next.length - 1] = { ...next[next.length - 1], ended: true };
+      const last = { ...next[next.length - 1], ended: true };
+      if (last.points.length === 2) {
+        last.points = [...last.points, last.points[0], last.points[1]];
+      }
+      next[next.length - 1] = last;
       return { strokes: { ...state.strokes, [participant_id]: next } };
+    }
+    case 'stroke_undone': {
+      if (existing.length === 0) return state;
+      return { strokes: { ...state.strokes, [participant_id]: existing.slice(0, -1) } };
+    }
+    case 'canvas_clear_undone': {
+      return {
+        strokes: { ...state.strokes, [participant_id]: action.data?.strokes || [] },
+      };
     }
     default:
       return state;
