@@ -22,6 +22,12 @@ export const mockParticipants: ExperienceParticipant[] = [
     fingerprint: null,
     created_at: now,
     updated_at: now,
+    avatar: {
+      strokes: [
+        { points: [80, 60, 160, 60, 160, 140, 80, 140, 80, 60], color: '#3300ff', width: 4 },
+        { points: [100, 90, 120, 80, 140, 90], color: '#3300ff', width: 3 },
+      ],
+    },
   },
   {
     id: 'p2',
@@ -54,6 +60,12 @@ export const mockParticipants: ExperienceParticipant[] = [
     fingerprint: null,
     created_at: now,
     updated_at: now,
+    avatar: {
+      strokes: [
+        { points: [120, 50, 100, 100, 140, 100, 120, 50], color: '#00cc44', width: 4 },
+        { points: [110, 120, 130, 120], color: '#00cc44', width: 3 },
+      ],
+    },
   },
   {
     id: 'p4',
@@ -67,6 +79,13 @@ export const mockParticipants: ExperienceParticipant[] = [
     fingerprint: null,
     created_at: now,
     updated_at: now,
+    avatar: {
+      strokes: [
+        { points: [80, 80, 160, 80, 160, 160, 80, 160, 80, 80], color: '#ff00ff', width: 3 },
+        { points: [100, 110, 140, 110], color: '#ff00ff', width: 3 },
+        { points: [110, 130, 130, 130], color: '#ff00ff', width: 2 },
+      ],
+    },
   },
 ];
 

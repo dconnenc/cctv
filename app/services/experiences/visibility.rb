@@ -133,12 +133,20 @@ module Experiences
         nil
       end
 
+      responded_ids = responded_participant_ids_for_monitor(
+        experience: experience,
+        blocks: blocks,
+        participants: participants,
+        submissions_cache: submissions_cache
+      )
+
       {
         experience: experience_structure(
           experience,
           serialized_blocks,
           next_block: serialized_next,
-          participant_block_active: participant_block_active?(experience)
+          participant_block_active: participant_block_active?(experience),
+          responded_participant_ids: responded_ids
         )
       }
     end
@@ -467,6 +475,47 @@ module Experiences
       )
     end
 
+    def self.responded_participant_ids_for_monitor(experience:, blocks: nil, participants: nil, submissions_cache: nil)
+      all_blocks = blocks || experience.experience_blocks.to_a
+      participant_list = participants || experience.experience_participants.to_a
+
+      active_blocks = all_blocks.select do |block|
+        block.parent_block_id.nil? &&
+          block.status == 'open' &&
+          block.visible_to_roles.empty? &&
+          block.target_user_ids.empty?
+      end
+
+      return [] if active_blocks.empty?
+
+      responded_user_ids = Set.new
+
+      if submissions_cache
+        active_blocks.each do |block|
+          (submissions_cache[block.id] || {}).each_key { |uid| responded_user_ids.add(uid) }
+          child_blocks = all_blocks.select { |b| b.parent_block_id == block.id }
+          child_blocks.each do |child|
+            (submissions_cache[child.id] || {}).each_key { |uid| responded_user_ids.add(uid) }
+          end
+        end
+      else
+        block_ids = active_blocks.flat_map { |b| [b.id] + all_blocks.select { |c| c.parent_block_id == b.id }.map(&:id) }
+        [
+          ExperiencePollSubmission,
+          ExperienceQuestionSubmission,
+          ExperienceMultistepFormSubmission,
+          ExperienceMadLibSubmission
+        ].each do |klass|
+          klass.where(experience_block_id: block_ids).distinct.pluck(:user_id).each do |uid|
+            responded_user_ids.add(uid)
+          end
+        end
+      end
+
+      user_to_participant = participant_list.each_with_object({}) { |p, h| h[p.user_id] = p.id }
+      responded_user_ids.filter_map { |uid| user_to_participant[uid] }
+    end
+
     def self.participant_block_active?(experience)
       experience.parent_blocks
         .where(status: 'open')
@@ -475,7 +524,7 @@ module Experiences
         .any? { |block| block.payload['show_on_monitor'] == false }
     end
 
-    def self.experience_structure(experience, blocks, next_block: nil, participant_block_active: nil)
+    def self.experience_structure(experience, blocks, next_block: nil, participant_block_active: nil, responded_participant_ids: nil)
       structure = {
         id: experience.id,
         code: experience.code,
@@ -486,6 +535,7 @@ module Experiences
         next_block: next_block
       }
       structure[:participant_block_active] = participant_block_active unless participant_block_active.nil?
+      structure[:responded_participant_ids] = responded_participant_ids unless responded_participant_ids.nil?
       structure
     end
   end
