@@ -190,6 +190,12 @@
   transform: scale(0.98);
 }
 
+@media (min-width: 769px) {
+  .avatarToggleBtn {
+    top: calc(var(--nav-h) + var(--space-sm));
+  }
+}
+
 .fab {
   position: fixed;
   bottom: calc(var(--space-sm) + env(safe-area-inset-bottom));
