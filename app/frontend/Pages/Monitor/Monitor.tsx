@@ -56,7 +56,7 @@ export default function Monitor() {
           )}
           <ParticipantsMenu />
           <div className={styles.qrContainer}>
-            <QRCodeDisplay experience={monitorView} compact />
+            <QRCodeDisplay experience={monitorView} />
           </div>
         </>
       )}

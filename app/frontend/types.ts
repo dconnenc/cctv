@@ -225,6 +225,7 @@ export interface AvatarStroke {
   points: number[];
   color: string;
   width: number;
+  committed?: boolean;
 }
 
 export interface ExperienceParticipant {

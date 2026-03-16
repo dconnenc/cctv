@@ -121,6 +121,76 @@ RSpec.describe "Avatar flow", type: :system do
     end
   end
 
+  describe "Undo" do
+    it "undoes the last stroke and disables undo when no uncommitted strokes remain" do
+      using_session(:participant) do
+        register_participant(
+          code: experience.code_slug,
+          name: "Alice",
+          email: "alice@example.com",
+          experience_name: experience.name
+        )
+
+        expect(page).to have_current_path("/experiences/#{experience.code_slug}/avatar")
+        expect(page).to have_button("Undo", disabled: true)
+
+        draw_on_canvas
+
+        expect(page).to have_button("Undo", disabled: false)
+
+        click_button "Undo"
+
+        expect(page).to have_button("Undo", disabled: true)
+      end
+    end
+
+    it "is not available for committed strokes after submit and re-navigation" do
+      using_session(:participant) do
+        register_participant(
+          code: experience.code_slug,
+          name: "Alice",
+          email: "alice@example.com",
+          experience_name: experience.name
+        )
+
+        draw_and_submit_avatar
+
+        find('button[aria-label="Edit avatar"]').click
+        wait_for_animation
+
+        expect(page).to have_button("Undo", disabled: true)
+
+        draw_on_canvas
+        expect(page).to have_button("Undo", disabled: false)
+
+        click_button "Undo"
+        expect(page).to have_button("Undo", disabled: true)
+      end
+    end
+
+    it "retains undo ability after page reload for uncommitted strokes" do
+      using_session(:participant) do
+        register_participant(
+          code: experience.code_slug,
+          name: "Alice",
+          email: "alice@example.com",
+          experience_name: experience.name
+        )
+
+        expect(page).to have_current_path("/experiences/#{experience.code_slug}/avatar")
+
+        draw_on_canvas
+
+        expect(page).to have_button("Undo", disabled: false)
+
+        visit "/experiences/#{experience.code_slug}/avatar"
+
+        expect(page).to have_css("canvas", wait: 10)
+        expect(page).to have_button("Undo", disabled: false)
+      end
+    end
+  end
+
   describe "Started experience" do
     before do
       sign_in(admin)

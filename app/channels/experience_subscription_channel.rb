@@ -42,12 +42,29 @@ class ExperienceSubscriptionChannel < ApplicationCable::Channel
       @current_stroke['points'] = (@current_stroke['points'] || []).concat(payload['points'] || [])
     when 'stroke_ended'
       if @current_stroke
+        points = @current_stroke['points'] || []
+        if points.length == 2
+          @current_stroke['points'] = points + points
+        end
         @participant.reload
         avatar = (@participant.avatar || {}).dup
         strokes = (avatar['strokes'] || []) + [@current_stroke]
         @participant.update!(avatar: avatar.merge('strokes' => strokes))
         @current_stroke = nil
       end
+    when 'stroke_undone'
+      @current_stroke = nil
+      @participant.reload
+      avatar = (@participant.avatar || {}).dup
+      strokes = avatar['strokes'] || []
+      if strokes.any?
+        strokes = strokes[0...-1]
+        @participant.update!(avatar: avatar.merge('strokes' => strokes))
+      end
+    when 'canvas_clear_undone'
+      @current_stroke = nil
+      strokes = payload['strokes'] || []
+      @participant.update!(avatar: { 'strokes' => strokes })
     when 'canvas_cleared'
       @current_stroke = nil
       @participant.update!(avatar: {})
