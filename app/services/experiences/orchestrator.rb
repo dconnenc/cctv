@@ -90,6 +90,36 @@ module Experiences
       end
     end
 
+    def reorder_block!(block_id:, position:)
+      actor_action do
+        authorize! experience, to: :manage_blocks?, with: ExperiencePolicy
+
+        transaction do
+          block = experience.experience_blocks.find(block_id)
+          siblings = if block.parent_block_id.present?
+            experience.experience_blocks.where(parent_block_id: block.parent_block_id).order(:position)
+          else
+            experience.experience_blocks.parent_blocks.order(:position)
+          end
+
+          ids = siblings.pluck(:id)
+          old_index = ids.index(block.id)
+          new_index = position.clamp(0, ids.length - 1)
+
+          return block if old_index == new_index
+
+          ids.delete_at(old_index)
+          ids.insert(new_index, block.id)
+
+          ids.each_with_index do |id, idx|
+            experience.experience_blocks.where(id: id).update_all(position: idx)
+          end
+
+          block.reload
+        end
+      end
+    end
+
     def open_lobby!
       actor_action do
         authorize! experience, to: :open_lobby?, with: ExperiencePolicy
