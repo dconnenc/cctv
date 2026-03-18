@@ -13,6 +13,10 @@ require 'rspec/rails'
 require 'knapsack'
 
 Knapsack::Adapters::RSpecAdapter.bind
+Knapsack.tracker.config({
+  enable_time_offset_warning: true,
+  time_offset_in_seconds: 120
+})
 # Add additional requires below this line. Rails is not loaded until this point!
 
 # Requires supporting ruby files with custom matchers and macros, etc, in
