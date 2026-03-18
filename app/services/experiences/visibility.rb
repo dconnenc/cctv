@@ -1,7 +1,7 @@
 module Experiences
   # Determines which blocks are visible for a given context (admin, monitor, or participant),
-  # and builds the visibility payload — the serialized block data for each stream type.
-  # ExperienceSerializer consumes this payload to format final API/websocket responses.
+  # builds visibility payloads, and formats complete experience responses for API
+  # and websocket consumers.
   class Visibility
     attr_reader :experience, :user_role, :participant_role, :segments, :target_user_ids
 
@@ -75,8 +75,8 @@ module Experiences
 
       {
         experience: {
-          blocks: visible.map { |b| BlockSerializer.serialize_for_stream(b, participant_role: "host", submissions_cache: submissions_cache) },
-          next_block: next_block ? BlockSerializer.serialize_for_stream(next_block, participant_role: "host", submissions_cache: submissions_cache) : nil
+          blocks: visible.map { |b| serialize_for_stream(b, participant_role: "host", submissions_cache: submissions_cache) },
+          next_block: next_block ? serialize_for_stream(next_block, participant_role: "host", submissions_cache: submissions_cache) : nil
         }
       }
     end
@@ -123,20 +123,89 @@ module Experiences
 
       if visibility.moderator_or_host? || visibility.user_admin?
         serialized_blocks = visibility.visible_blocks.map do |block|
-          BlockSerializer.serialize_for_user(block, participant_role: effective_role, user: user, submissions_cache: submissions_cache)
+          serialize_for_user(block, participant_role: effective_role, user: user, submissions_cache: submissions_cache)
         end
         next_block = visibility.next_block_for_user
       else
         resolved = visibility.resolve_block_for_user
-        serialized_blocks = resolved ? [BlockSerializer.serialize_for_user(resolved, participant_role: effective_role, user: user, submissions_cache: submissions_cache)] : []
+        serialized_blocks = resolved ? [serialize_for_user(resolved, participant_role: effective_role, user: user, submissions_cache: submissions_cache)] : []
         next_block = visibility.next_block_for_user
       end
 
       {
         experience: {
           blocks: serialized_blocks,
-          next_block: next_block ? BlockSerializer.serialize_for_user(next_block, participant_role: effective_role, user: user, submissions_cache: submissions_cache) : nil
+          next_block: next_block ? serialize_for_user(next_block, participant_role: effective_role, user: user, submissions_cache: submissions_cache) : nil
         }
+      }
+    end
+
+    # Serializes a single block for a specific user. Used by the blocks controller
+    # after submission actions to return the updated block state.
+    def self.serialize_block_for_participant(block:, experience:, user:)
+      participant_record = experience.experience_participants.find_by(user_id: user.id)
+
+      if user.admin? || user.superadmin?
+        effective_role = participant_record&.role || "host"
+        return serialize_for_user(block, participant_role: effective_role, user: user)
+      end
+
+      return nil if participant_record.blank?
+
+      serialize_for_user(block, participant_role: participant_record.role, user: user)
+    end
+
+    # Formats a complete experience response for API consumers.
+    def self.serialize_for_api_response(experience, visibility_payload:, current_participant: nil, participants: nil)
+      {
+        type: "success",
+        success: true,
+        experience: serialize_experience(
+          experience,
+          visibility_payload: visibility_payload,
+          include_participants: true,
+          participants: participants
+        ),
+        participant: current_participant ? serialize_participant_summary(current_participant) : nil
+      }
+    end
+
+    # Formats a complete experience response for websocket messages.
+    def self.serialize_for_websocket_message(experience, visibility_payload:, include_participants: false, participants: nil)
+      serialize_experience(
+        experience,
+        visibility_payload: visibility_payload,
+        include_participants: include_participants,
+        participants: participants
+      )
+    end
+
+    def self.serialize_participants(participants)
+      participants.map do |participant|
+        {
+          id: participant.id,
+          user_id: participant.user.id,
+          experience_id: participant.experience_id,
+          name: participant.name,
+          email: participant.user.email,
+          status: participant.status,
+          role: participant.role,
+          segments: participant.segment_names,
+          joined_at: participant.joined_at,
+          fingerprint: participant.fingerprint,
+          created_at: participant.created_at,
+          updated_at: participant.updated_at
+        }
+      end
+    end
+
+    def self.serialize_participant_summary(participant)
+      {
+        id: participant.id,
+        user_id: participant.user.id,
+        name: participant.name,
+        email: participant.user.email,
+        role: participant.role
       }
     end
 
@@ -236,6 +305,563 @@ module Experiences
       nil
     end
 
+    def self.serialize_for_user(block, participant_role:, user:, submissions_cache: nil, depth: 0)
+      serialize_block(block, participant_role: participant_role, context: :user, user: user, submissions_cache: submissions_cache, depth: depth)
+    end
+
+    def self.serialize_for_stream(block, participant_role:, submissions_cache: nil, depth: 0)
+      serialize_block(block, participant_role: participant_role, context: :stream, submissions_cache: submissions_cache, depth: depth)
+    end
+
+    def self.serialize_block(block, participant_role:, context: :user, user: nil, target_user_ids: [], submissions_cache: nil, depth: 0)
+      base_structure = {
+        id: block.id,
+        kind: block.kind,
+        status: block.status,
+        payload: block.payload
+      }
+
+      response_data = case context
+      when :user
+        serialize_user_response_data(block, participant_role, user, submissions_cache)
+      when :stream
+        serialize_stream_response_data(block, participant_role, submissions_cache)
+      else
+        raise ArgumentError, "Invalid context: #{context}. Must be :user or :stream"
+      end
+
+      visibility_data = serialize_visibility_metadata(block, participant_role, user)
+      dag_metadata = serialize_dag_metadata(block, participant_role, user, submissions_cache, depth)
+
+      base_structure
+        .merge(responses: response_data)
+        .merge(visibility_data)
+        .merge(dag_metadata)
+    end
+
+    def self.serialize_user_response_data(block, participant_role, user, submissions_cache = nil)
+      case block.kind
+      when ExperienceBlock::POLL
+        submissions = if submissions_cache
+          submissions_cache.dig(block.id)&.values || []
+        else
+          block.experience_poll_submissions
+        end
+
+        total = submissions.count
+        user_response = if submissions_cache && user
+          submissions_cache.dig(block.id, user.id)
+        else
+          submissions.find { |s| s.user_id == user&.id }
+        end
+        user_response_payload = format_user_response(user_response)
+
+        response = {
+          total: total,
+          user_response: user_response_payload,
+          user_responded: user_response.present?
+        }
+
+        if mod_or_host?(participant_role) && total > 0
+          response[:aggregate] = calculate_poll_aggregate(submissions)
+        else
+          response[:aggregate] = mod_or_host?(participant_role) ? {} : nil
+        end
+
+        if mod_or_host?(participant_role) || user_admin_role?(user)
+          response[:all_responses] = submissions.map do |submission|
+            {
+              id: submission.id,
+              user_id: submission.user_id,
+              answer: submission.answer,
+              created_at: submission.created_at
+            }
+          end
+        end
+
+        response
+
+      when ExperienceBlock::QUESTION
+        submissions = if submissions_cache
+          submissions_cache.dig(block.id)&.values || []
+        else
+          block.experience_question_submissions
+        end
+
+        total = submissions.count
+        user_response = if submissions_cache && user
+          submissions_cache.dig(block.id, user.id)
+        else
+          submissions.find { |s| s.user_id == user&.id }
+        end
+
+        response = {
+          total: total,
+          user_response: format_user_response(user_response),
+          user_responded: user_response.present?
+        }
+
+        if mod_or_host?(participant_role) || user_admin_role?(user)
+          response[:all_responses] = submissions.map do |submission|
+            {
+              id: submission.id,
+              user_id: submission.user_id,
+              answer: submission.answer,
+              created_at: submission.created_at
+            }
+          end
+        end
+
+        response
+
+      when ExperienceBlock::MULTISTEP_FORM
+        submissions = if submissions_cache
+          submissions_cache.dig(block.id)&.values || []
+        else
+          block.experience_multistep_form_submissions
+        end
+
+        total = submissions.count
+        user_response = if submissions_cache && user
+          submissions_cache.dig(block.id, user.id)
+        else
+          submissions.find { |s| s.user_id == user&.id }
+        end
+
+        response = {
+          total: total,
+          user_response: format_user_response(user_response),
+          user_responded: user_response.present?
+        }
+
+        if mod_or_host?(participant_role) || user_admin_role?(user)
+          response[:all_responses] = submissions.map do |submission|
+            {
+              id: submission.id,
+              user_id: submission.user_id,
+              answer: submission.answer,
+              created_at: submission.created_at
+            }
+          end
+        end
+
+        response
+
+      when ExperienceBlock::ANNOUNCEMENT
+        {}
+
+      when ExperienceBlock::MAD_LIB
+        participant_record = block.experience.experience_participants.find_by(user_id: user&.id)
+
+        resolved_variables = if participant_record
+          BlockResolver.resolve_variables(
+            block: block,
+            participant: participant_record,
+            submissions_cache: submissions_cache
+          )
+        else
+          {}
+        end
+
+        total_responses = if block.has_dependencies?
+          block.children.sum do |child|
+            if submissions_cache
+              (submissions_cache.dig(child.id)&.values || []).count
+            else
+              case child.kind
+              when ExperienceBlock::QUESTION then child.experience_question_submissions.count
+              when ExperienceBlock::POLL then child.experience_poll_submissions.count
+              else 0
+              end
+            end
+          end
+        else
+          0
+        end
+
+        {
+          total: total_responses,
+          user_response: nil,
+          user_responded: false,
+          resolved_variables: resolved_variables
+        }
+
+      when ExperienceBlock::PHOTO_UPLOAD
+        submissions = block.experience_photo_upload_submissions.includes(photo_attachment: :blob)
+        total = submissions.count
+        user_response = submissions.find { |s| s.user_id == user&.id }
+
+        response = {
+          total: total,
+          user_response: if user_response
+            {
+              id: user_response.id,
+              answer: user_response.answer,
+              photo_url: user_response.photo.attached? ? ActiveStorageUrlService.blob_url(user_response.photo.blob) : nil
+            }
+          end,
+          user_responded: user_response.present?
+        }
+
+        if mod_or_host?(participant_role) || user_admin_role?(user)
+          response[:all_responses] = submissions.map do |submission|
+            {
+              id: submission.id,
+              user_id: submission.user_id,
+              answer: submission.answer,
+              photo_url: submission.photo.attached? ? ActiveStorageUrlService.blob_url(submission.photo.blob) : nil,
+              created_at: submission.created_at
+            }
+          end
+        end
+
+        response
+
+      when ExperienceBlock::BUZZER
+        submissions = block.experience_buzzer_submissions.order(Arel.sql("answer->>'buzzed_at' ASC"))
+        total = submissions.count
+        user_response = submissions.find { |s| s.user_id == user&.id }
+
+        {
+          total: total,
+          user_responded: user_response.present?,
+          user_response: user_response ? { id: user_response.id, answer: user_response.answer } : nil,
+          all_responses: submissions.map do |submission|
+            {
+              id: submission.id,
+              user_id: submission.user_id,
+              answer: submission.answer,
+              created_at: submission.created_at
+            }
+          end
+        }
+
+      else
+        {}
+      end
+    end
+
+    def self.serialize_stream_response_data(block, participant_role, submissions_cache = nil)
+      case block.kind
+      when ExperienceBlock::POLL
+        submissions = if submissions_cache
+          submissions_cache.dig(block.id)&.values || []
+        else
+          block.experience_poll_submissions
+        end
+
+        total = submissions.count
+
+        response = {
+          total: total,
+          user_response: nil,
+          user_responded: false
+        }
+
+        if mod_or_host?(participant_role) && total > 0
+          response[:aggregate] = calculate_poll_aggregate(submissions)
+        else
+          response[:aggregate] = mod_or_host?(participant_role) ? {} : nil
+        end
+
+        if mod_or_host?(participant_role)
+          response[:all_responses] = submissions.map do |submission|
+            {
+              id: submission.id,
+              user_id: submission.user_id,
+              answer: submission.answer,
+              created_at: submission.created_at
+            }
+          end
+        end
+
+        response
+
+      when ExperienceBlock::QUESTION
+        submissions = if submissions_cache
+          submissions_cache.dig(block.id)&.values || []
+        else
+          block.experience_question_submissions
+        end
+
+        total = submissions.count
+
+        response = {
+          total: total,
+          user_response: nil,
+          user_responded: false
+        }
+
+        if mod_or_host?(participant_role)
+          response[:all_responses] = submissions.map do |submission|
+            {
+              id: submission.id,
+              user_id: submission.user_id,
+              answer: submission.answer,
+              created_at: submission.created_at
+            }
+          end
+        end
+
+        response
+
+      when ExperienceBlock::MULTISTEP_FORM
+        submissions = if submissions_cache
+          submissions_cache.dig(block.id)&.values || []
+        else
+          block.experience_multistep_form_submissions
+        end
+
+        total = submissions.count
+
+        response = {
+          total: total,
+          user_response: nil,
+          user_responded: false
+        }
+
+        if mod_or_host?(participant_role)
+          response[:all_responses] = submissions.map do |submission|
+            {
+              id: submission.id,
+              user_id: submission.user_id,
+              answer: submission.answer,
+              created_at: submission.created_at
+            }
+          end
+        end
+
+        response
+
+      when ExperienceBlock::ANNOUNCEMENT
+        {}
+
+      when ExperienceBlock::MAD_LIB
+        {
+          total: 0,
+          user_response: nil,
+          user_responded: false,
+          resolved_variables: {}
+        }
+
+      when ExperienceBlock::PHOTO_UPLOAD
+        submissions = block.experience_photo_upload_submissions.includes(photo_attachment: :blob)
+        total = submissions.count
+
+        response = {
+          total: total,
+          user_response: nil,
+          user_responded: false
+        }
+
+        if mod_or_host?(participant_role)
+          response[:all_responses] = submissions.map do |submission|
+            {
+              id: submission.id,
+              user_id: submission.user_id,
+              answer: submission.answer,
+              photo_url: submission.photo.attached? ? ActiveStorageUrlService.blob_url(submission.photo.blob) : nil,
+              created_at: submission.created_at
+            }
+          end
+        end
+
+        response
+
+      when ExperienceBlock::BUZZER
+        submissions = block.experience_buzzer_submissions.order(Arel.sql("answer->>'buzzed_at' ASC"))
+        total = submissions.count
+        winner_user_id = submissions.first&.user_id
+        winner_avatar = winner_user_id &&
+          block.experience.experience_participants
+            .find_by(user_id: winner_user_id)
+            &.avatar
+            &.presence
+
+        {
+          total: total,
+          user_response: nil,
+          user_responded: false,
+          all_responses: submissions.map.with_index do |submission, index|
+            entry = {
+              id: submission.id,
+              user_id: submission.user_id,
+              answer: submission.answer,
+              created_at: submission.created_at
+            }
+            entry[:avatar] = winner_avatar if index == 0 && winner_avatar
+            entry
+          end
+        }
+
+      else
+        {}
+      end
+    end
+
+    def self.serialize_visibility_metadata(block, participant_role, user)
+      return {} unless mod_or_host?(participant_role) || user_admin_role?(user)
+
+      {
+        visible_to_roles: block.visible_to_roles,
+        visible_to_segments: block.visible_to_segment_names,
+        target_user_ids: block.target_user_ids,
+        show_in_lobby: block.show_in_lobby
+      }
+    end
+
+    def self.serialize_dag_metadata(block, participant_role, user, submissions_cache = nil, depth = 0)
+      return {} unless mod_or_host?(participant_role) || user_admin_role?(user)
+
+      if submissions_cache
+        metadata = {}
+
+        metadata[:child_block_ids] = block.association(:children).loaded? ? block.children.map(&:id) : []
+        metadata[:parent_block_ids] = block.association(:parents).loaded? ? block.parents.map(&:id) : []
+
+        if depth == 0 && block.children.any?
+          child_context = (mod_or_host?(participant_role) || user_admin_role?(user)) ? :user : :stream
+          metadata[:children] = block.children.map do |child|
+            serialize_block(child, participant_role: participant_role, context: child_context, user: user, submissions_cache: submissions_cache, depth: depth + 1)
+          end
+        end
+      else
+        metadata = {
+          child_block_ids: block.children.pluck(:id),
+          parent_block_ids: block.parents.pluck(:id)
+        }
+
+        if depth == 0 && block.children.exists?
+          child_context = (mod_or_host?(participant_role) || user_admin_role?(user)) ? :user : :stream
+          metadata[:children] = block.children.map do |child|
+            serialize_block(child, participant_role: participant_role, context: child_context, user: user, submissions_cache: submissions_cache, depth: depth + 1)
+          end
+        end
+      end
+
+      if block.kind == ExperienceBlock::MAD_LIB
+        metadata[:variables] = block.variables.map do |variable|
+          {
+            id: variable.id,
+            key: variable.key,
+            label: variable.label,
+            datatype: variable.datatype,
+            required: variable.required
+          }
+        end
+
+        metadata[:variable_bindings] = block.variables.flat_map do |variable|
+          variable.bindings.map do |binding|
+            {
+              id: binding.id,
+              variable_id: binding.variable_id,
+              source_block_id: binding.source_block_id
+            }
+          end
+        end
+      end
+
+      metadata
+    end
+
+    def self.calculate_poll_aggregate(submissions)
+      aggregate = {}
+      submissions.each do |submission|
+        selected_options = Array(submission.answer["selectedOptions"])
+        selected_options.each do |option|
+          aggregate[option] ||= 0
+          aggregate[option] += 1
+        end
+      end
+      aggregate
+    end
+
+    def self.format_user_response(user_response)
+      return nil unless user_response
+      {
+        id: user_response.id,
+        answer: {
+          selectedOptions: Array(user_response.answer["selectedOptions"])
+        }
+      }
+    end
+
+    def self.mod_or_host?(participant_role)
+      ["moderator", "host"].include?(participant_role.to_s)
+    end
+
+    def self.user_admin_role?(user)
+      return false unless user
+      ["admin", "superadmin"].include?(user.role.to_s)
+    end
+
+    def self.serialize_experience(experience, visibility_payload: nil, include_participants: false, participants: nil)
+      blocks = visibility_payload&.dig(:experience, :blocks) || []
+      next_block = visibility_payload&.dig(:experience, :next_block)
+      participant_block_active = visibility_payload&.dig(:experience, :participant_block_active)
+
+      base_url = Rails.application.config.app_base_url
+
+      result = {
+        id: experience.id,
+        name: experience.name,
+        code: experience.code,
+        code_slug: experience.code_slug,
+        url: "#{base_url}/experiences/#{experience.code_slug}",
+        status: experience.status,
+        description: experience.description,
+        creator_id: experience.creator_id,
+        created_at: experience.created_at,
+        updated_at: experience.updated_at,
+        blocks: blocks,
+        next_block: next_block,
+        playbill_enabled: experience.playbill_enabled,
+        playbill: serialize_playbill(experience.playbill),
+        segments: serialize_segments(experience)
+      }
+
+      result[:participant_block_active] = participant_block_active unless participant_block_active.nil?
+
+      responded_participant_ids = visibility_payload&.dig(:experience, :responded_participant_ids)
+      result[:responded_participant_ids] = responded_participant_ids unless responded_participant_ids.nil?
+
+      if include_participants
+        all_participants = participants || experience.experience_participants.includes(:user)
+
+        result[:hosts] = serialize_participants(
+          all_participants.select { |p| p.role == "host" }
+        )
+
+        result[:participants] = serialize_participants(all_participants)
+      end
+
+      result
+    end
+
+    def self.serialize_segments(experience)
+      experience.experience_segments.order(position: :asc).map do |segment|
+        {
+          id: segment.id,
+          name: segment.name,
+          color: segment.color,
+          position: segment.position
+        }
+      end
+    end
+
+    def self.serialize_playbill(playbill)
+      return [] unless playbill.is_a?(Array)
+
+      playbill.map do |section|
+        resolved = section.dup
+        if section["image_signed_id"].present?
+          blob = ActiveStorage::Blob.find_signed(section["image_signed_id"])
+          resolved["image_url"] = blob ? ActiveStorageUrlService.blob_url(blob) : nil
+        end
+        resolved
+      end
+    end
+
     def self.resolve_monitor_entry(parent, direct_children)
       sorted = direct_children.sort_by(&:position)
       return [parent] if sorted.empty?
@@ -246,7 +872,7 @@ module Experiences
     end
 
     def self.serialize_monitor_block(experience, block, participants: nil, blocks: nil, submissions_cache: nil)
-      serialized = BlockSerializer.serialize_for_stream(block, participant_role: "host", submissions_cache: submissions_cache)
+      serialized = serialize_for_stream(block, participant_role: "host", submissions_cache: submissions_cache)
 
       if block.kind == ExperienceBlock::MAD_LIB
         participant_list = participants || experience.experience_participants
@@ -321,7 +947,13 @@ module Experiences
       end
     end
 
-    private_class_method :resolve_monitor_entry, :serialize_monitor_block,
-                         :responded_participant_ids, :participant_block_active?
+    private_class_method :serialize_for_user, :serialize_for_stream, :serialize_block,
+                         :serialize_user_response_data, :serialize_stream_response_data,
+                         :serialize_visibility_metadata, :serialize_dag_metadata,
+                         :calculate_poll_aggregate, :format_user_response,
+                         :mod_or_host?, :user_admin_role?,
+                         :resolve_monitor_entry, :serialize_monitor_block,
+                         :responded_participant_ids, :participant_block_active?,
+                         :serialize_experience, :serialize_segments, :serialize_playbill
   end
 end

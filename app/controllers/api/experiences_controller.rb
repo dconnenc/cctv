@@ -191,7 +191,7 @@ class Api::ExperiencesController < Api::BaseController
     # Find current user's participant record for this experience
     current_participant = authenticated_user ? experience.experience_participants.find_by(user: authenticated_user) : nil
 
-    render json: ExperienceSerializer.serialize_for_api_response(
+    render json: Experiences::Visibility.serialize_for_api_response(
       experience,
       visibility_payload: visibility_payload,
       current_participant: current_participant

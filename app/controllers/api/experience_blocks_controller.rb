@@ -137,7 +137,7 @@ class Api::ExperienceBlocksController < Api::BaseController
       )
 
       # Get updated block with response data
-      updated_block = BlockSerializer.for_participant(
+      updated_block = Experiences::Visibility.serialize_block_for_participant(
         block: block,
         experience: @experience,
         user: @user
@@ -186,7 +186,7 @@ class Api::ExperienceBlocksController < Api::BaseController
       end
 
       # Get updated block with response data
-      updated_block = BlockSerializer.for_participant(
+      updated_block = Experiences::Visibility.serialize_block_for_participant(
         block: block,
         experience: @experience,
         user: @user
@@ -217,7 +217,7 @@ class Api::ExperienceBlocksController < Api::BaseController
       )
 
       # Get updated block with response data
-      updated_block = BlockSerializer.for_participant(
+      updated_block = Experiences::Visibility.serialize_block_for_participant(
         block: block,
         experience: @experience,
         user: @user
@@ -248,7 +248,7 @@ class Api::ExperienceBlocksController < Api::BaseController
       )
 
       # Get updated block with response data
-      updated_block = BlockSerializer.for_participant(
+      updated_block = Experiences::Visibility.serialize_block_for_participant(
         block: block,
         experience: @experience,
         user: @user
@@ -278,7 +278,7 @@ class Api::ExperienceBlocksController < Api::BaseController
         answer: params[:answer]
       )
 
-      updated_block = BlockSerializer.for_participant(
+      updated_block = Experiences::Visibility.serialize_block_for_participant(
         block: block,
         experience: @experience,
         user: @user
@@ -334,7 +334,7 @@ class Api::ExperienceBlocksController < Api::BaseController
         answer: params[:answer] || {}
       )
 
-      updated_block = BlockSerializer.for_participant(
+      updated_block = Experiences::Visibility.serialize_block_for_participant(
         block: block,
         experience: @experience,
         user: @user

@@ -366,6 +366,30 @@ RSpec.describe Experiences::Visibility do
     end
   end
 
+  describe ".serialize_for_api_response" do
+    let(:user) { create(:user, :user) }
+    let(:block) { create(:experience_block, experience: experience) }
+    let(:visibility_payload) do
+      { experience: { blocks: [{ id: block.id, kind: block.kind }], next_block: nil } }
+    end
+
+    it "includes blocks from the visibility payload" do
+      result = described_class.serialize_for_api_response(experience, visibility_payload: visibility_payload)
+      expect(result.dig(:experience, :blocks).first[:id]).to eq(block.id)
+    end
+
+    it "includes participant_block_active when present in payload" do
+      payload = visibility_payload.deep_merge(experience: { participant_block_active: true })
+      result = described_class.serialize_for_api_response(experience, visibility_payload: payload)
+      expect(result.dig(:experience, :participant_block_active)).to be true
+    end
+
+    it "omits participant_block_active when absent from payload" do
+      result = described_class.serialize_for_api_response(experience, visibility_payload: visibility_payload)
+      expect(result[:experience]).not_to have_key(:participant_block_active)
+    end
+  end
+
   describe ".for_admin" do
     let!(:block1) { create(:experience_block, experience: experience, status: :open, position: 0) }
     let!(:block2) { create(:experience_block, experience: experience, status: :closed, position: 1) }

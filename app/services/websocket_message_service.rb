@@ -23,7 +23,7 @@ class WebsocketMessageService
   def self.experience_state(experience, visibility_payload:, logical_stream:, participant_id:, participant: nil, include_participants: false, participants: nil)
     message = {
       type: MESSAGE_TYPES[:EXPERIENCE_STATE],
-      experience: ExperienceSerializer.serialize_for_websocket_message(
+      experience: Experiences::Visibility.serialize_for_websocket_message(
         experience,
         visibility_payload: visibility_payload,
         include_participants: include_participants,
@@ -44,7 +44,7 @@ class WebsocketMessageService
   def self.experience_updated(experience, visibility_payload:, stream_key:, stream_type:, participant_id:, role:, segments:, participant: nil, include_participants: false, participants: nil)
     message = {
       type: MESSAGE_TYPES[:EXPERIENCE_UPDATED],
-      experience: ExperienceSerializer.serialize_for_websocket_message(
+      experience: Experiences::Visibility.serialize_for_websocket_message(
         experience,
         visibility_payload: visibility_payload,
         include_participants: include_participants,
@@ -68,7 +68,7 @@ class WebsocketMessageService
   def self.stream_changed(experience, visibility_payload:, old_stream:, new_stream:, participant_id:, participant: nil, include_participants: false)
     message = {
       type: MESSAGE_TYPES[:STREAM_CHANGED],
-      experience: ExperienceSerializer.serialize_for_websocket_message(
+      experience: Experiences::Visibility.serialize_for_websocket_message(
         experience,
         visibility_payload: visibility_payload,
         include_participants: include_participants
