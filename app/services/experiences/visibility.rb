@@ -306,14 +306,14 @@ module Experiences
     end
 
     def self.serialize_for_user(block, participant_role:, user:, submissions_cache: nil, depth: 0)
-      serialize_block(block, participant_role: participant_role, context: :user, user: user, submissions_cache: submissions_cache, depth: depth)
+      serialize_block(block, participant_role: participant_role, user: user, submissions_cache: submissions_cache, depth: depth)
     end
 
     def self.serialize_for_stream(block, participant_role:, submissions_cache: nil, depth: 0)
-      serialize_block(block, participant_role: participant_role, context: :stream, submissions_cache: submissions_cache, depth: depth)
+      serialize_block(block, participant_role: participant_role, user: nil, submissions_cache: submissions_cache, depth: depth)
     end
 
-    def self.serialize_block(block, participant_role:, context: :user, user: nil, target_user_ids: [], submissions_cache: nil, depth: 0)
+    def self.serialize_block(block, participant_role:, user: nil, submissions_cache: nil, depth: 0)
       base_structure = {
         id: block.id,
         kind: block.kind,
@@ -321,25 +321,13 @@ module Experiences
         payload: block.payload
       }
 
-      response_data = case context
-      when :user
-        serialize_user_response_data(block, participant_role, user, submissions_cache)
-      when :stream
-        serialize_stream_response_data(block, participant_role, submissions_cache)
-      else
-        raise ArgumentError, "Invalid context: #{context}. Must be :user or :stream"
-      end
-
-      visibility_data = serialize_visibility_metadata(block, participant_role, user)
-      dag_metadata = serialize_dag_metadata(block, participant_role, user, submissions_cache, depth)
-
       base_structure
-        .merge(responses: response_data)
-        .merge(visibility_data)
-        .merge(dag_metadata)
+        .merge(responses: serialize_response_data(block, participant_role, user, submissions_cache))
+        .merge(serialize_visibility_metadata(block, participant_role, user))
+        .merge(serialize_dag_metadata(block, participant_role, user, submissions_cache, depth))
     end
 
-    def self.serialize_user_response_data(block, participant_role, user, submissions_cache = nil)
+    def self.serialize_response_data(block, participant_role, user, submissions_cache = nil)
       case block.kind
       when ExperienceBlock::POLL
         submissions = if submissions_cache
@@ -541,164 +529,6 @@ module Experiences
       end
     end
 
-    def self.serialize_stream_response_data(block, participant_role, submissions_cache = nil)
-      case block.kind
-      when ExperienceBlock::POLL
-        submissions = if submissions_cache
-          submissions_cache.dig(block.id)&.values || []
-        else
-          block.experience_poll_submissions
-        end
-
-        total = submissions.count
-
-        response = {
-          total: total,
-          user_response: nil,
-          user_responded: false
-        }
-
-        if mod_or_host?(participant_role) && total > 0
-          response[:aggregate] = calculate_poll_aggregate(submissions)
-        else
-          response[:aggregate] = mod_or_host?(participant_role) ? {} : nil
-        end
-
-        if mod_or_host?(participant_role)
-          response[:all_responses] = submissions.map do |submission|
-            {
-              id: submission.id,
-              user_id: submission.user_id,
-              answer: submission.answer,
-              created_at: submission.created_at
-            }
-          end
-        end
-
-        response
-
-      when ExperienceBlock::QUESTION
-        submissions = if submissions_cache
-          submissions_cache.dig(block.id)&.values || []
-        else
-          block.experience_question_submissions
-        end
-
-        total = submissions.count
-
-        response = {
-          total: total,
-          user_response: nil,
-          user_responded: false
-        }
-
-        if mod_or_host?(participant_role)
-          response[:all_responses] = submissions.map do |submission|
-            {
-              id: submission.id,
-              user_id: submission.user_id,
-              answer: submission.answer,
-              created_at: submission.created_at
-            }
-          end
-        end
-
-        response
-
-      when ExperienceBlock::MULTISTEP_FORM
-        submissions = if submissions_cache
-          submissions_cache.dig(block.id)&.values || []
-        else
-          block.experience_multistep_form_submissions
-        end
-
-        total = submissions.count
-
-        response = {
-          total: total,
-          user_response: nil,
-          user_responded: false
-        }
-
-        if mod_or_host?(participant_role)
-          response[:all_responses] = submissions.map do |submission|
-            {
-              id: submission.id,
-              user_id: submission.user_id,
-              answer: submission.answer,
-              created_at: submission.created_at
-            }
-          end
-        end
-
-        response
-
-      when ExperienceBlock::ANNOUNCEMENT
-        {}
-
-      when ExperienceBlock::MAD_LIB
-        {
-          total: 0,
-          user_response: nil,
-          user_responded: false,
-          resolved_variables: {}
-        }
-
-      when ExperienceBlock::PHOTO_UPLOAD
-        submissions = block.experience_photo_upload_submissions.includes(photo_attachment: :blob)
-        total = submissions.count
-
-        response = {
-          total: total,
-          user_response: nil,
-          user_responded: false
-        }
-
-        if mod_or_host?(participant_role)
-          response[:all_responses] = submissions.map do |submission|
-            {
-              id: submission.id,
-              user_id: submission.user_id,
-              answer: submission.answer,
-              photo_url: submission.photo.attached? ? ActiveStorageUrlService.blob_url(submission.photo.blob) : nil,
-              created_at: submission.created_at
-            }
-          end
-        end
-
-        response
-
-      when ExperienceBlock::BUZZER
-        submissions = block.experience_buzzer_submissions.order(Arel.sql("answer->>'buzzed_at' ASC"))
-        total = submissions.count
-        winner_user_id = submissions.first&.user_id
-        winner_avatar = winner_user_id &&
-          block.experience.experience_participants
-            .find_by(user_id: winner_user_id)
-            &.avatar
-            &.presence
-
-        {
-          total: total,
-          user_response: nil,
-          user_responded: false,
-          all_responses: submissions.map.with_index do |submission, index|
-            entry = {
-              id: submission.id,
-              user_id: submission.user_id,
-              answer: submission.answer,
-              created_at: submission.created_at
-            }
-            entry[:avatar] = winner_avatar if index == 0 && winner_avatar
-            entry
-          end
-        }
-
-      else
-        {}
-      end
-    end
-
     def self.serialize_visibility_metadata(block, participant_role, user)
       return {} unless mod_or_host?(participant_role) || user_admin_role?(user)
 
@@ -720,9 +550,8 @@ module Experiences
         metadata[:parent_block_ids] = block.association(:parents).loaded? ? block.parents.map(&:id) : []
 
         if depth == 0 && block.children.any?
-          child_context = (mod_or_host?(participant_role) || user_admin_role?(user)) ? :user : :stream
           metadata[:children] = block.children.map do |child|
-            serialize_block(child, participant_role: participant_role, context: child_context, user: user, submissions_cache: submissions_cache, depth: depth + 1)
+            serialize_block(child, participant_role: participant_role, user: user, submissions_cache: submissions_cache, depth: depth + 1)
           end
         end
       else
@@ -732,9 +561,8 @@ module Experiences
         }
 
         if depth == 0 && block.children.exists?
-          child_context = (mod_or_host?(participant_role) || user_admin_role?(user)) ? :user : :stream
           metadata[:children] = block.children.map do |child|
-            serialize_block(child, participant_role: participant_role, context: child_context, user: user, submissions_cache: submissions_cache, depth: depth + 1)
+            serialize_block(child, participant_role: participant_role, user: user, submissions_cache: submissions_cache, depth: depth + 1)
           end
         end
       end
@@ -948,7 +776,7 @@ module Experiences
     end
 
     private_class_method :serialize_for_user, :serialize_for_stream, :serialize_block,
-                         :serialize_user_response_data, :serialize_stream_response_data,
+                         :serialize_response_data,
                          :serialize_visibility_metadata, :serialize_dag_metadata,
                          :calculate_poll_aggregate, :format_user_response,
                          :mod_or_host?, :user_admin_role?,
