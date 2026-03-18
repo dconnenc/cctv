@@ -182,7 +182,7 @@ class ExperienceSubscriptionChannel < ApplicationCable::Channel
       transmit(
         WebsocketMessageService.experience_state(
           @experience,
-          visibility_payload: ExperienceSerializer.for_monitor(
+          visibility_payload: Experiences::Visibility.for_monitor(
             experience: @experience,
             blocks: preloaded_data[:blocks],
             participants: preloaded_data[:participants],
@@ -213,7 +213,7 @@ class ExperienceSubscriptionChannel < ApplicationCable::Channel
       transmit(
         WebsocketMessageService.experience_state(
           @experience,
-          visibility_payload: ExperienceSerializer.for_participant(
+          visibility_payload: Experiences::Visibility.for_participant(
             experience: @experience,
             user: @impersonated_participant.user,
             participant: @impersonated_participant,
@@ -243,7 +243,7 @@ class ExperienceSubscriptionChannel < ApplicationCable::Channel
         transmit(
           WebsocketMessageService.experience_state(
             @experience,
-            visibility_payload: ExperienceSerializer.for_participant(
+            visibility_payload: Experiences::Visibility.for_participant(
               experience: @experience,
               user: @user,
               participant: @participant,
@@ -282,7 +282,7 @@ class ExperienceSubscriptionChannel < ApplicationCable::Channel
         transmit(
           WebsocketMessageService.experience_state(
             @experience,
-            visibility_payload: ExperienceSerializer.for_participant(
+            visibility_payload: Experiences::Visibility.for_participant(
               experience: @experience,
               user: @user,
               participant: @participant,
@@ -325,7 +325,7 @@ class ExperienceSubscriptionChannel < ApplicationCable::Channel
     transmit(
       WebsocketMessageService.experience_state(
         @experience,
-        visibility_payload: ExperienceSerializer.for_participant(
+        visibility_payload: Experiences::Visibility.for_participant(
           experience: @experience,
           user: @user,
           participant: @participant,
@@ -558,7 +558,7 @@ class ExperienceSubscriptionChannel < ApplicationCable::Channel
 
   def payload_for_participant(user)
     preloaded_data = preload_experience_data
-    ExperienceSerializer.for_participant(
+    Experiences::Visibility.for_participant(
       experience: @experience,
       user: user,
       blocks: preloaded_data[:blocks],

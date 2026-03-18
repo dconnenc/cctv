@@ -145,7 +145,7 @@ class Experiences::Broadcaster
 
   def broadcast_monitor_view(preloaded_data = nil)
     begin
-      payload = ExperienceSerializer.for_monitor(
+      payload = Experiences::Visibility.for_monitor(
         experience: experience,
         blocks: preloaded_data&.dig(:blocks),
         participants: preloaded_data&.dig(:participants),
@@ -177,7 +177,7 @@ class Experiences::Broadcaster
 
   def broadcast_admin_view(preloaded_data = nil)
     begin
-      payload = ExperienceSerializer.for_admin(
+      payload = Experiences::Visibility.for_admin(
         experience: experience,
         blocks: preloaded_data&.dig(:blocks),
         submissions_cache: preloaded_data&.dig(:submissions_cache)
@@ -220,7 +220,7 @@ class Experiences::Broadcaster
         avatar: participant.avatar.presence
       }
 
-      payload = ExperienceSerializer.for_participant(
+      payload = Experiences::Visibility.for_participant(
         experience: experience,
         user: participant.user,
         participant: participant,
