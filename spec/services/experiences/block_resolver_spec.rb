@@ -54,25 +54,6 @@ RSpec.describe Experiences::BlockResolver do
       end
     end
 
-    context "with a submissions_cache" do
-      let!(:child) do
-        create(:experience_block, experience: experience, kind: :question, status: :open,
-               parent_block: parent, position: 0)
-      end
-
-      before { create(:experience_block_link, parent_block: parent, child_block: child) }
-
-      it "uses the cache instead of querying the DB" do
-        submission = build(:experience_question_submission, experience_block: child, user: user)
-        cache = { child.id => { user.id => submission } }
-
-        result = described_class.next_unresolved_child(
-          block: parent, participant: participant, submissions_cache: cache
-        )
-        expect(result).to be_nil
-      end
-    end
-
     context "child visibility" do
       let!(:closed_child) do
         create(:experience_block, experience: experience, kind: :question, status: :closed,

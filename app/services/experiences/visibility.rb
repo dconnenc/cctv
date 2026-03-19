@@ -24,23 +24,18 @@ module Experiences
 
     def for_admin
       visible = admin_visible_blocks
-      current = resolve_admin_block(visible)
-      next_b  = current ? resolve_admin_block(visible.reject { |b| b == current }) : nil
 
       experience_payload(
-        blocks:     visible.map { |b| serialize_block(b, participant_role: "host") },
-        next_block: next_b ? serialize_block(next_b, participant_role: "host") : nil
+        blocks: visible.map { |b| serialize_block(b, participant_role: "host") }
       )
     end
 
     def for_monitor
-      visible  = monitor_visible_blocks
-      current  = visible.first
-      next_b   = visible.second
+      visible = monitor_visible_blocks
+      current = visible.first
 
       experience_payload(
         blocks:                    current ? [serialize_monitor_block(current)] : [],
-        next_block:                next_b ? serialize_monitor_block(next_b) : nil,
         participant_block_active:  participant_block_active?,
         responded_participant_ids: responded_participant_ids
       )
@@ -51,19 +46,13 @@ module Experiences
       role    = participant.role
 
       if host_or_moderator?(role)
-        current = resolve_admin_block(visible)
-        next_b  = current ? resolve_admin_block(visible.reject { |b| b == current }) : nil
-        blocks  = visible.map { |b| serialize_block(b, participant_role: role, user: participant.user) }
+        blocks = visible.map { |b| serialize_block(b, participant_role: role, user: participant.user) }
       else
         current = resolve_participant_block(visible, participant)
-        next_b  = current ? resolve_participant_block(visible.reject { |b| b == current }, participant) : nil
         blocks  = current ? [serialize_block(current, participant_role: role, user: participant.user)] : []
       end
 
-      experience_payload(
-        blocks:     blocks,
-        next_block: next_b ? serialize_block(next_b, participant_role: role, user: participant.user) : nil
-      )
+      experience_payload(blocks: blocks)
     end
 
     def block_visible_to_user?(block, user)
@@ -113,17 +102,6 @@ module Experiences
       parents
         .select { |b| b.visible_by_status?(@experience) }
         .select { |b| b.visible_to?(role: participant.role, segments: participant.segment_names, user_id: participant.user_id) }
-    end
-
-    def resolve_admin_block(blocks)
-      blocks.sort_by(&:position).each do |block|
-        if block.has_dependencies?
-          first_child = block.children.min_by(&:position)
-          return first_child if first_child
-        end
-        return block
-      end
-      nil
     end
 
     def resolve_participant_block(blocks, participant)
@@ -342,7 +320,7 @@ module Experiences
 
     # --- Experience serialization ---
 
-    def experience_payload(blocks:, next_block:, **extra)
+    def experience_payload(blocks:, **extra)
       base_url     = Rails.application.config.app_base_url
       participants = @experience.experience_participants.includes(:user).to_a
 
@@ -358,7 +336,6 @@ module Experiences
         created_at:       @experience.created_at,
         updated_at:       @experience.updated_at,
         blocks:           blocks,
-        next_block:       next_block,
         playbill_enabled: @experience.playbill_enabled,
         playbill:         serialize_playbill,
         segments:         serialize_segments,

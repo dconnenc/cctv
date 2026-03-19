@@ -1,19 +1,18 @@
 module Experiences
   class BlockResolver
-    attr_reader :block, :participant, :submissions_cache
+    attr_reader :block, :participant
 
-    def initialize(block:, participant:, submissions_cache: nil)
+    def initialize(block:, participant:)
       @block = block
       @participant = participant
-      @submissions_cache = submissions_cache
     end
 
-    def self.resolve_variables(block:, participant:, submissions_cache: nil)
-      new(block: block, participant: participant, submissions_cache: submissions_cache).resolve_variables
+    def self.resolve_variables(block:, participant:)
+      new(block: block, participant: participant).resolve_variables
     end
 
-    def self.next_unresolved_child(block:, participant:, submissions_cache: nil)
-      new(block: block, participant: participant, submissions_cache: submissions_cache).next_unresolved_child
+    def self.next_unresolved_child(block:, participant:)
+      new(block: block, participant: participant).next_unresolved_child
     end
 
     def resolve_variables
@@ -69,33 +68,29 @@ module Experiences
     end
 
     def find_submission(source_block)
-      if submissions_cache
-        submissions_cache.dig(source_block.id, participant.user_id)
+      case source_block.kind
+      when ExperienceBlock::QUESTION
+        ExperienceQuestionSubmission.find_by(
+          experience_block_id: source_block.id,
+          user_id: participant.user_id
+        )
+      when ExperienceBlock::POLL
+        ExperiencePollSubmission.find_by(
+          experience_block_id: source_block.id,
+          user_id: participant.user_id
+        )
+      when ExperienceBlock::MAD_LIB
+        ExperienceMadLibSubmission.find_by(
+          experience_block_id: source_block.id,
+          user_id: participant.user_id
+        )
+      when ExperienceBlock::MULTISTEP_FORM
+        ExperienceMultistepFormSubmission.find_by(
+          experience_block_id: source_block.id,
+          user_id: participant.user_id
+        )
       else
-        case source_block.kind
-        when ExperienceBlock::QUESTION
-          ExperienceQuestionSubmission.find_by(
-            experience_block_id: source_block.id,
-            user_id: participant.user_id
-          )
-        when ExperienceBlock::POLL
-          ExperiencePollSubmission.find_by(
-            experience_block_id: source_block.id,
-            user_id: participant.user_id
-          )
-        when ExperienceBlock::MAD_LIB
-          ExperienceMadLibSubmission.find_by(
-            experience_block_id: source_block.id,
-            user_id: participant.user_id
-          )
-        when ExperienceBlock::MULTISTEP_FORM
-          ExperienceMultistepFormSubmission.find_by(
-            experience_block_id: source_block.id,
-            user_id: participant.user_id
-          )
-        else
-          nil
-        end
+        nil
       end
     end
 

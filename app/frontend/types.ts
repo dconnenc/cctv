@@ -379,7 +379,6 @@ export interface Experience {
   hosts: ExperienceParticipant[];
   participants: ExperienceParticipant[];
   blocks: Block[];
-  next_block?: Block | null;
   playbill_enabled?: boolean;
   playbill?: PlaybillSection[];
   segments?: ExperienceSegment[];
