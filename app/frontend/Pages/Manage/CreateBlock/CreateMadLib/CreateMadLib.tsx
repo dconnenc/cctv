@@ -13,7 +13,7 @@ interface MadLibVariable {
   name: string;
   question: string;
   dataType: 'text' | 'number';
-  assigned_user_id?: string;
+  assigned_participant_id?: string;
 }
 
 interface MadLibDataInternal {
@@ -44,7 +44,7 @@ export const validateMadLib = (data: MadLibDataInternal): string | null => {
 
   for (const part of variableParts) {
     const variable = data.variables.find((v) => v.id === part.content);
-    if (!variable?.assigned_user_id) {
+    if (!variable?.assigned_participant_id) {
       return 'Each variable must have an assigned user';
     }
   }
@@ -85,7 +85,7 @@ export default function CreateMadLib({ data, onChange }: BlockComponentProps<Mad
       name: 'variable',
       question: 'Enter a word',
       dataType: 'text' as const,
-      assigned_user_id: undefined,
+      assigned_participant_id: undefined,
     };
 
     const newPart = {
@@ -159,7 +159,7 @@ export default function CreateMadLib({ data, onChange }: BlockComponentProps<Mad
   const getAvailableParticipants = (excludeVariableIndex?: number) => {
     return participants.filter((p) => {
       const isAlreadyAssigned = internalData.variables.some(
-        (v, vIndex) => vIndex !== excludeVariableIndex && v.assigned_user_id === p.user_id,
+        (v, vIndex) => vIndex !== excludeVariableIndex && v.assigned_participant_id === p.id,
       );
       return !isAlreadyAssigned;
     });
@@ -256,12 +256,12 @@ export default function CreateMadLib({ data, onChange }: BlockComponentProps<Mad
                           internalData.variables.findIndex((v) => v.id === variable.id),
                         ).map((p) => ({
                           label: p.name,
-                          value: p.user_id,
+                          value: p.id,
                         })),
                       ]}
-                      value={variable.assigned_user_id || ''}
+                      value={variable.assigned_participant_id || ''}
                       onChange={(value) =>
-                        updateVariable(variable.id, { assigned_user_id: value || undefined })
+                        updateVariable(variable.id, { assigned_participant_id: value || undefined })
                       }
                     />
                   </div>

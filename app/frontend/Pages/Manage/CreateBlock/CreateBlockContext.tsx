@@ -353,10 +353,10 @@ export function CreateBlockProvider({
           label: v.name,
           datatype: v.dataType === 'number' ? 'number' : 'string',
           required: true,
-          source: v.assigned_user_id
+          source: v.assigned_participant_id
             ? {
                 type: 'participant',
-                participant_id: v.assigned_user_id,
+                participant_id: v.assigned_participant_id,
               }
             : {
                 kind: 'question',

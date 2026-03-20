@@ -121,7 +121,7 @@ export interface MadLibVariable {
   name: string;
   question: string;
   dataType: 'text' | 'number';
-  assigned_user_id?: string;
+  assigned_participant_id?: string;
 }
 
 export interface MadLibPart {
