@@ -186,16 +186,17 @@ class Api::ExperiencesController < Api::BaseController
 
     authorize! experience, to: :show?
 
-    visibility_payload = Experiences::Visibility.for_participant(experience: experience, user: authenticated_user)
+    participant = experience.experience_participants.find_by(user: authenticated_user)
 
-    # Find current user's participant record for this experience
-    current_participant = authenticated_user ? experience.experience_participants.find_by(user: authenticated_user) : nil
+    payload = if authenticated_user.admin? || authenticated_user.superadmin?
+      Experiences::Visibility.for_admin(experience)
+    elsif participant
+      Experiences::Visibility.for_participant(experience, participant)
+    else
+      Experiences::Visibility.for_admin(experience)
+    end
 
-    render json: Experiences::Visibility.serialize_for_api_response(
-      experience,
-      visibility_payload: visibility_payload,
-      current_participant: current_participant
-    )
+    render json: payload
   end
 
   # POST /api/experiences/join

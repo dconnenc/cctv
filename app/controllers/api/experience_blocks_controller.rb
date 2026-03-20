@@ -136,22 +136,9 @@ class Api::ExperienceBlocksController < Api::BaseController
         answer: params[:answer]
       )
 
-      # Get updated block with response data
-      updated_block = Experiences::Visibility.serialize_block_for_participant(
-        block: block,
-        experience: @experience,
-        user: @user
-      )
-
       Experiences::Broadcaster.new(@experience).broadcast_experience_update
 
-      render json: {
-        success: true,
-        data: {
-          submission: submission,
-          block: updated_block
-        },
-      }, status: 200
+      render json: { success: true, data: { submission: submission } }, status: 200
     end
   end
 
@@ -185,30 +172,15 @@ class Api::ExperienceBlocksController < Api::BaseController
         )
       end
 
-      # Get updated block with response data
-      updated_block = Experiences::Visibility.serialize_block_for_participant(
-        block: block,
-        experience: @experience,
-        user: @user
-      )
-
       Experiences::Broadcaster.new(@experience).broadcast_experience_update
 
-      render json: {
-        success: true,
-        data: {
-          submission: submission,
-          block: updated_block
-        },
-      }, status: 200
+      render json: { success: true, data: { submission: submission } }, status: 200
     end
   end
 
   # POST /api/experiences/:experience_id/blocks/:id/submit_multistep_form_response
   def submit_multistep_form_response
     with_experience_orchestration do
-      block = @experience.experience_blocks.find(params[:id])
-
       submission = Experiences::Orchestrator.new(
         experience: @experience, actor: @user
       ).submit_multistep_form_response!(
@@ -216,30 +188,15 @@ class Api::ExperienceBlocksController < Api::BaseController
         answer: params[:answer]
       )
 
-      # Get updated block with response data
-      updated_block = Experiences::Visibility.serialize_block_for_participant(
-        block: block,
-        experience: @experience,
-        user: @user
-      )
+      Experiences::Broadcaster.new(@experience).broadcast_experience_update
 
-      # TODO: Potential bug: not broadcast call here
-
-      render json: {
-        success: true,
-        data: {
-          submission: submission,
-          block: updated_block
-        },
-      }, status: 200
+      render json: { success: true, data: { submission: submission } }, status: 200
     end
   end
 
   # POST /api/experiences/:experience_id/blocks/:id/submit_mad_lib_response
   def submit_mad_lib_response
     with_experience_orchestration do
-      block = @experience.experience_blocks.find(params[:id])
-
       submission = Experiences::Orchestrator.new(
         experience: @experience, actor: @user
       ).submit_mad_lib_response!(
@@ -247,30 +204,15 @@ class Api::ExperienceBlocksController < Api::BaseController
         answer: params[:answer]
       )
 
-      # Get updated block with response data
-      updated_block = Experiences::Visibility.serialize_block_for_participant(
-        block: block,
-        experience: @experience,
-        user: @user
-      )
-
       Experiences::Broadcaster.new(@experience).broadcast_experience_update
 
-      render json: {
-        success: true,
-        data: {
-          submission: submission,
-          block: updated_block
-        },
-      }, status: 200
+      render json: { success: true, data: { submission: submission } }, status: 200
     end
   end
 
   # POST /api/experiences/:experience_id/blocks/:id/submit_buzzer_response
   def submit_buzzer_response
     with_experience_orchestration do
-      block = @experience.experience_blocks.find(params[:id])
-
       Experiences::Orchestrator.new(
         experience: @experience, actor: @user
       ).submit_buzzer_response!(
@@ -278,15 +220,9 @@ class Api::ExperienceBlocksController < Api::BaseController
         answer: params[:answer]
       )
 
-      updated_block = Experiences::Visibility.serialize_block_for_participant(
-        block: block,
-        experience: @experience,
-        user: @user
-      )
-
       Experiences::Broadcaster.new(@experience).broadcast_experience_update
 
-      render json: { success: true, data: { block: updated_block } }, status: 200
+      render json: { success: true }, status: 200
     end
   end
 
@@ -324,9 +260,7 @@ class Api::ExperienceBlocksController < Api::BaseController
   # POST /api/experiences/:experience_id/blocks/:id/submit_photo_upload_response
   def submit_photo_upload_response
     with_experience_orchestration do
-      block = @experience.experience_blocks.find(params[:id])
-
-      submission = Experiences::Orchestrator.new(
+      Experiences::Orchestrator.new(
         experience: @experience, actor: @user
       ).submit_photo_upload_response!(
         block_id: params[:id],
@@ -334,24 +268,9 @@ class Api::ExperienceBlocksController < Api::BaseController
         answer: params[:answer] || {}
       )
 
-      updated_block = Experiences::Visibility.serialize_block_for_participant(
-        block: block,
-        experience: @experience,
-        user: @user
-      )
-
       Experiences::Broadcaster.new(@experience).broadcast_experience_update
 
-      render json: {
-        success: true,
-        data: {
-          submission: {
-            id: submission.id,
-            photo_url: submission.photo.attached? ? ActiveStorageUrlService.blob_url(submission.photo.blob) : nil
-          },
-          block: updated_block
-        },
-      }, status: 200
+      render json: { success: true }, status: 200
     end
   end
 
