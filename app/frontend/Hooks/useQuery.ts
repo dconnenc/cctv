@@ -15,10 +15,14 @@ export function useQuery<T>({ url }: { url: string }) {
       setError(undefined);
       try {
         const response = await fetch(url, { ...options, signal: controller.signal });
+        const data = (await response.json()) as T;
         if (!response.ok) {
-          throw new Error(`Request failed with status ${response.status}`);
+          const msg =
+            (data as Record<string, unknown>)?.error ||
+            `Request failed with status ${response.status}`;
+          throw new Error(String(msg));
         }
-        return (await response.json()) as T;
+        return data;
       } catch (err) {
         if (err instanceof DOMException && err.name === 'AbortError') return undefined;
         setError(err instanceof Error ? err.message : 'Unknown error');

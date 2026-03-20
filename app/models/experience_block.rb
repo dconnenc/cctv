@@ -187,7 +187,26 @@ class ExperienceBlock < ApplicationRecord
   end
 
   def visible_to_segment_names
-    experience_segments.pluck(:name)
+    experience_segments.map(&:name)
+  end
+
+  def has_visibility_rules?
+    visible_to_roles.present? || experience_segments.any? || target_user_ids.present?
+  end
+
+  def visible_by_status?(experience)
+    return true if open?
+    return true if experience.status == "lobby" && show_in_lobby?
+
+    false
+  end
+
+  def visible_to?(role:, segments: [], user_id: nil)
+    return true unless has_visibility_rules?
+
+    visible_to_roles.include?(role.to_s) ||
+      (visible_to_segment_names & Array(segments)).any? ||
+      (target_user_ids.map(&:to_s) & [user_id.to_s]).any?
   end
 
   private

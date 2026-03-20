@@ -47,6 +47,13 @@ jobs:
 
   rspec-system:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        ci_node_index: [0, 1, 2, 3]
+    env:
+      CI_NODE_TOTAL: 4
+      CI_NODE_INDEX: ${{ matrix.ci_node_index }}
     services:
       postgres:
         image: postgres:16-alpine
@@ -95,7 +102,15 @@ jobs:
           ORIGIN: 'http://example.com'
           CUPRITE_INSPECTOR: false
           DATABASE_URL: 'postgres://postgres:password@localhost:5432/test'
-        run: bundle exec rspec spec/system
+          KNAPSACK_TEST_FILE_PATTERN: 'spec/system/**/*_spec.rb'
+        run: bundle exec rake knapsack:rspec
+
+      - name: Upload Capybara screenshots
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: capybara-screenshots-${{ matrix.ci_node_index }}
+          path: tmp/capybara/
 
   prettier:
     runs-on: ubuntu-latest

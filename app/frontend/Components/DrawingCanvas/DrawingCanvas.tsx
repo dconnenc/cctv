@@ -13,7 +13,13 @@ export interface DrawingCanvasProps {
   brushSizes?: number[];
   drawSize?: { w: number; h: number };
   onStrokeEvent?: (e: {
-    operation: 'stroke_started' | 'stroke_points_appended' | 'stroke_ended' | 'canvas_cleared';
+    operation:
+      | 'stroke_started'
+      | 'stroke_points_appended'
+      | 'stroke_ended'
+      | 'canvas_cleared'
+      | 'stroke_undone'
+      | 'canvas_clear_undone';
     data?: Record<string, unknown>;
   }) => void;
   onSubmit: (strokes: AvatarStroke[]) => void | Promise<void>;
@@ -44,6 +50,7 @@ export default function DrawingCanvas({
   onBack,
 }: DrawingCanvasProps) {
   const [lines, setLines] = useState<AvatarStroke[]>(initialStrokes);
+  const [clearedLines, setClearedLines] = useState<AvatarStroke[] | null>(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const hasLoadedInitialRef = useRef(false);
 
@@ -84,6 +91,7 @@ export default function DrawingCanvas({
 
   const onPointerDown = (e: any) => {
     if (e?.evt?.preventDefault) e.evt.preventDefault();
+    setClearedLines(null);
     setIsDrawing(true);
     isDrawingRef.current = true;
     const p = e.target.getStage().getPointerPosition();
@@ -153,6 +161,15 @@ export default function DrawingCanvas({
     }
     flushPendingPoints();
 
+    // If the stroke has only one point (tap without drag), duplicate it so Konva renders a dot
+    setLines((prev) => {
+      const last = prev[prev.length - 1];
+      if (!last || last.points.length !== 2) return prev;
+      const next = prev.slice();
+      next[next.length - 1] = { ...last, points: [...last.points, last.points[0], last.points[1]] };
+      return next;
+    });
+
     onStrokeEvent?.({ operation: 'stroke_ended' });
   };
 
@@ -176,22 +193,53 @@ export default function DrawingCanvas({
         throttleTimerRef.current = null;
       }
       flushPendingPoints();
+
+      setLines((prev) => {
+        const last = prev[prev.length - 1];
+        if (!last || last.points.length !== 2) return prev;
+        const next = prev.slice();
+        next[next.length - 1] = {
+          ...last,
+          points: [...last.points, last.points[0], last.points[1]],
+        };
+        return next;
+      });
+
       onStrokeEvent?.({ operation: 'stroke_ended' });
     };
     window.addEventListener('mouseup', handleGlobalMouseUp);
     return () => window.removeEventListener('mouseup', handleGlobalMouseUp);
   }, [flushPendingPoints, onStrokeEvent]);
 
+  const onUndo = () => {
+    if (lines.length === 0 && clearedLines) {
+      setLines(clearedLines);
+      setClearedLines(null);
+      onStrokeEvent?.({
+        operation: 'canvas_clear_undone',
+        data: { strokes: clearedLines },
+      });
+      return;
+    }
+    const last = lines[lines.length - 1];
+    if (!last || last.committed) return;
+    setLines((prev) => prev.slice(0, -1));
+    onStrokeEvent?.({ operation: 'stroke_undone' });
+  };
+
+  const canUndo = lines.some((s) => !s.committed) || (lines.length === 0 && !!clearedLines);
+
   const handleSubmit = async () => {
-    await onSubmit(lines);
+    const committedLines = lines.map((s) => ({ ...s, committed: true }));
+    await onSubmit(committedLines);
+    setLines(committedLines);
   };
 
   useEffect(() => {
     const updateSize = () => {
       if (drawWrapRef.current) {
-        const rect = drawWrapRef.current.getBoundingClientRect();
-        const w = Math.floor(rect.width);
-        setDrawStageSize({ w, h: w });
+        const side = Math.floor(drawWrapRef.current.getBoundingClientRect().width);
+        setDrawStageSize({ w: side, h: side });
       }
     };
     updateSize();
@@ -269,10 +317,14 @@ export default function DrawingCanvas({
       </div>
 
       <div className={styles.controls}>
+        <Button variant="secondary" className={styles.btn} onClick={onUndo} disabled={!canUndo}>
+          Undo
+        </Button>
         <Button
           variant="secondary"
           className={styles.btn}
           onClick={() => {
+            if (lines.length > 0) setClearedLines(lines);
             setLines([]);
             onStrokeEvent?.({ operation: 'canvas_cleared' });
           }}
@@ -284,11 +336,13 @@ export default function DrawingCanvas({
             variant="secondary"
             className={styles.btn}
             onClick={async () => {
-              await onSubmit(lines);
+              const committedLines = lines.map((s) => ({ ...s, committed: true }));
+              await onSubmit(committedLines);
+              setLines(committedLines);
               onBack();
             }}
           >
-            Back
+            Save
           </Button>
         ) : (
           <Button className={styles.btn} onClick={handleSubmit} disabled={lines.length === 0}>

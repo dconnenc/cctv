@@ -25,7 +25,7 @@ RSpec.describe "Avatar flow", type: :system do
         expect(page).to have_current_path("/experiences/#{experience.code_slug}/avatar")
         expect(page).to have_text("Draw your avatar to enter the lobby")
         expect(page).to have_button("Submit", disabled: true)
-        expect(page).not_to have_button("Back")
+        expect(page).not_to have_button("Save")
       end
     end
 
@@ -63,7 +63,7 @@ RSpec.describe "Avatar flow", type: :system do
 
         expect(page).to have_current_path("/experiences/#{experience.code_slug}/avatar")
         expect(page).not_to have_text("Draw your avatar to enter the lobby")
-        expect(page).to have_button("Back")
+        expect(page).to have_button("Save")
         expect(page).not_to have_button("Submit")
       end
     end
@@ -83,7 +83,7 @@ RSpec.describe "Avatar flow", type: :system do
         wait_for_animation
 
         click_button "Clear"
-        click_button "Back"
+        click_button "Save"
 
         expect(page).to have_current_path("/experiences/#{experience.code_slug}")
 
@@ -91,7 +91,7 @@ RSpec.describe "Avatar flow", type: :system do
         find('button[aria-label="Edit avatar"]').click
         wait_for_animation
 
-        expect(page).to have_button("Back")
+        expect(page).to have_button("Save")
         expect(page).to have_css("canvas")
         # Canvas is empty so there are no drawn strokes to submit back with
         expect(page).not_to have_button("Submit")
@@ -113,10 +113,80 @@ RSpec.describe "Avatar flow", type: :system do
         wait_for_animation
 
         draw_on_canvas
-        click_button "Back"
+        click_button "Save"
 
         expect(page).to have_current_path("/experiences/#{experience.code_slug}")
         expect(page).to have_css('button[aria-label="Edit avatar"]')
+      end
+    end
+  end
+
+  describe "Undo" do
+    it "undoes the last stroke and disables undo when no uncommitted strokes remain" do
+      using_session(:participant) do
+        register_participant(
+          code: experience.code_slug,
+          name: "Alice",
+          email: "alice@example.com",
+          experience_name: experience.name
+        )
+
+        expect(page).to have_current_path("/experiences/#{experience.code_slug}/avatar")
+        expect(page).to have_button("Undo", disabled: true)
+
+        draw_on_canvas
+
+        expect(page).to have_button("Undo", disabled: false)
+
+        click_button "Undo"
+
+        expect(page).to have_button("Undo", disabled: true)
+      end
+    end
+
+    it "is not available for committed strokes after submit and re-navigation" do
+      using_session(:participant) do
+        register_participant(
+          code: experience.code_slug,
+          name: "Alice",
+          email: "alice@example.com",
+          experience_name: experience.name
+        )
+
+        draw_and_submit_avatar
+
+        find('button[aria-label="Edit avatar"]').click
+        wait_for_animation
+
+        expect(page).to have_button("Undo", disabled: true)
+
+        draw_on_canvas
+        expect(page).to have_button("Undo", disabled: false)
+
+        click_button "Undo"
+        expect(page).to have_button("Undo", disabled: true)
+      end
+    end
+
+    it "retains undo ability after page reload for uncommitted strokes" do
+      using_session(:participant) do
+        register_participant(
+          code: experience.code_slug,
+          name: "Alice",
+          email: "alice@example.com",
+          experience_name: experience.name
+        )
+
+        expect(page).to have_current_path("/experiences/#{experience.code_slug}/avatar")
+
+        draw_on_canvas
+
+        expect(page).to have_button("Undo", disabled: false)
+
+        visit "/experiences/#{experience.code_slug}/avatar"
+
+        expect(page).to have_css("canvas", wait: 10)
+        expect(page).to have_button("Undo", disabled: false)
       end
     end
   end
@@ -157,10 +227,10 @@ RSpec.describe "Avatar flow", type: :system do
 
         expect(page).to have_current_path("/experiences/#{experience.code_slug}/avatar")
         expect(page).not_to have_text("Draw your avatar to enter the lobby")
-        expect(page).to have_button("Back")
+        expect(page).to have_button("Save")
         expect(page).not_to have_button("Submit")
 
-        click_button "Back"
+        click_button "Save"
 
         expect(page).not_to have_current_path("/experiences/#{experience.code_slug}/avatar")
       end

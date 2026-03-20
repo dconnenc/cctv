@@ -42,12 +42,29 @@ class ExperienceSubscriptionChannel < ApplicationCable::Channel
       @current_stroke['points'] = (@current_stroke['points'] || []).concat(payload['points'] || [])
     when 'stroke_ended'
       if @current_stroke
+        points = @current_stroke['points'] || []
+        if points.length == 2
+          @current_stroke['points'] = points + points
+        end
         @participant.reload
         avatar = (@participant.avatar || {}).dup
         strokes = (avatar['strokes'] || []) + [@current_stroke]
         @participant.update!(avatar: avatar.merge('strokes' => strokes))
         @current_stroke = nil
       end
+    when 'stroke_undone'
+      @current_stroke = nil
+      @participant.reload
+      avatar = (@participant.avatar || {}).dup
+      strokes = avatar['strokes'] || []
+      if strokes.any?
+        strokes = strokes[0...-1]
+        @participant.update!(avatar: avatar.merge('strokes' => strokes))
+      end
+    when 'canvas_clear_undone'
+      @current_stroke = nil
+      strokes = payload['strokes'] || []
+      @participant.update!(avatar: { 'strokes' => strokes })
     when 'canvas_cleared'
       @current_stroke = nil
       @participant.update!(avatar: {})
@@ -157,24 +174,13 @@ class ExperienceSubscriptionChannel < ApplicationCable::Channel
       "user=#{@user&.id}, participant=#{@participant&.id}, is_admin=#{@is_admin}"
     )
 
-    # Preload all data to avoid N+1 queries
-    preloaded_data = preload_experience_data
-
     case @view_type
     when 'monitor'
       transmit(
         WebsocketMessageService.experience_state(
-          @experience,
-          visibility_payload: Experiences::Visibility.payload_for_monitor(
-            experience: @experience,
-            blocks: preloaded_data[:blocks],
-            participants: preloaded_data[:participants],
-            submissions_cache: preloaded_data[:submissions_cache]
-          ),
+          Experiences::Visibility.for_monitor(@experience),
           logical_stream: "monitor_view",
-          participant_id: nil,
-          include_participants: true,
-          participants: preloaded_data[:participants]
+          participant_id: nil
         )
       )
 
@@ -182,7 +188,7 @@ class ExperienceSubscriptionChannel < ApplicationCable::Channel
       # the default state and start applying live drawing updates. However, it
       # doesn't scale, so this should be de-coupled from the initial fetch in
       # the future
-      preloaded_data[:participants].each do |p|
+      @experience.experience_participants.includes(:user).each do |p|
         next unless p.avatar.present? && p.avatar['strokes'].present?
 
         transmit({
@@ -195,92 +201,44 @@ class ExperienceSubscriptionChannel < ApplicationCable::Channel
     when 'impersonation'
       transmit(
         WebsocketMessageService.experience_state(
-          @experience,
-          visibility_payload: Experiences::Visibility.payload_for_user(
-            experience: @experience,
-            user: @impersonated_participant.user,
-            participant: @impersonated_participant,
-            blocks: preloaded_data[:blocks],
-            submissions_cache: preloaded_data[:submissions_cache],
-            participants_by_user_id: preloaded_data[:participants_by_user_id]
-          ),
+          Experiences::Visibility.for_participant(@experience, @impersonated_participant),
           logical_stream: "participant_#{@impersonated_participant.id}",
-          participant_id: @impersonated_participant.id,
-          include_participants: true,
-          participants: preloaded_data[:participants]
+          participant_id: @impersonated_participant.id
+        )
+      )
+    when 'admin'
+      Rails.logger.info("[ExperienceChannel] Sending admin initial state")
+      transmit(
+        WebsocketMessageService.experience_state(
+          Experiences::Visibility.for_admin(@experience),
+          logical_stream: "admin_view",
+          participant_id: nil
         )
       )
     else
-      # Admin or participant stream
-      is_manager = (@is_admin && !@participant) || is_host_or_moderator?
-
+      # Regular participant stream
       Rails.logger.info(
-        "[ExperienceChannel] Else branch: is_manager=#{is_manager}, " \
-        "is_admin=#{@is_admin}, participant=#{@participant&.id}, " \
-        "is_host_or_mod=#{is_host_or_moderator?}"
+        "[ExperienceChannel] Sending participant initial state: " \
+        "participant_id=#{@participant.id}, user_id=#{@user.id}"
       )
 
-      if is_manager
-        # Admin/host viewing full experience (managers get full view)
-        Rails.logger.info("[ExperienceChannel] Sending admin initial state")
-        transmit(
-          WebsocketMessageService.experience_state(
-            @experience,
-            visibility_payload: Experiences::Visibility.payload_for_user(
-              experience: @experience,
-              user: @user,
-              participant: @participant,
-              blocks: preloaded_data[:blocks],
-              submissions_cache: preloaded_data[:submissions_cache],
-              participants_by_user_id: preloaded_data[:participants_by_user_id]
-            ),
-            logical_stream: "admin_view",
-            participant_id: nil,
-            include_participants: true,
-            participants: preloaded_data[:participants]
-          )
-        )
-      else
-        # Regular participant stream
-        Rails.logger.info(
-          "[ExperienceChannel] Sending participant initial state: " \
-          "participant_id=#{@participant.id}, user_id=#{@user.id}"
-        )
+      participant_summary = {
+        id: @participant.id,
+        user_id: @participant.user_id,
+        name: @participant.name,
+        email: @participant.user.email,
+        role: @participant.role,
+        avatar: @participant.avatar.presence
+      }
 
-        payload = payload_for_participant(@user)
-        Rails.logger.info(
-          "[ExperienceChannel] Participant payload: " \
-          "blocks_count=#{payload.dig(:experience, :blocks)&.length || 0}"
+      transmit(
+        WebsocketMessageService.experience_state(
+          Experiences::Visibility.for_participant(@experience, @participant),
+          logical_stream: "participant_#{@participant.id}",
+          participant_id: @participant.id,
+          participant: participant_summary
         )
-
-        participant_summary = {
-          id: @participant.id,
-          user_id: @participant.user_id,
-          name: @participant.name,
-          email: @participant.user.email,
-          role: @participant.role,
-          avatar: @participant.avatar.presence
-        }
-
-        transmit(
-          WebsocketMessageService.experience_state(
-            @experience,
-            visibility_payload: Experiences::Visibility.payload_for_user(
-              experience: @experience,
-              user: @user,
-              participant: @participant,
-              blocks: preloaded_data[:blocks],
-              submissions_cache: preloaded_data[:submissions_cache],
-              participants_by_user_id: preloaded_data[:participants_by_user_id]
-            ),
-            logical_stream: "participant_#{@participant.id}",
-            participant_id: @participant.id,
-            participant: participant_summary,
-            include_participants: true,
-            participants: preloaded_data[:participants]
-          )
-        )
-      end
+      )
     end
   end
 
@@ -302,119 +260,14 @@ class ExperienceSubscriptionChannel < ApplicationCable::Channel
       avatar: @participant.avatar.presence
     }
 
-    # Preload all data to avoid N+1 queries
-    preloaded_data = preload_experience_data
-
     transmit(
       WebsocketMessageService.experience_state(
-        @experience,
-        visibility_payload: Experiences::Visibility.payload_for_user(
-          experience: @experience,
-          user: @user,
-          participant: @participant,
-          blocks: preloaded_data[:blocks],
-          submissions_cache: preloaded_data[:submissions_cache],
-          participants_by_user_id: preloaded_data[:participants_by_user_id]
-        ),
+        Experiences::Visibility.for_participant(@experience, @participant),
         logical_stream: "participant_#{@participant.id}",
         participant_id: @participant.id,
-        participant: participant_summary,
-        include_participants: true,
-        participants: preloaded_data[:participants]
+        participant: participant_summary
       )
     )
-  end
-
-  def preload_experience_data
-    # Load all blocks with all associations
-    blocks = @experience.experience_blocks
-      .includes(
-        :experience_poll_submissions,
-        :experience_question_submissions,
-        :experience_multistep_form_submissions,
-        :experience_mad_lib_submissions,
-        :child_links,
-        :parent_links,
-        children: [
-          :experience_poll_submissions,
-          :experience_question_submissions,
-          :experience_multistep_form_submissions,
-          :experience_mad_lib_submissions,
-          :child_links,
-          :parent_links
-        ],
-        parents: [],
-        variables: { bindings: :source_block }
-      )
-      .order(position: :asc)
-      .to_a
-
-    # Load all participants with users
-    participants = @experience.experience_participants.includes(:user, :experience_segments).to_a
-
-    # Build in-memory cache of submissions
-    # TODO: This will live on the client in the future to avoid participant
-    # specific data showing up in generic streams
-    submissions_cache = build_submissions_cache(blocks)
-
-    # Build participant lookup by user_id
-    participants_by_user_id = participants.index_by(&:user_id)
-
-    {
-      blocks: blocks,
-      participants: participants,
-      submissions_cache: submissions_cache,
-      participants_by_user_id: participants_by_user_id
-    }
-  end
-
-  # TODO: See above, this is an optimization to keep things simple and have
-  # submissions be apart of the generic streams. This will all be client data
-  # in the future
-  def build_submissions_cache(blocks)
-    cache = {}
-
-    blocks.each do |block|
-      cache[block.id] = {}
-
-      block.experience_poll_submissions.each do |submission|
-        cache[block.id][submission.user_id] = submission
-      end
-
-      block.experience_question_submissions.each do |submission|
-        cache[block.id][submission.user_id] = submission
-      end
-
-      block.experience_multistep_form_submissions.each do |submission|
-        cache[block.id][submission.user_id] = submission
-      end
-
-      block.experience_mad_lib_submissions.each do |submission|
-        cache[block.id][submission.user_id] = submission
-      end
-
-      block.children.each do |child|
-        cache[child.id] ||= {}
-
-        child.experience_poll_submissions.each do |submission|
-          cache[child.id][submission.user_id] = submission
-        end
-
-        child.experience_question_submissions.each do |submission|
-          cache[child.id][submission.user_id] = submission
-        end
-
-        child.experience_multistep_form_submissions.each do |submission|
-          cache[child.id][submission.user_id] = submission
-        end
-
-        child.experience_mad_lib_submissions.each do |submission|
-          cache[child.id][submission.user_id] = submission
-        end
-      end
-    end
-
-    cache
   end
 
   def find_experience_or_reject
@@ -537,17 +390,6 @@ class ExperienceSubscriptionChannel < ApplicationCable::Channel
 
   def stream_key_for_participant(participant)
     "experience_#{participant.experience_id}_participant_#{participant.id}"
-  end
-
-  def payload_for_participant(user)
-    preloaded_data = preload_experience_data
-    Experiences::Visibility.payload_for_user(
-      experience: @experience,
-      user: user,
-      blocks: preloaded_data[:blocks],
-      submissions_cache: preloaded_data[:submissions_cache],
-      participants_by_user_id: preloaded_data[:participants_by_user_id]
-    )
   end
 
   def log_stream_subscription

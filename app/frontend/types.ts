@@ -225,6 +225,7 @@ export interface AvatarStroke {
   points: number[];
   color: string;
   width: number;
+  committed?: boolean;
 }
 
 export interface ExperienceParticipant {
@@ -378,13 +379,13 @@ export interface Experience {
   hosts: ExperienceParticipant[];
   participants: ExperienceParticipant[];
   blocks: Block[];
-  next_block?: Block | null;
   playbill_enabled?: boolean;
   playbill?: PlaybillSection[];
   segments?: ExperienceSegment[];
   created_at: string;
   updated_at: string;
   participant_block_active?: boolean;
+  responded_participant_ids?: string[];
 }
 
 // ===== TYPE FRAGMENTS (using Pick/Omit from complete types) =====

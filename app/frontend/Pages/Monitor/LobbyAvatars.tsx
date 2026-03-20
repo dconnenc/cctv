@@ -4,7 +4,7 @@ import { Group, Layer, Line, Stage } from 'react-konva';
 
 import { useExperience } from '@cctv/contexts/ExperienceContext';
 import { useLobbyDrawingState } from '@cctv/contexts/LobbyDrawingContext';
-import { ExperienceParticipant } from '@cctv/types';
+import type { ExperienceParticipant } from '@cctv/types';
 
 import styles from './LobbyAvatars.module.scss';
 
@@ -27,27 +27,18 @@ interface AvatarMotion {
   scaleFreq: number;
 }
 
-function hashId(id: string): number {
-  let hash = 0;
-  for (let i = 0; i < id.length; i++) {
-    hash = ((hash << 5) - hash + id.charCodeAt(i)) | 0;
-  }
-  return Math.abs(hash);
-}
-
-function initMotion(id: string, w: number, h: number): AvatarMotion {
-  const hash = hashId(id);
+function initMotion(w: number, h: number): AvatarMotion {
   const maxX = Math.max(0, w - AVATAR_DISPLAY_SIZE);
   const maxY = Math.max(0, h - AVATAR_DISPLAY_SIZE);
-  const angle = ((hash % 360) * Math.PI) / 180;
-  const speed = SPEED_MIN + ((hash % 100) / 100) * SPEED_RANGE;
+  const angle = Math.random() * Math.PI * 2;
+  const speed = SPEED_MIN + Math.random() * SPEED_RANGE;
   return {
-    x: maxX > 0 ? hash % maxX : 0,
-    y: maxY > 0 ? ((hash >>> 16) * 7919) % maxY : 0,
+    x: Math.random() * maxX,
+    y: Math.random() * maxY,
     vx: Math.cos(angle) * speed,
     vy: Math.sin(angle) * speed,
-    scalePhase: (hash % 628) / 100,
-    scaleFreq: SCALE_FREQ_MIN + (((hash >> 8) % 100) / 100) * SCALE_FREQ_RANGE,
+    scalePhase: Math.random() * Math.PI * 2,
+    scaleFreq: SCALE_FREQ_MIN + Math.random() * SCALE_FREQ_RANGE,
   };
 }
 
@@ -69,21 +60,36 @@ export default function LobbyAvatars() {
     return () => ro.disconnect();
   }, []);
 
-  const participants: ExperienceParticipant[] = useMemo(
-    () => [...(monitorView?.participants || []), ...(monitorView?.hosts || [])],
-    [monitorView],
+  const participants: ExperienceParticipant[] = useMemo(() => {
+    const all = [...(monitorView?.participants || []), ...(monitorView?.hosts || [])];
+    const seen = new Set<string>();
+    return all.filter((p) => {
+      if (seen.has(p.id)) return false;
+      seen.add(p.id);
+      return true;
+    });
+  }, [monitorView]);
+
+  const respondedIds = useMemo(
+    () => new Set(monitorView?.responded_participant_ids ?? []),
+    [monitorView?.responded_participant_ids],
   );
+  const hasActiveBlock = !!monitorView?.blocks[0] || !!monitorView?.participant_block_active;
 
   const motionsRef = useRef<Map<string, AvatarMotion>>(new Map());
   const rafRef = useRef<number | null>(null);
   const lastTimeRef = useRef<number | null>(null);
   const [, forceUpdate] = useState(0);
 
+  const prevSizeRef = useRef(size);
   useEffect(() => {
     const motions = motionsRef.current;
+    const sizeChanged = prevSizeRef.current.w !== size.w || prevSizeRef.current.h !== size.h;
+    prevSizeRef.current = size;
+
     for (const p of participants) {
-      if (!motions.has(p.id)) {
-        motions.set(p.id, initMotion(p.id, size.w, size.h));
+      if (!motions.has(p.id) || sizeChanged) {
+        motions.set(p.id, initMotion(size.w, size.h));
       }
     }
     for (const id of motions.keys()) {
@@ -147,14 +153,22 @@ export default function LobbyAvatars() {
               if (!motion) return null;
 
               const scale = BASE_SCALE * (1 + SCALE_AMPLITUDE * Math.sin(motion.scalePhase));
+              const isGrayed = hasActiveBlock && p.role !== 'host' && !respondedIds.has(p.id);
 
               return (
-                <Group key={p.id} x={motion.x} y={motion.y} scaleX={scale} scaleY={scale}>
+                <Group
+                  key={p.id}
+                  x={motion.x}
+                  y={motion.y}
+                  scaleX={scale}
+                  scaleY={scale}
+                  opacity={isGrayed ? 0.3 : 1}
+                >
                   {strokes.map((s, idx) => (
                     <Line
                       key={idx}
                       points={s.points}
-                      stroke={s.color}
+                      stroke={isGrayed ? '#666' : s.color}
                       strokeWidth={s.width}
                       lineCap="round"
                     />

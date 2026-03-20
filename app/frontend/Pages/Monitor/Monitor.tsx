@@ -44,6 +44,7 @@ export default function Monitor() {
 
   return (
     <section className={styles.root}>
+      <LobbyAvatars />
       {showProgramBlock ? (
         <div className={styles.blockContainer}>
           <ExperienceBlockContainer block={currentBlock} disabled viewContext="monitor" />
@@ -54,9 +55,8 @@ export default function Monitor() {
             <div className={styles.participantNotification}>Check your devices</div>
           )}
           <ParticipantsMenu />
-          <LobbyAvatars />
           <div className={styles.qrContainer}>
-            <QRCodeDisplay experience={monitorView} compact />
+            <QRCodeDisplay experience={monitorView} />
           </div>
         </>
       )}

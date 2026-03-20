@@ -77,7 +77,7 @@ GEM
     addressable (2.8.7)
       public_suffix (>= 2.0.2, < 7.0)
     base64 (0.3.0)
-    bcrypt (3.1.20)
+    bcrypt (3.1.22)
     benchmark (0.4.1)
     bigdecimal (3.2.3)
     bindex (0.8.1)
@@ -137,6 +137,8 @@ GEM
       reline (>= 0.4.2)
     jwt (3.1.2)
       base64
+    knapsack (4.0.0)
+      rake
     launchy (3.1.1)
       addressable (~> 2.8)
       childprocess (~> 5.0)
@@ -175,11 +177,11 @@ GEM
     net-smtp (0.5.1)
       net-protocol
     nio4r (2.7.4)
-    nokogiri (1.18.9-arm64-darwin)
+    nokogiri (1.19.1-arm64-darwin)
       racc (~> 1.4)
-    nokogiri (1.18.9-x64-mingw-ucrt)
+    nokogiri (1.19.1-x64-mingw-ucrt)
       racc (~> 1.4)
-    nokogiri (1.18.9-x86_64-linux-gnu)
+    nokogiri (1.19.1-x86_64-linux-gnu)
       racc (~> 1.4)
     passwordless (1.8.1)
       bcrypt (>= 3.1.11)
@@ -314,6 +316,7 @@ DEPENDENCIES
   factory_bot_rails
   image_processing (~> 1.2)
   jwt
+  knapsack
   letter_opener
   letter_opener_web
   passwordless

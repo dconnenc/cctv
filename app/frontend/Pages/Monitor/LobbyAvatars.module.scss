@@ -1,13 +1,12 @@
 .root {
   position: absolute;
-  inset: 50px;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
 }
 
 .stageWrap {
   width: 100%;
   height: 100%;
-  background: hsl(var(--card));
-  border: 1px solid hsl(var(--border));
-  border-radius: 8px;
   overflow: hidden;
 }

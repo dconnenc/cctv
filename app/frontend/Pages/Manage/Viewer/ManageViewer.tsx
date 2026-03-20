@@ -10,6 +10,7 @@ import { useBlockPresentation } from '@cctv/hooks/useBlockPresentation';
 import { useExperiencePause } from '@cctv/hooks/useExperiencePause';
 import { useExperienceResume } from '@cctv/hooks/useExperienceResume';
 import { useExperienceStart } from '@cctv/hooks/useExperienceStart';
+import { useReorderBlock } from '@cctv/hooks/useReorderBlock';
 import { Block, ParticipantSummary } from '@cctv/types';
 
 import CreateBlock from '../CreateBlock/CreateBlock';
@@ -132,6 +133,15 @@ export default function ManageViewer() {
     statusError,
   } = useBlockPresentation();
 
+  const { reorder: reorderBlock } = useReorderBlock();
+
+  const handleReorderBlock = useCallback(
+    (blockId: string, newIndex: number) => {
+      reorderBlock(blockId, newIndex);
+    },
+    [reorderBlock],
+  );
+
   const participantsCombined: ParticipantSummary[] = useMemo(
     () => [...(experience?.hosts || []), ...(experience?.participants || [])],
     [experience],
@@ -200,6 +210,7 @@ export default function ManageViewer() {
           onSelectBlock={setSelectedBlockId}
           onToggleSidebar={() => setSidebarCollapsed((prev) => !prev)}
           onCreateBlock={() => setIsCreateDialogOpen(true)}
+          onReorderBlock={handleReorderBlock}
         />
 
         <main className="flex-1 flex flex-col w-full h-full z-10 overflow-hidden bg-[hsl(var(--background))]">

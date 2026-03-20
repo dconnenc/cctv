@@ -10,6 +10,13 @@ abort("The Rails environment is running in production mode!") if Rails.env.produ
 # that will avoid rails generators crashing because migrations haven't been run yet
 # return unless Rails.env.test?
 require 'rspec/rails'
+require 'knapsack'
+
+Knapsack::Adapters::RSpecAdapter.bind
+Knapsack.tracker.config({
+  enable_time_offset_warning: true,
+  time_offset_in_seconds: 120
+})
 # Add additional requires below this line. Rails is not loaded until this point!
 
 # Requires supporting ruby files with custom matchers and macros, etc, in
@@ -57,6 +64,6 @@ Capybara.enable_aria_label = true
 
 RSpec.configure do |config|
   config.before(:each, type: :system) do
-    driven_by :cuprite, screen_size: [1440, 900], options: { headless: ENV["HEADLESS"] != "false" }
+    driven_by :cuprite, screen_size: [1440, 900], options: { headless: ENV["HEADLESS"] != "false", process_timeout: 20 }
   end
 end
