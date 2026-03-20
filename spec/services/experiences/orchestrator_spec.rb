@@ -330,6 +330,9 @@ RSpec.describe Experiences::Orchestrator do
 
       context "with a participant source variable" do
         let(:other_user) { create(:user, :user) }
+        let(:other_participant) do
+          create(:experience_participant, user: other_user, experience: experience, role: :audience)
+        end
         let(:variables) do
           [
             {
@@ -339,19 +342,10 @@ RSpec.describe Experiences::Orchestrator do
               "required" => true,
               "source" => {
                 "type" => "participant",
-                "participant_id" => other_user.id
+                "participant_id" => other_participant.id
               }
             }
           ]
-        end
-
-        before do
-          create(
-            :experience_participant,
-            user: other_user,
-            experience: experience,
-            role: :audience
-          )
         end
 
         it "creates a variable bound to a question block for that participant" do
