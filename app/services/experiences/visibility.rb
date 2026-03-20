@@ -1,542 +1,418 @@
 module Experiences
+  # Determines which blocks are visible for a given context and builds the complete
+  # experience payload for each stream type (admin, monitor, participant).
   class Visibility
-    attr_reader(
-      :experience, :user_role, :participant_role, :segments, :target_user_ids
-    )
-
-    def self.payload_for_admin(experience:, blocks: nil, submissions_cache: nil)
-      visible_blocks = blocks || admin_visible_blocks(experience)
-      
-      serialized_blocks = visible_blocks.reject(&:child_block?).map do |block|
-        BlockSerializer.serialize_for_stream(block, participant_role: "host", submissions_cache: submissions_cache)
-      end
-
-      current_block = resolve_block_for_admin(experience: experience, blocks: visible_blocks)
-      blocks_without_current = current_block ? visible_blocks.reject { |b| b == current_block } : visible_blocks
-      next_block = resolve_block_for_admin(experience: experience, blocks: blocks_without_current)
-
-      serialized_next = if next_block
-        BlockSerializer.serialize_for_stream(next_block, participant_role: "host", submissions_cache: submissions_cache)
-      else
-        nil
-      end
-
-      {
-        experience: experience_structure(
-          experience,
-          serialized_blocks,
-          next_block: serialized_next
-        )
-      }
+    def self.for_admin(experience)
+      new(experience).for_admin
     end
 
-    def self.next_block_for_admin(experience:)
-      visible_blocks = admin_visible_blocks(experience)
-      current_block = resolve_block_for_admin(experience: experience, blocks: visible_blocks)
-      return nil unless current_block
-
-      blocks_without_current = visible_blocks.reject { |b| b == current_block }
-      resolve_block_for_admin(experience: experience, blocks: blocks_without_current)
+    def self.for_monitor(experience)
+      new(experience).for_monitor
     end
 
-    def self.next_block_for_monitor(experience:)
-      visible_blocks = monitor_visible_blocks(experience)
-      current_block = visible_blocks.first
-      return nil unless current_block
-
-      blocks_without_current = visible_blocks.reject { |b| b == current_block }
-      blocks_without_current.first
-    end
-
-    def self.admin_visible_blocks(experience)
-      experience.experience_blocks.order(position: :asc)
-    end
-
-    def self.resolve_block_for_admin(experience:, blocks:)
-      return nil if blocks.empty?
-
-      parent_blocks = blocks.reject(&:child_block?)
-
-      parent_blocks.sort_by(&:position).each do |block|
-        if block.has_dependencies?
-          first_child = block.child_blocks.order(position: :asc).first
-          return first_child if first_child
-        end
-        return block
-      end
-
-      nil
-    end
-
-    def self.payload_for_user(experience:, user:, participant: nil, blocks: nil, submissions_cache: nil, participants_by_user_id: nil)
-      participant_record = participant || (participants_by_user_id&.dig(user.id)) || experience
-        .experience_participants
-        .find_by(user_id: user.id)
-
-      # Admin users can see everything even without being participants
-      if user.admin? || user.superadmin?
-        return new(
-          experience: experience,
-          user_role: user.role,
-          participant_role: participant_record&.role,
-          segments: participant_record&.segment_names || [],
-          target_user_ids: [user.id],
-          preloaded_blocks: blocks,
-          submissions_cache: submissions_cache,
-          participant: participant_record,
-          participants_by_user_id: participants_by_user_id
-        ).payload_for_user(user)
-      end
-
-      if participant_record.blank?
-        return { experience: experience_structure(experience, []) }
-      end
-
-      new(
-        experience: experience,
-        user_role: user.role,
-        participant_role: participant_record.role,
-        segments: participant_record.segment_names,
-        target_user_ids: [user.id],
-        preloaded_blocks: blocks,
-        submissions_cache: submissions_cache,
-        participant: participant_record,
-        participants_by_user_id: participants_by_user_id
-      ).payload_for_user(user)
-    end
-
-    def self.payload_for_stream(
-      experience:, role:, segments: [], target_user_ids: []
-    )
-      new(
-        experience: experience,
-        participant_role: role,
-        segments: segments,
-        target_user_ids: target_user_ids
-      ).payload
-    end
-
-    def self.payload_for_monitor(experience:, blocks: nil, participants: nil, submissions_cache: nil)
-      visible_blocks = blocks ? monitor_visible_blocks_from_preloaded(experience, blocks) : monitor_visible_blocks(experience)
-
-      current_block = visible_blocks.first
-      serialized_blocks = if current_block
-        [serialize_block_for_monitor(experience: experience, block: current_block, participants: participants, submissions_cache: submissions_cache)]
-      else
-        []
-      end
-
-      next_block = visible_blocks.second
-      serialized_next = if next_block
-        serialize_block_for_monitor(experience: experience, block: next_block, participants: participants, submissions_cache: submissions_cache)
-      else
-        nil
-      end
-
-      responded_ids = responded_participant_ids_for_monitor(
-        experience: experience,
-        blocks: blocks,
-        participants: participants,
-        submissions_cache: submissions_cache
-      )
-
-      {
-        experience: experience_structure(
-          experience,
-          serialized_blocks,
-          next_block: serialized_next,
-          participant_block_active: participant_block_active?(experience),
-          responded_participant_ids: responded_ids
-        )
-      }
-    end
-
-    def self.monitor_visible_blocks(experience)
-      parent_blocks = if experience.status == 'lobby'
-        experience.parent_blocks
-          .where(show_in_lobby: true)
-          .where(visible_to_roles: [], target_user_ids: [])
-          .where.not(id: ExperienceBlockSegment.select(:experience_block_id))
-          .order(position: :asc)
-      else
-        experience.parent_blocks
-          .where(status: 'open')
-          .where(visible_to_roles: [], target_user_ids: [])
-          .where.not(id: ExperienceBlockSegment.select(:experience_block_id))
-          .order(position: :asc)
-      end
-
-      parent_blocks = parent_blocks.reject { |block| block.payload['show_on_monitor'] == false }
-
-      result = []
-      parent_blocks.each do |parent|
-        if parent.has_dependencies?
-          if parent.kind == ExperienceBlock::FAMILY_FEUD
-            result << parent
-          else
-            first_child = parent.child_blocks.order(position: :asc).first
-            if first_child && !has_visibility_rules?(first_child)
-              result << first_child
-            else
-              result << parent
-            end
-          end
-        else
-          result << parent
-        end
-      end
-
-      result
-    end
-
-    def self.monitor_visible_blocks_from_preloaded(experience, blocks)
-      parent_blocks = blocks.select(&:parent_block?)
-
-      parent_blocks = if experience.status == 'lobby'
-        parent_blocks.select do |block|
-          block.show_in_lobby? &&
-            block.visible_to_roles.empty? &&
-            block.experience_segments.empty? &&
-            block.target_user_ids.empty?
-        end
-      else
-        parent_blocks.select do |block|
-          block.status == 'open' &&
-            block.visible_to_roles.empty? &&
-            block.experience_segments.empty? &&
-            block.target_user_ids.empty?
-        end
-      end
-
-      parent_blocks = parent_blocks.reject { |block| block.payload['show_on_monitor'] == false }
-      parent_blocks = parent_blocks.sort_by(&:position)
-
-      result = []
-      parent_blocks.each do |parent|
-        if parent.has_dependencies?
-          if parent.kind == ExperienceBlock::FAMILY_FEUD
-            result << parent
-          else
-            first_child = parent.children.min_by(&:position)
-            if first_child && !has_visibility_rules?(first_child)
-              result << first_child
-            else
-              result << parent
-            end
-          end
-        else
-          result << parent
-        end
-      end
-
-      result
-    end
-
-    def self.has_visibility_rules?(block)
-      block.visible_to_roles.present? ||
-        block.experience_segments.any? ||
-        block.target_user_ids.present?
-    end
-
-    def self.serialize_block_for_monitor(experience:, block:, participants: nil, submissions_cache: nil)
-      serialized = BlockSerializer.serialize_for_stream(
-        block,
-        participant_role: "host",
-        submissions_cache: submissions_cache
-      )
-
-      if block.kind == ExperienceBlock::MAD_LIB
-        all_resolved_variables = {}
-
-        participant_list = participants || experience.experience_participants
-        participant_list.each do |participant|
-          participant_vars = Experiences::BlockResolver.resolve_variables(
-            block: block,
-            participant: participant,
-            submissions_cache: submissions_cache
-          )
-          all_resolved_variables.merge!(participant_vars)
-        end
-
-        serialized[:responses][:resolved_variables] =
-          all_resolved_variables
-      end
-
-      serialized
+    def self.for_participant(experience, participant)
+      new(experience).for_participant(participant)
     end
 
     def self.block_visible_to_user?(block:, user:)
-      return true if user.admin? || user.superadmin?
-
-      participant_record = block
-        .experience
-        .experience_participants
-        .find_by(user_id: user.id)
-
-      return false if participant_record.blank?
-
-      new(
-        experience: block.experience,
-        user_role: user.role,
-        participant_role: participant_record.role,
-        segments: participant_record.segment_names,
-        target_user_ids: [user.id]
-      ).block_visible?(block)
+      new(block.experience).block_visible_to_user?(block, user)
     end
 
-    def self.serialize_block_for_user(experience:, user:, block:)
-      participant_record = experience
-        .experience_participants
-        .find_by(user_id: user.id)
+    def initialize(experience)
+      @experience = experience
+    end
 
-      # Treat admin's as host-level permissions when they are not participants
-      if user.admin? || user.superadmin?
-        effective_participant_role = participant_record&.role || "host"
+    def for_admin
+      visible = admin_visible_blocks
 
-        return BlockSerializer.serialize_for_user(
-          block, participant_role: effective_participant_role, user: user
-        )
-      end
-
-      return nil if participant_record.blank?
-
-      BlockSerializer.serialize_for_user(
-        block, participant_role: participant_record.role, user: user
+      experience_payload(
+        blocks: visible.map { |b| serialize_block(b, participant_role: "host") }
       )
     end
 
-    def initialize(
-      experience:,
-      user_role: nil,
-      participant_role: nil,
-      segments: [],
-      target_user_ids: [],
-      preloaded_blocks: nil,
-      submissions_cache: nil,
-      participant: nil,
-      participants_by_user_id: nil
-    )
-      @experience = experience
-      @user_role = user_role
-      @participant_role = participant_role
-      @segments = segments || []
-      @target_user_ids = target_user_ids || []
-      @preloaded_blocks = preloaded_blocks
-      @submissions_cache = submissions_cache
-      @participant = participant
-      @participants_by_user_id = participants_by_user_id
+    def for_monitor
+      visible = monitor_visible_blocks
+      current = visible.first
+
+      experience_payload(
+        blocks:                    current ? [serialize_monitor_block(current)] : [],
+        participant_block_active:  participant_block_active?,
+        responded_participant_ids: responded_participant_ids
+      )
     end
 
-    def payload_for_user(user)
-      blocks = if moderator_or_host? || user_admin?
-        parent_blocks_only = visible_blocks.reject(&:child_block?)
-        parent_blocks_only.map { |block| serialize_block_for_user(block, user) }
+    def for_participant(participant)
+      visible = participant_visible_blocks(participant)
+      role    = participant.role
+
+      if host_or_moderator?(role)
+        blocks = visible.map { |b| serialize_block(b, participant_role: role, user: participant.user) }
       else
-        resolved_block = resolve_block_for_user(user)
-        resolved_block ? [serialize_block_for_user(resolved_block, user)] : []
+        current = resolve_participant_block(visible, participant)
+        blocks  = current ? [serialize_block(current, participant_role: role, user: participant.user)] : []
       end
 
-      next_block = next_block_for_user(user)
-
-      {
-        experience: self.class.experience_structure(
-          experience,
-          blocks,
-          next_block: next_block ? serialize_block_for_user(next_block, user) : nil
-        )
-      }
+      experience_payload(blocks: blocks)
     end
 
-    def payload
-      {
-        experience: self.class.experience_structure(
-          experience,
-          visible_blocks.map { |block| serialize_block_for_stream(block) }
-        )
-      }
-    end
+    def block_visible_to_user?(block, user)
+      return true if user.admin? || user.superadmin?
 
-    def block_visible?(block)
-      visible_blocks.include?(block)
-    end
+      participant = @experience.experience_participants.find_by(user_id: user.id)
+      return false if participant.blank?
 
-    def block_visible_to_user?(block)
-      block_visible?(block)
-    end
-
-    def block_visible_to_stream?(block)
-      block_visible?(block)
-    end
-
-    def resolve_block_for_user(user, blocks: visible_blocks)
-      return nil if blocks.empty?
-
-      parent_blocks = blocks.reject(&:child_block?)
-
-      participant_record = @participant || (@participants_by_user_id&.dig(user.id)) || experience
-        .experience_participants
-        .find_by(user_id: user.id)
-      return nil unless participant_record
-
-      parent_blocks.sort_by(&:position).each do |block|
-        if block.has_dependencies?
-          unresolved_child = BlockResolver.next_unresolved_child(
-            block: block,
-            participant: participant_record,
-            submissions_cache: @submissions_cache
-          )
-
-          return unresolved_child if unresolved_child
-          return block
-        else
-          return block
-        end
-      end
-
-      nil
-    end
-
-    def next_block_for_user(user)
-      current_block = resolve_block_for_user(user)
-      return nil unless current_block
-
-      # Get all visible blocks except the current resolved block
-      blocks_without_current = visible_blocks.reject { |b| b == current_block }
-
-      # Use the same resolution logic on the remaining blocks
-      resolve_block_for_user(user, blocks: blocks_without_current)
-    end
-
-    def visible_blocks
-      @visible_blocks ||= begin
-        blocks = @preloaded_blocks || experience.experience_blocks.order(position: :asc)
-
-        return blocks if user_admin?
-        return [] if participant_role.nil?
-
-        blocks
-          .select { |block| moderator_or_host? || block_visible_by_status?(block) }
-          .select { |block| rules_allow_block?(block) }
+      if block.parent_block?
+        participant_visible_blocks(participant).include?(block)
+      else
+        block.visible_by_status?(@experience) &&
+          block.visible_to?(role: participant.role, segments: participant.segment_names, user_id: participant.user_id)
       end
     end
 
     private
 
-    def user_admin?
-      user_role == "admin" || user_role == "superadmin"
+    def admin_visible_blocks
+      @experience.experience_blocks.order(position: :asc).select(&:parent_block?)
     end
 
-    def moderator_or_host?
-      ["moderator", "host"].include?(participant_role.to_s)
-    end
+    def monitor_visible_blocks
+      all     = @experience.experience_blocks.includes(:experience_segments).order(position: :asc).to_a
+      parents = all.select(&:parent_block?)
+      children_by_parent = all.reject { |b| b.parent_block_id.nil? }.group_by(&:parent_block_id)
 
-    def block_visible_by_status?(block)
-      return true if block.open?
-      return true if experience.status == "lobby" && block.show_in_lobby?
-
-      false
-    end
-
-    def rules_allow_block?(block)
-      return true if moderator_or_host?
-
-      targeting_rules_exist = block.visible_to_roles.present? ||
-        block.experience_segments.any? ||
-        block.target_user_ids.present?
-
-      return true unless targeting_rules_exist
-
-      allowed_from_roles?(block) ||
-        allowed_from_segments?(block) ||
-        allowed_from_user_target?(block)
-    end
-
-    def allowed_from_roles?(block)
-      block.visible_to_roles.include?(participant_role.to_s)
-    end
-
-    def allowed_from_segments?(block)
-      (block.visible_to_segment_names & segments).any?
-    end
-
-    def allowed_from_user_target?(block)
-      (block.target_user_ids.map(&:to_s) & target_user_ids.map(&:to_s)).any?
-    end
-
-    def serialize_block_for_user(block, user)
-      BlockSerializer.serialize_for_user(
-        block, participant_role: participant_role, user: user, submissions_cache: @submissions_cache
-      )
-    end
-
-    def serialize_block_for_stream(block)
-      BlockSerializer.serialize_for_stream(
-        block, participant_role: participant_role, submissions_cache: @submissions_cache
-      )
-    end
-
-    def self.responded_participant_ids_for_monitor(experience:, blocks: nil, participants: nil, submissions_cache: nil)
-      all_blocks = blocks || experience.experience_blocks.to_a
-      participant_list = participants || experience.experience_participants.to_a
-
-      active_blocks = all_blocks.select do |block|
-        block.parent_block_id.nil? &&
-          block.status == 'open' &&
-          block.visible_to_roles.empty? &&
-          block.target_user_ids.empty?
-      end
-
-      return [] if active_blocks.empty?
-
-      responded_user_ids = Set.new
-
-      if submissions_cache
-        active_blocks.each do |block|
-          (submissions_cache[block.id] || {}).each_key { |uid| responded_user_ids.add(uid) }
-          child_blocks = all_blocks.select { |b| b.parent_block_id == block.id }
-          child_blocks.each do |child|
-            (submissions_cache[child.id] || {}).each_key { |uid| responded_user_ids.add(uid) }
-          end
-        end
+      candidates = if @experience.status == "lobby"
+        parents.select { |b| b.show_in_lobby? && !b.has_visibility_rules? }
       else
-        block_ids = active_blocks.flat_map { |b| [b.id] + all_blocks.select { |c| c.parent_block_id == b.id }.map(&:id) }
-        [
-          ExperiencePollSubmission,
-          ExperienceQuestionSubmission,
-          ExperienceMultistepFormSubmission,
-          ExperienceMadLibSubmission
-        ].each do |klass|
-          klass.where(experience_block_id: block_ids).distinct.pluck(:user_id).each do |uid|
-            responded_user_ids.add(uid)
-          end
-        end
+        parents.select { |b| b.open? && !b.has_visibility_rules? }
       end
 
-      user_to_participant = participant_list.each_with_object({}) { |p, h| h[p.user_id] = p.id }
-      responded_user_ids.filter_map { |uid| user_to_participant[uid] }
+      candidates
+        .reject { |b| b.payload["show_on_monitor"] == false }
+        .sort_by(&:position)
+        .flat_map { |parent| resolve_monitor_entry(parent, children_by_parent[parent.id] || []) }
     end
 
-    def self.participant_block_active?(experience)
-      experience.parent_blocks
-        .where(status: 'open')
+    def participant_visible_blocks(participant)
+      all     = @experience.experience_blocks.includes(:experience_segments).order(position: :asc).to_a
+      parents = all.select(&:parent_block?)
+
+      return parents if host_or_moderator?(participant.role)
+      return parents if participant.user.admin? || participant.user.superadmin?
+
+      parents
+        .select { |b| b.visible_by_status?(@experience) }
+        .select { |b| b.visible_to?(role: participant.role, segments: participant.segment_names, user_id: participant.user_id) }
+    end
+
+    def resolve_participant_block(blocks, participant)
+      blocks.sort_by(&:position).each do |block|
+        if block.has_dependencies?
+          unresolved = BlockResolver.next_unresolved_child(block: block, participant: participant)
+          return unresolved if unresolved
+        end
+        return block
+      end
+      nil
+    end
+
+    def resolve_monitor_entry(parent, children)
+      sorted = children.sort_by(&:position)
+      return [parent] if sorted.empty?
+      return [parent] if parent.kind == ExperienceBlock::FAMILY_FEUD
+
+      first = sorted.first
+      first.has_visibility_rules? ? [parent] : [first]
+    end
+
+    def participant_block_active?
+      @experience.parent_blocks
+        .where(status: "open")
         .where(visible_to_roles: [], target_user_ids: [])
         .where.missing(:experience_block_segments)
-        .any? { |block| block.payload['show_on_monitor'] == false }
+        .any? { |b| b.payload["show_on_monitor"] == false }
     end
 
-    def self.experience_structure(experience, blocks, next_block: nil, participant_block_active: nil, responded_participant_ids: nil)
-      structure = {
-        id: experience.id,
-        code: experience.code,
-        status: experience.status,
-        started_at: experience.started_at,
-        ended_at: experience.ended_at,
-        blocks: blocks,
-        next_block: next_block
+    def responded_participant_ids
+      active_block_ids = @experience.parent_blocks
+        .where(status: "open")
+        .where(visible_to_roles: [], target_user_ids: [])
+        .where.missing(:experience_block_segments)
+        .pluck(:id)
+
+      return [] if active_block_ids.empty?
+
+      child_block_ids  = ExperienceBlock.where(parent_block_id: active_block_ids).pluck(:id)
+      all_block_ids    = active_block_ids + child_block_ids
+
+      responded_user_ids = [
+        ExperiencePollSubmission,
+        ExperienceQuestionSubmission,
+        ExperienceMultistepFormSubmission,
+        ExperienceMadLibSubmission
+      ].flat_map { |klass| klass.where(experience_block_id: all_block_ids).distinct.pluck(:user_id) }.uniq
+
+      @experience.experience_participants.where(user_id: responded_user_ids).pluck(:id)
+    end
+
+    # --- Block serialization ---
+
+    def serialize_block(block, participant_role:, user: nil, depth: 0)
+      {
+        id:      block.id,
+        kind:    block.kind,
+        status:  block.status,
+        payload: block.payload
       }
-      structure[:participant_block_active] = participant_block_active unless participant_block_active.nil?
-      structure[:responded_participant_ids] = responded_participant_ids unless responded_participant_ids.nil?
-      structure
+        .merge(responses: serialize_response_data(block, participant_role, user))
+        .merge(visibility_metadata(block, participant_role, user))
+        .merge(dag_metadata(block, participant_role, user, depth))
+    end
+
+    def serialize_monitor_block(block)
+      serialized = serialize_block(block, participant_role: "host")
+
+      if block.kind == ExperienceBlock::MAD_LIB
+        all_resolved = @experience.experience_participants.each_with_object({}) do |participant, vars|
+          vars.merge!(BlockResolver.resolve_variables(block: block, participant: participant))
+        end
+        serialized[:responses][:resolved_variables] = all_resolved
+      end
+
+      serialized
+    end
+
+    def serialize_response_data(block, participant_role, user)
+      case block.kind
+      when ExperienceBlock::POLL
+        submissions  = block.experience_poll_submissions.to_a
+        user_response = submissions.find { |s| s.user_id == user&.id }
+
+        response = {
+          total:          submissions.count,
+          user_response:  format_poll_response(user_response),
+          user_responded: user_response.present?
+        }
+
+        if mod_or_host?(participant_role) && submissions.any?
+          response[:aggregate] = calculate_poll_aggregate(submissions)
+        else
+          response[:aggregate] = mod_or_host?(participant_role) ? {} : nil
+        end
+
+        if mod_or_host?(participant_role) || admin_user?(user)
+          response[:all_responses] = submissions.map { |s| submission_payload(s) }
+        end
+
+        response
+
+      when ExperienceBlock::QUESTION
+        submissions   = block.experience_question_submissions.to_a
+        user_response = submissions.find { |s| s.user_id == user&.id }
+
+        response = {
+          total:          submissions.count,
+          user_response:  format_poll_response(user_response),
+          user_responded: user_response.present?
+        }
+
+        if mod_or_host?(participant_role) || admin_user?(user)
+          response[:all_responses] = submissions.map { |s| submission_payload(s) }
+        end
+
+        response
+
+      when ExperienceBlock::MULTISTEP_FORM
+        submissions   = block.experience_multistep_form_submissions.to_a
+        user_response = submissions.find { |s| s.user_id == user&.id }
+
+        response = {
+          total:          submissions.count,
+          user_response:  format_poll_response(user_response),
+          user_responded: user_response.present?
+        }
+
+        if mod_or_host?(participant_role) || admin_user?(user)
+          response[:all_responses] = submissions.map { |s| submission_payload(s) }
+        end
+
+        response
+
+      when ExperienceBlock::ANNOUNCEMENT
+        {}
+
+      when ExperienceBlock::MAD_LIB
+        participant    = user && @experience.experience_participants.find_by(user_id: user.id)
+        resolved_vars  = participant ? BlockResolver.resolve_variables(block: block, participant: participant) : {}
+        total          = block.has_dependencies? ? block.children.sum { |c| c.experience_question_submissions.count + c.experience_poll_submissions.count } : 0
+
+        { total: total, user_response: nil, user_responded: false, resolved_variables: resolved_vars }
+
+      when ExperienceBlock::PHOTO_UPLOAD
+        submissions   = block.experience_photo_upload_submissions.includes(photo_attachment: :blob).to_a
+        user_response = submissions.find { |s| s.user_id == user&.id }
+
+        response = {
+          total:          submissions.count,
+          user_response:  user_response && { id: user_response.id, answer: user_response.answer, photo_url: attachment_url(user_response.photo) },
+          user_responded: user_response.present?
+        }
+
+        if mod_or_host?(participant_role) || admin_user?(user)
+          response[:all_responses] = submissions.map { |s| submission_payload(s).merge(photo_url: attachment_url(s.photo)) }
+        end
+
+        response
+
+      when ExperienceBlock::BUZZER
+        submissions   = block.experience_buzzer_submissions.order(Arel.sql("answer->>'buzzed_at' ASC")).to_a
+        user_response = submissions.find { |s| s.user_id == user&.id }
+        winner        = submissions.first
+        winner_avatar = winner && @experience.experience_participants.find_by(user_id: winner.user_id)&.avatar&.presence
+
+        {
+          total:          submissions.count,
+          user_response:  user_response ? { id: user_response.id, answer: user_response.answer } : nil,
+          user_responded: user_response.present?,
+          all_responses:  submissions.map.with_index do |s, i|
+            entry = submission_payload(s)
+            entry[:avatar] = winner_avatar if i == 0 && winner_avatar
+            entry
+          end
+        }
+
+      else
+        {}
+      end
+    end
+
+    def visibility_metadata(block, participant_role, user)
+      return {} unless mod_or_host?(participant_role) || admin_user?(user)
+
+      {
+        visible_to_roles:    block.visible_to_roles,
+        visible_to_segments: block.visible_to_segment_names,
+        target_user_ids:     block.target_user_ids,
+        show_in_lobby:       block.show_in_lobby
+      }
+    end
+
+    def dag_metadata(block, participant_role, user, depth)
+      return {} unless mod_or_host?(participant_role) || admin_user?(user)
+
+      metadata = {
+        child_block_ids:  block.children.map(&:id),
+        parent_block_ids: block.parents.map(&:id)
+      }
+
+      if depth == 0 && block.children.any?
+        metadata[:children] = block.children.map do |child|
+          serialize_block(child, participant_role: participant_role, user: user, depth: depth + 1)
+        end
+      end
+
+      if block.kind == ExperienceBlock::MAD_LIB
+        metadata[:variables]        = block.variables.map { |v| { id: v.id, key: v.key, label: v.label, datatype: v.datatype, required: v.required } }
+        metadata[:variable_bindings] = block.variables.flat_map { |v| v.bindings.map { |b| { id: b.id, variable_id: b.variable_id, source_block_id: b.source_block_id } } }
+      end
+
+      metadata
+    end
+
+    # --- Experience serialization ---
+
+    def experience_payload(blocks:, **extra)
+      base_url     = Rails.application.config.app_base_url
+      participants = @experience.experience_participants.includes(:user).to_a
+
+      result = {
+        id:               @experience.id,
+        name:             @experience.name,
+        code:             @experience.code,
+        code_slug:        @experience.code_slug,
+        url:              "#{base_url}/experiences/#{@experience.code_slug}",
+        status:           @experience.status,
+        description:      @experience.description,
+        creator_id:       @experience.creator_id,
+        created_at:       @experience.created_at,
+        updated_at:       @experience.updated_at,
+        blocks:           blocks,
+        playbill_enabled: @experience.playbill_enabled,
+        playbill:         serialize_playbill,
+        segments:         serialize_segments,
+        hosts:            serialize_participants(participants.select { |p| p.role == "host" }),
+        participants:     serialize_participants(participants)
+      }
+
+      result.merge(extra)
+    end
+
+    def serialize_participants(participants)
+      participants.map do |p|
+        {
+          id:            p.id,
+          user_id:       p.user.id,
+          experience_id: p.experience_id,
+          name:          p.name,
+          email:         p.user.email,
+          status:        p.status,
+          role:          p.role,
+          segments:      p.segment_names,
+          joined_at:     p.joined_at,
+          fingerprint:   p.fingerprint,
+          created_at:    p.created_at,
+          updated_at:    p.updated_at
+        }
+      end
+    end
+
+    def serialize_segments
+      @experience.experience_segments.order(position: :asc).map do |s|
+        { id: s.id, name: s.name, color: s.color, position: s.position }
+      end
+    end
+
+    def serialize_playbill
+      return [] unless @experience.playbill.is_a?(Array)
+
+      @experience.playbill.map do |section|
+        resolved = section.dup
+        if section["image_signed_id"].present?
+          blob = ActiveStorage::Blob.find_signed(section["image_signed_id"])
+          resolved["image_url"] = blob ? ActiveStorageUrlService.blob_url(blob) : nil
+        end
+        resolved
+      end
+    end
+
+    # --- Helpers ---
+
+    def format_poll_response(submission)
+      return nil unless submission
+      { id: submission.id, answer: { selectedOptions: Array(submission.answer["selectedOptions"]) } }
+    end
+
+    def calculate_poll_aggregate(submissions)
+      submissions.each_with_object({}) do |s, agg|
+        Array(s.answer["selectedOptions"]).each { |opt| agg[opt] = (agg[opt] || 0) + 1 }
+      end
+    end
+
+    def submission_payload(submission)
+      { id: submission.id, user_id: submission.user_id, answer: submission.answer, created_at: submission.created_at }
+    end
+
+    def attachment_url(attachment)
+      attachment.attached? ? ActiveStorageUrlService.blob_url(attachment.blob) : nil
+    end
+
+    def host_or_moderator?(role)
+      role.to_s.in?(%w[host moderator])
+    end
+
+    alias_method :mod_or_host?, :host_or_moderator?
+
+    def admin_user?(user)
+      user&.role.to_s.in?(%w[admin superadmin])
     end
   end
 end

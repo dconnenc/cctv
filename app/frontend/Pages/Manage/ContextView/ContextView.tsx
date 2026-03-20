@@ -23,8 +23,9 @@ export default function ContextView({
   title,
 }: ContextViewProps) {
   const panelTitle = title || (viewMode === 'monitor' ? 'Monitor View' : 'Current');
-  if (viewMode === 'monitor' && monitorView) {
-    const monitorBlock = monitorView.blocks[0];
+
+  if (viewMode === 'monitor') {
+    const monitorBlock = monitorView?.blocks[0];
 
     return (
       <Panel title={panelTitle}>

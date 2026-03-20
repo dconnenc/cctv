@@ -185,9 +185,7 @@ export default function BlockDetailPanel({
             ) : selectedBlock.id === currentOpenBlock?.id ? (
               <ContextView
                 block={
-                  viewMode === 'monitor'
-                    ? (monitorView?.next_block ?? undefined)
-                    : (participantView?.blocks[0] ?? undefined)
+                  viewMode === 'monitor' ? undefined : (participantView?.blocks[0] ?? undefined)
                 }
                 participant={
                   viewMode === 'participant'

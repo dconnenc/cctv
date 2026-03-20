@@ -5,51 +5,41 @@ class WebsocketMessageService
   MESSAGE_TYPES = {
     # Experience updates
     EXPERIENCE_STATE: 'experience_state',
-    EXPERIENCE_UPDATED: 'experience_updated', 
+    EXPERIENCE_UPDATED: 'experience_updated',
     STREAM_CHANGED: 'stream_changed',
-    
+
     # Block-specific updates
     FAMILY_FEUD_UPDATED: 'family_feud_updated',
-    
+
     # Subscription management
     RESUBSCRIBE_REQUIRED: 'resubscribe_required',
-    
+
     # ActionCable built-ins
     CONFIRM_SUBSCRIPTION: 'confirm_subscription',
     PING: 'ping'
   }.freeze
 
   # Build experience state message (initial subscription)
-  def self.experience_state(experience, visibility_payload:, logical_stream:, participant_id:, participant: nil, include_participants: false, participants: nil)
+  def self.experience_state(visibility_payload, logical_stream:, participant_id:, participant: nil)
     message = {
       type: MESSAGE_TYPES[:EXPERIENCE_STATE],
-      experience: ExperienceSerializer.serialize_for_websocket_message(
-        experience,
-        visibility_payload: visibility_payload,
-        include_participants: include_participants,
-        participants: participants
-      ),
+      experience: visibility_payload,
       metadata: {
         logical_stream: logical_stream,
         participant_id: participant_id,
         timestamp: Time.current.to_f
       }
     }
-    
+
     message[:participant] = participant if participant
     message
   end
 
   # Build experience updated message (broadcasts)
-  def self.experience_updated(experience, visibility_payload:, stream_key:, stream_type:, participant_id:, role:, segments:, participant: nil, include_participants: false, participants: nil)
+  def self.experience_updated(visibility_payload, stream_key:, stream_type:, participant_id:, role:, segments:, participant: nil)
     message = {
       type: MESSAGE_TYPES[:EXPERIENCE_UPDATED],
-      experience: ExperienceSerializer.serialize_for_websocket_message(
-        experience,
-        visibility_payload: visibility_payload,
-        include_participants: include_participants,
-        participants: participants
-      ),
+      experience: visibility_payload,
       metadata: {
         stream_key: stream_key,
         stream_type: stream_type,
@@ -59,20 +49,16 @@ class WebsocketMessageService
         timestamp: Time.current.to_f
       }
     }
-    
+
     message[:participant] = participant if participant
     message
   end
 
   # Build stream changed message (resubscription complete)
-  def self.stream_changed(experience, visibility_payload:, old_stream:, new_stream:, participant_id:, participant: nil, include_participants: false)
+  def self.stream_changed(visibility_payload, old_stream:, new_stream:, participant_id:, participant: nil)
     message = {
       type: MESSAGE_TYPES[:STREAM_CHANGED],
-      experience: ExperienceSerializer.serialize_for_websocket_message(
-        experience,
-        visibility_payload: visibility_payload,
-        include_participants: include_participants
-      ),
+      experience: visibility_payload,
       metadata: {
         old_stream: old_stream,
         new_stream: new_stream,
@@ -80,7 +66,7 @@ class WebsocketMessageService
         timestamp: Time.current.to_f
       }
     }
-    
+
     message[:participant] = participant if participant
     message
   end
