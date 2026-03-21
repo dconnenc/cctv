@@ -2,7 +2,7 @@ class ExperienceBlockLink < ApplicationRecord
   belongs_to :parent_block, class_name: "ExperienceBlock"
   belongs_to :child_block, class_name: "ExperienceBlock"
 
-  enum relationship: {
+  enum :relationship, {
     depends_on: "depends_on"
   }
 
