@@ -353,12 +353,9 @@ RSpec.describe Api::ExperienceBlocksController, type: :controller do
         create(:experience_poll_submission, experience_block: block, user: player.user)
       end
 
-      it "returns 422 with an error message" do
-        subject
-        expect(response.status).to eql(422)
-        json = JSON.parse(response.body)
-        expect(json["success"]).to be(false)
-        expect(json["error"]).to match(/Cannot change poll options/)
+      it "clears submissions and returns 200" do
+        expect { subject }.to change { ExperiencePollSubmission.count }.by(-1)
+        expect(response.status).to eql(200)
       end
     end
 
@@ -380,7 +377,7 @@ RSpec.describe Api::ExperienceBlocksController, type: :controller do
         expect(response.status).to eql(422)
         json = JSON.parse(response.body)
         expect(json["success"]).to be(false)
-        expect(json["error"]).to match(/Cannot edit a Mad Lib after/)
+        expect(json["error"]).to match(/Cannot edit a Mad Lib while it is active/)
       end
     end
 
@@ -398,12 +395,10 @@ RSpec.describe Api::ExperienceBlocksController, type: :controller do
         create(:experience_question_submission, experience_block: child, user: player.user)
       end
 
-      it "returns 422 with an error message" do
+      it "allows the edit and returns 200" do
         subject
-        expect(response.status).to eql(422)
-        json = JSON.parse(response.body)
-        expect(json["success"]).to be(false)
-        expect(json["error"]).to match(/Cannot edit a Family Feud block/)
+        expect(response.status).to eql(200)
+        expect(block.reload.payload["title"]).to eql("Updated Title")
       end
     end
 
