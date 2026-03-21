@@ -790,9 +790,9 @@ export interface EditBlockContextValue {
   setVisibleSegments: (segments: string[]) => void;
   viewAdditionalDetails: boolean;
   setViewAdditionalDetails: (view: boolean) => void;
-  pendingSegmentWarning: boolean;
-  confirmSegmentWarning: () => void;
-  cancelSegmentWarning: () => void;
+  pendingWarning: string | null;
+  confirmWarning: () => void;
+  cancelWarning: () => void;
 }
 
 export interface CreateBlockContextValue {

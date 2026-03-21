@@ -165,7 +165,7 @@ export function EditBlockProvider({
   const initialVisibleSegments = block.visible_to_segments ?? [];
   const [visibleSegments, setVisibleSegments] = useState<string[]>(initialVisibleSegments);
   const [viewAdditionalDetails, setViewAdditionalDetails] = useState<boolean>(false);
-  const [pendingSegmentWarning, setPendingSegmentWarning] = useState(false);
+  const [pendingWarning, setPendingWarning] = useState<string | null>(null);
   const pendingVisibleSegmentIds = useRef<string[]>([]);
 
   const { experience } = useExperience();
@@ -240,13 +240,28 @@ export function EditBlockProvider({
       .map((name) => definedSegments.find((s) => s.name === name)?.id)
       .filter((id): id is string => id !== undefined);
 
-    const segmentsChanged =
-      JSON.stringify([...visibleSegments].sort()) !==
-      JSON.stringify([...initialVisibleSegments].sort());
+    const isOpen = block.status === 'open';
+    const submissionCount = block.responses?.total ?? 0;
+    const submissionWarnKinds: BlockKind[] = [
+      BlockKind.QUESTION,
+      BlockKind.BUZZER,
+      BlockKind.PHOTO_UPLOAD,
+      BlockKind.ANNOUNCEMENT,
+      BlockKind.POLL,
+      BlockKind.MULTISTEP_FORM,
+    ];
+    const hasSubmissions = submissionCount > 0 && submissionWarnKinds.includes(blockData.kind);
 
-    if (block.status === 'open' && segmentsChanged) {
+    if (isOpen || hasSubmissions) {
+      const parts: string[] = [];
+      if (isOpen)
+        parts.push('This block is currently active — participants may be interacting with it.');
+      if (hasSubmissions)
+        parts.push(
+          `${submissionCount} ${submissionCount === 1 ? 'response has' : 'responses have'} already been submitted.`,
+        );
       pendingVisibleSegmentIds.current = visible_to_segment_ids;
-      setPendingSegmentWarning(true);
+      setPendingWarning(parts.join(' '));
       return;
     }
 
@@ -256,18 +271,18 @@ export function EditBlockProvider({
     visibleSegments,
     experience,
     block.status,
-    initialVisibleSegments,
+    block.responses,
     performUpdate,
     setUpdateError,
   ]);
 
-  const confirmSegmentWarning = useCallback(async () => {
-    setPendingSegmentWarning(false);
+  const confirmWarning = useCallback(async () => {
+    setPendingWarning(null);
     await performUpdate(pendingVisibleSegmentIds.current);
   }, [performUpdate]);
 
-  const cancelSegmentWarning = useCallback(() => {
-    setPendingSegmentWarning(false);
+  const cancelWarning = useCallback(() => {
+    setPendingWarning(null);
     pendingVisibleSegmentIds.current = [];
   }, []);
 
@@ -282,9 +297,9 @@ export function EditBlockProvider({
     setVisibleSegments,
     viewAdditionalDetails,
     setViewAdditionalDetails,
-    pendingSegmentWarning,
-    confirmSegmentWarning,
-    cancelSegmentWarning,
+    pendingWarning,
+    confirmWarning,
+    cancelWarning,
   };
 
   return <EditBlockContext.Provider value={contextValue}>{children}</EditBlockContext.Provider>;

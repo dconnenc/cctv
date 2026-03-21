@@ -57,9 +57,9 @@ function EditBlockForm({ onClose, block }: EditBlockFormProps) {
     error,
     viewAdditionalDetails,
     setViewAdditionalDetails,
-    pendingSegmentWarning,
-    confirmSegmentWarning,
-    cancelSegmentWarning,
+    pendingWarning,
+    confirmWarning,
+    cancelWarning,
   } = useEditBlockContext();
 
   return (
@@ -70,17 +70,14 @@ function EditBlockForm({ onClose, block }: EditBlockFormProps) {
       </DialogDescription>
       {error && <div className={styles.error}>{error}</div>}
 
-      {pendingSegmentWarning && (
+      {pendingWarning && (
         <div className={styles.warning}>
-          <span>
-            This block is currently open to participants. Changing visibility may affect who can see
-            it.
-          </span>
+          <span>{pendingWarning}</span>
           <div className={styles.warningActions}>
-            <Button variant="secondary" onClick={cancelSegmentWarning}>
+            <Button variant="secondary" onClick={cancelWarning}>
               Cancel
             </Button>
-            <Button onClick={confirmSegmentWarning} loading={isSubmitting} loadingText="Saving...">
+            <Button onClick={confirmWarning} loading={isSubmitting} loadingText="Saving...">
               Save Anyway
             </Button>
           </div>
