@@ -262,7 +262,6 @@ export function EditBlockProvider({
       BlockKind.ANNOUNCEMENT,
       BlockKind.POLL,
       BlockKind.MULTISTEP_FORM,
-      BlockKind.FAMILY_FEUD,
       BlockKind.MAD_LIB,
     ];
     const hasSubmissions = submissionCount > 0 && submissionWarnKinds.includes(blockData.kind);

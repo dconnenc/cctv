@@ -701,8 +701,9 @@ RSpec.describe Experiences::Orchestrator do
 
       before { create(:experience_poll_submission, experience_block: block, user: user) }
 
-      it "raises UnsafeEditError" do
-        expect { subject }.to raise_error(Experiences::UnsafeEditError, /Cannot change poll options/)
+      it "clears submissions and saves" do
+        expect { subject }.to change { ExperiencePollSubmission.count }.by(-1)
+        expect(block.reload.payload["options"]).to include("c")
       end
     end
 
@@ -741,19 +742,30 @@ RSpec.describe Experiences::Orchestrator do
 
       before { create(:experience_multistep_form_submission, experience_block: block, user: user) }
 
-      it "raises UnsafeEditError" do
-        expect { subject }.to raise_error(Experiences::UnsafeEditError, /Cannot change form question structure/)
+      it "clears submissions and saves" do
+        expect { subject }.to change { ExperienceMultistepFormSubmission.count }.by(-1)
       end
     end
 
-    context "mad lib with submissions" do
-      let(:block) { create(:experience_block, :mad_lib, experience: experience) }
+    context "mad lib with submissions while active" do
+      let(:block) { create(:experience_block, :mad_lib, experience: experience, status: :open) }
       let(:new_payload) { { "parts" => [{ "id" => "1", "type" => "text", "content" => "hi" }] } }
 
       before { create(:experience_mad_lib_submission, experience_block: block, user: user) }
 
       it "raises UnsafeEditError" do
-        expect { subject }.to raise_error(Experiences::UnsafeEditError, /Cannot edit a Mad Lib after/)
+        expect { subject }.to raise_error(Experiences::UnsafeEditError, /Cannot edit a Mad Lib while it is active/)
+      end
+    end
+
+    context "mad lib with submissions while inactive" do
+      let(:block) { create(:experience_block, :mad_lib, experience: experience, status: :hidden) }
+      let(:new_payload) { { "parts" => [{ "id" => "1", "type" => "text", "content" => "hi" }] } }
+
+      before { create(:experience_mad_lib_submission, experience_block: block, user: user) }
+
+      it "clears mad lib and child question submissions and saves" do
+        expect { subject }.to change { ExperienceMadLibSubmission.count }.by(-1)
       end
     end
 
@@ -766,8 +778,9 @@ RSpec.describe Experiences::Orchestrator do
         create(:experience_question_submission, experience_block: child, user: user)
       end
 
-      it "raises UnsafeEditError" do
-        expect { subject }.to raise_error(Experiences::UnsafeEditError, /Cannot edit a Family Feud block/)
+      it "allows the edit" do
+        expect { subject }.not_to raise_error
+        expect(block.reload.payload["title"]).to eql("Updated")
       end
     end
 

@@ -133,13 +133,14 @@ RSpec.describe "Mad Lib Block", type: :system do
       within("li[aria-label='block 1']") { find("button", text: /mad.lib/i).click }
       click_button "Edit"
       expect(page).to have_text("Edit Block")
+
+      find("label", text: "Assign to participant").find("select").select("Alice (audience)")
       click_button "Save"
 
       expect(page).to have_text(/response has already been submitted/i)
       click_button "Save Anyway"
 
       expect(page).to have_no_text("Edit Block")
-      within("li[aria-label='block 1']") { expect(page).to have_css("button", text: /mad.lib/i) }
     end
   end
 end

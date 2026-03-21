@@ -219,7 +219,7 @@ RSpec.describe "Poll Block", type: :system do
         click_button "Save Anyway"
 
         within("li[aria-label='block 1']") { find("button", text: /poll/i).click }
-        expect(page).to have_text("Responses\n0")
+        expect(page).to have_text("Responses (0)")
       end
     end
   end
