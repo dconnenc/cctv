@@ -164,6 +164,9 @@ export function EditBlockProvider({
 
   const initialVisibleSegments = block.visible_to_segments ?? [];
   const [visibleSegments, setVisibleSegments] = useState<string[]>(initialVisibleSegments);
+  const [showOnMonitor, setShowOnMonitor] = useState<boolean>(
+    (block.payload as { show_on_monitor?: boolean }).show_on_monitor !== false,
+  );
   const [viewAdditionalDetails, setViewAdditionalDetails] = useState<boolean>(false);
   const [pendingWarning, setPendingWarning] = useState<string | null>(null);
   const pendingVisibleSegmentIds = useRef<string[]>([]);
@@ -181,8 +184,15 @@ export function EditBlockProvider({
     async (visible_to_segment_ids: string[]) => {
       const { payload, variables, questions } = buildUpdatePayload(blockData);
 
+      // Announcement controls show_on_monitor via its own form field; all other
+      // block types use the shared showOnMonitor state from AdditionalDetails.
+      const finalPayload =
+        blockData.kind !== BlockKind.ANNOUNCEMENT
+          ? { ...payload, show_on_monitor: showOnMonitor }
+          : payload;
+
       const result = await updateExperienceBlock(block.id, {
-        payload,
+        payload: finalPayload,
         visible_to_segment_ids,
         ...(variables && { variables }),
         ...(questions && { questions }),
@@ -192,7 +202,7 @@ export function EditBlockProvider({
         onClose();
       }
     },
-    [blockData, block.id, onClose, updateExperienceBlock],
+    [blockData, block.id, onClose, updateExperienceBlock, showOnMonitor],
   );
 
   const submit = useCallback(async () => {
@@ -295,6 +305,8 @@ export function EditBlockProvider({
     error: updateError,
     visibleSegments,
     setVisibleSegments,
+    showOnMonitor,
+    setShowOnMonitor,
     viewAdditionalDetails,
     setViewAdditionalDetails,
     pendingWarning,

@@ -790,6 +790,8 @@ export interface EditBlockContextValue {
   setVisibleSegments: (segments: string[]) => void;
   viewAdditionalDetails: boolean;
   setViewAdditionalDetails: (view: boolean) => void;
+  showOnMonitor: boolean;
+  setShowOnMonitor: (value: boolean) => void;
   pendingWarning: string | null;
   confirmWarning: () => void;
   cancelWarning: () => void;

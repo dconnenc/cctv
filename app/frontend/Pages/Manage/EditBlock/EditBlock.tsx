@@ -148,12 +148,23 @@ function BlockEditor() {
 }
 
 function AdditionalDetails() {
-  const { visibleSegments, setVisibleSegments } = useEditBlockContext();
+  const { blockData, visibleSegments, setVisibleSegments, showOnMonitor, setShowOnMonitor } =
+    useEditBlockContext();
   const { experience } = useExperience();
   const definedSegments = experience?.segments || [];
 
   return (
     <div className={styles.additionalDetails}>
+      {blockData.kind !== BlockKind.ANNOUNCEMENT && (
+        <label className={styles.checkboxLabel}>
+          <input
+            type="checkbox"
+            checked={showOnMonitor}
+            onChange={(e) => setShowOnMonitor(e.target.checked)}
+          />
+          Show on monitor
+        </label>
+      )}
       <div>
         <label style={{ fontSize: '0.85rem' }}>Visible to segments</label>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.25rem', marginTop: '0.25rem' }}>
