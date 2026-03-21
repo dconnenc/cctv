@@ -173,14 +173,15 @@ RSpec.describe "Buzzer Block", type: :system do
         within("li[aria-label='block 1']") { find("button", text: /buzzer/i).click }
       end
 
-      it "shows a warning about existing responses and saves after confirmation" do
+      it "warns that the block is active but saves after confirmation without a separate response warning" do
         click_button "Edit"
         expect(page).to have_text("Edit Block")
 
         fill_in "Prompt", with: "Updated prompt"
         click_button "Save"
 
-        expect(page).to have_text("response has already been submitted")
+        expect(page).to have_text("currently active")
+        expect(page).to have_no_text("response has already been submitted")
         click_button "Save Anyway"
 
         within("li[aria-label='block 1']") { find("button", text: /buzzer/i).click }

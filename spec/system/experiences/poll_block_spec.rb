@@ -207,6 +207,20 @@ RSpec.describe "Poll Block", type: :system do
         within("li[aria-label='block 1']") { find("button", text: /poll/i).click }
         expect(page).to have_text("Updated question?")
       end
+
+      it "warns, clears responses, and saves when poll options are changed" do
+        click_button "Edit"
+        expect(page).to have_text("Edit Block")
+
+        fill_in "Option 1", with: "maybe"
+        click_button "Save"
+
+        expect(page).to have_text("response has already been submitted")
+        click_button "Save Anyway"
+
+        within("li[aria-label='block 1']") { find("button", text: /poll/i).click }
+        expect(page).to have_text("Responses\n0")
+      end
     end
   end
 end

@@ -201,8 +201,14 @@ export function EditBlockProvider({
   const submit = useCallback(async () => {
     setUpdateError(null);
 
-    if (blockData.kind === BlockKind.MAD_LIB && (block.responses?.total ?? 0) > 0) {
-      setUpdateError('Cannot edit a Mad Lib after responses have been submitted.');
+    if (
+      blockData.kind === BlockKind.MAD_LIB &&
+      block.status === 'open' &&
+      (block.responses?.total ?? 0) > 0
+    ) {
+      setUpdateError(
+        'Cannot edit a Mad Lib while it is active. Stop presenting this block first — you will be asked to confirm before saving.',
+      );
       return;
     }
 
@@ -252,11 +258,12 @@ export function EditBlockProvider({
     const submissionCount = block.responses?.total ?? 0;
     const submissionWarnKinds: BlockKind[] = [
       BlockKind.QUESTION,
-      BlockKind.BUZZER,
       BlockKind.PHOTO_UPLOAD,
       BlockKind.ANNOUNCEMENT,
       BlockKind.POLL,
       BlockKind.MULTISTEP_FORM,
+      BlockKind.FAMILY_FEUD,
+      BlockKind.MAD_LIB,
     ];
     const hasSubmissions = submissionCount > 0 && submissionWarnKinds.includes(blockData.kind);
 

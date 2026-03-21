@@ -876,30 +876,24 @@ module Experiences
         if block.experience_poll_submissions.exists?
           old_opts = Array(block.payload["options"]).sort
           new_opts = Array(new_payload["options"]).sort
-          if old_opts != new_opts
-            raise Experiences::UnsafeEditError,
-              "Cannot change poll options after #{block.experience_poll_submissions.count} response(s) have been submitted."
-          end
+          block.experience_poll_submissions.delete_all if old_opts != new_opts
         end
       when ExperienceBlock::MULTISTEP_FORM
         if block.experience_multistep_form_submissions.exists?
           old_keys = (block.payload["questions"] || []).map { |q| q["formKey"] }
           new_keys = (new_payload["questions"] || []).map { |q| q["formKey"] }
-          if old_keys != new_keys
-            raise Experiences::UnsafeEditError,
-              "Cannot change form question structure after #{block.experience_multistep_form_submissions.count} response(s) have been submitted."
-          end
+          block.experience_multistep_form_submissions.delete_all if old_keys != new_keys
         end
       when ExperienceBlock::MAD_LIB
         if block.experience_mad_lib_submissions.exists?
-          raise Experiences::UnsafeEditError,
-            "Cannot edit a Mad Lib after #{block.experience_mad_lib_submissions.count} response(s) have been submitted."
-        end
-      when ExperienceBlock::FAMILY_FEUD
-        child_ids = block.child_blocks.pluck(:id)
-        if child_ids.any? && ExperienceQuestionSubmission.where(experience_block_id: child_ids).exists?
-          raise Experiences::UnsafeEditError,
-            "Cannot edit a Family Feud block after question responses have been submitted."
+          if block.status == "open"
+            raise Experiences::UnsafeEditError,
+              "Cannot edit a Mad Lib while it is active."
+          else
+            block.experience_mad_lib_submissions.delete_all
+            child_ids = block.child_blocks.pluck(:id)
+            ExperienceQuestionSubmission.where(experience_block_id: child_ids).delete_all
+          end
         end
       end
     end
