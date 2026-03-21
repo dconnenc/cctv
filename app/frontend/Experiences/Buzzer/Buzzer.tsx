@@ -139,7 +139,7 @@ export default function Buzzer({ block, viewContext = 'participant' }: BuzzerPro
     return () => cancelAnimationFrame(animRef.current);
   }, []);
 
-  if (viewContext === 'monitor') {
+  if (viewContext === 'monitor' || viewContext === 'manage') {
     if (!firstResponse) {
       return (
         <div className={styles.monitorWaiting}>
@@ -184,34 +184,30 @@ export default function Buzzer({ block, viewContext = 'participant' }: BuzzerPro
     );
   }
 
-  if (viewContext === 'participant') {
-    if (showBuzzed) {
-      return (
-        <div className={styles.buzzedState}>
-          <p className={styles.buzzedText}>Buzzed!</p>
-        </div>
-      );
-    }
-
+  if (showBuzzed) {
     return (
-      <div className={styles.participantRoot}>
-        <p className={styles.label}>{block.payload.label || 'Buzz In'}</p>
-        <div className={styles.buzzerArea}>
-          <button
-            className={styles.buzzerButton}
-            onClick={(e) => {
-              const rect = e.currentTarget.getBoundingClientRect();
-              spawnExplosion(rect.left + rect.width / 2, rect.top + rect.height / 2);
-              handleBuzz();
-            }}
-            disabled={isLoading}
-            aria-label="Buzz in"
-          />
-          <canvas ref={canvasRef} className={styles.particleLayer} />
-        </div>
+      <div className={styles.buzzedState}>
+        <p className={styles.buzzedText}>Buzzed!</p>
       </div>
     );
   }
 
-  return null;
+  return (
+    <div className={styles.participantRoot}>
+      <p className={styles.label}>{block.payload.label || 'Buzz In'}</p>
+      <div className={styles.buzzerArea}>
+        <button
+          className={styles.buzzerButton}
+          onClick={(e) => {
+            const rect = e.currentTarget.getBoundingClientRect();
+            spawnExplosion(rect.left + rect.width / 2, rect.top + rect.height / 2);
+            handleBuzz();
+          }}
+          disabled={isLoading}
+          aria-label="Buzz in"
+        />
+        <canvas ref={canvasRef} className={styles.particleLayer} />
+      </div>
+    </div>
+  );
 }
