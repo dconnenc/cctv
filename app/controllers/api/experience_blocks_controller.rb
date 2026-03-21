@@ -70,10 +70,21 @@ class Api::ExperienceBlocksController < Api::BaseController
 
   # PATCH /api/experiences/:experience_id/blocks/:id
   def update
-    render json: {
-      success: true,
-      data: block,
-    }, status: 200
+    with_experience_orchestration do
+      block = Experiences::Orchestrator.new(experience: @experience, actor: @user)
+        .update_block!(
+          block_id: params[:id],
+          payload: update_params[:payload] || {},
+          visible_to_segment_ids: update_params[:visible_to_segment_ids] || [],
+          variables: update_params[:variables],
+          questions: update_params[:questions]
+        )
+
+      @experience.reload
+      Experiences::Broadcaster.new(@experience).broadcast_experience_update
+
+      render json: { success: true, data: block }, status: 200
+    end
   end
 
   # POST /api/experiences/:experience_id/blocks/:id/reorder
@@ -535,6 +546,14 @@ class Api::ExperienceBlocksController < Api::BaseController
     permitted[:variables] = params[:block][:variables] if params[:block][:variables]
     permitted[:questions] = params[:block][:questions] if params[:block][:questions]
 
+    permitted
+  end
+
+  def update_params
+    permitted = params.require(:block).permit(visible_to_segment_ids: [])
+    permitted[:payload] = params[:block][:payload] if params[:block][:payload]
+    permitted[:variables] = params[:block][:variables] if params[:block][:variables]
+    permitted[:questions] = params[:block][:questions] if params[:block][:questions]
     permitted
   end
 end

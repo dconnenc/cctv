@@ -7,6 +7,7 @@ import {
   ParticipantSummary,
   QuestionApiPayload,
   QuestionData,
+  QuestionPayload,
 } from '@cctv/types';
 
 import sharedStyles from '../CreateBlock.module.scss';
@@ -46,6 +47,12 @@ export const canQuestionOpenImmediately = (
 ): boolean => {
   return true;
 };
+
+export const questionPayloadToFormData = (payload: QuestionPayload): QuestionData => ({
+  questionText: payload.question || '',
+  questionFormKey: payload.formKey || '',
+  questionInputType: payload.inputType || 'text',
+});
 
 export const processQuestionBeforeSubmit = (
   data: QuestionData,

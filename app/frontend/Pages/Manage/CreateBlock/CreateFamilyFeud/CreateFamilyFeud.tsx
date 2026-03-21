@@ -2,7 +2,13 @@ import { X } from 'lucide-react';
 
 import { Button } from '@cctv/core/Button/Button';
 import { TextInput } from '@cctv/core/TextInput/TextInput';
-import { BlockComponentProps, FamilyFeudData } from '@cctv/types';
+import {
+  Block,
+  BlockComponentProps,
+  FamilyFeudData,
+  FamilyFeudPayload,
+  QuestionPayload,
+} from '@cctv/types';
 
 import sharedStyles from '../CreateBlock.module.scss';
 import styles from './CreateFamilyFeud.module.scss';
@@ -45,6 +51,17 @@ export const buildFamilyFeudPayload = (data: FamilyFeudData) => {
     title: data.title.trim(),
   };
 };
+
+export const familyFeudPayloadToFormData = (
+  payload: FamilyFeudPayload,
+  children?: Block[],
+): FamilyFeudData => ({
+  title: payload.title || '',
+  questions: (children || []).map((child) => ({
+    id: child.id,
+    question: (child.payload as QuestionPayload).question || '',
+  })),
+});
 
 export const buildFamilyFeudQuestions = (data: FamilyFeudData) => {
   return data.questions

@@ -639,4 +639,199 @@ RSpec.describe Experiences::Orchestrator do
       ExperienceMultistepFormSubmission,
       :experience_multistep_form_submission
   end
+
+  describe "#update_block!" do
+    let(:participant_role) { ExperienceParticipant.roles[:host] }
+
+    subject do
+      described_class.new(actor: user, experience: experience).update_block!(
+        block_id: block.id,
+        payload: new_payload,
+        visible_to_segment_ids: [],
+        variables: variables,
+        questions: questions
+      )
+    end
+
+    let(:variables) { nil }
+    let(:questions) { nil }
+
+    context "updating a simple block" do
+      let(:block) do
+        create(
+          :experience_block,
+          experience: experience,
+          kind: ExperienceBlock::ANNOUNCEMENT,
+          payload: { "message" => "Hello" }
+        )
+      end
+      let(:new_payload) { { "message" => "Updated" } }
+
+      it "updates the block payload" do
+        subject
+        block.reload
+        expect(block.payload["message"]).to eql("Updated")
+      end
+
+      it "updates segment associations" do
+        segment = experience.experience_segments.create!(name: "Test", color: "#000", position: 0)
+        described_class.new(actor: user, experience: experience).update_block!(
+          block_id: block.id,
+          payload: new_payload,
+          visible_to_segment_ids: [segment.id]
+        )
+        block.reload
+        expect(block.experience_segment_ids).to include(segment.id)
+      end
+    end
+
+    context "when actor lacks manage_blocks? permission" do
+      let(:participant_role) { ExperienceParticipant.roles[:audience] }
+      let(:block) do
+        create(:experience_block, experience: experience, kind: ExperienceBlock::ANNOUNCEMENT, payload: {})
+      end
+      let(:new_payload) { {} }
+
+      it "raises ForbiddenError" do
+        expect { subject }.to raise_error(Experiences::ForbiddenError)
+      end
+    end
+
+    context "poll options changed with submissions" do
+      let(:block) do
+        create(
+          :experience_block,
+          experience: experience,
+          kind: ExperienceBlock::POLL,
+          payload: { "question" => "Q?", "options" => ["a", "b"], "pollType" => "single" }
+        )
+      end
+      let(:new_payload) { { "question" => "Q?", "options" => ["a", "c"], "pollType" => "single" } }
+
+      before { create(:experience_poll_submission, experience_block: block, user: user) }
+
+      it "raises UnsafeEditError" do
+        expect { subject }.to raise_error(Experiences::UnsafeEditError, /Cannot change poll options/)
+      end
+    end
+
+    context "poll options unchanged with submissions (question text changed)" do
+      let(:block) do
+        create(
+          :experience_block,
+          experience: experience,
+          kind: ExperienceBlock::POLL,
+          payload: { "question" => "Old Q?", "options" => ["a", "b"], "pollType" => "single" }
+        )
+      end
+      let(:new_payload) { { "question" => "New Q?", "options" => ["a", "b"], "pollType" => "single" } }
+
+      before { create(:experience_poll_submission, experience_block: block, user: user) }
+
+      it "does not raise an error" do
+        expect { subject }.not_to raise_error
+        block.reload
+        expect(block.payload["question"]).to eql("New Q?")
+      end
+    end
+
+    context "multistep form formKeys changed with submissions" do
+      let(:block) do
+        create(
+          :experience_block,
+          experience: experience,
+          kind: ExperienceBlock::MULTISTEP_FORM,
+          payload: { "questions" => [{ "question" => "Q1", "formKey" => "key1", "inputType" => "text" }] }
+        )
+      end
+      let(:new_payload) do
+        { "questions" => [{ "question" => "Q1", "formKey" => "key_changed", "inputType" => "text" }] }
+      end
+
+      before { create(:experience_multistep_form_submission, experience_block: block, user: user) }
+
+      it "raises UnsafeEditError" do
+        expect { subject }.to raise_error(Experiences::UnsafeEditError, /Cannot change form question structure/)
+      end
+    end
+
+    context "mad lib with submissions" do
+      let(:block) do
+        create(
+          :experience_block,
+          experience: experience,
+          kind: ExperienceBlock::MAD_LIB,
+          payload: { "parts" => [] }
+        )
+      end
+      let(:new_payload) { { "parts" => [{ "id" => "1", "type" => "text", "content" => "hi" }] } }
+
+      before { create(:experience_mad_lib_submission, experience_block: block, user: user) }
+
+      it "raises UnsafeEditError" do
+        expect { subject }.to raise_error(Experiences::UnsafeEditError, /Cannot edit a Mad Lib after/)
+      end
+    end
+
+    context "family feud with child submissions" do
+      let(:block) do
+        create(:experience_block, :family_feud, experience: experience, status: ExperienceBlock::HIDDEN)
+      end
+      let(:new_payload) { { "title" => "Updated" } }
+
+      before do
+        child = block.child_blocks.first
+        ExperienceQuestionSubmission.new(
+          experience_block: child,
+          user: user,
+          answer: "test answer"
+        ).tap { |s| s.save!(validate: false) }
+      end
+
+      it "raises UnsafeEditError" do
+        expect { subject }.to raise_error(Experiences::UnsafeEditError, /Cannot edit a Family Feud block/)
+      end
+    end
+
+    context "re-syncing mad lib variables when no submissions" do
+      let(:block) do
+        create(
+          :experience_block,
+          experience: experience,
+          kind: ExperienceBlock::MAD_LIB,
+          payload: { "parts" => [] }
+        )
+      end
+      let(:new_payload) { { "parts" => [] } }
+      let(:variables) do
+        [{ key: "newvar", label: "New Label", datatype: "string", required: true }]
+      end
+
+      before do
+        block.variables.create!(key: "oldvar", label: "Old Label", datatype: "string", required: true)
+      end
+
+      it "destroys old variables and creates new ones" do
+        subject
+        block.reload
+        expect(block.variables.pluck(:key)).to contain_exactly("newvar")
+        expect(block.variables.first.label).to eql("New Label")
+      end
+    end
+
+    context "propagating family feud question text to child blocks" do
+      let(:block) do
+        create(:experience_block, :family_feud, experience: experience, status: ExperienceBlock::HIDDEN)
+      end
+      let(:child) { block.child_blocks.first }
+      let(:new_payload) { { "title" => "New Title" } }
+      let(:questions) { [{ id: child.id, question: "Updated question" }] }
+
+      it "updates the child block payload" do
+        subject
+        child.reload
+        expect(child.payload["question"]).to eql("Updated question")
+      end
+    end
+  end
 end

@@ -1,5 +1,5 @@
 import { TextInput } from '@cctv/core/TextInput/TextInput';
-import { BlockKind, BlockStatus, ParticipantSummary } from '@cctv/types';
+import { AnnouncementPayload, BlockKind, BlockStatus, ParticipantSummary } from '@cctv/types';
 import { AnnouncementApiPayload, AnnouncementData, BlockComponentProps } from '@cctv/types';
 
 import sharedStyles from '../CreateBlock.module.scss';
@@ -34,6 +34,11 @@ export const canAnnouncementOpenImmediately = (
 ): boolean => {
   return true;
 };
+
+export const announcementPayloadToFormData = (payload: AnnouncementPayload): AnnouncementData => ({
+  message: payload.message || '',
+  show_on_monitor: payload.show_on_monitor !== false,
+});
 
 export const processAnnouncementBeforeSubmit = (
   data: AnnouncementData,

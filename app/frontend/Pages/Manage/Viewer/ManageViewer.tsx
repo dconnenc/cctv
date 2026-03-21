@@ -14,6 +14,7 @@ import { useReorderBlock } from '@cctv/hooks/useReorderBlock';
 import { Block, ParticipantSummary } from '@cctv/types';
 
 import CreateBlock from '../CreateBlock/CreateBlock';
+import EditBlock from '../EditBlock/EditBlock';
 import ParticipantsTab from '../ParticipantsTab/ParticipantsTab';
 import PlaybillTab from '../PlaybillTab/PlaybillTab';
 import BlockDetailPanel from './BlockDetailPanel';
@@ -88,6 +89,7 @@ export default function ManageViewer() {
   const [showParticipantDetails, setShowParticipantDetails] = useState(false);
   const [showDebugPanel, setShowDebugPanel] = useState(false);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [editingBlock, setEditingBlock] = useState<Block | null>(null);
   const [isPlaybillDialogOpen, setIsPlaybillDialogOpen] = useState(false);
   const [dismissedError, setDismissedError] = useState(false);
   const [viewMode, setViewMode] = useState<'monitor' | 'participant' | 'responses'>('monitor');
@@ -278,6 +280,7 @@ export default function ManageViewer() {
                 onPlayNext={onPlayNext}
                 onViewModeChange={setViewMode}
                 onImpersonatedParticipantChange={setImpersonatedParticipantId}
+                onEdit={setEditingBlock}
               />
             ) : (
               <div className="flex items-center justify-center h-full text-[hsl(var(--muted-foreground))]">
@@ -319,6 +322,23 @@ export default function ManageViewer() {
               await closeBlock(currentOpenBlock);
             }}
           />
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={editingBlock !== null}
+        onOpenChange={(open) => {
+          if (!open) setEditingBlock(null);
+        }}
+      >
+        <DialogContent style={{ maxWidth: '48rem', width: '100%' }}>
+          {editingBlock && (
+            <EditBlock
+              block={editingBlock}
+              onClose={() => setEditingBlock(null)}
+              participants={participantsCombined}
+            />
+          )}
         </DialogContent>
       </Dialog>
 

@@ -71,4 +71,54 @@ RSpec.describe "Mad Lib Block", type: :system do
       expect(page).to have_text("fluffy")
     end
   end
+
+  it "blocks editing a mad lib after a response has been submitted" do
+    sign_in(admin)
+    create_experience_and_go_to_manage(
+      name: "Test Experience", code: "test-exp"
+    )
+
+    click_button "Start"
+    expect(page).to have_button("Pause")
+
+    using_session(:alice) do
+      register_participant(
+        code: "test-exp",
+        name: "Alice",
+        email: "alice@example.com",
+        experience_name: "Test Experience"
+      )
+      expect(page).to have_text("Waiting for the next activity...")
+    end
+
+    visit current_path
+    click_button "Block"
+    expect(page).to have_text("Create Block")
+    select "Mad Lib", from: "Kind"
+
+    click_button "Add Variable"
+    fill_in "Variable Name", with: "word"
+    fill_in "Question to ask user", with: "Enter a word"
+    find("label", text: "Assign to participant").find("select").select("Alice (audience)")
+
+    click_button "Add Text"
+    fill_in "Text", with: "Hello "
+
+    click_button "Play now"
+    expect(page).to have_css("li[aria-label='block 1']")
+
+    using_session(:alice) do
+      find("input[type='text']").fill_in with: "world"
+      click_button "Submit"
+    end
+
+    visit current_path
+    within("li[aria-label='block 1']") { find("button", text: /mad.lib/i).click }
+    click_button "Edit"
+
+    expect(page).to have_text("Edit Block")
+    click_button "Save"
+
+    expect(page).to have_text(/Cannot edit a Mad Lib after/i)
+  end
 end

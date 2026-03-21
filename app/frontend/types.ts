@@ -767,6 +767,34 @@ export type FormBlockData =
   | { kind: BlockKind.PHOTO_UPLOAD; data: PhotoUploadData }
   | { kind: BlockKind.BUZZER; data: BuzzerData };
 
+export interface UpdateBlockPayload {
+  payload: ApiPayload | Record<string, unknown>;
+  visible_to_segment_ids: string[];
+  variables?: Array<{
+    key: string;
+    label: string;
+    datatype: string;
+    required: boolean;
+  }>;
+  questions?: Array<{ id: string; question: string }>;
+}
+
+export interface EditBlockContextValue {
+  blockData: FormBlockData;
+  setBlockData: (data: FormBlockData | ((prev: FormBlockData) => FormBlockData)) => void;
+  participants: ParticipantSummary[];
+  submit: () => Promise<void>;
+  isSubmitting: boolean;
+  error: string | null;
+  visibleSegments: string[];
+  setVisibleSegments: (segments: string[]) => void;
+  viewAdditionalDetails: boolean;
+  setViewAdditionalDetails: (view: boolean) => void;
+  pendingSegmentWarning: boolean;
+  confirmSegmentWarning: () => void;
+  cancelSegmentWarning: () => void;
+}
+
 export interface CreateBlockContextValue {
   // Form block data with discriminated union
   blockData: FormBlockData;

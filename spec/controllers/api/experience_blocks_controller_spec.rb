@@ -260,4 +260,270 @@ RSpec.describe Api::ExperienceBlocksController, type: :controller do
       end
     end
   end
+
+  describe "PATCH #update" do
+    let(:broadcaster) do
+      instance_double(Experiences::Broadcaster, broadcast_experience_update: true)
+    end
+
+    before do
+      allow(Experiences::Broadcaster).to receive(:new).and_return(broadcaster)
+    end
+
+    subject do
+      patch(
+        :update,
+        params: {
+          experience_id: experience.code_slug,
+          id: block.id,
+          block: update_params,
+        },
+        format: :json
+      )
+    end
+
+    context "updating an announcement block" do
+      let(:block) do
+        create(
+          :experience_block,
+          experience: experience,
+          kind: ExperienceBlock::ANNOUNCEMENT,
+          payload: { "message" => "Hello", "show_on_monitor" => true },
+          status: ExperienceBlock::HIDDEN
+        )
+      end
+      let(:update_params) do
+        {
+          payload: { "message" => "Updated message", "show_on_monitor" => false },
+          visible_to_segment_ids: []
+        }
+      end
+
+      it "updates the block payload and returns 200" do
+        subject
+        expect(response.status).to eql(200)
+        block.reload
+        expect(block.payload["message"]).to eql("Updated message")
+      end
+
+      it "broadcasts the experience update" do
+        subject
+        expect(broadcaster).to have_received(:broadcast_experience_update)
+      end
+    end
+
+    context "updating a poll block question text (no submissions)" do
+      let(:block) do
+        create(
+          :experience_block,
+          experience: experience,
+          kind: ExperienceBlock::POLL,
+          payload: {
+            "question" => "Old question",
+            "options" => ["yes", "no"],
+            "pollType" => "single"
+          }
+        )
+      end
+      let(:update_params) do
+        {
+          payload: {
+            "question" => "New question",
+            "options" => ["yes", "no"],
+            "pollType" => "single"
+          },
+          visible_to_segment_ids: []
+        }
+      end
+
+      it "updates the question text and returns 200" do
+        subject
+        expect(response.status).to eql(200)
+        block.reload
+        expect(block.payload["question"]).to eql("New question")
+      end
+    end
+
+    context "updating a poll block with changed options when submissions exist" do
+      let(:block) do
+        create(
+          :experience_block,
+          experience: experience,
+          kind: ExperienceBlock::POLL,
+          payload: {
+            "question" => "Favorite color?",
+            "options" => ["red", "blue"],
+            "pollType" => "single"
+          }
+        )
+      end
+      let(:update_params) do
+        {
+          payload: {
+            "question" => "Favorite color?",
+            "options" => ["red", "green"],
+            "pollType" => "single"
+          },
+          visible_to_segment_ids: []
+        }
+      end
+
+      before do
+        ExperiencePollSubmission.new(
+          experience_block: block,
+          user: admin,
+          answer: { "selectedOptions" => ["red"] }
+        ).tap { |s| s.save!(validate: false) }
+      end
+
+      it "returns 422 with an error message" do
+        subject
+        expect(response.status).to eql(422)
+        json = JSON.parse(response.body)
+        expect(json["success"]).to be(false)
+        expect(json["error"]).to match(/Cannot change poll options/)
+      end
+    end
+
+    context "updating a mad lib when submissions exist" do
+      let(:block) do
+        create(
+          :experience_block,
+          kind: ExperienceBlock::MAD_LIB,
+          experience: experience,
+          payload: { "parts" => [] }
+        )
+      end
+      let(:update_params) do
+        {
+          payload: { "parts" => [{ "id" => "1", "type" => "text", "content" => "hello" }] },
+          visible_to_segment_ids: []
+        }
+      end
+
+      before do
+        ExperienceMadLibSubmission.new(
+          experience_block: block,
+          user: admin,
+          answer: {}
+        ).tap { |s| s.save!(validate: false) }
+      end
+
+      it "returns 422 with an error message" do
+        subject
+        expect(response.status).to eql(422)
+        json = JSON.parse(response.body)
+        expect(json["success"]).to be(false)
+        expect(json["error"]).to match(/Cannot edit a Mad Lib after/)
+      end
+    end
+
+    context "updating a family feud block with child submissions" do
+      let(:block) do
+        create(:experience_block, :family_feud, experience: experience, status: ExperienceBlock::HIDDEN)
+      end
+      let(:update_params) do
+        {
+          payload: { "title" => "Updated Title" },
+          visible_to_segment_ids: []
+        }
+      end
+
+      before do
+        child = block.child_blocks.first
+        ExperienceQuestionSubmission.new(
+          experience_block: child,
+          user: admin,
+          answer: "test answer"
+        ).tap { |s| s.save!(validate: false) }
+      end
+
+      it "returns 422 with an error message" do
+        subject
+        expect(response.status).to eql(422)
+        json = JSON.parse(response.body)
+        expect(json["success"]).to be(false)
+        expect(json["error"]).to match(/Cannot edit a Family Feud block/)
+      end
+    end
+
+    context "propagating question edits to family feud child blocks" do
+      let(:block) do
+        create(:experience_block, :family_feud, experience: experience, status: ExperienceBlock::HIDDEN)
+      end
+      let(:child) { block.child_blocks.first }
+      let(:update_params) do
+        {
+          payload: { "title" => "New Title" },
+          visible_to_segment_ids: [],
+          questions: [{ id: child.id, question: "Updated question text" }]
+        }
+      end
+
+      it "updates the child block question text" do
+        subject
+        expect(response.status).to eql(200)
+        child.reload
+        expect(child.payload["question"]).to eql("Updated question text")
+      end
+    end
+
+    context "re-syncing mad lib variables" do
+      let(:block) do
+        create(
+          :experience_block,
+          kind: ExperienceBlock::MAD_LIB,
+          experience: experience,
+          payload: { "parts" => [] }
+        )
+      end
+      let(:update_params) do
+        {
+          payload: { "parts" => [] },
+          visible_to_segment_ids: [],
+          variables: [
+            { key: "newvar", label: "New Variable", datatype: "string", required: true }
+          ]
+        }
+      end
+
+      before do
+        block.variables.create!(key: "oldvar", label: "Old Variable", datatype: "string", required: true)
+      end
+
+      it "destroys old variables and creates new ones" do
+        subject
+        expect(response.status).to eql(200)
+        block.reload
+        expect(block.variables.pluck(:key)).to contain_exactly("newvar")
+      end
+    end
+
+    context "when actor is not a host or admin" do
+      let(:regular_user) { create(:user, :user) }
+      let(:participant) { create(:experience_participant, user: regular_user, experience: experience, role: :audience) }
+      let(:block) do
+        create(
+          :experience_block,
+          experience: experience,
+          kind: ExperienceBlock::ANNOUNCEMENT,
+          payload: { "message" => "Hello" }
+        )
+      end
+      let(:update_params) do
+        { payload: { "message" => "Changed" }, visible_to_segment_ids: [] }
+      end
+
+      before do
+        participant
+        jwt = Experiences::AuthService.jwt_for_participant(experience: experience, user: regular_user)
+        request.headers["Authorization"] = "Bearer #{jwt}"
+      end
+
+      it "returns 403 forbidden" do
+        subject
+        expect(response.status).to eql(403)
+      end
+    end
+  end
 end

@@ -133,4 +133,30 @@ RSpec.describe "Poll Block", type: :system do
       expect(page).to have_text("Waiting for the next activity...")
     end
   end
+
+  it "allows editing poll question text when no responses exist" do
+    sign_in(admin)
+    create_experience_and_go_to_manage(
+      name: "Test Experience", code: "test-exp"
+    )
+
+    click_button "Block"
+    expect(page).to have_text("Create Block")
+    select "Poll", from: "Kind"
+    fill_in "Poll Question", with: "Original question?"
+    fill_in "Option 1", with: "yes"
+    fill_in "Option 2", with: "no"
+    click_button "Queue block"
+    expect(page).to have_css("li[aria-label='block 1']")
+
+    within("li[aria-label='block 1']") { find("button", text: /poll/i).click }
+    click_button "Edit"
+
+    expect(page).to have_text("Edit Block")
+    fill_in "Poll Question", with: "Updated question?"
+    click_button "Save"
+
+    within("li[aria-label='block 1']") { find("button", text: /poll/i).click }
+    expect(page).to have_text("Updated question?")
+  end
 end

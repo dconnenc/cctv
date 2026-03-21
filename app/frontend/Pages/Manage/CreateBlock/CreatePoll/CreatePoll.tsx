@@ -9,6 +9,7 @@ import {
   ParticipantSummary,
   PollApiPayload,
   PollData,
+  PollPayload,
 } from '@cctv/types';
 
 import sharedStyles from '../CreateBlock.module.scss';
@@ -67,6 +68,13 @@ export const canPollOpenImmediately = (
 ): boolean => {
   return true;
 };
+
+export const pollPayloadToFormData = (payload: PollPayload): PollData => ({
+  question: payload.question || '',
+  options: payload.options?.length ? payload.options : ['', ''],
+  pollType: payload.pollType || 'single',
+  segmentAssignments: payload.segmentAssignments || {},
+});
 
 export const processPollBeforeSubmit = (
   data: PollData,

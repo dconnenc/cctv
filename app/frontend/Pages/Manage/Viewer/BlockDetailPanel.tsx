@@ -37,6 +37,7 @@ interface BlockDetailPanelProps {
   onPlayNext: () => void;
   onViewModeChange: (mode: 'monitor' | 'participant' | 'responses') => void;
   onImpersonatedParticipantChange: (id: string) => void;
+  onEdit: (block: Block) => void;
 }
 
 export default function BlockDetailPanel({
@@ -53,6 +54,7 @@ export default function BlockDetailPanel({
   onPlayNext,
   onViewModeChange,
   onImpersonatedParticipantChange,
+  onEdit,
 }: BlockDetailPanelProps) {
   return (
     <div className="space-y-6">
@@ -67,6 +69,11 @@ export default function BlockDetailPanel({
           </div>
         </div>
         <div className="flex items-center gap-2">
+          {!selectedBlock.parent_block_id && (
+            <Button variant="secondary" onClick={() => onEdit(selectedBlock)}>
+              Edit
+            </Button>
+          )}
           {selectedBlock.status === 'open' ? (
             <>
               <Button

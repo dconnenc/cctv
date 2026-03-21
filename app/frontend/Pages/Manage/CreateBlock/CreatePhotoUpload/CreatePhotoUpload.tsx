@@ -1,6 +1,11 @@
 import { TextInput } from '@cctv/core';
 import { BlockKind, BlockStatus, ParticipantSummary } from '@cctv/types';
-import { BlockComponentProps, PhotoUploadApiPayload, PhotoUploadData } from '@cctv/types';
+import {
+  BlockComponentProps,
+  PhotoUploadApiPayload,
+  PhotoUploadData,
+  PhotoUploadPayload,
+} from '@cctv/types';
 
 import sharedStyles from '../CreateBlock.module.scss';
 
@@ -31,6 +36,10 @@ export const canPhotoUploadOpenImmediately = (
 ): boolean => {
   return true;
 };
+
+export const photoUploadPayloadToFormData = (payload: PhotoUploadPayload): PhotoUploadData => ({
+  prompt: payload.prompt || '',
+});
 
 export const processPhotoUploadBeforeSubmit = (
   data: PhotoUploadData,
