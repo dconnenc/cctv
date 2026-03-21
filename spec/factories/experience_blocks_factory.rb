@@ -23,6 +23,16 @@ FactoryBot.define do
       end
     end
 
+    trait :announcement do
+      kind { ExperienceBlock::ANNOUNCEMENT }
+      payload { { "message" => "Hello", "show_on_monitor" => false } }
+    end
+
+    trait :mad_lib do
+      kind { ExperienceBlock::MAD_LIB }
+      payload { { "parts" => [] } }
+    end
+
     trait :family_feud do
       kind { ExperienceBlock::FAMILY_FEUD }
       

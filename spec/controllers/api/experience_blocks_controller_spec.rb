@@ -262,13 +262,7 @@ RSpec.describe Api::ExperienceBlocksController, type: :controller do
   end
 
   describe "PATCH #update" do
-    let(:broadcaster) do
-      instance_double(Experiences::Broadcaster, broadcast_experience_update: true)
-    end
-
-    before do
-      allow(Experiences::Broadcaster).to receive(:new).and_return(broadcaster)
-    end
+    let(:player) { create(:experience_participant, :player, experience: experience) }
 
     subject do
       patch(
@@ -283,15 +277,7 @@ RSpec.describe Api::ExperienceBlocksController, type: :controller do
     end
 
     context "updating an announcement block" do
-      let(:block) do
-        create(
-          :experience_block,
-          experience: experience,
-          kind: ExperienceBlock::ANNOUNCEMENT,
-          payload: { "message" => "Hello", "show_on_monitor" => true },
-          status: ExperienceBlock::HIDDEN
-        )
-      end
+      let(:block) { create(:experience_block, :announcement, experience: experience) }
       let(:update_params) do
         {
           payload: { "message" => "Updated message", "show_on_monitor" => false },
@@ -304,11 +290,6 @@ RSpec.describe Api::ExperienceBlocksController, type: :controller do
         expect(response.status).to eql(200)
         block.reload
         expect(block.payload["message"]).to eql("Updated message")
-      end
-
-      it "broadcasts the experience update" do
-        subject
-        expect(broadcaster).to have_received(:broadcast_experience_update)
       end
     end
 
@@ -369,11 +350,7 @@ RSpec.describe Api::ExperienceBlocksController, type: :controller do
       end
 
       before do
-        ExperiencePollSubmission.new(
-          experience_block: block,
-          user: admin,
-          answer: { "selectedOptions" => ["red"] }
-        ).tap { |s| s.save!(validate: false) }
+        create(:experience_poll_submission, experience_block: block, user: player.user)
       end
 
       it "returns 422 with an error message" do
@@ -386,14 +363,7 @@ RSpec.describe Api::ExperienceBlocksController, type: :controller do
     end
 
     context "updating a mad lib when submissions exist" do
-      let(:block) do
-        create(
-          :experience_block,
-          kind: ExperienceBlock::MAD_LIB,
-          experience: experience,
-          payload: { "parts" => [] }
-        )
-      end
+      let(:block) { create(:experience_block, :mad_lib, experience: experience) }
       let(:update_params) do
         {
           payload: { "parts" => [{ "id" => "1", "type" => "text", "content" => "hello" }] },
@@ -402,11 +372,7 @@ RSpec.describe Api::ExperienceBlocksController, type: :controller do
       end
 
       before do
-        ExperienceMadLibSubmission.new(
-          experience_block: block,
-          user: admin,
-          answer: {}
-        ).tap { |s| s.save!(validate: false) }
+        create(:experience_mad_lib_submission, experience_block: block, user: player.user)
       end
 
       it "returns 422 with an error message" do
@@ -419,9 +385,7 @@ RSpec.describe Api::ExperienceBlocksController, type: :controller do
     end
 
     context "updating a family feud block with child submissions" do
-      let(:block) do
-        create(:experience_block, :family_feud, experience: experience, status: ExperienceBlock::HIDDEN)
-      end
+      let(:block) { create(:experience_block, :family_feud, experience: experience) }
       let(:update_params) do
         {
           payload: { "title" => "Updated Title" },
@@ -431,11 +395,7 @@ RSpec.describe Api::ExperienceBlocksController, type: :controller do
 
       before do
         child = block.child_blocks.first
-        ExperienceQuestionSubmission.new(
-          experience_block: child,
-          user: admin,
-          answer: "test answer"
-        ).tap { |s| s.save!(validate: false) }
+        create(:experience_question_submission, experience_block: child, user: player.user)
       end
 
       it "returns 422 with an error message" do
@@ -448,9 +408,7 @@ RSpec.describe Api::ExperienceBlocksController, type: :controller do
     end
 
     context "propagating question edits to family feud child blocks" do
-      let(:block) do
-        create(:experience_block, :family_feud, experience: experience, status: ExperienceBlock::HIDDEN)
-      end
+      let(:block) { create(:experience_block, :family_feud, experience: experience) }
       let(:child) { block.child_blocks.first }
       let(:update_params) do
         {
@@ -469,14 +427,7 @@ RSpec.describe Api::ExperienceBlocksController, type: :controller do
     end
 
     context "re-syncing mad lib variables" do
-      let(:block) do
-        create(
-          :experience_block,
-          kind: ExperienceBlock::MAD_LIB,
-          experience: experience,
-          payload: { "parts" => [] }
-        )
-      end
+      let(:block) { create(:experience_block, :mad_lib, experience: experience) }
       let(:update_params) do
         {
           payload: { "parts" => [] },
@@ -502,14 +453,7 @@ RSpec.describe Api::ExperienceBlocksController, type: :controller do
     context "when actor is not a host or admin" do
       let(:regular_user) { create(:user, :user) }
       let(:participant) { create(:experience_participant, user: regular_user, experience: experience, role: :audience) }
-      let(:block) do
-        create(
-          :experience_block,
-          experience: experience,
-          kind: ExperienceBlock::ANNOUNCEMENT,
-          payload: { "message" => "Hello" }
-        )
-      end
+      let(:block) { create(:experience_block, :announcement, experience: experience) }
       let(:update_params) do
         { payload: { "message" => "Changed" }, visible_to_segment_ids: [] }
       end

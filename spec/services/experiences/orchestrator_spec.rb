@@ -657,14 +657,7 @@ RSpec.describe Experiences::Orchestrator do
     let(:questions) { nil }
 
     context "updating a simple block" do
-      let(:block) do
-        create(
-          :experience_block,
-          experience: experience,
-          kind: ExperienceBlock::ANNOUNCEMENT,
-          payload: { "message" => "Hello" }
-        )
-      end
+      let(:block) { create(:experience_block, :announcement, experience: experience) }
       let(:new_payload) { { "message" => "Updated" } }
 
       it "updates the block payload" do
@@ -687,9 +680,7 @@ RSpec.describe Experiences::Orchestrator do
 
     context "when actor lacks manage_blocks? permission" do
       let(:participant_role) { ExperienceParticipant.roles[:audience] }
-      let(:block) do
-        create(:experience_block, experience: experience, kind: ExperienceBlock::ANNOUNCEMENT, payload: {})
-      end
+      let(:block) { create(:experience_block, :announcement, experience: experience) }
       let(:new_payload) { {} }
 
       it "raises ForbiddenError" do
@@ -728,8 +719,8 @@ RSpec.describe Experiences::Orchestrator do
 
       before { create(:experience_poll_submission, experience_block: block, user: user) }
 
-      it "does not raise an error" do
-        expect { subject }.not_to raise_error
+      it "updates the question text" do
+        subject
         block.reload
         expect(block.payload["question"]).to eql("New Q?")
       end
@@ -756,14 +747,7 @@ RSpec.describe Experiences::Orchestrator do
     end
 
     context "mad lib with submissions" do
-      let(:block) do
-        create(
-          :experience_block,
-          experience: experience,
-          kind: ExperienceBlock::MAD_LIB,
-          payload: { "parts" => [] }
-        )
-      end
+      let(:block) { create(:experience_block, :mad_lib, experience: experience) }
       let(:new_payload) { { "parts" => [{ "id" => "1", "type" => "text", "content" => "hi" }] } }
 
       before { create(:experience_mad_lib_submission, experience_block: block, user: user) }
@@ -774,18 +758,12 @@ RSpec.describe Experiences::Orchestrator do
     end
 
     context "family feud with child submissions" do
-      let(:block) do
-        create(:experience_block, :family_feud, experience: experience, status: ExperienceBlock::HIDDEN)
-      end
+      let(:block) { create(:experience_block, :family_feud, experience: experience) }
       let(:new_payload) { { "title" => "Updated" } }
 
       before do
         child = block.child_blocks.first
-        ExperienceQuestionSubmission.new(
-          experience_block: child,
-          user: user,
-          answer: "test answer"
-        ).tap { |s| s.save!(validate: false) }
+        create(:experience_question_submission, experience_block: child, user: user)
       end
 
       it "raises UnsafeEditError" do
@@ -794,14 +772,7 @@ RSpec.describe Experiences::Orchestrator do
     end
 
     context "re-syncing mad lib variables when no submissions" do
-      let(:block) do
-        create(
-          :experience_block,
-          experience: experience,
-          kind: ExperienceBlock::MAD_LIB,
-          payload: { "parts" => [] }
-        )
-      end
+      let(:block) { create(:experience_block, :mad_lib, experience: experience) }
       let(:new_payload) { { "parts" => [] } }
       let(:variables) do
         [{ key: "newvar", label: "New Label", datatype: "string", required: true }]
