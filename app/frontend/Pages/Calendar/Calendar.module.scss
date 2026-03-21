@@ -1,0 +1,164 @@
+.calendar {
+  max-width: 700px;
+  margin: 0 auto;
+  padding: var(--space-md);
+  width: 100%;
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-lg);
+}
+
+.title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  font-size: 1.5rem;
+  margin: 0;
+}
+
+.monthNav {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.navBtn {
+  background: none;
+  border: 1px solid var(--color-white-20);
+  color: var(--color-text);
+  padding: var(--space-xs);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+
+  &:hover {
+    border-color: var(--color-white-40);
+  }
+}
+
+.monthLabel {
+  font-size: 1.1rem;
+  min-width: 180px;
+  text-align: center;
+}
+
+.loading,
+.empty {
+  text-align: center;
+  padding: var(--space-lg);
+  opacity: 0.7;
+}
+
+.eventList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+}
+
+.dateGroup {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.dateLabel {
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  opacity: 0.7;
+  margin: 0;
+  padding-bottom: var(--space-xs);
+  border-bottom: 1px solid var(--color-white-10);
+}
+
+.dateEvents {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.eventCard {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-md);
+  border: 1px solid var(--color-white-10);
+  border-radius: 6px;
+  text-decoration: none;
+  color: inherit;
+  transition: border-color 0.15s;
+
+  &:hover {
+    border-color: var(--color-yellow);
+  }
+}
+
+.eventTime {
+  font-size: 0.85rem;
+  white-space: nowrap;
+  min-width: 70px;
+  padding-top: 2px;
+  opacity: 0.8;
+}
+
+.eventInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.eventTitle {
+  font-size: 1rem;
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.eventVenue {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.8rem;
+  opacity: 0.7;
+}
+
+.eventPerformers {
+  font-size: 0.8rem;
+  opacity: 0.6;
+}
+
+.eventPricing {
+  font-size: 0.8rem;
+  color: var(--color-yellow);
+}
+
+.liveBadge {
+  font-size: 0.7rem;
+  font-weight: bold;
+  padding: 2px 8px;
+  background: var(--color-red);
+  color: white;
+  border-radius: 4px;
+  white-space: nowrap;
+  align-self: center;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
