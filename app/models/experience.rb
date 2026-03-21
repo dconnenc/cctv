@@ -7,6 +7,7 @@ class Experience < ApplicationRecord
   has_many :hosts, through: :host_participants, source: :user
 
   has_many_attached :attachments
+  has_many :events
 
   has_many :experience_segments,
     -> { order(position: :asc) },
