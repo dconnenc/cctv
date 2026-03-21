@@ -7,13 +7,21 @@ import { ExperienceProvider, UserProvider } from '@cctv/contexts';
 import {
   About,
   Block,
+  Calendar,
   Create,
+  CreateEvent,
+  CreatePerformer,
+  EditEvent,
+  EditPerformer,
+  EventDetail,
   Experience,
   Home,
   Join,
   Manage,
   ManageCreateBlock,
   Monitor,
+  PerformerProfile,
+  PerformersList,
   Playbill,
   Register,
   Stylesheet,
@@ -25,6 +33,7 @@ import ManageViewer from './Pages/Manage/Viewer/ManageViewer';
 import {
   AllowRegisterRoute,
   RequireAdmin,
+  RequireAuth,
   RequireExperienceHostOrAdmin,
   RequireExperienceParticipantOrAdmin,
 } from './RouteRules';
@@ -52,9 +61,23 @@ function App() {
             <Route path="/join" element={<Join />} />
             <Route path="/stylesheet" element={<Stylesheet />} />
 
+            {/* Public event & performer pages */}
+            <Route path="/calendar" element={<Calendar />} />
+            <Route path="/events/:slug" element={<EventDetail />} />
+            <Route path="/performers" element={<PerformersList />} />
+            <Route path="/performers/:slug" element={<PerformerProfile />} />
+
+            {/* Logged-in user routes */}
+            <Route element={<RequireAuth />}>
+              <Route path="/performers/new" element={<CreatePerformer />} />
+              <Route path="/performers/:slug/edit" element={<EditPerformer />} />
+            </Route>
+
             {/* Admin-only */}
             <Route element={<RequireAdmin />}>
               <Route path="/create" element={<Create />} />
+              <Route path="/events/new" element={<CreateEvent />} />
+              <Route path="/events/:slug/edit" element={<EditEvent />} />
             </Route>
 
             <Route

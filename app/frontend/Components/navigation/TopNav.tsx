@@ -58,6 +58,18 @@ export const TopNav = () => {
           >
             {'Join'}
           </NavLink>
+          <NavLink
+            to="/calendar"
+            className={({ isActive }) => (isActive ? 'link link--active' : 'link')}
+          >
+            {'Events'}
+          </NavLink>
+          <NavLink
+            to="/performers"
+            className={({ isActive }) => (isActive ? 'link link--active' : 'link')}
+          >
+            {'Performers'}
+          </NavLink>
           {isAdmin && (
             <>
               <div className={styles.dropdown}>
@@ -85,6 +97,12 @@ export const TopNav = () => {
                 className={({ isActive }) => (isActive ? 'link link--active' : 'link')}
               >
                 Create
+              </NavLink>
+              <NavLink
+                to="/events/new"
+                className={({ isActive }) => (isActive ? 'link link--active' : 'link')}
+              >
+                New Event
               </NavLink>
             </>
           )}
@@ -182,6 +200,20 @@ export const TopNav = () => {
               >
                 Join
               </NavLink>
+              <NavLink
+                to="/calendar"
+                className={({ isActive }) => (isActive ? 'link link--active' : 'link')}
+                onClick={() => setOpen(false)}
+              >
+                Events
+              </NavLink>
+              <NavLink
+                to="/performers"
+                className={({ isActive }) => (isActive ? 'link link--active' : 'link')}
+                onClick={() => setOpen(false)}
+              >
+                Performers
+              </NavLink>
               {isAdmin && (
                 <>
                   <div className={styles.dropdown}>
@@ -211,6 +243,13 @@ export const TopNav = () => {
                     onClick={() => setOpen(false)}
                   >
                     Create
+                  </NavLink>
+                  <NavLink
+                    to="/events/new"
+                    className={({ isActive }) => (isActive ? 'link link--active' : 'link')}
+                    onClick={() => setOpen(false)}
+                  >
+                    New Event
                   </NavLink>
                 </>
               )}

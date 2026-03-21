@@ -17,3 +17,8 @@ export { useSaveAvatar } from './useSaveAvatar';
 export { useClearAvatars } from './useClearAvatars';
 export { useDebugParticipants } from './useDebugParticipants';
 export { useSimulateResponses } from './useSimulateResponses';
+export { useEvents } from './useEvents';
+export { useEvent } from './useEvent';
+export { usePerformers } from './usePerformers';
+export { usePerformer } from './usePerformer';
+export { useFollowPerformer } from './useFollowPerformer';

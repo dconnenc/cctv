@@ -6,7 +6,8 @@ class Experience < ApplicationRecord
            class_name: 'ExperienceParticipant'
   has_many :hosts, through: :host_participants, source: :user
 
-  has_many :experience_blocks, 
+  has_many :events
+  has_many :experience_blocks,
     -> { order(position: :asc) },
     dependent: :destroy
 
