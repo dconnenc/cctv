@@ -40,7 +40,7 @@ RSpec.describe "Mad Lib Block", type: :system do
     click_button "Add Variable"
     fill_in "Variable Name", with: "adjective"
     fill_in "Question to ask user", with: "Enter an adjective"
-    select "Alice", from: "Assign to participant"
+    select "Alice (audience)", from: "Assign to participant"
 
     click_button "Queue block"
     expect(page).to have_css("li[aria-label='block 1']")

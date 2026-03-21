@@ -300,7 +300,7 @@ export default function CreateMadLib({
                         ...getAvailableParticipants(
                           internalData.variables.findIndex((v) => v.id === variable.id),
                         ).map((p) => ({
-                          label: p.name,
+                          label: `${p.name} (${p.role})`,
                           value: p.id,
                         })),
                       ]}

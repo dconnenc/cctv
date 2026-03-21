@@ -201,6 +201,11 @@ export function EditBlockProvider({
   const submit = useCallback(async () => {
     setUpdateError(null);
 
+    if (blockData.kind === BlockKind.MAD_LIB && (block.responses?.total ?? 0) > 0) {
+      setUpdateError('Cannot edit a Mad Lib after responses have been submitted.');
+      return;
+    }
+
     let validationError: string | null = null;
     switch (blockData.kind) {
       case BlockKind.POLL:
