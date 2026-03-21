@@ -67,14 +67,6 @@ export default function CreateAnnouncement({
       <span className={styles.helpText}>
         {`Include the participant's name with {{ participant_name }}`}
       </span>
-      <label className={sharedStyles.checkboxLabel}>
-        <input
-          type="checkbox"
-          checked={data.show_on_monitor}
-          onChange={(e) => updateData({ show_on_monitor: e.target.checked })}
-        />
-        Show on monitor
-      </label>
     </div>
   );
 }

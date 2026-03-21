@@ -184,15 +184,8 @@ export function EditBlockProvider({
     async (visible_to_segment_ids: string[]) => {
       const { payload, variables, questions } = buildUpdatePayload(blockData);
 
-      // Announcement controls show_on_monitor via its own form field; all other
-      // block types use the shared showOnMonitor state from AdditionalDetails.
-      const finalPayload =
-        blockData.kind !== BlockKind.ANNOUNCEMENT
-          ? { ...payload, show_on_monitor: showOnMonitor }
-          : payload;
-
       const result = await updateExperienceBlock(block.id, {
-        payload: finalPayload,
+        payload: { ...payload, show_on_monitor: showOnMonitor },
         visible_to_segment_ids,
         ...(variables && { variables }),
         ...(questions && { questions }),
