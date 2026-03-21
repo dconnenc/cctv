@@ -52,7 +52,7 @@ class ExperienceBlock < ApplicationRecord
   has_many :experience_block_segments, dependent: :destroy
   has_many :experience_segments, through: :experience_block_segments
 
-  enum status: {
+  enum :status, {
     hidden: HIDDEN = "hidden",
     open: OPEN = "open",
     closed: CLOSED = "closed"

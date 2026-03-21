@@ -23,7 +23,7 @@ class Experience < ApplicationRecord
 
   belongs_to :creator, class_name: 'User'
 
-  enum status: {
+  enum :status, {
     draft: DRAFT = "draft",
     lobby: LOBBY = "lobby",
     live: LIVE = "live",

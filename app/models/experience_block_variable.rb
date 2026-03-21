@@ -6,7 +6,7 @@ class ExperienceBlockVariable < ApplicationRecord
     dependent: :destroy
   has_many :source_blocks, through: :bindings
 
-  enum datatype: {
+  enum :datatype, {
     string: "string",
     number: "number",
     text: "text"
