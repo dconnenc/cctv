@@ -113,7 +113,7 @@ RSpec.describe "Mad Lib Block", type: :system do
         click_button "Submit"
       end
 
-      visit current_path
+      visit "/experiences/test-exp/manage"
       within("li[aria-label='block 1']") { find("button", text: /mad.lib/i).click }
     end
 
