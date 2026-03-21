@@ -41,13 +41,20 @@ RSpec.describe "Managing Blocks", type: :system do
         "Announcement Message",
         with: "Hidden announcement {{ participant_name }}"
       )
-      uncheck "Show on monitor"
       click_button "Queue block"
       expect(page).to have_css("li[aria-label='block 1']")
 
       within("li[aria-label='block 1']") do
         find("button", text: /announcement/i).click
       end
+
+      click_button "Edit"
+      expect(page).to have_text("Edit Block")
+      click_button "View Additional Details"
+      expect(page).to have_field("Show on monitor", checked: true)
+      uncheck "Show on monitor"
+      click_button "Save"
+      expect(page).to have_no_text("Edit Block")
 
       # Monitor impersonation view shows empty state even when block is queued but not live
       within("[aria-label='Preview mode']") { click_button "Monitor" }
