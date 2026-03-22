@@ -99,6 +99,12 @@ class Api::BaseController < ApplicationController
         message: "Invalid state transition",
         error: e.message,
       }, status: :unprocessable_entity
+    rescue Experiences::UnsafeEditError => e
+      render json: {
+        success: false,
+        message: "Edit not allowed",
+        error: e.message,
+      }, status: :unprocessable_entity
     end
   end
 end

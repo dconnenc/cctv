@@ -1,6 +1,7 @@
 module Experiences
   class ForbiddenError < StandardError; end
   class InvalidTransitionError < StandardError; end
+  class UnsafeEditError < StandardError; end
 
   class BaseService
     include ActionPolicy::Behaviour

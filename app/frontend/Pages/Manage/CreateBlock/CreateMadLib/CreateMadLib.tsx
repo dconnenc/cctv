@@ -1,9 +1,14 @@
 import { Button } from '@cctv/core/Button/Button';
 import { Dropdown } from '@cctv/core/Dropdown/Dropdown';
 import { TextInput } from '@cctv/core/TextInput/TextInput';
-import { BlockComponentProps, MadLibData } from '@cctv/types';
-
-import { useCreateBlockContext } from '../CreateBlockContext';
+import {
+  Block,
+  BlockComponentProps,
+  BlockVariable,
+  MadLibData,
+  MadLibPayload,
+  ParticipantSummary,
+} from '@cctv/types';
 
 import sharedStyles from '../CreateBlock.module.scss';
 import styles from './CreateMadLib.module.scss';
@@ -20,6 +25,44 @@ interface MadLibDataInternal {
   parts: Array<{ id: string; type: 'text' | 'variable'; content: string }>;
   variables: MadLibVariable[];
 }
+
+export const madLibPayloadToFormData = (
+  payload: MadLibPayload,
+  variables?: BlockVariable[],
+  children?: Block[],
+  participants?: ParticipantSummary[],
+): MadLibData => {
+  const vars = (variables || []).map((v) => {
+    const binding = children
+      ?.flatMap(
+        (c) =>
+          (
+            c as Block & {
+              variable_bindings?: Array<{ variable_id: string; source_block_id: string }>;
+            }
+          ).variable_bindings || [],
+      )
+      .find((b) => b.variable_id === v.id);
+    const sourceBlock = binding
+      ? children?.find((c) => c.id === binding.source_block_id)
+      : undefined;
+    const userId = sourceBlock?.target_user_ids?.[0];
+    const participant = userId ? participants?.find((p) => p.user_id === userId) : undefined;
+
+    return {
+      id: v.key,
+      name: v.label,
+      question: v.label,
+      dataType: v.datatype === 'number' ? ('number' as const) : ('text' as const),
+      assigned_participant_id: participant?.id,
+    };
+  });
+
+  return {
+    parts: payload.parts || [],
+    variables: vars,
+  };
+};
 
 export const getDefaultMadLibState = (): MadLibData => {
   return {
@@ -52,9 +95,11 @@ export const validateMadLib = (data: MadLibDataInternal): string | null => {
   return null;
 };
 
-export default function CreateMadLib({ data, onChange }: BlockComponentProps<MadLibData>) {
-  const { participants } = useCreateBlockContext();
-
+export default function CreateMadLib({
+  data,
+  onChange,
+  participants = [],
+}: BlockComponentProps<MadLibData>) {
   const internalData: MadLibDataInternal = {
     parts: data.parts,
     variables: data.variables || [],
@@ -255,7 +300,7 @@ export default function CreateMadLib({ data, onChange }: BlockComponentProps<Mad
                         ...getAvailableParticipants(
                           internalData.variables.findIndex((v) => v.id === variable.id),
                         ).map((p) => ({
-                          label: p.name,
+                          label: `${p.name} (${p.role})`,
                           value: p.id,
                         })),
                       ]}

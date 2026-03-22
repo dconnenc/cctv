@@ -21,6 +21,8 @@
   display: grid;
   width: calc(100% - 2rem);
   max-width: 32rem;
+  max-height: calc(100vh - 2rem);
+  overflow-y: auto;
   gap: 1rem;
   border: 1px solid hsl(var(--border));
   background: hsl(var(--background));

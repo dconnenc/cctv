@@ -5,7 +5,7 @@ import classNames from 'classnames';
 import { Button } from '@cctv/core/Button/Button';
 import { Dropdown } from '@cctv/core/Dropdown/Dropdown';
 import { TextInput } from '@cctv/core/TextInput/TextInput';
-import { BlockKind, BlockStatus, ParticipantSummary } from '@cctv/types';
+import { BlockKind, BlockStatus, MultistepFormPayload, ParticipantSummary } from '@cctv/types';
 import { MultistepFormApiPayload, MultistepFormData } from '@cctv/types';
 
 import sharedStyles from '../CreateBlock.module.scss';
@@ -47,6 +47,16 @@ export const canMultistepFormOpenImmediately = (
 ): boolean => {
   return true;
 };
+
+export const multistepFormPayloadToFormData = (
+  payload: MultistepFormPayload,
+): MultistepFormData => ({
+  questions: (payload.questions || []).map((q) => ({
+    question: q.question || '',
+    formKey: q.formKey || '',
+    inputType: q.inputType || 'text',
+  })),
+});
 
 export const processMultistepFormBeforeSubmit = (
   data: MultistepFormData,

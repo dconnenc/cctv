@@ -4,6 +4,7 @@ import {
   BlockStatus,
   BuzzerApiPayload,
   BuzzerData,
+  BuzzerPayload,
   ParticipantSummary,
 } from '@cctv/types';
 import { BlockComponentProps } from '@cctv/types';
@@ -27,6 +28,11 @@ export const canBuzzerOpenImmediately = (
   _data: BuzzerData,
   _participants: ParticipantSummary[],
 ): boolean => true;
+
+export const buzzerPayloadToFormData = (payload: BuzzerPayload): BuzzerData => ({
+  label: payload.label || '',
+  prompt: payload.prompt || '',
+});
 
 export const processBuzzerBeforeSubmit = (
   data: BuzzerData,

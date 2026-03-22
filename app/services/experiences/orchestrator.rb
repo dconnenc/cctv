@@ -643,6 +643,46 @@ module Experiences
       end
     end
 
+    def update_block!(block_id:, payload:, visible_to_segment_ids:, variables: nil, questions: nil)
+      actor_action do
+        authorize! experience, to: :manage_blocks?, with: ExperiencePolicy
+
+        transaction do
+          block = experience.experience_blocks.find(block_id)
+          safety_check_edit!(block, payload)
+
+          block.update!(payload: payload)
+
+          block.experience_block_segments.delete_all
+          if visible_to_segment_ids.any?
+            ExperienceBlockSegment.insert_all(
+              visible_to_segment_ids.map { |sid| { experience_block_id: block.id, experience_segment_id: sid } }
+            )
+          end
+
+          if block.kind == ExperienceBlock::MAD_LIB && variables.present?
+            block.variables.destroy_all
+            variables.each do |v|
+              block.variables.create!(
+                key: v[:key], label: v[:label], datatype: v[:datatype],
+                required: v.fetch(:required, true)
+              )
+            end
+          end
+
+          if block.kind == ExperienceBlock::FAMILY_FEUD && questions.present?
+            questions.each do |q|
+              child = block.child_blocks.find_by(id: q[:id])
+              next unless child
+              child.update!(payload: child.payload.merge("question" => q[:question]))
+            end
+          end
+
+          block
+        end
+      end
+    end
+
     def add_block_with_dependencies!(
       kind:,
       payload: {},
@@ -828,6 +868,34 @@ module Experiences
       ExperienceBlockSegment.insert_all(
         segment_ids.map { |sid| { experience_block_id: to.id, experience_segment_id: sid } }
       )
+    end
+
+    def safety_check_edit!(block, new_payload)
+      case block.kind
+      when ExperienceBlock::POLL
+        if block.experience_poll_submissions.exists?
+          old_opts = Array(block.payload["options"]).sort
+          new_opts = Array(new_payload["options"]).sort
+          block.experience_poll_submissions.delete_all if old_opts != new_opts
+        end
+      when ExperienceBlock::MULTISTEP_FORM
+        if block.experience_multistep_form_submissions.exists?
+          old_keys = (block.payload["questions"] || []).map { |q| q["formKey"] }
+          new_keys = (new_payload["questions"] || []).map { |q| q["formKey"] }
+          block.experience_multistep_form_submissions.delete_all if old_keys != new_keys
+        end
+      when ExperienceBlock::MAD_LIB
+        if block.experience_mad_lib_submissions.exists?
+          if block.status == "open"
+            raise Experiences::UnsafeEditError,
+              "Cannot edit a Mad Lib while it is active."
+          else
+            block.experience_mad_lib_submissions.delete_all
+            child_ids = block.child_blocks.pluck(:id)
+            ExperienceQuestionSubmission.where(experience_block_id: child_ids).delete_all
+          end
+        end
+      end
     end
 
     def guard_state!(allowed)
