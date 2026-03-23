@@ -112,6 +112,9 @@ module Experiences
           ids.insert(new_index, block.id)
 
           ids.each_with_index do |id, idx|
+            experience.experience_blocks.where(id: id).update_all(position: -(idx + 1))
+          end
+          ids.each_with_index do |id, idx|
             experience.experience_blocks.where(id: id).update_all(position: idx)
           end
 

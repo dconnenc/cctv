@@ -138,7 +138,7 @@ export default function ManageViewer() {
   const { reorder: reorderBlock } = useReorderBlock();
 
   const handleReorderBlock = useCallback(
-    (blockId: string, newIndex: number) => {
+    (blockId: string, newIndex: number, _parentBlockId?: string) => {
       reorderBlock(blockId, newIndex);
     },
     [reorderBlock],
@@ -205,7 +205,7 @@ export default function ManageViewer() {
     <>
       <section className="flex w-full h-[calc(100dvh-var(--nav-h))] overflow-hidden relative">
         <BlockSidebar
-          flattenedBlocks={flattenedBlocks}
+          blocks={experience?.blocks || []}
           selectedBlockId={selectedBlockId}
           sidebarCollapsed={sidebarCollapsed}
           hasBlocks={Boolean(experience?.blocks?.length)}
