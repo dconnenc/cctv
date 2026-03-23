@@ -1,0 +1,269 @@
+.sidebar {
+  z-index: 10;
+  height: 100%;
+  flex-shrink: 0;
+  border-right: 1px solid hsl(var(--border));
+  background: hsl(var(--card));
+  display: flex;
+  flex-direction: column;
+  transition: width 0.3s ease-in-out;
+
+  &.collapsed {
+    width: 3rem;
+  }
+
+  &.expanded {
+    width: 16rem;
+  }
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem;
+  height: 5rem;
+  border-bottom: 1px solid hsl(var(--border));
+}
+
+.headerTitle {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: white;
+  padding-left: 0.5rem;
+}
+
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+
+  &.collapsedActions {
+    flex-direction: column;
+  }
+}
+
+.content {
+  flex: 1;
+  overflow-y: auto;
+}
+
+// --- Collapsed view ---
+
+.collapsedList {
+  padding: 0.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  list-style: none;
+  margin: 0;
+}
+
+.iconButton {
+  width: 100%;
+  height: 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  font-size: 0.75rem;
+
+  &.selected {
+    background: hsl(var(--muted));
+    box-shadow: inset 0 0 0 2px var(--green);
+  }
+
+  &.hiddenBlock {
+    opacity: 0.5;
+  }
+}
+
+.groupedContainer {
+  border: 1px solid hsl(var(--border));
+  border-radius: var(--radius);
+  overflow: hidden;
+  list-style: none;
+  transition: border-color 0.15s ease;
+
+  &:has(button:hover) {
+    border-color: var(--phosphor);
+  }
+}
+
+.groupedList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.groupedButton {
+  width: 100%;
+  height: 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border-radius: 0;
+
+  &.selected {
+    background: hsl(var(--muted));
+    box-shadow: inset 0 0 0 2px var(--green);
+  }
+
+  &.hiddenBlock {
+    opacity: 0.5;
+  }
+}
+
+// --- Expanded view ---
+
+.expandedList {
+  padding: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  list-style: none;
+  margin: 0;
+}
+
+.blockButton {
+  width: 100%;
+  height: 4rem;
+  padding: 0.5rem 0.75rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: stretch;
+  text-align: left;
+
+  &.selected {
+    background: hsl(var(--muted));
+    box-shadow: inset 0 0 0 2px var(--green);
+  }
+
+  &.hiddenBlock {
+    opacity: 0.5;
+  }
+
+  &.dragging {
+    background: hsl(var(--muted));
+    box-shadow:
+      inset 0 0 0 2px hsl(var(--primary)),
+      0 4px 16px rgba(0, 0, 0, 0.3);
+  }
+}
+
+.blockRow {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.dragHandle {
+  padding: 0.375rem;
+  margin-left: -0.375rem;
+  display: flex;
+  align-items: center;
+  color: hsl(var(--muted-foreground));
+  cursor: grab;
+  flex-shrink: 0;
+
+  &:hover {
+    color: hsl(var(--foreground));
+  }
+
+  &:active {
+    cursor: grabbing;
+  }
+}
+
+.blockIndex {
+  font-size: 0.75rem;
+  color: hsl(var(--muted-foreground));
+  width: 1rem;
+  flex-shrink: 0;
+}
+
+.statusDot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  flex-shrink: 0;
+
+  &[data-status='open'] {
+    background: var(--green);
+  }
+
+  &[data-status='closed'] {
+    background: #9ca3af;
+  }
+
+  &[data-status='hidden'] {
+    background: #4b5563;
+  }
+}
+
+.blockKind {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.liveBadge {
+  font-size: 0.625rem;
+  font-weight: 700;
+  color: var(--green);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  flex-shrink: 0;
+}
+
+.responseCount {
+  margin-left: 1.5rem;
+  font-size: 0.75rem;
+  color: hsl(var(--muted-foreground));
+}
+
+.childItem {
+  margin-left: 1rem;
+  list-style: none;
+}
+
+.emptyState {
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  color: hsl(var(--muted-foreground));
+}
+
+// --- Status badge (collapsed icon) ---
+
+.statusBadge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1rem;
+  height: 1rem;
+  min-width: 1rem;
+  min-height: 1rem;
+  border-radius: 50%;
+  flex-shrink: 0;
+
+  &[data-status='open'] {
+    background: var(--green);
+  }
+
+  &[data-status='closed'] {
+    background: #9ca3af;
+  }
+
+  &[data-status='hidden'] {
+    background: #4b5563;
+  }
+}
+
+.statusBadgeIndex {
+  font-size: 0.625rem;
+  color: white;
+  line-height: 1;
+}

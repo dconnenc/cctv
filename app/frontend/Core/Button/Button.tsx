@@ -2,7 +2,7 @@ import { ButtonHTMLAttributes, PropsWithChildren, Ref } from 'react';
 
 import styles from './Button.module.scss';
 
-type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'outline';
+type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'outline' | 'bare' | 'subtle';
 type ButtonSize = 'default' | 'sm' | 'lg';
 
 type ButtonProps = PropsWithChildren &
@@ -28,13 +28,6 @@ export function Button({
 }: ButtonProps) {
   const isDisabled = disabled || loading;
 
-  const getButtonText = () => {
-    if (loading && loadingText) {
-      return loadingText;
-    }
-    return children;
-  };
-
   const variantClass = variant !== 'primary' ? styles[variant] : '';
   const sizeClass = size !== 'default' ? styles[size] : '';
 
@@ -46,8 +39,13 @@ export function Button({
       disabled={isDisabled}
       {...props}
     >
-      {loading && <span className={styles.spinner} aria-hidden="true" />}
-      <span className={styles.content}>{getButtonText()}</span>
+      {loading && (
+        <>
+          <span className={styles.spinner} aria-hidden="true" />
+          {loadingText && <span>{loadingText}</span>}
+        </>
+      )}
+      {!loading && children}
     </button>
   );
 }

@@ -1,9 +1,13 @@
 import { useEffect, useState } from 'react';
 
 import { DragDropContext, Draggable, type DropResult, Droppable } from '@hello-pangea/dnd';
+import classNames from 'classnames';
 import { ChevronLeft, ChevronRight, GripVertical, Plus } from 'lucide-react';
 
+import { Button } from '@cctv/core/Button/Button';
 import { Block } from '@cctv/types';
+
+import styles from './BlockSidebar.module.scss';
 
 interface BlockSidebarProps {
   blocks: Block[];
@@ -14,19 +18,6 @@ interface BlockSidebarProps {
   onToggleSidebar: () => void;
   onCreateBlock: () => void;
   onReorderBlock?: (blockId: string, newIndex: number, parentBlockId?: string) => void;
-}
-
-function getStatusColor(status: string) {
-  switch (status) {
-    case 'open':
-      return 'bg-green-500';
-    case 'closed':
-      return 'bg-gray-400';
-    case 'hidden':
-      return 'bg-gray-600';
-    default:
-      return 'bg-gray-400';
-  }
 }
 
 export default function BlockSidebar({
@@ -44,11 +35,6 @@ export default function BlockSidebar({
   useEffect(() => {
     setLocalBlocks(blocks);
   }, [blocks]);
-
-  const flatBlocks = localBlocks.flatMap((b) => [
-    { block: b, isChild: false },
-    ...(b.children || []).map((c) => ({ block: c, isChild: true })),
-  ]);
 
   const handleDragEnd = (result: DropResult) => {
     if (!result.destination || !onReorderBlock) return;
@@ -81,66 +67,101 @@ export default function BlockSidebar({
 
   return (
     <aside
-      className={`z-10 h-full shrink-0 border-r border-[hsl(var(--border))] bg-[hsl(var(--card))] flex flex-col transition-all duration-300 ease-in-out ${
-        sidebarCollapsed ? 'w-12' : 'w-64'
-      }`}
+      className={classNames(styles.sidebar, {
+        [styles.collapsed]: sidebarCollapsed,
+        [styles.expanded]: !sidebarCollapsed,
+      })}
     >
-      <div className="flex items-center justify-between p-2 h-20 border-b border-[hsl(var(--border))]">
-        {!sidebarCollapsed && <div className="text-sm text-white font-semibold pl-2">Blocks</div>}
-        <div className={`flex items-center gap-1 ${sidebarCollapsed ? 'flex-col' : ''}`}>
+      <div className={styles.header}>
+        {!sidebarCollapsed && <div className={styles.headerTitle}>Blocks</div>}
+        <div
+          className={classNames(styles.headerActions, {
+            [styles.collapsedActions]: sidebarCollapsed,
+          })}
+        >
           {!sidebarCollapsed && (
-            <button
-              onClick={onCreateBlock}
-              className="p-1.5 rounded-md hover:bg-[hsl(var(--muted))] transition-colors"
-              title="Create Block"
-            >
+            <button onClick={onCreateBlock} title="Create Block">
               <Plus size={16} />
             </button>
           )}
           <button
             onClick={onToggleSidebar}
-            className="p-1.5 rounded-md hover:bg-[hsl(var(--muted))] transition-colors"
             title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           >
             {sidebarCollapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
           </button>
         </div>
       </div>
-      <div className="flex-1 overflow-y-auto">
+
+      <div className={styles.content}>
         {sidebarCollapsed ? (
-          <ul className="p-1 space-y-1">
-            {flatBlocks.map(({ block, isChild }, index) => (
-              <li
-                key={block.id}
-                style={{ contentVisibility: 'auto' }}
-                aria-label={`block ${index + 1}`}
-              >
-                <button
-                  className={`relative w-full h-10 flex items-center justify-center rounded-md cursor-pointer text-xs text-[hsl(var(--foreground))] hover:bg-[hsl(var(--muted))] transition-colors ${
-                    selectedBlockId === block.id
-                      ? 'bg-[hsl(var(--muted))] ring-2 ring-green-500'
-                      : ''
-                  } ${block.status === 'hidden' ? 'opacity-50' : ''}`}
-                  onClick={() => onSelectBlock(block.id)}
-                  title={`${isChild ? '↳ ' : ''}${block.kind} - ${block.status}`}
-                >
-                  <span
-                    className={`flex items-center justify-center gap-2 w-4 h-4 rounded-full ${getStatusColor(block.status)}`}
+          <ul className={styles.collapsedList}>
+            {localBlocks.map((block, parentIndex) => {
+              const hasChildren = block.children && block.children.length > 0;
+              return hasChildren ? (
+                <li key={block.id} className={styles.groupedContainer}>
+                  <Button
+                    variant="bare"
+                    className={classNames(styles.groupedButton, {
+                      [styles.selected]: selectedBlockId === block.id,
+                      [styles.hiddenBlock]: block.status === 'hidden',
+                    })}
+                    onClick={() => onSelectBlock(block.id)}
+                    title={`${block.kind} - ${block.status}`}
                   >
-                    <span className="sr-only">
-                      {block.kind} - {block.status}
+                    <span className={styles.statusBadge} data-status={block.status}>
+                      <span className="sr-only">
+                        {block.kind} - {block.status}
+                      </span>
+                      <span className={styles.statusBadgeIndex}>{parentIndex + 1}</span>
                     </span>
-                    <span className="text-xs text-white w-4 z-10">{index + 1}</span>
-                  </span>
-                </button>
-              </li>
-            ))}
+                  </Button>
+                  <ul className={styles.groupedList}>
+                    {block.children!.map((child, childIndex) => (
+                      <li key={child.id}>
+                        <Button
+                          variant="bare"
+                          className={classNames(styles.groupedButton, {
+                            [styles.selected]: selectedBlockId === child.id,
+                            [styles.hiddenBlock]: child.status === 'hidden',
+                          })}
+                          onClick={() => onSelectBlock(child.id)}
+                          title={`↳ ${child.kind} - ${child.status}`}
+                        >
+                          <span className={styles.statusBadge} data-status={child.status}>
+                            <span className="sr-only">
+                              {child.kind} - {child.status}
+                            </span>
+                            <span className={styles.statusBadgeIndex}>{childIndex + 1}</span>
+                          </span>
+                        </Button>
+                      </li>
+                    ))}
+                  </ul>
+                </li>
+              ) : (
+                <li key={block.id}>
+                  <Button
+                    variant="subtle"
+                    className={classNames(styles.iconButton, {
+                      [styles.selected]: selectedBlockId === block.id,
+                      [styles.hiddenBlock]: block.status === 'hidden',
+                    })}
+                    onClick={() => onSelectBlock(block.id)}
+                    title={`${block.kind} - ${block.status}`}
+                  >
+                    <span className={styles.statusBadge} data-status={block.status}>
+                      <span className="sr-only">
+                        {block.kind} - {block.status}
+                      </span>
+                      <span className={styles.statusBadgeIndex}>{parentIndex + 1}</span>
+                    </span>
+                  </Button>
+                </li>
+              );
+            })}
             <li>
-              <button
-                onClick={onCreateBlock}
-                className="h-10 w-10 !p-0 flex items-center justify-center rounded-md hover:bg-[hsl(var(--muted))] transition-colors"
-                title="Create Block"
-              >
+              <button onClick={onCreateBlock} title="Create Block">
                 <Plus size={32} />
               </button>
             </li>
@@ -149,7 +170,11 @@ export default function BlockSidebar({
           <DragDropContext onDragEnd={handleDragEnd}>
             <Droppable droppableId="top-level" type="PARENT">
               {(provided) => (
-                <ul className="p-2 space-y-1" ref={provided.innerRef} {...provided.droppableProps}>
+                <ul
+                  className={styles.expandedList}
+                  ref={provided.innerRef}
+                  {...provided.droppableProps}
+                >
                   {localBlocks.map((block, parentIndex) => (
                     <Draggable key={block.id} draggableId={block.id} index={parentIndex}>
                       {(dragProvided, snapshot) => (
@@ -160,47 +185,38 @@ export default function BlockSidebar({
                           aria-label={`block ${parentIndex + 1}`}
                           data-block-id={block.id}
                         >
-                          <button
-                            className={`relative w-full h-16 px-3 py-2 rounded-md cursor-pointer text-sm text-left text-[hsl(var(--foreground))] hover:bg-[hsl(var(--muted))] transition-colors flex flex-col justify-center ${
-                              selectedBlockId === block.id
-                                ? 'bg-[hsl(var(--muted))] ring-2 ring-green-500'
-                                : ''
-                            } ${block.status === 'hidden' ? 'opacity-50' : ''} ${
-                              snapshot.isDragging
-                                ? 'bg-[hsl(var(--muted))] ring-2 ring-[hsl(var(--primary))] shadow-lg'
-                                : ''
-                            }`}
+                          <Button
+                            variant="subtle"
+                            className={classNames(styles.blockButton, {
+                              [styles.selected]: selectedBlockId === block.id,
+                              [styles.hiddenBlock]: block.status === 'hidden',
+                              [styles.dragging]: snapshot.isDragging,
+                            })}
                             onClick={() => onSelectBlock(block.id)}
                           >
-                            <div className="flex items-center gap-2">
+                            <div className={styles.blockRow}>
                               <span
                                 {...dragProvided.dragHandleProps}
                                 data-drag-handle
-                                className="p-1.5 -ml-1.5 flex items-center text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] cursor-grab active:cursor-grabbing"
+                                className={styles.dragHandle}
                                 onClick={(e) => e.stopPropagation()}
                               >
                                 <GripVertical size={14} />
                               </span>
-                              <span className="text-xs text-[hsl(var(--muted-foreground))] w-4">
-                                {parentIndex + 1}
-                              </span>
-                              <span
-                                className={`w-2 h-2 rounded-full ${getStatusColor(block.status)}`}
-                              />
-                              <span className="truncate flex-1">{block.kind}</span>
+                              <span className={styles.blockIndex}>{parentIndex + 1}</span>
+                              <span className={styles.statusDot} data-status={block.status} />
+                              <span className={styles.blockKind}>{block.kind}</span>
                               {block.status === 'open' && (
-                                <span className="text-[10px] font-bold text-green-500 uppercase">
-                                  Live
-                                </span>
+                                <span className={styles.liveBadge}>Live</span>
                               )}
                             </div>
                             {block.responses && block.responses.total > 0 && (
-                              <div className="ml-6 text-xs text-[hsl(var(--muted-foreground))]">
+                              <div className={styles.responseCount}>
                                 {block.responses.total} response
                                 {block.responses.total !== 1 ? 's' : ''}
                               </div>
                             )}
-                          </button>
+                          </Button>
 
                           {block.children && block.children.length > 0 && (
                             <Droppable droppableId={`children-${block.id}`} type="CHILD">
@@ -208,7 +224,7 @@ export default function BlockSidebar({
                                 <ul
                                   ref={childProvided.innerRef}
                                   {...childProvided.droppableProps}
-                                  className="mt-1 space-y-1"
+                                  className={styles.expandedList}
                                 >
                                   {block.children!.map((child, childIndex) => (
                                     <Draggable
@@ -223,49 +239,45 @@ export default function BlockSidebar({
                                           style={childDragProvided.draggableProps.style}
                                           aria-label={`child ${childIndex + 1} of block ${parentIndex + 1}`}
                                           data-block-id={child.id}
-                                          className="ml-4"
+                                          className={styles.childItem}
                                         >
-                                          <button
-                                            className={`relative w-full h-16 px-3 py-2 rounded-md cursor-pointer text-sm text-left text-[hsl(var(--foreground))] hover:bg-[hsl(var(--muted))] transition-colors flex flex-col justify-center ${
-                                              selectedBlockId === child.id
-                                                ? 'bg-[hsl(var(--muted))] ring-2 ring-green-500'
-                                                : ''
-                                            } ${child.status === 'hidden' ? 'opacity-50' : ''} ${
-                                              childSnapshot.isDragging
-                                                ? 'bg-[hsl(var(--muted))] ring-2 ring-[hsl(var(--primary))] shadow-lg'
-                                                : ''
-                                            }`}
+                                          <Button
+                                            variant="subtle"
+                                            className={classNames(styles.blockButton, {
+                                              [styles.selected]: selectedBlockId === child.id,
+                                              [styles.hiddenBlock]: child.status === 'hidden',
+                                              [styles.dragging]: childSnapshot.isDragging,
+                                            })}
                                             onClick={() => onSelectBlock(child.id)}
                                           >
-                                            <div className="flex items-center gap-2">
+                                            <div className={styles.blockRow}>
                                               <span
                                                 {...childDragProvided.dragHandleProps}
                                                 data-drag-handle
-                                                className="p-1.5 -ml-1.5 flex items-center text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] cursor-grab active:cursor-grabbing"
+                                                className={styles.dragHandle}
                                                 onClick={(e) => e.stopPropagation()}
                                               >
                                                 <GripVertical size={14} />
                                               </span>
-                                              <span className="text-xs text-[hsl(var(--muted-foreground))] w-4">
+                                              <span className={styles.blockIndex}>
                                                 {childIndex + 1}
                                               </span>
                                               <span
-                                                className={`w-2 h-2 rounded-full ${getStatusColor(child.status)}`}
+                                                className={styles.statusDot}
+                                                data-status={child.status}
                                               />
-                                              <span className="truncate flex-1">{child.kind}</span>
+                                              <span className={styles.blockKind}>{child.kind}</span>
                                               {child.status === 'open' && (
-                                                <span className="text-[10px] font-bold text-green-500 uppercase">
-                                                  Live
-                                                </span>
+                                                <span className={styles.liveBadge}>Live</span>
                                               )}
                                             </div>
                                             {child.responses && child.responses.total > 0 && (
-                                              <div className="ml-6 text-xs text-[hsl(var(--muted-foreground))]">
+                                              <div className={styles.responseCount}>
                                                 {child.responses.total} response
                                                 {child.responses.total !== 1 ? 's' : ''}
                                               </div>
                                             )}
-                                          </button>
+                                          </Button>
                                         </li>
                                       )}
                                     </Draggable>
@@ -280,11 +292,7 @@ export default function BlockSidebar({
                     </Draggable>
                   ))}
                   {provided.placeholder}
-                  {!hasBlocks && (
-                    <li className="px-3 py-2 text-sm text-[hsl(var(--muted-foreground))]">
-                      No blocks yet
-                    </li>
-                  )}
+                  {!hasBlocks && <li className={styles.emptyState}>No blocks yet</li>}
                 </ul>
               )}
             </Droppable>
