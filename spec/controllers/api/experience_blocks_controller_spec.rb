@@ -261,6 +261,55 @@ RSpec.describe Api::ExperienceBlocksController, type: :controller do
     end
   end
 
+  describe "POST #reorder" do
+    let!(:block_a) { create(:experience_block, :announcement, experience: experience, position: 0) }
+    let!(:block_b) { create(:experience_block, :announcement, experience: experience, position: 1) }
+    let!(:block_c) { create(:experience_block, :announcement, experience: experience, position: 2) }
+
+    subject do
+      post(
+        :reorder,
+        params: {
+          experience_id: experience.code_slug,
+          id: block_a.id,
+          position: 2,
+        },
+        format: :json
+      )
+    end
+
+    it "updates block positions in the database" do
+      broadcaster = instance_double(Experiences::Broadcaster, broadcast_experience_update: true)
+      allow(Experiences::Broadcaster).to receive(:new).and_return(broadcaster)
+
+      subject
+
+      expect(block_a.reload.position).to eq(2)
+      expect(block_b.reload.position).to eq(0)
+      expect(block_c.reload.position).to eq(1)
+    end
+
+    it "calls the broadcaster" do
+      broadcaster = instance_double(Experiences::Broadcaster, broadcast_experience_update: true)
+      allow(Experiences::Broadcaster).to receive(:new).and_return(broadcaster)
+
+      subject
+
+      expect(broadcaster).to have_received(:broadcast_experience_update)
+    end
+
+    it "returns success with 200" do
+      broadcaster = instance_double(Experiences::Broadcaster, broadcast_experience_update: true)
+      allow(Experiences::Broadcaster).to receive(:new).and_return(broadcaster)
+
+      subject
+
+      expect(response.status).to eql(200)
+      json_response = JSON.parse(response.body)
+      expect(json_response["success"]).to be(true)
+    end
+  end
+
   describe "PATCH #update" do
     let(:player) { create(:experience_participant, :player, experience: experience) }
 

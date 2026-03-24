@@ -64,6 +64,7 @@ class ExperienceBlock < ApplicationRecord
   validates :position,
     presence: true,
     numericality: { only_integer: true, greater_than_or_equal_to: 0 }
+  validate :position_unique_within_scope
 
   after_create :sync_parent_from_links
 
@@ -215,6 +216,18 @@ class ExperienceBlock < ApplicationRecord
     if parent_links.any? && parent_block_id.nil?
       link = parent_links.first
       update_column(:parent_block_id, link.parent_block_id)
+    end
+  end
+
+  def position_unique_within_scope
+    scope = if parent_block_id.nil?
+      experience.experience_blocks.where(parent_block_id: nil)
+    else
+      ExperienceBlock.where(parent_block_id: parent_block_id)
+    end
+
+    if scope.where(position: position).where.not(id: id).exists?
+      errors.add(:position, :taken)
     end
   end
 

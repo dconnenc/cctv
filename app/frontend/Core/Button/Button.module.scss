@@ -6,28 +6,17 @@
   justify-content: center;
   gap: var(--space-xs);
   font-family: var(--font-ui);
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
+  font-size: 1rem;
+  font-weight: 600;
   border-radius: var(--radius);
-  background: var(--phosphor);
-  color: var(--black);
-  border: none;
   cursor: pointer;
   transition:
     filter 0.15s ease,
     transform 0.04s ease,
     opacity 0.2s ease,
-    box-shadow 0.15s ease;
-
-  &:hover {
-    filter: brightness(1.1);
-    background: var(--phosphor);
-    border-color: transparent;
-    box-shadow:
-      0 0 8px var(--phosphor-glow-medium),
-      0 0 20px var(--phosphor-glow);
-  }
+    box-shadow 0.15s ease,
+    background-color 0.15s ease,
+    border-color 0.15s ease;
 
   &:active {
     transform: scale(0.97);
@@ -41,7 +30,30 @@
   filter: grayscale(0.5);
 }
 
+.primary {
+  font-family: var(--font-ui);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  background: var(--phosphor);
+  color: var(--black);
+  border: none;
+
+  &:hover {
+    filter: brightness(1.1);
+    background: var(--phosphor);
+    border-color: transparent;
+    box-shadow:
+      0 0 8px var(--phosphor-glow-medium),
+      0 0 20px var(--phosphor-glow);
+  }
+}
+
 .secondary {
+  font-family: var(--font-ui);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
   background: transparent;
   color: var(--hot-white);
   border: 1px solid var(--hot-white);
@@ -91,6 +103,32 @@
   }
 }
 
+.bare {
+  background: transparent;
+  color: hsl(var(--foreground));
+  border: none;
+
+  &:hover {
+    background: var(--phosphor-glow);
+    border-color: transparent;
+    filter: none;
+    box-shadow: none;
+  }
+}
+
+.subtle {
+  background: transparent;
+  color: hsl(var(--foreground));
+  border: 1px solid hsl(var(--border));
+
+  &:hover {
+    border-color: var(--phosphor);
+    background: var(--phosphor-glow);
+    filter: none;
+    box-shadow: none;
+  }
+}
+
 .sm {
   padding: 0.25rem 0.75rem;
   font-size: 0.75rem;
@@ -115,11 +153,6 @@
   border-top: 2px solid currentColor;
   border-radius: 50%;
   animation: spin 1s linear infinite;
-}
-
-.content {
-  display: inline-flex;
-  align-items: center;
 }
 
 @keyframes spin {

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_03_12_143222) do
+ActiveRecord::Schema[7.2].define(version: 2026_03_24_000002) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "citext"
   enable_extension "plpgsql"
@@ -110,14 +110,14 @@ ActiveRecord::Schema[7.2].define(version: 2026_03_12_143222) do
     t.uuid "parent_block_id"
     t.integer "position", default: 0, null: false
     t.boolean "show_in_lobby", default: false, null: false
-    t.index ["experience_id", "position"], name: "index_parent_blocks_unique_position", unique: true, where: "(parent_block_id IS NULL)"
+    t.virtual "position_scope", type: :uuid, as: "COALESCE(parent_block_id, experience_id)", stored: true
     t.index ["experience_id", "status"], name: "index_experience_blocks_on_experience_id_and_status"
     t.index ["experience_id"], name: "index_experience_blocks_on_experience_id"
     t.index ["kind"], name: "index_experience_blocks_on_kind"
-    t.index ["parent_block_id", "position"], name: "index_child_blocks_unique_position", unique: true, where: "(parent_block_id IS NOT NULL)"
     t.index ["parent_block_id"], name: "index_experience_blocks_on_parent_block_id"
     t.index ["target_user_ids"], name: "index_experience_blocks_on_target_user_ids", using: :gin
     t.index ["visible_to_roles"], name: "index_experience_blocks_on_visible_to_roles", using: :gin
+    t.unique_constraint ["position_scope", "position"], deferrable: :deferred, name: "unique_position_in_scope"
   end
 
   create_table "experience_buzzer_submissions", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
