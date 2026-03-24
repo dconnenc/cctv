@@ -27,4 +27,3 @@ export {
   DialogDescription,
 } from './Dialog/Dialog';
 export { Switch } from './Switch/Switch';
-export { SortableList } from './SortableList';
