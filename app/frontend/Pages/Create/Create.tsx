@@ -70,7 +70,11 @@ export default function Create() {
       <section className="page flex-centered">
         <Panel className={styles.container}>
           <h1 className={styles.title}>{`Experience: ${experienceName || ''}`}</h1>
-          <img src={qrCode} alt={`QR code for joining an experience`} />
+          <img
+            src={qrCode}
+            alt={`QR code for joining an experience`}
+            onLoad={(e) => e.currentTarget.setAttribute('data-loaded', 'true')}
+          />
           <a href={experienceUrl} className={styles.link}>
             {'Go to lobby'}
           </a>
