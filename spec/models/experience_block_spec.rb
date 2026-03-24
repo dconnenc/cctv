@@ -9,10 +9,10 @@ RSpec.describe ExperienceBlock do
         create(:experience_block, experience: experience, position: 0)
       end
 
-      it "enforces unique position within experience" do
-        expect {
-          create(:experience_block, experience: experience, position: 0)
-        }.to raise_error(ActiveRecord::RecordNotUnique)
+      it "is invalid with a duplicate position in the same experience" do
+        duplicate = build(:experience_block, experience: experience, position: 0)
+        expect(duplicate).not_to be_valid
+        expect(duplicate.errors[:position]).to include("has already been taken")
       end
     end
 
@@ -49,13 +49,34 @@ RSpec.describe ExperienceBlock do
         let(:parent1) { create(:experience_block, experience: experience) }
         let(:parent2) { parent1 }
 
-        it "enforces unique position within parent" do
+        it "is invalid with a duplicate position under the same parent" do
           child1.save!
 
-          expect {
-            child2.save!
-          }.to raise_error(ActiveRecord::RecordNotUnique)
+          expect(child2).not_to be_valid
+          expect(child2.errors[:position]).to include("has already been taken")
         end
+      end
+    end
+
+    describe "update_all reorder" do
+      it "reorders positions in a single pass without violating the deferred index" do
+        block_a = create(:experience_block, experience: experience, position: 0)
+        block_b = create(:experience_block, experience: experience, position: 1)
+        block_c = create(:experience_block, experience: experience, position: 2)
+
+        new_order = [block_c.id, block_a.id, block_b.id]
+
+        expect {
+          ActiveRecord::Base.transaction do
+            new_order.each_with_index do |id, idx|
+              ExperienceBlock.where(id: id).update_all(position: idx)
+            end
+          end
+        }.not_to raise_error
+
+        expect(block_c.reload.position).to eq(0)
+        expect(block_a.reload.position).to eq(1)
+        expect(block_b.reload.position).to eq(2)
       end
     end
   end
