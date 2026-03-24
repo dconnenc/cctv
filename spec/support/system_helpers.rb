@@ -62,6 +62,7 @@ module SystemHelpers
   def create_experience_and_go_to_manage(name:, code:)
     create_experience(name:, code:)
 
+    expect(page).to have_link("Go to lobby")
     click_link "Go to lobby"
 
     expect(page).to have_text(
