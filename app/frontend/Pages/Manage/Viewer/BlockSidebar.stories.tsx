@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { fn } from '@storybook/test';
 
+import { BlockKind } from '@cctv/types';
 import type { Block } from '@cctv/types';
 
 import BlockSidebar from './BlockSidebar';
@@ -40,16 +41,16 @@ function block(
 }
 
 const flatBlocks: Block[] = [
-  block('b1', 'announcement', 'open'),
-  block('b2', 'poll', 'closed'),
-  block('b3', 'question', 'hidden'),
+  block('b1', BlockKind.ANNOUNCEMENT, 'open'),
+  block('b2', BlockKind.POLL, 'closed'),
+  block('b3', BlockKind.QUESTION, 'hidden'),
 ];
 
 const blocksWithChildren: Block[] = [
-  block('b1', 'mad_lib', 'open', {
-    children: [block('c1', 'poll', 'closed'), block('c2', 'question', 'hidden')],
+  block('b1', BlockKind.MAD_LIB, 'open', {
+    children: [block('c1', BlockKind.POLL, 'closed'), block('c2', BlockKind.QUESTION, 'hidden')],
   }),
-  block('b2', 'announcement', 'hidden'),
+  block('b2', BlockKind.ANNOUNCEMENT, 'hidden'),
 ];
 
 export const Expanded: Story = {
