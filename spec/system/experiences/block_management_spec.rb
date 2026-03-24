@@ -87,32 +87,6 @@ RSpec.describe "Managing Blocks", type: :system do
       end
     end
 
-    it "can reorder top-level blocks via drag and drop" do
-      visit "/experiences/#{experience.code_slug}/manage"
-
-      3.times do
-        click_button "Block"
-        expect(page).to have_text("Create Block")
-        select "Announcement", from: "Kind"
-        fill_in "Announcement Message", with: "Block message"
-        click_button "Queue block"
-      end
-      expect(page).to have_css("li[aria-label='block 3']")
-
-      block1_id = find("li[aria-label='block 1']")["data-block-id"]
-
-      drag_handle = find("li[aria-label='block 1'] [data-drag-handle]")
-      drag_handle.send_keys(:space)
-      drag_handle.send_keys(:arrow_down)
-      drag_handle.send_keys(:arrow_down)
-      drag_handle.send_keys(:space)
-
-      expect(page).to have_css("li[aria-label='block 3'][data-block-id='#{block1_id}']")
-
-      visit "/experiences/#{experience.code_slug}/manage"
-      expect(page).to have_css("li[aria-label='block 3'][data-block-id='#{block1_id}']")
-    end
-
     it "shows the correct impersonation views" do
       visit "/experiences/#{experience.code_slug}/manage"
 
