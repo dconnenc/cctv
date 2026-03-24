@@ -5,10 +5,18 @@ import { Outlet, Route, useLocation } from 'react-router-dom';
 import { BackgroundStatic, RouteWink, TopNav } from '@cctv/components';
 import { ExperienceProvider } from '@cctv/contexts/ExperienceContext';
 import { UserProvider } from '@cctv/contexts/UserContext';
+import Calendar from '@cctv/pages/Calendar/Calendar';
 import Create from '@cctv/pages/Create/Create';
+import CreateEvent from '@cctv/pages/Events/CreateEvent';
+import EditEvent from '@cctv/pages/Events/EditEvent';
+import EventDetail from '@cctv/pages/Events/EventDetail';
 import Avatar from '@cctv/pages/Experience/Avatar';
 import Experience from '@cctv/pages/Experience/Experience';
 import Monitor from '@cctv/pages/Monitor/Monitor';
+import CreatePerformer from '@cctv/pages/Performers/CreatePerformer';
+import EditPerformer from '@cctv/pages/Performers/EditPerformer';
+import PerformerProfile from '@cctv/pages/Performers/PerformerProfile';
+import PerformersList from '@cctv/pages/Performers/PerformersList';
 import Playbill from '@cctv/pages/Playbill/Playbill';
 import Register from '@cctv/pages/Register';
 import About from '@cctv/pages/about';
@@ -19,6 +27,7 @@ import Stylesheet from '@cctv/pages/stylesheet';
 import {
   AllowRegisterRoute,
   RequireAdmin,
+  RequireAuth,
   RequireExperienceHostOrAdmin,
   RequireExperienceParticipantOrAdmin,
 } from './RouteRules';
@@ -54,9 +63,23 @@ function App() {
               <Route path="/join" element={<Join />} />
               <Route path="/stylesheet" element={<Stylesheet />} />
 
+              {/* Public event & performer pages */}
+              <Route path="/calendar" element={<Calendar />} />
+              <Route path="/events/:slug" element={<EventDetail />} />
+              <Route path="/performers" element={<PerformersList />} />
+              <Route path="/performers/:slug" element={<PerformerProfile />} />
+
+              {/* Logged-in user routes */}
+              <Route element={<RequireAuth />}>
+                <Route path="/performers/new" element={<CreatePerformer />} />
+                <Route path="/performers/:slug/edit" element={<EditPerformer />} />
+              </Route>
+
               {/* Admin-only */}
               <Route element={<RequireAdmin />}>
                 <Route path="/create" element={<Create />} />
+                <Route path="/events/new" element={<CreateEvent />} />
+                <Route path="/events/:slug/edit" element={<EditEvent />} />
               </Route>
 
               <Route
