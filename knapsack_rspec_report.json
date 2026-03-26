@@ -1,1 +1,13 @@
-{}
+{
+  "spec/system/experiences/buzzer_block_spec.rb": 72.96164599992335,
+  "spec/system/experiences/block_management_spec.rb": 25.600447000935674,
+  "spec/system/experiences/mad_lib_block_spec.rb": 60.31558699905872,
+  "spec/system/experiences/photo_upload_block_spec.rb": 13.911487000063062,
+  "spec/system/health_check_spec.rb": 0.6700099986046553,
+  "spec/system/experiences/family_feud_block_spec.rb": 23.32002800144255,
+  "spec/system/experiences/announcement_block_spec.rb": 42.313907999545336,
+  "spec/system/experiences/question_block_spec.rb": 42.20420600101352,
+  "spec/system/experiences/avatar_spec.rb": 62.89338499866426,
+  "spec/system/experiences/participant_spec.rb": 11.612120000645518,
+  "spec/system/experiences/poll_block_spec.rb": 79.12155600078404
+}

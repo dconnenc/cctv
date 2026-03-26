@@ -50,9 +50,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        ci_node_index: [0, 1, 2, 3]
+        ci_node_index: [0, 1, 2, 3, 4, 5]
     env:
-      CI_NODE_TOTAL: 4
+      CI_NODE_TOTAL: 6
       CI_NODE_INDEX: ${{ matrix.ci_node_index }}
     services:
       postgres:
