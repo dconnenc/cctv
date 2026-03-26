@@ -108,6 +108,7 @@ jobs:
           CUPRITE_INSPECTOR: false
           DATABASE_URL: 'postgres://postgres:password@localhost:5432/test'
           REDIS_URL: 'redis://localhost:6379/1'
+          ACTION_CABLE_ADAPTER: redis
           KNAPSACK_TEST_FILE_PATTERN: 'spec/system/**/*_spec.rb'
         run: bundle exec rake knapsack:rspec
 
