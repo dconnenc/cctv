@@ -96,13 +96,8 @@ module Experiences
 
         transaction do
           block = experience.experience_blocks.find(block_id)
-          siblings = if block.parent_block_id.present?
-            experience.experience_blocks.where(parent_block_id: block.parent_block_id).order(:position)
-          else
-            experience.experience_blocks.parent_blocks.order(:position)
-          end
 
-          ids = siblings.pluck(:id)
+          ids = block.siblings(include_self: true).order(:position).pluck(:id)
           old_index = ids.index(block.id)
           new_index = position.clamp(0, ids.length - 1)
 

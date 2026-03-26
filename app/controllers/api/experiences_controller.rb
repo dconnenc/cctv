@@ -1,7 +1,15 @@
 class Api::ExperiencesController < Api::BaseController
   authorize :user, through: :current_user
   before_action :authenticate_and_set_user_and_experience,
-    only: [:open_lobby, :start, :pause, :resume, :admin_token, :clear_avatars, :update_playbill]
+    only: [
+      :open_lobby,
+      :start,
+      :pause,
+      :resume,
+      :admin_token,
+      :clear_avatars,
+      :update_playbill
+    ]
 
   # POST /api/experiences
   def create

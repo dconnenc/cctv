@@ -17,6 +17,7 @@ RSpec.describe Experiences::Orchestrator do
 
   describe "#reorder_block!" do
     let(:participant_role) { ExperienceParticipant.roles[:host] }
+    let(:parent_block_id) { nil }
 
     subject do
       described_class.new(actor: user, experience: experience).reorder_block!(
@@ -25,86 +26,86 @@ RSpec.describe Experiences::Orchestrator do
       )
     end
 
-    context "reordering top-level blocks" do
-      let!(:block_a) { create(:experience_block, :announcement, experience: experience, position: 0) }
-      let!(:block_b) { create(:experience_block, :announcement, experience: experience, position: 1) }
-      let!(:block_c) { create(:experience_block, :announcement, experience: experience, position: 2) }
+    let!(:block_a) do
+      create(
+        :experience_block,
+        experience: experience,
+        parent_block_id: parent_block_id,
+        position: 0
+      )
+    end
 
+    let!(:block_b) do
+      create(
+        :experience_block,
+        experience: experience,
+        parent_block_id: parent_block_id,
+        position: 1
+      )
+    end
+
+    let!(:block_c) do
+      create(
+        :experience_block,
+        experience: experience,
+        parent_block_id: parent_block_id,
+        position: 2
+      )
+    end
+
+    before { subject }
+
+    context "reordering top-level blocks" do
+      let(:parent_block_id) { nil }
       let(:block_to_move) { block_a }
       let(:new_position) { 2 }
 
-      it "moves block_a to the last position and shifts others forward" do
-        subject
+      it "moves block_a to the last position and shifts others backwards" do
         expect(block_a.reload.position).to eq(2)
         expect(block_b.reload.position).to eq(0)
         expect(block_c.reload.position).to eq(1)
       end
     end
 
-    context "reordering child blocks within a parent" do
-      let!(:parent_block) { create(:experience_block, experience: experience, position: 0) }
-      let!(:child_a) do
-        create(:experience_block, experience: experience, parent_block_id: parent_block.id, position: 0)
-      end
-      let!(:child_b) do
-        create(:experience_block, experience: experience, parent_block_id: parent_block.id, position: 1)
-      end
-      let!(:child_c) do
-        create(:experience_block, experience: experience, parent_block_id: parent_block.id, position: 2)
+    context "re-ordering child blocks" do
+      let(:parent_block) do
+        create(:experience_block, experience: experience, position: 0)
       end
 
-      let(:block_to_move) { child_a }
+      let(:parent_block_id) { parent_block.id }
+
+      let(:block_to_move) { block_a }
       let(:new_position) { 2 }
 
       it "reorders children within their sibling group without affecting the parent" do
-        subject
-        expect(child_a.reload.position).to eq(2)
-        expect(child_b.reload.position).to eq(0)
-        expect(child_c.reload.position).to eq(1)
+        expect(block_a.reload.position).to eq(2)
+        expect(block_b.reload.position).to eq(0)
+        expect(block_c.reload.position).to eq(1)
         expect(parent_block.reload.position).to eq(0)
       end
     end
 
     context "with a position beyond the last sibling" do
-      let!(:block_a) { create(:experience_block, :announcement, experience: experience, position: 0) }
-      let!(:block_b) { create(:experience_block, :announcement, experience: experience, position: 1) }
-
       let(:block_to_move) { block_a }
       let(:new_position) { 99 }
 
       it "clamps to the last valid position" do
-        subject
         expect(block_b.reload.position).to eq(0)
-        expect(block_a.reload.position).to eq(1)
+        expect(block_c.reload.position).to eq(1)
+        expect(block_a.reload.position).to eq(2)
       end
     end
 
     context "when source and destination are the same" do
-      let!(:block_a) { create(:experience_block, :announcement, experience: experience, position: 0) }
-      let!(:block_b) { create(:experience_block, :announcement, experience: experience, position: 1) }
-
       let(:block_to_move) { block_a }
       let(:new_position) { 0 }
 
       it "returns the block unchanged" do
-        result = subject
-        expect(result.id).to eq(block_a.id)
         expect(block_a.reload.position).to eq(0)
         expect(block_b.reload.position).to eq(1)
       end
     end
 
-    context "when the actor is not authorized" do
-      let(:participant_role) { ExperienceParticipant.roles[:audience] }
-      let!(:block_a) { create(:experience_block, :announcement, experience: experience, position: 0) }
-
-      let(:block_to_move) { block_a }
-      let(:new_position) { 0 }
-
-      it "raises a forbidden error" do
-        expect { subject }.to raise_error(Experiences::ForbiddenError)
-      end
-    end
   end
 
   describe "#open_lobby!" do

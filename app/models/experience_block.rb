@@ -94,12 +94,11 @@ class ExperienceBlock < ApplicationRecord
     parent_block_id.present?
   end
 
-  def siblings
-    if parent_block?
-      experience.experience_blocks.parent_blocks.where.not(id: id)
-    else
-      ExperienceBlock.where(parent_block_id: parent_block_id).where.not(id: id)
-    end
+  def siblings(include_self: false)
+    experience
+      .experience_blocks
+      .yield_self { |b| parent_block? ? b.parent_blocks : b.where(parent_block_id: parent_block_id) }
+      .yield_self { |s| include_self ? s : s.where.not(id: id) }
   end
 
   def next_sibling

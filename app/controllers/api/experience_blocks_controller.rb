@@ -1,7 +1,6 @@
 class Api::ExperienceBlocksController < Api::BaseController
   before_action :authenticate_and_set_user_and_experience
 
-
   # POST /api/experiences/:experience_id/blocks
   def create
     with_experience_orchestration do
