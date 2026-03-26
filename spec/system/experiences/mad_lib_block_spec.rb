@@ -41,8 +41,7 @@ RSpec.describe "Mad Lib Block", type: :system do
       select "Alice (audience)", from: "Assign to participant"
     end
 
-    select_block(1, kind: "mad_lib")
-    present_block
+    select_and_present(1, kind: "mad_lib")
 
     # Alice sees the question assigned to her
     using_session(:alice) do
@@ -114,8 +113,7 @@ RSpec.describe "Mad Lib Block", type: :system do
     end
 
     it "blocks the edit with a message to deactivate first while the block is active" do
-      click_button "Edit"
-      expect(page).to have_text("Edit Block")
+      edit_block
       click_button "Save"
 
       expect(page).to have_text(/Cannot edit a Mad Lib while it is active/i)
@@ -126,8 +124,7 @@ RSpec.describe "Mad Lib Block", type: :system do
       stop_presenting_block
 
       select_block(1, kind: "mad.lib")
-      click_button "Edit"
-      expect(page).to have_text("Edit Block")
+      edit_block
 
       select "Alice (audience)", from: "Assign to participant"
       click_button "Save"

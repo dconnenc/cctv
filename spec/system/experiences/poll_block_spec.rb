@@ -57,8 +57,7 @@ RSpec.describe "Poll Block", type: :system do
 
     # Present the poll block
     visit current_path
-    select_block(1, kind: "poll")
-    present_block
+    select_and_present(1, kind: "poll")
 
     ## Each participant selects a different option
     using_session(:participant) do
@@ -94,8 +93,7 @@ RSpec.describe "Poll Block", type: :system do
       find("select[aria-label='Visible to segments']").select("Team A")
     end
 
-    select_block(2, kind: "announcement")
-    present_block
+    select_and_present(2, kind: "announcement")
 
     using_session(:participant) do
       expect(page).to have_text("Hello Team A!")
@@ -114,8 +112,7 @@ RSpec.describe "Poll Block", type: :system do
       find("select[aria-label='Visible to segments']").select("Team B")
     end
 
-    select_block(3, kind: "announcement")
-    present_block
+    select_and_present(3, kind: "announcement")
 
     using_session(:participant_two) do
       expect(page).to have_text("Hello Team B!")
@@ -143,8 +140,7 @@ RSpec.describe "Poll Block", type: :system do
 
     context "without responses" do
       it "saves without a confirmation prompt" do
-        click_button "Edit"
-        expect(page).to have_text("Edit Block")
+        edit_block
 
         fill_in "Poll Question", with: "Updated question?"
         click_button "Save"
@@ -169,8 +165,7 @@ RSpec.describe "Poll Block", type: :system do
         end
 
         visit current_path
-        select_block(1, kind: "poll")
-        present_block
+        select_and_present(1, kind: "poll")
 
         using_session(:participant) do
           expect(page).to have_button("Submit", disabled: false)
@@ -184,8 +179,7 @@ RSpec.describe "Poll Block", type: :system do
       end
 
       it "shows a warning when saving and saves after confirmation" do
-        click_button "Edit"
-        expect(page).to have_text("Edit Block")
+        edit_block
 
         fill_in "Poll Question", with: "Updated question?"
         click_button "Save"
@@ -198,8 +192,7 @@ RSpec.describe "Poll Block", type: :system do
       end
 
       it "warns, clears responses, and saves when poll options are changed" do
-        click_button "Edit"
-        expect(page).to have_text("Edit Block")
+        edit_block
 
         fill_in "Option 1", with: "maybe"
         click_button "Save"

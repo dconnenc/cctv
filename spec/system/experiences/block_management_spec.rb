@@ -104,8 +104,7 @@ RSpec.describe "Managing Blocks", type: :system do
       )
 
       # Start presenting the block
-      select_block(1, kind: "announcement")
-      present_block
+      select_and_present(1, kind: "announcement")
 
       # Assert impersonation and monitor views
       within("[aria-label='Preview mode']") { click_button "Participant" }

@@ -28,8 +28,7 @@ RSpec.describe "Announcement Block", type: :system do
     end
 
     visit current_path
-    select_block(1, kind: "announcement")
-    present_block
+    select_and_present(1, kind: "announcement")
 
     using_session(:participant) do
       expect(page).to have_text("Welcome Alice to the show!")
@@ -81,8 +80,7 @@ RSpec.describe "Announcement Block", type: :system do
 
     context "when the block is hidden" do
       it "saves without a confirmation prompt" do
-        click_button "Edit"
-        expect(page).to have_text("Edit Block")
+        edit_block
 
         fill_in "Announcement Message", with: "Updated message"
         click_button "Save"
@@ -98,8 +96,7 @@ RSpec.describe "Announcement Block", type: :system do
       end
 
       it "shows a warning and saves after confirmation" do
-        click_button "Edit"
-        expect(page).to have_text("Edit Block")
+        edit_block
 
         fill_in "Announcement Message", with: "Updated message"
         click_button "Save"

@@ -25,8 +25,7 @@ RSpec.describe "Question Block", type: :system do
     end
 
     visit current_path
-    select_block(1, kind: "question")
-    present_block
+    select_and_present(1, kind: "question")
 
     using_session(:participant) do
       expect(page).to have_text("What is your favorite color?")
@@ -52,8 +51,7 @@ RSpec.describe "Question Block", type: :system do
 
     context "without responses" do
       it "saves without a confirmation prompt" do
-        click_button "Edit"
-        expect(page).to have_text("Edit Block")
+        edit_block
 
         fill_in "Question", with: "Updated question?"
         click_button "Save"
@@ -78,8 +76,7 @@ RSpec.describe "Question Block", type: :system do
         end
 
         visit current_path
-        select_block(1, kind: "question")
-        present_block
+        select_and_present(1, kind: "question")
 
         using_session(:participant) do
           expect(page).to have_button("Submit", disabled: false)
@@ -93,8 +90,7 @@ RSpec.describe "Question Block", type: :system do
       end
 
       it "shows a warning when saving and saves after confirmation" do
-        click_button "Edit"
-        expect(page).to have_text("Edit Block")
+        edit_block
 
         fill_in "Question", with: "Updated question?"
         click_button "Save"

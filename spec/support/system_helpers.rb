@@ -164,6 +164,20 @@ module SystemHelpers
     expect(page).to have_button("Present")
   end
 
+  # Selects block N in the sidebar and presents it in one step.
+  def select_and_present(n, kind:)
+    select_block(n, kind:)
+    present_block
+  end
+
+  # Opens the edit form for the currently selected block.
+  # Pre-asserts "Edit" is available; post-asserts "Edit Block" heading appears.
+  def edit_block
+    expect(page).to have_button("Edit")
+    click_button "Edit"
+    expect(page).to have_text("Edit Block")
+  end
+
   # Opens the participants panel, yields, then closes it.
   # Requires the manage page (/manage) to be the current path.
   def within_participants_panel(&block)

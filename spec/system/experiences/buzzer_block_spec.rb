@@ -28,8 +28,7 @@ RSpec.describe "Buzzer Block", type: :system do
     end
 
     visit current_path
-    select_block(1, kind: "buzzer")
-    present_block
+    select_and_present(1, kind: "buzzer")
 
     # Monitor impersonation view shows the custom prompt
     within("[aria-label='Preview mode']") { click_button "Monitor" }
@@ -83,8 +82,7 @@ RSpec.describe "Buzzer Block", type: :system do
     end
 
     visit current_path
-    select_block(1, kind: "buzzer")
-    present_block
+    select_and_present(1, kind: "buzzer")
 
     using_session(:participant) do
       expect(page).to have_css("button[aria-label='Buzz in']")
@@ -125,8 +123,7 @@ RSpec.describe "Buzzer Block", type: :system do
 
     context "when no one has buzzed in" do
       it "saves without a confirmation prompt" do
-        click_button "Edit"
-        expect(page).to have_text("Edit Block")
+        edit_block
 
         fill_in "Prompt", with: "Updated prompt"
         click_button "Save"
@@ -151,8 +148,7 @@ RSpec.describe "Buzzer Block", type: :system do
         end
 
         visit current_path
-        select_block(1, kind: "buzzer")
-        present_block
+        select_and_present(1, kind: "buzzer")
 
         using_session(:participant) do
           expect(page).to have_css("button[aria-label='Buzz in']")
@@ -165,8 +161,7 @@ RSpec.describe "Buzzer Block", type: :system do
       end
 
       it "warns that the block is active but saves after confirmation without a separate response warning" do
-        click_button "Edit"
-        expect(page).to have_text("Edit Block")
+        edit_block
 
         fill_in "Prompt", with: "Updated prompt"
         click_button "Save"

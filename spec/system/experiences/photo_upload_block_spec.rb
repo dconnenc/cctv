@@ -25,8 +25,7 @@ RSpec.describe "Photo Upload Block", type: :system do
     end
 
     visit current_path
-    select_block(1, kind: "photo_upload")
-    present_block
+    select_and_present(1, kind: "photo_upload")
 
     using_session(:participant) do
       expect(page).to have_text("Upload a photo of your workspace")

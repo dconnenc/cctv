@@ -20,8 +20,7 @@ RSpec.describe "Family Feud Block", type: :system do
 
     context "without responses" do
       it "saves without a confirmation prompt" do
-        click_button "Edit"
-        expect(page).to have_text("Edit Block")
+        edit_block
 
         fill_in "Title", with: "Updated Title"
         click_button "Save"
@@ -35,15 +34,13 @@ RSpec.describe "Family Feud Block", type: :system do
         start_experience
 
         visit current_path
-        select_block(1, kind: "family.feud")
-        present_block
+        select_and_present(1, kind: "family.feud")
 
         select_block(1, kind: "family.feud")
       end
 
       it "shows a warning that the block is active and saves after confirmation" do
-        click_button "Edit"
-        expect(page).to have_text("Edit Block")
+        edit_block
 
         fill_in "Title", with: "Updated Title"
         click_button "Save"
