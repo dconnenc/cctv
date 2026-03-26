@@ -48,7 +48,7 @@ RSpec.describe "Participating in an Experience", type: :system do
         expect(page).to have_field(placeholder: "Your Name", with: "Alice")
 
         # No email field as the user has an active session
-        expect(page).to_not have_field(placeholder: "Your Email")
+        expect(page).to have_no_field(placeholder: "Your Email")
 
         click_button "Register"
 

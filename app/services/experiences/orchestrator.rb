@@ -149,20 +149,6 @@ module Experiences
       submission
     end
 
-    def submit_multistep_form_response!(block_id:, answer:)
-      block = experience.experience_blocks.find(block_id)
-
-      submission = ExperienceMultistepFormSubmission.find_or_initialize_by(
-        experience_block_id: block.id,
-        user_id: actor.id
-      )
-
-      submission.answer = answer
-      submission.save!
-
-      submission
-    end
-
     def submit_mad_lib_response!(block_id:, answer:)
       block = experience.experience_blocks.find(block_id)
 
@@ -723,12 +709,6 @@ module Experiences
           old_opts = Array(block.payload["options"]).sort
           new_opts = Array(new_payload["options"]).sort
           block.experience_poll_submissions.delete_all if old_opts != new_opts
-        end
-      when ExperienceBlock::MULTISTEP_FORM
-        if block.experience_multistep_form_submissions.exists?
-          old_keys = (block.payload["questions"] || []).map { |q| q["formKey"] }
-          new_keys = (new_payload["questions"] || []).map { |q| q["formKey"] }
-          block.experience_multistep_form_submissions.delete_all if old_keys != new_keys
         end
       when ExperienceBlock::MAD_LIB
         if block.experience_mad_lib_submissions.exists?

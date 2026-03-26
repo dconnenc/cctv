@@ -8,7 +8,6 @@ import CreateAnnouncement from '../CreateBlock/CreateAnnouncement/CreateAnnounce
 import CreateBuzzer from '../CreateBlock/CreateBuzzer/CreateBuzzer';
 import CreateFamilyFeud from '../CreateBlock/CreateFamilyFeud/CreateFamilyFeud';
 import CreateMadLib from '../CreateBlock/CreateMadLib/CreateMadLib';
-import CreateMultistepForm from '../CreateBlock/CreateMultistepForm/CreateMultistepForm';
 import CreatePhotoUpload from '../CreateBlock/CreatePhotoUpload/CreatePhotoUpload';
 import CreatePoll from '../CreateBlock/CreatePoll/CreatePoll';
 import CreateQuestion from '../CreateBlock/CreateQuestion/CreateQuestion';
@@ -42,7 +41,6 @@ interface EditBlockFormProps {
 const KIND_LABELS: Record<BlockKind, string> = {
   [BlockKind.POLL]: 'Poll',
   [BlockKind.QUESTION]: 'Question',
-  [BlockKind.MULTISTEP_FORM]: 'Multistep Form',
   [BlockKind.ANNOUNCEMENT]: 'Announcement',
   [BlockKind.MAD_LIB]: 'Mad Lib',
   [BlockKind.FAMILY_FEUD]: 'Family Feud',
@@ -123,13 +121,6 @@ function BlockEditor() {
       return <CreatePoll data={blockData.data} onChange={onChange} />;
     case BlockKind.QUESTION:
       return <CreateQuestion data={blockData.data} onChange={onChange} />;
-    case BlockKind.MULTISTEP_FORM:
-      return (
-        <CreateMultistepForm
-          multistepQuestions={blockData.data.questions}
-          setMultistepQuestions={(questions) => onChange({ questions })}
-        />
-      );
     case BlockKind.ANNOUNCEMENT:
       return <CreateAnnouncement data={blockData.data} onChange={onChange} />;
     case BlockKind.MAD_LIB:

@@ -84,11 +84,6 @@ module Experiences
           experience_block_id: source_block.id,
           user_id: participant.user_id
         )
-      when ExperienceBlock::MULTISTEP_FORM
-        ExperienceMultistepFormSubmission.find_by(
-          experience_block_id: source_block.id,
-          user_id: participant.user_id
-        )
       else
         nil
       end

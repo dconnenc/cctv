@@ -88,50 +88,12 @@ function generateQuestionResponse(block: Block): { value: string; submittedAt: s
   };
 }
 
-function generateMultistepFormResponse(block: Block): {
-  responses: Record<string, string>;
-  submittedAt: string;
-} {
-  if (block.kind !== BlockKind.MULTISTEP_FORM) {
-    throw new Error('Block is not a multistep form');
-  }
-
-  const questions = block.payload.questions || [];
-  const responses: Record<string, string> = {};
-
-  for (const question of questions) {
-    const inputType = question.inputType || 'text';
-    let value: string;
-
-    switch (inputType) {
-      case 'number':
-      case 'tel':
-        value = getRandomElement(RANDOM_NUMBERS);
-        break;
-      case 'email':
-        value = `${getRandomElement(RANDOM_WORDS)}@test.local`;
-        break;
-      default:
-        value = getRandomElement(RANDOM_WORDS);
-    }
-
-    responses[question.formKey] = value;
-  }
-
-  return {
-    responses,
-    submittedAt: new Date().toISOString(),
-  };
-}
-
 function getSubmitEndpoint(block: Block): string | null {
   switch (block.kind) {
     case BlockKind.POLL:
       return 'submit_poll_response';
     case BlockKind.QUESTION:
       return 'submit_question_response';
-    case BlockKind.MULTISTEP_FORM:
-      return 'submit_multistep_form_response';
     case BlockKind.ANNOUNCEMENT:
     case BlockKind.MAD_LIB:
     case BlockKind.FAMILY_FEUD:
@@ -147,8 +109,6 @@ function generateResponse(block: Block): Record<string, any> | null {
       return generatePollResponse(block);
     case BlockKind.QUESTION:
       return generateQuestionResponse(block);
-    case BlockKind.MULTISTEP_FORM:
-      return generateMultistepFormResponse(block);
     case BlockKind.ANNOUNCEMENT:
     case BlockKind.MAD_LIB:
     case BlockKind.FAMILY_FEUD:

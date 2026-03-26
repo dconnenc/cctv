@@ -4,7 +4,6 @@ class ExperienceBlock < ApplicationRecord
   KINDS = [
     POLL = "poll",
     QUESTION = "question",
-    MULTISTEP_FORM = "multistep_form",
     ANNOUNCEMENT = "announcement",
     MAD_LIB = "mad_lib",
     FAMILY_FEUD = "family_feud",
@@ -25,7 +24,6 @@ class ExperienceBlock < ApplicationRecord
 
   has_many :experience_poll_submissions, dependent: :destroy
   has_many :experience_question_submissions, dependent: :destroy
-  has_many :experience_multistep_form_submissions, dependent: :destroy
   has_many :experience_mad_lib_submissions, dependent: :destroy
   has_many :experience_photo_upload_submissions, dependent: :destroy
   has_many :experience_buzzer_submissions, dependent: :destroy

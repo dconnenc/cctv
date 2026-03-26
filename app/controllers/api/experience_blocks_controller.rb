@@ -7,7 +7,7 @@ class Api::ExperienceBlocksController < Api::BaseController
   ].freeze
 
   SUBMISSION_ACTIONS = %i[
-    submit_poll_response submit_question_response submit_multistep_form_response
+    submit_poll_response submit_question_response
     submit_mad_lib_response submit_photo_upload_response submit_buzzer_response
   ].freeze
 
@@ -212,22 +212,6 @@ class Api::ExperienceBlocksController < Api::BaseController
           }
         )
       end
-
-      Experiences::Broadcaster.new(@experience).broadcast_experience_update
-
-      render json: { success: true, data: { submission: submission } }, status: 200
-    end
-  end
-
-  # POST /api/experiences/:experience_id/blocks/:id/submit_multistep_form_response
-  def submit_multistep_form_response
-    with_experience_orchestration do
-      submission = Experiences::Orchestrator.new(
-        experience: @experience, actor: @user
-      ).submit_multistep_form_response!(
-        block_id: params[:id],
-        answer: params[:answer]
-      )
 
       Experiences::Broadcaster.new(@experience).broadcast_experience_update
 

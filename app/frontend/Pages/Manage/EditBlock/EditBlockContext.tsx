@@ -11,7 +11,6 @@ import {
   FormBlockData,
   MadLibBlock,
   MadLibPayload,
-  MultistepFormPayload,
   ParticipantSummary,
 } from '@cctv/types';
 
@@ -31,11 +30,6 @@ import {
   validateFamilyFeud,
 } from '../CreateBlock/CreateFamilyFeud/CreateFamilyFeud';
 import { madLibPayloadToFormData, validateMadLib } from '../CreateBlock/CreateMadLib/CreateMadLib';
-import {
-  buildMultistepFormPayload,
-  multistepFormPayloadToFormData,
-  validateMultistepForm,
-} from '../CreateBlock/CreateMultistepForm/CreateMultistepForm';
 import {
   buildPhotoUploadPayload,
   photoUploadPayloadToFormData,
@@ -75,11 +69,6 @@ function blockToFormData(block: Block, participants: ParticipantSummary[]): Form
       return { kind: BlockKind.POLL, data: pollPayloadToFormData(block.payload) };
     case BlockKind.QUESTION:
       return { kind: BlockKind.QUESTION, data: questionPayloadToFormData(block.payload) };
-    case BlockKind.MULTISTEP_FORM:
-      return {
-        kind: BlockKind.MULTISTEP_FORM,
-        data: multistepFormPayloadToFormData(block.payload as MultistepFormPayload),
-      };
     case BlockKind.ANNOUNCEMENT:
       return { kind: BlockKind.ANNOUNCEMENT, data: announcementPayloadToFormData(block.payload) };
     case BlockKind.MAD_LIB: {
@@ -120,8 +109,6 @@ function buildUpdatePayload(blockData: FormBlockData): {
       return { payload: buildPollPayload(blockData.data) };
     case BlockKind.QUESTION:
       return { payload: buildQuestionPayload(blockData.data) };
-    case BlockKind.MULTISTEP_FORM:
-      return { payload: buildMultistepFormPayload(blockData.data) };
     case BlockKind.ANNOUNCEMENT:
       return { payload: buildAnnouncementPayload(blockData.data) };
     case BlockKind.MAD_LIB: {
@@ -220,9 +207,6 @@ export function EditBlockProvider({
       case BlockKind.QUESTION:
         validationError = validateQuestion(blockData.data);
         break;
-      case BlockKind.MULTISTEP_FORM:
-        validationError = validateMultistepForm(blockData.data);
-        break;
       case BlockKind.ANNOUNCEMENT:
         validationError = validateAnnouncement(blockData.data);
         break;
@@ -261,7 +245,6 @@ export function EditBlockProvider({
       BlockKind.PHOTO_UPLOAD,
       BlockKind.ANNOUNCEMENT,
       BlockKind.POLL,
-      BlockKind.MULTISTEP_FORM,
       BlockKind.MAD_LIB,
     ];
     const hasSubmissions = submissionCount > 0 && submissionWarnKinds.includes(blockData.kind);

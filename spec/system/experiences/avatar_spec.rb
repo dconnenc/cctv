@@ -13,6 +13,31 @@ RSpec.describe "Avatar flow", type: :system do
   end
 
   describe "Lobby gate (experience not started)" do
+    it "prompts a user for an avatar and shows them on the monitor after submission" do
+      using_session(:monitor) do
+        visit "/experiences/#{experience.code_slug}/monitor"
+        expect(page).to have_text("Participants")
+      end
+
+      using_session(:participant) do
+        register_participant(
+          code: experience.code_slug,
+          name: "Alice",
+          email: "alice@example.com",
+          experience_name: experience.name
+        )
+
+        expect(page).to have_text("Draw your avatar to enter the lobby")
+
+        draw_and_submit_avatar
+        expect(page).to have_text("Players in Lobby:")
+      end
+
+      using_session(:monitor) do
+        expect(page).to have_text("Alice")
+      end
+    end
+
     it "redirects an avatar-less participant to the avatar page with lobby gate UI" do
       using_session(:participant) do
         register_participant(
@@ -25,7 +50,7 @@ RSpec.describe "Avatar flow", type: :system do
         expect(page).to have_current_path("/experiences/#{experience.code_slug}/avatar")
         expect(page).to have_text("Draw your avatar to enter the lobby")
         expect(page).to have_button("Submit", disabled: true)
-        expect(page).not_to have_button("Save")
+        expect(page).to have_no_button("Save")
       end
     end
 
@@ -62,9 +87,9 @@ RSpec.describe "Avatar flow", type: :system do
         wait_for_animation
 
         expect(page).to have_current_path("/experiences/#{experience.code_slug}/avatar")
-        expect(page).not_to have_text("Draw your avatar to enter the lobby")
+        expect(page).to have_no_text("Draw your avatar to enter the lobby")
         expect(page).to have_button("Save")
-        expect(page).not_to have_button("Submit")
+        expect(page).to have_no_button("Submit")
       end
     end
 
@@ -94,7 +119,7 @@ RSpec.describe "Avatar flow", type: :system do
         expect(page).to have_button("Save")
         expect(page).to have_css("canvas")
         # Canvas is empty so there are no drawn strokes to submit back with
-        expect(page).not_to have_button("Submit")
+        expect(page).to have_no_button("Submit")
       end
     end
 
@@ -208,7 +233,7 @@ RSpec.describe "Avatar flow", type: :system do
           experience_name: experience.name
         )
 
-        expect(page).not_to have_current_path("/experiences/#{experience.code_slug}/avatar")
+        expect(page).to have_no_current_path("/experiences/#{experience.code_slug}/avatar")
         expect(page).to have_css('button[aria-label="Edit avatar"]')
       end
     end
@@ -226,13 +251,13 @@ RSpec.describe "Avatar flow", type: :system do
         wait_for_animation
 
         expect(page).to have_current_path("/experiences/#{experience.code_slug}/avatar")
-        expect(page).not_to have_text("Draw your avatar to enter the lobby")
+        expect(page).to have_no_text("Draw your avatar to enter the lobby")
         expect(page).to have_button("Save")
-        expect(page).not_to have_button("Submit")
+        expect(page).to have_no_button("Submit")
 
         click_button "Save"
 
-        expect(page).not_to have_current_path("/experiences/#{experience.code_slug}/avatar")
+        expect(page).to have_no_current_path("/experiences/#{experience.code_slug}/avatar")
       end
     end
   end

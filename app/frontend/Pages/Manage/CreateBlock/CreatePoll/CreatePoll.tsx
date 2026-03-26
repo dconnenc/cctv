@@ -174,6 +174,7 @@ export default function CreatePoll({ data, onChange }: BlockComponentProps<PollD
               {definedSegments.length > 0 && option.trim() !== '' && (
                 <Dropdown
                   label="Assign segment"
+                  aria-label={`Assign segment for option ${index + 1}`}
                   options={[
                     { label: 'None', value: '' },
                     ...definedSegments.map((s) => ({ label: s.name, value: s.id })),

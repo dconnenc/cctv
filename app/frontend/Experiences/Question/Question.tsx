@@ -101,7 +101,14 @@ export default function Question({
       <fieldset className={styles.fieldset}>
         <legend className={styles.legend}>{question}</legend>
         {error && <p className={styles.error}>{error}</p>}
-        <TextInput key={blockId} name={formKey} type={inputType} required disabled={disabled} />
+        <TextInput
+          key={blockId}
+          name={formKey}
+          type={inputType}
+          required
+          disabled={disabled}
+          aria-label={question}
+        />
         <Button type="submit" disabled={disabled}>
           {buttonText}
         </Button>

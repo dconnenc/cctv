@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_03_24_000002) do
+ActiveRecord::Schema[7.2].define(version: 2026_03_26_000001) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "citext"
   enable_extension "plpgsql"
@@ -139,16 +139,6 @@ ActiveRecord::Schema[7.2].define(version: 2026_03_24_000002) do
     t.datetime "updated_at", null: false
     t.index ["experience_block_id"], name: "index_experience_mad_lib_submissions_on_experience_block_id"
     t.index ["user_id"], name: "index_experience_mad_lib_submissions_on_user_id"
-  end
-
-  create_table "experience_multistep_form_submissions", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
-    t.uuid "experience_block_id", null: false
-    t.uuid "user_id", null: false
-    t.jsonb "answer", default: {}, null: false
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.index ["experience_block_id"], name: "idx_on_experience_block_id_3cadb23df3"
-    t.index ["user_id"], name: "index_experience_multistep_form_submissions_on_user_id"
   end
 
   create_table "experience_participant_segments", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -281,8 +271,6 @@ ActiveRecord::Schema[7.2].define(version: 2026_03_24_000002) do
   add_foreign_key "experience_buzzer_submissions", "users", on_delete: :cascade
   add_foreign_key "experience_mad_lib_submissions", "experience_blocks", on_delete: :cascade
   add_foreign_key "experience_mad_lib_submissions", "users", on_delete: :cascade
-  add_foreign_key "experience_multistep_form_submissions", "experience_blocks", on_delete: :cascade
-  add_foreign_key "experience_multistep_form_submissions", "users", on_delete: :cascade
   add_foreign_key "experience_participant_segments", "experience_participants", on_delete: :cascade
   add_foreign_key "experience_participant_segments", "experience_segments", on_delete: :cascade
   add_foreign_key "experience_participants", "experiences", on_delete: :cascade

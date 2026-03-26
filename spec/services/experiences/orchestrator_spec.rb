@@ -555,16 +555,6 @@ RSpec.describe Experiences::Orchestrator do
       :experience_question_submission
   end
 
-  describe "#submit_multistep_form_response!" do
-    let(:answer) { { "step1" => "data", "step2" => "more data" } }
-
-    it_behaves_like "a submission method",
-      :submit_multistep_form_response!,
-      "multistep_form",
-      ExperienceMultistepFormSubmission,
-      :experience_multistep_form_submission
-  end
-
   describe "#update_block!" do
     let(:participant_role) { ExperienceParticipant.roles[:host] }
 
@@ -639,26 +629,6 @@ RSpec.describe Experiences::Orchestrator do
         subject
         block.reload
         expect(block.payload["question"]).to eql("New Q?")
-      end
-    end
-
-    context "multistep form formKeys changed with submissions" do
-      let(:block) do
-        create(
-          :experience_block,
-          experience: experience,
-          kind: ExperienceBlock::MULTISTEP_FORM,
-          payload: { "questions" => [{ "question" => "Q1", "formKey" => "key1", "inputType" => "text" }] }
-        )
-      end
-      let(:new_payload) do
-        { "questions" => [{ "question" => "Q1", "formKey" => "key_changed", "inputType" => "text" }] }
-      end
-
-      before { create(:experience_multistep_form_submission, experience_block: block, user: user) }
-
-      it "clears submissions and saves" do
-        expect { subject }.to change { ExperienceMultistepFormSubmission.count }.by(-1)
       end
     end
 
