@@ -3,6 +3,10 @@ class Api::BaseController < ApplicationController
 
   include Passwordless::ControllerHelpers
 
+  authorize :user, through: :policy_user
+
+  rescue_from ActionPolicy::Unauthorized, with: :render_forbidden
+
   class UnauthorizedError < StandardError; end
   class NotFoundError < StandardError; end
 
@@ -28,6 +32,14 @@ class Api::BaseController < ApplicationController
   end
 
   private
+
+  def policy_user
+    @user || current_user
+  end
+
+  def render_forbidden
+    render json: { success: false, error: "forbidden" }, status: :forbidden
+  end
 
   def session_admin_signed_in?
     current_user&.admin? || current_user&.superadmin?
@@ -87,12 +99,6 @@ class Api::BaseController < ApplicationController
   def with_experience_orchestration
     begin
       yield
-    rescue Experiences::ForbiddenError => e
-      render json: {
-        success: false,
-        message: "forbidden",
-        error: e.message,
-      }, status: :forbidden
     rescue Experiences::InvalidTransitionError => e
       render json: {
         success: false,

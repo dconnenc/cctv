@@ -1,5 +1,4 @@
 class Api::ExperiencesController < Api::BaseController
-  authorize :user, through: :current_user
   before_action :authenticate_and_set_user_and_experience,
     only: [
       :open_lobby,
@@ -11,10 +10,14 @@ class Api::ExperiencesController < Api::BaseController
       :update_playbill
     ]
 
+  before_action -> { authorize! Experience, to: :create? }, only: [:create]
+  before_action :authorize_experience_action!, only: [:open_lobby, :start, :pause, :resume]
+  before_action -> { authorize! @experience, to: :manage? }, only: [:admin_token, :clear_avatars, :update_playbill]
+
+  after_action :verify_authorized, except: [:join, :registration_info]
+
   # POST /api/experiences
   def create
-    authorize! Experience, to: :create?
-
     valid, message = Experience.validate_code(params[:experience][:code])
 
     if valid
@@ -120,20 +123,10 @@ class Api::ExperiencesController < Api::BaseController
 
   # POST /api/experiences/:id/clear_avatars
   def clear_avatars
-    is_system_admin = @user&.admin? || @user&.superadmin?
-    is_host_or_mod = @experience.experience_participants.where(user_id: @user&.id, role: %w[host moderator]).exists?
-
-    unless is_system_admin || is_host_or_mod
-      render json: { success: false, error: 'forbidden' }, status: :forbidden
-      return
-    end
-
     ExperienceParticipant.where(experience_id: @experience.id).update_all(avatar: {})
 
-    # Broadcast full experience update so monitor/admin/participants refresh
     Experiences::Broadcaster.new(@experience).broadcast_experience_update
 
-    # Also send a live drawing clear signal to monitor to drop ephemeral strokes
     ActionCable.server.broadcast(
       Experiences::Broadcaster.monitor_stream_key(@experience),
       { type: 'drawing_update', participant_id: nil, operation: 'clear_all' },
@@ -143,16 +136,7 @@ class Api::ExperiencesController < Api::BaseController
   end
 
   # PATCH /api/experiences/:id/update_playbill
-  # TODO: this is using non standard auth patterns
   def update_playbill
-    is_system_admin = @user&.admin? || @user&.superadmin?
-    is_host_or_mod = @experience.experience_participants.where(user_id: @user&.id, role: %w[host moderator]).exists?
-
-    unless is_system_admin || is_host_or_mod
-      render json: { success: false, error: 'forbidden' }, status: :forbidden
-      return
-    end
-
     @experience.playbill = params[:playbill] || []
     @experience.playbill_enabled = params[:playbill_enabled] unless params[:playbill_enabled].nil?
 
@@ -176,8 +160,6 @@ class Api::ExperiencesController < Api::BaseController
 
   # POST /api/experiences/:id/admin_token
   def admin_token
-    authorize! @experience, to: :manage?
-
     jwt = Experiences::AuthService.jwt_for_admin(user: @user)
 
     render json: {
@@ -208,10 +190,8 @@ class Api::ExperiencesController < Api::BaseController
   end
 
   # POST /api/experiences/join
-  # Handles code submission - checks if user exists and is registered
   def join
     code = join_params
-    # TODO: I don't know which this should be. Doing both for now
     experience = Experience.find_by_code_or_slug(code)
 
     if experience.nil?
@@ -236,7 +216,6 @@ class Api::ExperiencesController < Api::BaseController
   end
 
   # GET /api/experiences/:id/registration_info
-  # Public endpoint - returns minimal metadata needed for registration page
   def registration_info
     experience = Experience.find_by(code_slug: params[:id])
 
@@ -258,8 +237,6 @@ class Api::ExperiencesController < Api::BaseController
   end
 
   # POST /api/experiences/:id/register
-  # Handles user registration for an experience
-  # Uses :id param from route (slug) to find experience
   def register
     experience = Experience.find_by(code_slug: params[:id])
 
@@ -278,22 +255,17 @@ class Api::ExperiencesController < Api::BaseController
     user = current_user
 
     if user.nil?
-      # Security check: prevent anyone from entering an admin email and auto-logging in as admin
       existing_user = User.find_by(email: register_params[:email])
       if existing_user && (existing_user.admin? || existing_user.superadmin?)
         render json: { type: 'error', error: "This email is already registered. Please sign in first." }, status: :forbidden
         return
       end
 
-      # Find or create user
       user = User.find_by(email: register_params[:email])
 
       if user
         # Existing user registering for a new experience
-        # Don't update user.name - keep their existing name
-        # The participant_name will be used for the experience_participant record
       else
-        # New user - use participant_name for the user record
         user = User.create!(
           email: register_params[:email],
           name: register_params[:participant_name]
@@ -302,7 +274,6 @@ class Api::ExperiencesController < Api::BaseController
 
       sign_in(create_passwordless_session(user))
     end
-    # If user is already logged in (current_user exists), don't modify their user.name
 
     unless experience.user_registered?(user)
       experience.register_user(user, name: register_params[:participant_name])
@@ -320,6 +291,10 @@ class Api::ExperiencesController < Api::BaseController
 
   private
 
+  def authorize_experience_action!
+    authorize! @experience, to: :"#{action_name}?"
+  end
+
   def join_params
     params.require(:code)
   end
@@ -328,8 +303,6 @@ class Api::ExperiencesController < Api::BaseController
     params.permit(:email, :name, :participant_name)
   end
 
-  # Authenticate user for experience show - handles both JWT and session auth
-  # Returns [user, experience] or renders error and returns nil
   def authenticate_for_experience_show
     if bearer_token
       authenticate_with_jwt_for_show
@@ -361,7 +334,6 @@ class Api::ExperiencesController < Api::BaseController
   def authorize_participant_for_show(claims)
     user, experience = Experiences::AuthService.authorize_participant!(claims)
 
-    # Verify experience slug matches URL parameter
     if params[:id] != experience.code_slug
       render json: { type: 'error', error: "Experience mismatch" }, status: :unauthorized
       return nil
@@ -386,7 +358,6 @@ class Api::ExperiencesController < Api::BaseController
   end
 
   def find_experience_by_code_or_render_error(slug)
-    # Find by URL-safe slug
     experience = Experience.find_by(code_slug: slug)
 
     if experience.nil?

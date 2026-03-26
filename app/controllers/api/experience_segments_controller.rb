@@ -1,5 +1,8 @@
 class Api::ExperienceSegmentsController < Api::BaseController
   before_action :authenticate_and_set_user_and_experience
+  before_action :authorize_manage_blocks!, except: [:index]
+
+  after_action :verify_authorized, except: [:index]
 
   # GET /api/experiences/:experience_id/segments
   def index
@@ -71,6 +74,10 @@ class Api::ExperienceSegmentsController < Api::BaseController
   end
 
   private
+
+  def authorize_manage_blocks!
+    authorize! @experience, to: :manage_blocks?
+  end
 
   def orchestrator
     @orchestrator ||= Experiences::SegmentOrchestrator.new(
