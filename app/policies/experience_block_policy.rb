@@ -7,10 +7,6 @@ class ExperienceBlockPolicy < ApplicationPolicy
     user_allowed_to_interact_with_block?
   end
 
-  def submit_multistep_form_response?
-    user_allowed_to_interact_with_block?
-  end
-
   def submit_mad_lib_response?
     user_allowed_to_interact_with_block?
   end

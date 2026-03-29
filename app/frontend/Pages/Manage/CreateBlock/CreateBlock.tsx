@@ -10,7 +10,6 @@ import { CreateBlockProvider, useCreateBlockContext } from './CreateBlockContext
 import CreateBuzzer from './CreateBuzzer/CreateBuzzer';
 import CreateFamilyFeud from './CreateFamilyFeud/CreateFamilyFeud';
 import CreateMadLib from './CreateMadLib/CreateMadLib';
-import CreateMultistepForm from './CreateMultistepForm/CreateMultistepForm';
 import CreatePhotoUpload from './CreatePhotoUpload/CreatePhotoUpload';
 import CreatePoll from './CreatePoll/CreatePoll';
 import CreateQuestion from './CreateQuestion/CreateQuestion';
@@ -59,7 +58,6 @@ function CreateBlockForm({ onClose }: CreateBlockFormProps) {
         options={[
           { label: 'Poll', value: BlockKind.POLL },
           { label: 'Question', value: BlockKind.QUESTION },
-          { label: 'Multistep Form', value: BlockKind.MULTISTEP_FORM },
           { label: 'Announcement', value: BlockKind.ANNOUNCEMENT },
           { label: 'Mad Lib', value: BlockKind.MAD_LIB },
           { label: 'Family Feud', value: BlockKind.FAMILY_FEUD },
@@ -115,13 +113,6 @@ function BlockEditor() {
       return <CreatePoll data={blockData.data} onChange={onChange} />;
     case BlockKind.QUESTION:
       return <CreateQuestion data={blockData.data} onChange={onChange} />;
-    case BlockKind.MULTISTEP_FORM:
-      return (
-        <CreateMultistepForm
-          multistepQuestions={blockData.data.questions}
-          setMultistepQuestions={(questions) => onChange({ questions })}
-        />
-      );
     case BlockKind.ANNOUNCEMENT:
       return <CreateAnnouncement data={blockData.data} onChange={onChange} />;
     case BlockKind.MAD_LIB:
@@ -161,6 +152,7 @@ function AdditionalDetails() {
           })}
           {definedSegments.filter((s) => !visibleSegments.includes(s.name)).length > 0 && (
             <select
+              aria-label="Visible to segments"
               style={{ fontSize: '0.75rem', padding: '0.15rem 0.3rem' }}
               value=""
               onChange={(e) => {

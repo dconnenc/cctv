@@ -4,9 +4,6 @@ module Experiences
   class UnsafeEditError < StandardError; end
 
   class BaseService
-    include ActionPolicy::Behaviour
-    authorize :user
-
     attr_reader :experience, :actor, :user
     def initialize(experience:, actor:)
       @experience = experience
@@ -15,14 +12,6 @@ module Experiences
     end
 
     private
-
-    def actor_action
-      begin
-        yield
-      rescue ActionPolicy::Unauthorized => e
-        raise Experiences::ForbiddenError.new(e.message)
-      end
-    end
 
     def transaction
       ActiveRecord::Base.transaction do

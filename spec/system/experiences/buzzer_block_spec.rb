@@ -9,16 +9,13 @@ RSpec.describe "Buzzer Block", type: :system do
       name: "Test Experience", code: "test-exp"
     )
 
-    click_button "Block"
-    expect(page).to have_text("Create Block")
-    select "Buzzer", from: "Kind"
-    fill_in "Prompt", with: "Get ready to buzz in!"
-    fill_in "Button Label (optional)", with: "Hit it!"
-    click_button "Queue block"
-    expect(page).to have_css("li[aria-label='block 1']")
+    queue_block(n: 1) do
+      select "Buzzer", from: "Kind"
+      fill_in "Prompt", with: "Get ready to buzz in!"
+      fill_in "Button Label (optional)", with: "Hit it!"
+    end
 
-    click_button "Start"
-    expect(page).to have_button("Pause")
+    start_experience
 
     using_session(:participant) do
       register_participant(
@@ -31,8 +28,7 @@ RSpec.describe "Buzzer Block", type: :system do
     end
 
     visit current_path
-    within("li[aria-label='block 1']") { find("button", text: /buzzer/i).click }
-    click_button "Present"
+    select_and_present(1, kind: "buzzer")
 
     # Monitor impersonation view shows the custom prompt
     within("[aria-label='Preview mode']") { click_button "Monitor" }
@@ -57,16 +53,13 @@ RSpec.describe "Buzzer Block", type: :system do
       name: "Test Experience", code: "test-exp"
     )
 
-    click_button "Block"
-    expect(page).to have_text("Create Block")
-    select "Buzzer", from: "Kind"
-    fill_in "Prompt", with: "Get ready to buzz in!"
-    fill_in "Button Label (optional)", with: "Hit it!"
-    click_button "Queue block"
-    expect(page).to have_css("li[aria-label='block 1']")
+    queue_block(n: 1) do
+      select "Buzzer", from: "Kind"
+      fill_in "Prompt", with: "Get ready to buzz in!"
+      fill_in "Button Label (optional)", with: "Hit it!"
+    end
 
-    click_button "Start"
-    expect(page).to have_button("Pause")
+    start_experience
 
     using_session(:participant) do
       register_participant(
@@ -89,8 +82,7 @@ RSpec.describe "Buzzer Block", type: :system do
     end
 
     visit current_path
-    within("li[aria-label='block 1']") { find("button", text: /buzzer/i).click }
-    click_button "Present"
+    select_and_present(1, kind: "buzzer")
 
     using_session(:participant) do
       expect(page).to have_css("button[aria-label='Buzz in']")
@@ -121,33 +113,29 @@ RSpec.describe "Buzzer Block", type: :system do
       sign_in(admin)
       create_experience_and_go_to_manage(name: "Test Experience", code: "test-exp")
 
-      click_button "Block"
-      expect(page).to have_text("Create Block")
-      select "Buzzer", from: "Kind"
-      fill_in "Prompt", with: "Original prompt"
-      click_button "Queue block"
-      expect(page).to have_css("li[aria-label='block 1']")
+      queue_block(n: 1) do
+        select "Buzzer", from: "Kind"
+        fill_in "Prompt", with: "Original prompt"
+      end
 
-      within("li[aria-label='block 1']") { find("button", text: /buzzer/i).click }
+      select_block(1, kind: "buzzer")
     end
 
     context "when no one has buzzed in" do
       it "saves without a confirmation prompt" do
-        click_button "Edit"
-        expect(page).to have_text("Edit Block")
+        edit_block
 
         fill_in "Prompt", with: "Updated prompt"
         click_button "Save"
 
-        within("li[aria-label='block 1']") { find("button", text: /buzzer/i).click }
+        select_block(1, kind: "buzzer")
         expect(page).to have_text("Updated prompt")
       end
     end
 
     context "when a participant has buzzed in" do
       before do
-        click_button "Start"
-        expect(page).to have_button("Pause")
+        start_experience
 
         using_session(:participant) do
           register_participant(
@@ -160,8 +148,7 @@ RSpec.describe "Buzzer Block", type: :system do
         end
 
         visit current_path
-        within("li[aria-label='block 1']") { find("button", text: /buzzer/i).click }
-        click_button "Present"
+        select_and_present(1, kind: "buzzer")
 
         using_session(:participant) do
           expect(page).to have_css("button[aria-label='Buzz in']")
@@ -170,12 +157,11 @@ RSpec.describe "Buzzer Block", type: :system do
         end
 
         visit current_path
-        within("li[aria-label='block 1']") { find("button", text: /buzzer/i).click }
+        select_block(1, kind: "buzzer")
       end
 
       it "warns that the block is active but saves after confirmation without a separate response warning" do
-        click_button "Edit"
-        expect(page).to have_text("Edit Block")
+        edit_block
 
         fill_in "Prompt", with: "Updated prompt"
         click_button "Save"
@@ -184,7 +170,7 @@ RSpec.describe "Buzzer Block", type: :system do
         expect(page).to have_no_text("response has already been submitted")
         click_button "Save Anyway"
 
-        within("li[aria-label='block 1']") { find("button", text: /buzzer/i).click }
+        select_block(1, kind: "buzzer")
         expect(page).to have_text("Updated prompt")
       end
     end

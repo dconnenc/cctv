@@ -9,8 +9,7 @@ RSpec.describe "Mad Lib Block", type: :system do
       name: "Test Experience", code: "test-exp"
     )
 
-    click_button "Start"
-    expect(page).to have_button("Pause")
+    start_experience
 
     using_session(:alice) do
       register_participant(
@@ -33,20 +32,16 @@ RSpec.describe "Mad Lib Block", type: :system do
     end
 
     visit current_path
-    click_button "Block"
-    expect(page).to have_text("Create Block")
-    select "Mad Lib", from: "Kind"
+    queue_block(n: 1) do
+      select "Mad Lib", from: "Kind"
 
-    click_button "Add Variable"
-    fill_in "Variable Name", with: "adjective"
-    fill_in "Question to ask user", with: "Enter an adjective"
-    select "Alice (audience)", from: "Assign to participant"
+      click_button "Add Variable"
+      fill_in "Variable Name", with: "adjective"
+      fill_in "Question to ask user", with: "Enter an adjective"
+      select "Alice (audience)", from: "Assign to participant"
+    end
 
-    click_button "Queue block"
-    expect(page).to have_css("li[aria-label='block 1']")
-
-    within("li[aria-label='block 1']") { find("button", text: /mad_lib/i).click }
-    click_button "Present"
+    select_and_present(1, kind: "mad_lib")
 
     # Alice sees the question assigned to her
     using_session(:alice) do
@@ -61,7 +56,7 @@ RSpec.describe "Mad Lib Block", type: :system do
 
     # Alice submits her word
     using_session(:alice) do
-      find("input[type='text']").fill_in with: "fluffy"
+      find("input[aria-label='adjective']").fill_in with: "fluffy"
       click_button "Submit"
     end
 
@@ -79,8 +74,7 @@ RSpec.describe "Mad Lib Block", type: :system do
         name: "Test Experience", code: "test-exp"
       )
 
-      click_button "Start"
-      expect(page).to have_button("Pause")
+      start_experience
 
       using_session(:alice) do
         register_participant(
@@ -100,26 +94,26 @@ RSpec.describe "Mad Lib Block", type: :system do
       click_button "Add Variable"
       fill_in "Variable Name", with: "word"
       fill_in "Question to ask user", with: "Enter a word"
-      find("label", text: "Assign to participant").find("select").select("Alice (audience)")
+      select "Alice (audience)", from: "Assign to participant"
 
       click_button "Add Text"
       fill_in "Text", with: "Hello "
 
+      expect(page).to have_button("Play now")
       click_button "Play now"
       expect(page).to have_css("li[aria-label='block 1']")
 
       using_session(:alice) do
-        find("input[type='text']").fill_in with: "world"
+        find("input[aria-label='word']").fill_in with: "world"
         click_button "Submit"
       end
 
       visit "/experiences/test-exp/manage"
-      within("li[aria-label='block 1']") { find("button", text: /mad.lib/i).click }
+      select_block(1, kind: "mad.lib")
     end
 
     it "blocks the edit with a message to deactivate first while the block is active" do
-      click_button "Edit"
-      expect(page).to have_text("Edit Block")
+      edit_block
       click_button "Save"
 
       expect(page).to have_text(/Cannot edit a Mad Lib while it is active/i)
@@ -127,14 +121,12 @@ RSpec.describe "Mad Lib Block", type: :system do
     end
 
     it "warns and allows a destructive save after deactivating" do
-      click_button "Stop Presenting"
-      expect(page).to have_button("Present")
+      stop_presenting_block
 
-      within("li[aria-label='block 1']") { find("button", text: /mad.lib/i).click }
-      click_button "Edit"
-      expect(page).to have_text("Edit Block")
+      select_block(1, kind: "mad.lib")
+      edit_block
 
-      find("label", text: "Assign to participant").find("select").select("Alice (audience)")
+      select "Alice (audience)", from: "Assign to participant"
       click_button "Save"
 
       expect(page).to have_text(/response has already been submitted/i)

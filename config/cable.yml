@@ -2,7 +2,9 @@ development:
   adapter: async
 
 test:
-  adapter: test
+  adapter: <%= ENV.fetch("ACTION_CABLE_ADAPTER", "test") %>
+  url: <%= ENV.fetch("REDIS_URL") { "redis://localhost:6379/1" } %>
+  channel_prefix: cctv_test
 
 production:
   adapter: redis

@@ -36,13 +36,6 @@ import {
 } from './CreateFamilyFeud/CreateFamilyFeud';
 import { getDefaultMadLibState, validateMadLib } from './CreateMadLib/CreateMadLib';
 import {
-  buildMultistepFormPayload,
-  canMultistepFormOpenImmediately,
-  getDefaultMultistepFormState,
-  processMultistepFormBeforeSubmit,
-  validateMultistepForm,
-} from './CreateMultistepForm/CreateMultistepForm';
-import {
   buildPhotoUploadPayload,
   canPhotoUploadOpenImmediately,
   getDefaultPhotoUploadState,
@@ -96,8 +89,6 @@ export function CreateBlockProvider({
         return { kind: BlockKind.POLL, data: getDefaultPollState() };
       case BlockKind.QUESTION:
         return { kind: BlockKind.QUESTION, data: getDefaultQuestionState() };
-      case BlockKind.MULTISTEP_FORM:
-        return { kind: BlockKind.MULTISTEP_FORM, data: getDefaultMultistepFormState() };
       case BlockKind.ANNOUNCEMENT:
         return { kind: BlockKind.ANNOUNCEMENT, data: getDefaultAnnouncementState() };
       case BlockKind.MAD_LIB:
@@ -151,9 +142,6 @@ export function CreateBlockProvider({
         case BlockKind.QUESTION:
           validationError = validateQuestion(blockData.data);
           break;
-        case BlockKind.MULTISTEP_FORM:
-          validationError = validateMultistepForm(blockData.data);
-          break;
         case BlockKind.ANNOUNCEMENT:
           validationError = validateAnnouncement(blockData.data);
           break;
@@ -187,9 +175,6 @@ export function CreateBlockProvider({
           break;
         case BlockKind.QUESTION:
           canOpenImmediately = canQuestionOpenImmediately(blockData.data, participants);
-          break;
-        case BlockKind.MULTISTEP_FORM:
-          canOpenImmediately = canMultistepFormOpenImmediately(blockData.data, participants);
           break;
         case BlockKind.ANNOUNCEMENT:
           canOpenImmediately = canAnnouncementOpenImmediately(blockData.data, participants);
@@ -236,12 +221,6 @@ export function CreateBlockProvider({
             data: processQuestionBeforeSubmit(blockData.data, status, participants),
           };
           break;
-        case BlockKind.MULTISTEP_FORM:
-          processedFormData = {
-            kind: BlockKind.MULTISTEP_FORM,
-            data: processMultistepFormBeforeSubmit(blockData.data, status, participants),
-          };
-          break;
         case BlockKind.ANNOUNCEMENT:
           processedFormData = {
             kind: BlockKind.ANNOUNCEMENT,
@@ -286,9 +265,6 @@ export function CreateBlockProvider({
           break;
         case BlockKind.QUESTION:
           payload = buildQuestionPayload(processedFormData.data);
-          break;
-        case BlockKind.MULTISTEP_FORM:
-          payload = buildMultistepFormPayload(processedFormData.data);
           break;
         case BlockKind.ANNOUNCEMENT:
           payload = buildAnnouncementPayload(processedFormData.data);

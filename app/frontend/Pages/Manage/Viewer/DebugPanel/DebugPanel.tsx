@@ -22,7 +22,6 @@ function canSimulateResponses(block?: Block): boolean {
   switch (block.kind) {
     case BlockKind.POLL:
     case BlockKind.QUESTION:
-    case BlockKind.MULTISTEP_FORM:
       return true;
     case BlockKind.MAD_LIB:
     case BlockKind.FAMILY_FEUD:

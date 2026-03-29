@@ -14,7 +14,6 @@ export type BlockStatus = 'hidden' | 'open' | 'closed';
 export enum BlockKind {
   POLL = 'poll',
   QUESTION = 'question',
-  MULTISTEP_FORM = 'multistep_form',
   ANNOUNCEMENT = 'announcement',
   MAD_LIB = 'mad_lib',
   FAMILY_FEUD = 'family_feud',
@@ -42,10 +41,6 @@ export interface QuestionPayload {
   question: string;
   formKey: string;
   inputType?: 'text' | 'number' | 'email' | 'password' | 'tel';
-}
-
-export interface MultistepFormPayload {
-  questions: QuestionPayload[];
 }
 
 export interface AnnouncementPayload {
@@ -156,11 +151,6 @@ export interface QuestionApiPayload {
   inputType: 'text' | 'number' | 'email' | 'password' | 'tel';
 }
 
-export interface MultistepFormApiPayload {
-  type: 'multistep_form';
-  questions: Array<{ type: 'question'; question: string; formKey: string; inputType: string }>;
-}
-
 export interface AnnouncementApiPayload {
   type: 'announcement';
   message: string;
@@ -192,7 +182,6 @@ export interface BuzzerApiPayload {
 export type ApiPayload =
   | PollApiPayload
   | QuestionApiPayload
-  | MultistepFormApiPayload
   | AnnouncementApiPayload
   | MadLibApiPayload
   | FamilyFeudApiPayload
@@ -291,11 +280,6 @@ export interface QuestionBlock extends BaseBlock {
   payload: QuestionPayload;
 }
 
-export interface MultistepFormBlock extends BaseBlock {
-  kind: BlockKind.MULTISTEP_FORM;
-  payload: MultistepFormPayload;
-}
-
 export interface AnnouncementBlock extends BaseBlock {
   kind: BlockKind.ANNOUNCEMENT;
   payload: AnnouncementPayload;
@@ -360,7 +344,6 @@ export interface BuzzerBlock extends BaseBlock {
 export type Block =
   | PollBlock
   | QuestionBlock
-  | MultistepFormBlock
   | AnnouncementBlock
   | MadLibBlock
   | FamilyFeudBlock
@@ -421,7 +404,6 @@ export interface CreateBlockPayload {
   payload?:
     | PollPayload
     | QuestionPayload
-    | MultistepFormPayload
     | AnnouncementPayload
     | MadLibPayload
     | FamilyFeudPayload
@@ -717,10 +699,6 @@ export interface QuestionData {
   questionInputType: 'text' | 'number' | 'email' | 'password' | 'tel';
 }
 
-export interface MultistepFormData {
-  questions: Array<{ question: string; formKey: string; inputType: string }>;
-}
-
 export interface AnnouncementData {
   message: string;
   show_on_monitor: boolean;
@@ -749,7 +727,6 @@ export interface BuzzerData {
 export type BlockComponentData =
   | PollData
   | QuestionData
-  | MultistepFormData
   | AnnouncementData
   | MadLibData
   | FamilyFeudData
@@ -760,7 +737,6 @@ export type BlockComponentData =
 export type FormBlockData =
   | { kind: BlockKind.POLL; data: PollData }
   | { kind: BlockKind.QUESTION; data: QuestionData }
-  | { kind: BlockKind.MULTISTEP_FORM; data: MultistepFormData }
   | { kind: BlockKind.ANNOUNCEMENT; data: AnnouncementData }
   | { kind: BlockKind.MAD_LIB; data: MadLibData }
   | { kind: BlockKind.FAMILY_FEUD; data: FamilyFeudData }

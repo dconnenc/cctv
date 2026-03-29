@@ -4,7 +4,6 @@ class ExperienceBlock < ApplicationRecord
   KINDS = [
     POLL = "poll",
     QUESTION = "question",
-    MULTISTEP_FORM = "multistep_form",
     ANNOUNCEMENT = "announcement",
     MAD_LIB = "mad_lib",
     FAMILY_FEUD = "family_feud",
@@ -25,7 +24,6 @@ class ExperienceBlock < ApplicationRecord
 
   has_many :experience_poll_submissions, dependent: :destroy
   has_many :experience_question_submissions, dependent: :destroy
-  has_many :experience_multistep_form_submissions, dependent: :destroy
   has_many :experience_mad_lib_submissions, dependent: :destroy
   has_many :experience_photo_upload_submissions, dependent: :destroy
   has_many :experience_buzzer_submissions, dependent: :destroy
@@ -94,12 +92,11 @@ class ExperienceBlock < ApplicationRecord
     parent_block_id.present?
   end
 
-  def siblings
-    if parent_block?
-      experience.experience_blocks.parent_blocks.where.not(id: id)
-    else
-      ExperienceBlock.where(parent_block_id: parent_block_id).where.not(id: id)
-    end
+  def siblings(include_self: false)
+    experience
+      .experience_blocks
+      .yield_self { |b| parent_block? ? b.parent_blocks : b.where(parent_block_id: parent_block_id) }
+      .yield_self { |s| include_self ? s : s.where.not(id: id) }
   end
 
   def next_sibling

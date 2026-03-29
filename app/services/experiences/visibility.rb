@@ -147,7 +147,6 @@ module Experiences
       responded_user_ids = [
         ExperiencePollSubmission,
         ExperienceQuestionSubmission,
-        ExperienceMultistepFormSubmission,
         ExperienceMadLibSubmission
       ].flat_map { |klass| klass.where(experience_block_id: all_block_ids).distinct.pluck(:user_id) }.uniq
 
@@ -211,23 +210,7 @@ module Experiences
 
         response = {
           total:          submissions.count,
-          user_response:  format_poll_response(user_response),
-          user_responded: user_response.present?
-        }
-
-        if mod_or_host?(participant_role) || admin_user?(user)
-          response[:all_responses] = submissions.map { |s| submission_payload(s) }
-        end
-
-        response
-
-      when ExperienceBlock::MULTISTEP_FORM
-        submissions   = block.experience_multistep_form_submissions.to_a
-        user_response = submissions.find { |s| s.user_id == user&.id }
-
-        response = {
-          total:          submissions.count,
-          user_response:  format_poll_response(user_response),
+          user_response:  user_response ? { id: user_response.id, answer: user_response.answer } : nil,
           user_responded: user_response.present?
         }
 

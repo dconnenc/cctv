@@ -1,6 +1,22 @@
 class Api::ExperienceBlocksController < Api::BaseController
-  before_action :authenticate_and_set_user_and_experience
+  MANAGEMENT_ACTIONS = %i[
+    create update reorder open close hide clear_buzzer_responses
+    add_bucket rename_bucket delete_bucket assign_answer auto_categorize
+    start_playing reveal_bucket show_x next_question restart_playing
+    restart_categorizing restart_everything
+  ].freeze
 
+  SUBMISSION_ACTIONS = %i[
+    submit_poll_response submit_question_response
+    submit_mad_lib_response submit_photo_upload_response submit_buzzer_response
+  ].freeze
+
+  before_action :authenticate_and_set_user_and_experience
+  before_action :authorize_manage_blocks!, only: MANAGEMENT_ACTIONS
+  before_action :set_block, only: SUBMISSION_ACTIONS
+  before_action :authorize_block_submission!, only: SUBMISSION_ACTIONS
+
+  after_action :verify_authorized
 
   # POST /api/experiences/:experience_id/blocks
   def create
@@ -39,7 +55,6 @@ class Api::ExperienceBlocksController < Api::BaseController
         )
       end
 
-      # If this is a child block being added to a Family Feud parent, broadcast granular update
       if create_params[:parent_block_id].present?
         parent_block = @experience.experience_blocks.find_by(id: create_params[:parent_block_id])
         if parent_block&.kind == 'family_feud'
@@ -158,8 +173,6 @@ class Api::ExperienceBlocksController < Api::BaseController
   # POST /api/experiences/:experience_id/blocks/:id/submit_poll_response
   def submit_poll_response
     with_experience_orchestration do
-      block = @experience.experience_blocks.find(params[:id])
-
       submission = Experiences::Orchestrator.new(
         experience: @experience, actor: @user
       ).submit_poll_response!(
@@ -176,8 +189,6 @@ class Api::ExperienceBlocksController < Api::BaseController
   # POST /api/experiences/:experience_id/blocks/:id/submit_question_response
   def submit_question_response
     with_experience_orchestration do
-      block = @experience.experience_blocks.find(params[:id])
-
       submission = Experiences::Orchestrator.new(
         experience: @experience, actor: @user
       ).submit_question_response!(
@@ -185,14 +196,13 @@ class Api::ExperienceBlocksController < Api::BaseController
         answer: params[:answer]
       )
 
-      # If this is a Family Feud child question, broadcast granular update
-      parent_block = block.parent_block
+      parent_block = @block.parent_block
       if parent_block&.kind == 'family_feud'
         Experiences::Broadcaster.new(@experience).broadcast_family_feud_update(
           block_id: parent_block.id,
           operation: 'answer_received',
           data: {
-            questionId: block.id,
+            questionId: @block.id,
             answer: {
               id: submission.id,
               text: params[:answer].is_a?(String) ? params[:answer] : params[:answer].to_s,
@@ -202,22 +212,6 @@ class Api::ExperienceBlocksController < Api::BaseController
           }
         )
       end
-
-      Experiences::Broadcaster.new(@experience).broadcast_experience_update
-
-      render json: { success: true, data: { submission: submission } }, status: 200
-    end
-  end
-
-  # POST /api/experiences/:experience_id/blocks/:id/submit_multistep_form_response
-  def submit_multistep_form_response
-    with_experience_orchestration do
-      submission = Experiences::Orchestrator.new(
-        experience: @experience, actor: @user
-      ).submit_multistep_form_response!(
-        block_id: params[:id],
-        answer: params[:answer]
-      )
 
       Experiences::Broadcaster.new(@experience).broadcast_experience_update
 
@@ -273,8 +267,6 @@ class Api::ExperienceBlocksController < Api::BaseController
   # POST /api/experiences/:experience_id/blocks/:id/family_feud/auto_categorize
   def auto_categorize
     with_experience_orchestration do
-      block = @experience.experience_blocks.find(params[:id])
-
       buckets = Experiences::Orchestrator.new(
         experience: @experience, actor: @user
       ).auto_categorize_family_feud!(
@@ -308,8 +300,6 @@ class Api::ExperienceBlocksController < Api::BaseController
   # POST /api/experiences/:experience_id/blocks/:id/family_feud/add_bucket
   def add_bucket
     with_experience_orchestration do
-      block = @experience.experience_blocks.find(params[:id])
-
       bucket = Experiences::Orchestrator.new(
         experience: @experience, actor: @user
       ).add_family_feud_bucket!(
@@ -335,8 +325,6 @@ class Api::ExperienceBlocksController < Api::BaseController
   # PATCH /api/experiences/:experience_id/blocks/:id/family_feud/buckets/:bucket_id
   def rename_bucket
     with_experience_orchestration do
-      block = @experience.experience_blocks.find(params[:id])
-
       Experiences::Orchestrator.new(
         experience: @experience, actor: @user
       ).rename_family_feud_bucket!(
@@ -363,8 +351,6 @@ class Api::ExperienceBlocksController < Api::BaseController
   # DELETE /api/experiences/:experience_id/blocks/:id/family_feud/buckets/:bucket_id
   def delete_bucket
     with_experience_orchestration do
-      block = @experience.experience_blocks.find(params[:id])
-
       Experiences::Orchestrator.new(
         experience: @experience, actor: @user
       ).delete_family_feud_bucket!(
@@ -390,8 +376,6 @@ class Api::ExperienceBlocksController < Api::BaseController
   # PATCH /api/experiences/:experience_id/blocks/:id/family_feud/answers/:answer_id/bucket
   def assign_answer
     with_experience_orchestration do
-      block = @experience.experience_blocks.find(params[:id])
-
       Experiences::Orchestrator.new(
         experience: @experience, actor: @user
       ).assign_family_feud_answer!(
@@ -435,7 +419,7 @@ class Api::ExperienceBlocksController < Api::BaseController
   # POST /api/experiences/:experience_id/blocks/:id/family_feud/reveal_bucket
   def reveal_bucket
     with_experience_orchestration do
-      block = Experiences::Orchestrator.new(
+      Experiences::Orchestrator.new(
         experience: @experience, actor: @user
       ).reveal_family_feud_bucket!(
         block_id: params[:id],
@@ -458,8 +442,6 @@ class Api::ExperienceBlocksController < Api::BaseController
 
       Experiences::Broadcaster.new(@experience).broadcast_experience_update
 
-      # Clear the X flag after a delay
-      # Frontend will show animation for 5 seconds
       Thread.new do
         sleep 3
         ActiveRecord::Base.connection_pool.with_connection do
@@ -480,7 +462,7 @@ class Api::ExperienceBlocksController < Api::BaseController
   # POST /api/experiences/:experience_id/blocks/:id/family_feud/next_question
   def next_question
     with_experience_orchestration do
-      block = Experiences::Orchestrator.new(
+      Experiences::Orchestrator.new(
         experience: @experience, actor: @user
       ).next_family_feud_question!(block_id: params[:id])
 
@@ -493,7 +475,7 @@ class Api::ExperienceBlocksController < Api::BaseController
   # POST /api/experiences/:experience_id/blocks/:id/family_feud/restart_playing
   def restart_playing
     with_experience_orchestration do
-      block = Experiences::Orchestrator.new(
+      Experiences::Orchestrator.new(
         experience: @experience, actor: @user
       ).restart_family_feud_playing!(block_id: params[:id])
 
@@ -506,7 +488,7 @@ class Api::ExperienceBlocksController < Api::BaseController
   # POST /api/experiences/:experience_id/blocks/:id/family_feud/restart_categorizing
   def restart_categorizing
     with_experience_orchestration do
-      block = Experiences::Orchestrator.new(
+      Experiences::Orchestrator.new(
         experience: @experience, actor: @user
       ).restart_family_feud_categorizing!(block_id: params[:id])
 
@@ -519,7 +501,7 @@ class Api::ExperienceBlocksController < Api::BaseController
   # POST /api/experiences/:experience_id/blocks/:id/family_feud/restart_everything
   def restart_everything
     with_experience_orchestration do
-      block = Experiences::Orchestrator.new(
+      Experiences::Orchestrator.new(
         experience: @experience, actor: @user
       ).restart_family_feud_everything!(block_id: params[:id])
 
@@ -530,6 +512,18 @@ class Api::ExperienceBlocksController < Api::BaseController
   end
 
   private
+
+  def authorize_manage_blocks!
+    authorize! @experience, to: :manage_blocks?
+  end
+
+  def set_block
+    @block = @experience.experience_blocks.find(params[:id])
+  end
+
+  def authorize_block_submission!
+    authorize! @block, to: :"#{action_name}?", with: ExperienceBlockPolicy
+  end
 
   def create_params
     permitted = params.require(:block).permit(

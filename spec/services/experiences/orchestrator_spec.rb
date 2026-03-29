@@ -17,6 +17,7 @@ RSpec.describe Experiences::Orchestrator do
 
   describe "#reorder_block!" do
     let(:participant_role) { ExperienceParticipant.roles[:host] }
+    let(:parent_block_id) { nil }
 
     subject do
       described_class.new(actor: user, experience: experience).reorder_block!(
@@ -25,208 +26,167 @@ RSpec.describe Experiences::Orchestrator do
       )
     end
 
-    context "reordering top-level blocks" do
-      let!(:block_a) { create(:experience_block, :announcement, experience: experience, position: 0) }
-      let!(:block_b) { create(:experience_block, :announcement, experience: experience, position: 1) }
-      let!(:block_c) { create(:experience_block, :announcement, experience: experience, position: 2) }
+    let!(:block_a) do
+      create(
+        :experience_block,
+        experience: experience,
+        parent_block_id: parent_block_id,
+        position: 0
+      )
+    end
 
+    let!(:block_b) do
+      create(
+        :experience_block,
+        experience: experience,
+        parent_block_id: parent_block_id,
+        position: 1
+      )
+    end
+
+    let!(:block_c) do
+      create(
+        :experience_block,
+        experience: experience,
+        parent_block_id: parent_block_id,
+        position: 2
+      )
+    end
+
+    before { subject }
+
+    context "reordering top-level blocks" do
+      let(:parent_block_id) { nil }
       let(:block_to_move) { block_a }
       let(:new_position) { 2 }
 
-      it "moves block_a to the last position and shifts others forward" do
-        subject
+      it "moves block_a to the last position and shifts others backwards" do
         expect(block_a.reload.position).to eq(2)
         expect(block_b.reload.position).to eq(0)
         expect(block_c.reload.position).to eq(1)
       end
     end
 
-    context "reordering child blocks within a parent" do
-      let!(:parent_block) { create(:experience_block, experience: experience, position: 0) }
-      let!(:child_a) do
-        create(:experience_block, experience: experience, parent_block_id: parent_block.id, position: 0)
-      end
-      let!(:child_b) do
-        create(:experience_block, experience: experience, parent_block_id: parent_block.id, position: 1)
-      end
-      let!(:child_c) do
-        create(:experience_block, experience: experience, parent_block_id: parent_block.id, position: 2)
+    context "re-ordering child blocks" do
+      let(:parent_block) do
+        create(:experience_block, experience: experience, position: 0)
       end
 
-      let(:block_to_move) { child_a }
+      let(:parent_block_id) { parent_block.id }
+
+      let(:block_to_move) { block_a }
       let(:new_position) { 2 }
 
       it "reorders children within their sibling group without affecting the parent" do
-        subject
-        expect(child_a.reload.position).to eq(2)
-        expect(child_b.reload.position).to eq(0)
-        expect(child_c.reload.position).to eq(1)
+        expect(block_a.reload.position).to eq(2)
+        expect(block_b.reload.position).to eq(0)
+        expect(block_c.reload.position).to eq(1)
         expect(parent_block.reload.position).to eq(0)
       end
     end
 
     context "with a position beyond the last sibling" do
-      let!(:block_a) { create(:experience_block, :announcement, experience: experience, position: 0) }
-      let!(:block_b) { create(:experience_block, :announcement, experience: experience, position: 1) }
-
       let(:block_to_move) { block_a }
       let(:new_position) { 99 }
 
       it "clamps to the last valid position" do
-        subject
         expect(block_b.reload.position).to eq(0)
-        expect(block_a.reload.position).to eq(1)
+        expect(block_c.reload.position).to eq(1)
+        expect(block_a.reload.position).to eq(2)
       end
     end
 
     context "when source and destination are the same" do
-      let!(:block_a) { create(:experience_block, :announcement, experience: experience, position: 0) }
-      let!(:block_b) { create(:experience_block, :announcement, experience: experience, position: 1) }
-
       let(:block_to_move) { block_a }
       let(:new_position) { 0 }
 
       it "returns the block unchanged" do
-        result = subject
-        expect(result.id).to eq(block_a.id)
         expect(block_a.reload.position).to eq(0)
         expect(block_b.reload.position).to eq(1)
-      end
-    end
-
-    context "when the actor is not authorized" do
-      let(:participant_role) { ExperienceParticipant.roles[:audience] }
-      let!(:block_a) { create(:experience_block, :announcement, experience: experience, position: 0) }
-
-      let(:block_to_move) { block_a }
-      let(:new_position) { 0 }
-
-      it "raises a forbidden error" do
-        expect { subject }.to raise_error(Experiences::ForbiddenError)
       end
     end
   end
 
   describe "#open_lobby!" do
+    let(:participant_role) { ExperienceParticipant.roles[:host] }
+
     subject do
       described_class.new(actor: user, experience: experience).open_lobby!
     end
 
-    context "when the actor is authorized to perform the action" do
-      let(:participant_role) { ExperienceParticipant.roles[:host] }
+    before { subject }
 
-      before { subject }
-
-      it "sets the experience status to `lobby`" do
-        expect(experience.status).to eql(Experience.statuses[:lobby])
-      end
-    end
-
-    context "when the actor is not authorized to perform the action" do
-      let(:participant_role) { ExperienceParticipant.roles[:player] }
-
-      it "raises a forbidden error" do
-        expect { subject }.to raise_error(Experiences::ForbiddenError)
-      end
+    it "sets the experience status to `lobby`" do
+      expect(experience.status).to eql(Experience.statuses[:lobby])
     end
   end
 
   describe "#start!" do
+    let(:participant_role) { ExperienceParticipant.roles[:host] }
+
     subject do
       described_class.new(actor: user, experience: experience).start!
     end
 
-    context "when the actor is authorized to perform the action" do
-      let(:participant_role) { ExperienceParticipant.roles[:host] }
+    before { subject }
+
+    it "sets the experience status to `live`" do
+      expect(experience.status).to eql(Experience.statuses[:live])
+    end
+
+    it "sets the started_at time" do
+      expect(experience.started_at).to be_present
+    end
+  end
+
+  describe "#pause!" do
+    let(:participant_role) { ExperienceParticipant.roles[:host] }
+
+    subject do
+      described_class.new(actor: user, experience: experience).pause!
+    end
+
+    context "when the experience can be paused" do
+      let(:experience_status) { Experience.statuses[:live] }
+
+      before { subject }
+
+      it "sets the experience status to `paused`" do
+        expect(experience.status).to eql(Experience.statuses[:paused])
+      end
+    end
+
+    context "when the experience cannot be paused" do
+      let(:experience_status) { Experience.statuses[:finished] }
+
+      it "raises an invalid transition error" do
+        expect { subject }.to raise_error(Experiences::InvalidTransitionError)
+      end
+    end
+  end
+
+  describe "#resume!" do
+    let(:participant_role) { ExperienceParticipant.roles[:host] }
+
+    subject do
+      described_class.new(actor: user, experience: experience).resume!
+    end
+
+    context "when the experience can be resumed" do
+      let(:experience_status) { Experience.statuses[:paused] }
 
       before { subject }
 
       it "sets the experience status to `live`" do
         expect(experience.status).to eql(Experience.statuses[:live])
       end
-
-      it "set the started_at time" do
-        expect(experience.started_at).to be_present
-      end
     end
 
-    context "when the actor is not authorized to perform the action" do
-      let(:participant_role) { ExperienceParticipant.roles[:player] }
+    context "when the experience cannot be resumed" do
+      let(:experience_status) { Experience.statuses[:live] }
 
-      it "raises a forbidden error" do
-        expect { subject }.to raise_error(Experiences::ForbiddenError)
-      end
-    end
-  end
-
-  describe "#pause!" do
-    subject do
-      described_class.new(actor: user, experience: experience).pause!
-    end
-
-    context "when the actor is authorized to perform the action" do
-      let(:participant_role) { ExperienceParticipant.roles[:host] }
-
-      context "and the experience can be paused" do
-        let(:experience_status) { Experience.statuses[:live] }
-
-        before { subject }
-
-        it "sets the experience status to `paused`" do
-          expect(experience.status).to eql(Experience.statuses[:paused])
-        end
-      end
-
-      context "and the experience cannot be paused" do
-        let(:experience_status) { Experience.statuses[:finished] }
-
-        it "raises an invalid transistion error" do
-          expect { subject }.to raise_error(Experiences::InvalidTransitionError)
-        end
-      end
-    end
-
-    context "when the actor is not authorized to perform the action" do
-      let(:participant_role) { ExperienceParticipant.roles[:player] }
-
-      it "raises a forbidden error" do
-        expect { subject }.to raise_error(Experiences::ForbiddenError)
-      end
-    end
-  end
-
-  describe "#resume!" do
-    subject do
-      described_class.new(actor: user, experience: experience).resume!
-    end
-
-    context "when the actor is authorized to perform the action" do
-      let(:participant_role) { ExperienceParticipant.roles[:host] }
-
-      context "and the experience can be resumed" do
-        let(:experience_status) { Experience.statuses[:paused] }
-
-        before { subject }
-
-        it "sets the experience status to `live`" do
-          expect(experience.status).to eql(Experience.statuses[:live])
-        end
-      end
-
-      context "and the experience cannot be resumed" do
-        let(:experience_status) { Experience.statuses[:live] }
-
-        it "raises an invalid transistion error" do
-          expect { subject }.to raise_error(Experiences::InvalidTransitionError)
-        end
-      end
-    end
-
-    context "when the actor is not authorized to perform the action" do
-      let(:participant_role) { ExperienceParticipant.roles[:player] }
-
-      it "raises a forbidden error" do
-        expect { subject }.to raise_error(Experiences::ForbiddenError)
+      it "raises an invalid transition error" do
+        expect { subject }.to raise_error(Experiences::InvalidTransitionError)
       end
     end
   end
@@ -316,10 +276,10 @@ RSpec.describe Experiences::Orchestrator do
   end
 
   describe "#add_block!" do
+    let(:participant_role) { ExperienceParticipant.roles[:host] }
     let(:kind) { "poll" }
     let(:payload) { { question: "Test question?" } }
     let(:visible_to_roles) { [] }
-
     let(:target_user_ids) { [] }
     let(:status) { :hidden }
     let(:open_immediately) { false }
@@ -330,7 +290,6 @@ RSpec.describe Experiences::Orchestrator do
         kind: kind,
         payload: payload,
         visible_to_roles: visible_to_roles,
-
         target_user_ids: target_user_ids,
         status: status,
         open_immediately: open_immediately,
@@ -338,59 +297,47 @@ RSpec.describe Experiences::Orchestrator do
       )
     end
 
-    context "when the actor is authorized to perform the action" do
-      let(:participant_role) { ExperienceParticipant.roles[:host] }
+    it "returns a persisted block with the specified configuration" do
+      block = subject
+      expect(block).to be_persisted
+      expect(block.kind).to eq(kind)
+      expect(block.payload).to eq(payload.stringify_keys)
+      expect(block.status).to eq(status.to_s)
+      expect(block.experience).to eq(experience)
+    end
 
-      it "returns a persisted block with the specified configuration" do
+    it "positions the block after existing blocks" do
+      create(:experience_block, experience: experience, position: 5)
+      block = subject
+      expect(block.position).to eq(6)
+    end
+
+    context "when open_immediately is true" do
+      let(:open_immediately) { true }
+
+      it "opens the block immediately" do
         block = subject
-        expect(block).to be_persisted
-        expect(block.kind).to eq(kind)
-        expect(block.payload).to eq(payload.stringify_keys)
-        expect(block.status).to eq(status.to_s)
-        expect(block.experience).to eq(experience)
-      end
-
-      it "positions the block after existing blocks" do
-        create(:experience_block, experience: experience, position: 5)
-        block = subject
-        expect(block.position).to eq(6)
-      end
-
-      context "when open_immediately is true" do
-        let(:open_immediately) { true }
-
-        it "opens the block immediately" do
-          block = subject
-          expect(block.status).to eq("open")
-        end
-      end
-
-      context "when visibility restrictions are specified" do
-        let(:visible_to_roles) { ["host", "moderator"] }
-        let(:target_user_ids) { [user.id] }
-
-        it "applies the visibility restrictions" do
-          block = subject
-          expect(block.visible_to_roles).to eq(visible_to_roles)
-          expect(block.target_user_ids).to eq(target_user_ids)
-        end
+        expect(block.status).to eq("open")
       end
     end
 
-    context "when the actor is not authorized to perform the action" do
-      let(:participant_role) { ExperienceParticipant.roles[:audience] }
+    context "when visibility restrictions are specified" do
+      let(:visible_to_roles) { ["host", "moderator"] }
+      let(:target_user_ids) { [user.id] }
 
-      it "raises a forbidden error" do
-        expect { subject }.to raise_error(Experiences::ForbiddenError)
+      it "applies the visibility restrictions" do
+        block = subject
+        expect(block.visible_to_roles).to eq(visible_to_roles)
+        expect(block.target_user_ids).to eq(target_user_ids)
       end
     end
   end
 
   describe "#add_block_with_dependencies!" do
+    let(:participant_role) { ExperienceParticipant.roles[:host] }
     let(:kind) { "mad_lib" }
     let(:payload) { { template: "Hello {name}!" } }
     let(:visible_to_roles) { [] }
-
     let(:target_user_ids) { [] }
     let(:status) { :hidden }
     let(:variables) { [] }
@@ -400,140 +347,127 @@ RSpec.describe Experiences::Orchestrator do
         kind: kind,
         payload: payload,
         visible_to_roles: visible_to_roles,
-
         target_user_ids: target_user_ids,
         status: status,
         variables: variables
       )
     end
 
-    context "when the actor is authorized to perform the action" do
-      let(:participant_role) { ExperienceParticipant.roles[:host] }
-
-      context "with no variables" do
-        it "returns a persisted parent block" do
-          block = subject
-          expect(block).to be_persisted
-          expect(block.kind).to eq(kind)
-          expect(block.payload).to eq(payload.stringify_keys)
-          expect(block.variables).to be_empty
-        end
-      end
-
-      context "with a participant source variable" do
-        let(:other_user) { create(:user, :user) }
-        let(:other_participant) do
-          create(:experience_participant, user: other_user, experience: experience, role: :audience)
-        end
-        let(:variables) do
-          [
-            {
-              "key" => "name",
-              "label" => "What is your name?",
-              "datatype" => "string",
-              "required" => true,
-              "source" => {
-                "type" => "participant",
-                "participant_id" => other_participant.id
-              }
-            }
-          ]
-        end
-
-        it "creates a variable bound to a question block for that participant" do
-          parent_block = subject
-
-          variable = parent_block.variables.find_by(key: "name")
-          expect(variable).to be_present
-          expect(variable.label).to eq("What is your name?")
-          expect(variable.datatype).to eq("string")
-          expect(variable.required).to be true
-
-          source_block = variable.bindings.first&.source_block
-          expect(source_block).to be_present
-          expect(source_block.kind).to eq("question")
-          expect(source_block.target_user_ids).to contain_exactly(other_user.id)
-          expect(source_block.payload["question"]).to eq("What is your name?")
-        end
-      end
-
-      context "with a block source variable" do
-        let(:variables) do
-          [
-            {
-              "key" => "answer",
-              "label" => "Your answer",
-              "datatype" => "string",
-              "required" => true,
-              "source" => {
-                "kind" => "poll",
-                "payload" => { "question" => "Choose one" },
-                "target_user_ids" => [user.id]
-              }
-            }
-          ]
-        end
-
-        it "creates a variable bound to the specified block type" do
-          parent_block = subject
-
-          variable = parent_block.variables.find_by(key: "answer")
-          expect(variable).to be_present
-
-          source_block = variable.bindings.first&.source_block
-          expect(source_block).to be_present
-          expect(source_block.kind).to eq("poll")
-          expect(source_block.payload).to eq({ "question" => "Choose one" })
-          expect(source_block.target_user_ids).to contain_exactly(user.id)
-        end
-      end
-
-      context "with multiple variables" do
-        let(:variables) do
-          [
-            {
-              "key" => "var1",
-              "label" => "Variable 1",
-              "datatype" => "string",
-              "required" => true,
-              "source" => {
-                "kind" => "poll",
-                "payload" => {}
-              }
-            },
-            {
-              "key" => "var2",
-              "label" => "Variable 2",
-              "datatype" => "number",
-              "required" => false,
-              "source" => {
-                "kind" => "question",
-                "payload" => {}
-              }
-            }
-          ]
-        end
-
-        it "creates all variables with their corresponding source blocks" do
-          parent_block = subject
-
-          expect(parent_block.variables.count).to eq(2)
-          expect(parent_block.child_blocks.count).to eq(2)
-
-          var1 = parent_block.variables.find_by(key: "var1")
-          expect(var1.bindings.first.source_block.kind).to eq("poll")
-
-          var2 = parent_block.variables.find_by(key: "var2")
-          expect(var2.bindings.first.source_block.kind).to eq("question")
-        end
+    context "with no variables" do
+      it "returns a persisted parent block" do
+        block = subject
+        expect(block).to be_persisted
+        expect(block.kind).to eq(kind)
+        expect(block.payload).to eq(payload.stringify_keys)
+        expect(block.variables).to be_empty
       end
     end
 
-    context "when the actor is not authorized to perform the action" do
-      let(:participant_role) { ExperienceParticipant.roles[:audience] }
+    context "with a participant source variable" do
+      let(:other_user) { create(:user, :user) }
+      let(:other_participant) do
+        create(:experience_participant, user: other_user, experience: experience, role: :audience)
+      end
+      let(:variables) do
+        [
+          {
+            "key" => "name",
+            "label" => "What is your name?",
+            "datatype" => "string",
+            "required" => true,
+            "source" => {
+              "type" => "participant",
+              "participant_id" => other_participant.id
+            }
+          }
+        ]
+      end
 
-      it "raises a forbidden error" do
-        expect { subject }.to raise_error(Experiences::ForbiddenError)
+      it "creates a variable bound to a question block for that participant" do
+        parent_block = subject
+
+        variable = parent_block.variables.find_by(key: "name")
+        expect(variable).to be_present
+        expect(variable.label).to eq("What is your name?")
+        expect(variable.datatype).to eq("string")
+        expect(variable.required).to be true
+
+        source_block = variable.bindings.first&.source_block
+        expect(source_block).to be_present
+        expect(source_block.kind).to eq("question")
+        expect(source_block.target_user_ids).to contain_exactly(other_user.id)
+        expect(source_block.payload["question"]).to eq("What is your name?")
+      end
+    end
+
+    context "with a block source variable" do
+      let(:variables) do
+        [
+          {
+            "key" => "answer",
+            "label" => "Your answer",
+            "datatype" => "string",
+            "required" => true,
+            "source" => {
+              "kind" => "poll",
+              "payload" => { "question" => "Choose one" },
+              "target_user_ids" => [user.id]
+            }
+          }
+        ]
+      end
+
+      it "creates a variable bound to the specified block type" do
+        parent_block = subject
+
+        variable = parent_block.variables.find_by(key: "answer")
+        expect(variable).to be_present
+
+        source_block = variable.bindings.first&.source_block
+        expect(source_block).to be_present
+        expect(source_block.kind).to eq("poll")
+        expect(source_block.payload).to eq({ "question" => "Choose one" })
+        expect(source_block.target_user_ids).to contain_exactly(user.id)
+      end
+    end
+
+    context "with multiple variables" do
+      let(:variables) do
+        [
+          {
+            "key" => "var1",
+            "label" => "Variable 1",
+            "datatype" => "string",
+            "required" => true,
+            "source" => {
+              "kind" => "poll",
+              "payload" => {}
+            }
+          },
+          {
+            "key" => "var2",
+            "label" => "Variable 2",
+            "datatype" => "number",
+            "required" => false,
+            "source" => {
+              "kind" => "question",
+              "payload" => {}
+            }
+          }
+        ]
+      end
+
+      it "creates all variables with their corresponding source blocks" do
+        parent_block = subject
+
+        expect(parent_block.variables.count).to eq(2)
+        expect(parent_block.child_blocks.count).to eq(2)
+
+        var1 = parent_block.variables.find_by(key: "var1")
+        expect(var1.bindings.first.source_block.kind).to eq("poll")
+
+        var2 = parent_block.variables.find_by(key: "var2")
+        expect(var2.bindings.first.source_block.kind).to eq("question")
       end
     end
   end
@@ -541,6 +475,7 @@ RSpec.describe Experiences::Orchestrator do
   shared_examples "a submission method" do |method_name, block_kind, submission_class, submission_factory|
     let(:experience_status) { Experience.statuses[:live] }
     let(:block_status) { "open" }
+    let(:participant_role) { ExperienceParticipant.roles[:audience] }
 
     let(:block) do
       create(
@@ -560,8 +495,6 @@ RSpec.describe Experiences::Orchestrator do
     end
 
     context "when the user is a participant and block has no visibility restrictions" do
-      let(:participant_role) { ExperienceParticipant.roles[:audience] }
-
       it "returns a persisted submission with the user's answer" do
         submission = subject
         expect(submission).to be_persisted
@@ -572,107 +505,7 @@ RSpec.describe Experiences::Orchestrator do
       end
     end
 
-    context "when the user is not a participant" do
-      let(:non_participant_user) { create(:user, :user) }
-
-      subject do
-        described_class.new(actor: non_participant_user, experience: experience).public_send(
-          method_name,
-          block_id: block.id,
-          answer: answer
-        )
-      end
-
-      it "raises a forbidden error" do
-        expect { subject }.to raise_error(Experiences::ForbiddenError)
-      end
-    end
-
-    context "when the block is not open" do
-      let(:block_status) { "closed" }
-      let(:participant_role) { ExperienceParticipant.roles[:audience] }
-
-      it "raises a forbidden error" do
-        expect { subject }.to raise_error(Experiences::ForbiddenError)
-      end
-    end
-
-    context "when the block has role-based visibility restrictions" do
-      let(:block) do
-        create(
-          :experience_block,
-          experience: experience,
-          kind: block_kind,
-          status: "open",
-          visible_to_roles: ["host", "moderator"]
-        )
-      end
-
-      context "and user has an allowed role" do
-        let(:participant_role) { ExperienceParticipant.roles[:host] }
-
-        it "allows submission" do
-          submission = subject
-          expect(submission).to be_persisted
-        end
-      end
-
-      context "and user has a restricted role" do
-        let(:participant_role) { ExperienceParticipant.roles[:audience] }
-
-        it "raises a forbidden error" do
-          expect { subject }.to raise_error(Experiences::ForbiddenError)
-        end
-      end
-    end
-
-    context "when the block has user-specific targeting" do
-      let(:other_user) { create(:user, :user) }
-      let(:block) do
-        create(
-          :experience_block,
-          experience: experience,
-          kind: block_kind,
-          status: "open",
-          target_user_ids: [other_user.id]
-        )
-      end
-
-      before do
-        create(
-          :experience_participant,
-          user: other_user,
-          experience: experience,
-          role: :audience
-        )
-      end
-
-      context "and user is targeted" do
-        let(:block) do
-          create(
-            :experience_block,
-            experience: experience,
-            kind: block_kind,
-            status: "open",
-            target_user_ids: [user.id]
-          )
-        end
-
-        it "allows submission" do
-          submission = subject
-          expect(submission).to be_persisted
-        end
-      end
-
-      context "and user is not targeted" do
-        it "raises a forbidden error" do
-          expect { subject }.to raise_error(Experiences::ForbiddenError)
-        end
-      end
-    end
-
     context "when updating an existing submission" do
-      let(:participant_role) { ExperienceParticipant.roles[:audience] }
       let(:old_answer) { { "name" => "old_name" } }
 
       before do
@@ -722,16 +555,6 @@ RSpec.describe Experiences::Orchestrator do
       :experience_question_submission
   end
 
-  describe "#submit_multistep_form_response!" do
-    let(:answer) { { "step1" => "data", "step2" => "more data" } }
-
-    it_behaves_like "a submission method",
-      :submit_multistep_form_response!,
-      "multistep_form",
-      ExperienceMultistepFormSubmission,
-      :experience_multistep_form_submission
-  end
-
   describe "#update_block!" do
     let(:participant_role) { ExperienceParticipant.roles[:host] }
 
@@ -767,16 +590,6 @@ RSpec.describe Experiences::Orchestrator do
         )
         block.reload
         expect(block.experience_segment_ids).to include(segment.id)
-      end
-    end
-
-    context "when actor lacks manage_blocks? permission" do
-      let(:participant_role) { ExperienceParticipant.roles[:audience] }
-      let(:block) { create(:experience_block, :announcement, experience: experience) }
-      let(:new_payload) { {} }
-
-      it "raises ForbiddenError" do
-        expect { subject }.to raise_error(Experiences::ForbiddenError)
       end
     end
 
@@ -816,26 +629,6 @@ RSpec.describe Experiences::Orchestrator do
         subject
         block.reload
         expect(block.payload["question"]).to eql("New Q?")
-      end
-    end
-
-    context "multistep form formKeys changed with submissions" do
-      let(:block) do
-        create(
-          :experience_block,
-          experience: experience,
-          kind: ExperienceBlock::MULTISTEP_FORM,
-          payload: { "questions" => [{ "question" => "Q1", "formKey" => "key1", "inputType" => "text" }] }
-        )
-      end
-      let(:new_payload) do
-        { "questions" => [{ "question" => "Q1", "formKey" => "key_changed", "inputType" => "text" }] }
-      end
-
-      before { create(:experience_multistep_form_submission, experience_block: block, user: user) }
-
-      it "clears submissions and saves" do
-        expect { subject }.to change { ExperienceMultistepFormSubmission.count }.by(-1)
       end
     end
 

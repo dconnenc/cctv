@@ -4,7 +4,6 @@ import Announcement from '../Announcement/Announcement';
 import Buzzer from '../Buzzer/Buzzer';
 import FamilyFeud from '../FamilyFeud/FamilyFeud';
 import MadLib from '../MadLib/MadLib';
-import MultistepForm from '../MultistepForm/MultistepForm';
 import PhotoUpload from '../PhotoUpload/PhotoUpload';
 import Poll from '../Poll/Poll';
 import Question from '../Question/Question';
@@ -48,16 +47,6 @@ export default function ExperienceBlockContainer({
     case BlockKind.QUESTION:
       return (
         <Question
-          blockId={block.id}
-          responses={block.responses}
-          {...block.payload}
-          disabled={disabled}
-          viewContext={viewContext}
-        />
-      );
-    case BlockKind.MULTISTEP_FORM:
-      return (
-        <MultistepForm
           blockId={block.id}
           responses={block.responses}
           {...block.payload}

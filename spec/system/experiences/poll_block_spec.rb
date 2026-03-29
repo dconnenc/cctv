@@ -22,22 +22,18 @@ RSpec.describe "Poll Block", type: :system do
     end
 
     # Create a poll block with each option assigned to a segment
-    click_button "Block"
-    expect(page).to have_text("Create Block")
-    select "Poll", from: "Kind"
-    fill_in "Poll Question", with: "Pick your team"
-    fill_in "Option 1", with: "Team A"
-    fill_in "Option 2", with: "Team B"
+    queue_block(n: 1) do
+      select "Poll", from: "Kind"
+      fill_in "Poll Question", with: "Pick your team"
+      fill_in "Option 1", with: "Team A"
+      fill_in "Option 2", with: "Team B"
 
-    expect(page).to have_selector("label", text: /Assign segment/i, count: 2)
-    all("label", text: /Assign segment/i)[0].find("select").select("Team A")
-    all("label", text: /Assign segment/i)[1].find("select").select("Team B")
+      expect(page).to have_css("select[aria-label='Assign segment for option 1']")
+      find("select[aria-label='Assign segment for option 1']").select("Team A")
+      find("select[aria-label='Assign segment for option 2']").select("Team B")
+    end
 
-    click_button "Queue block"
-    expect(page).to have_css("li[aria-label='block 1']")
-
-    click_button "Start"
-    expect(page).to have_button("Pause")
+    start_experience
 
     using_session(:participant) do
       register_participant(
@@ -61,8 +57,7 @@ RSpec.describe "Poll Block", type: :system do
 
     # Present the poll block
     visit current_path
-    within("li[aria-label='block 1']") { find("button", text: /poll/i).click }
-    click_button "Present"
+    select_and_present(1, kind: "poll")
 
     ## Each participant selects a different option
     using_session(:participant) do
@@ -91,17 +86,14 @@ RSpec.describe "Poll Block", type: :system do
     end
 
     ## Create an announcement scoped to Team A
-    click_button "Block"
-    expect(page).to have_text("Create Block")
-    select "Announcement", from: "Kind"
-    fill_in "Announcement Message", with: "Hello Team A!"
-    click_button "View Additional Details"
-    find(:xpath, '//label[contains(., "Visible to segments")]/following-sibling::div/select').select("Team A")
-    click_button "Queue block"
-    expect(page).to have_css("li[aria-label='block 2']")
+    queue_block(n: 2) do
+      select "Announcement", from: "Kind"
+      fill_in "Announcement Message", with: "Hello Team A!"
+      click_button "View Additional Details"
+      find("select[aria-label='Visible to segments']").select("Team A")
+    end
 
-    within("li[aria-label='block 2']") { find("button", text: /announcement/i).click }
-    click_button "Present"
+    select_and_present(2, kind: "announcement")
 
     using_session(:participant) do
       expect(page).to have_text("Hello Team A!")
@@ -113,17 +105,14 @@ RSpec.describe "Poll Block", type: :system do
 
     ## Create an announcement scoped to Team B
     visit current_path
-    click_button "Block"
-    expect(page).to have_text("Create Block")
-    select "Announcement", from: "Kind"
-    fill_in "Announcement Message", with: "Hello Team B!"
-    click_button "View Additional Details"
-    find(:xpath, '//label[contains(., "Visible to segments")]/following-sibling::div/select').select("Team B")
-    click_button "Queue block"
-    expect(page).to have_css("li[aria-label='block 3']")
+    queue_block(n: 3) do
+      select "Announcement", from: "Kind"
+      fill_in "Announcement Message", with: "Hello Team B!"
+      click_button "View Additional Details"
+      find("select[aria-label='Visible to segments']").select("Team B")
+    end
 
-    within("li[aria-label='block 3']") { find("button", text: /announcement/i).click }
-    click_button "Present"
+    select_and_present(3, kind: "announcement")
 
     using_session(:participant_two) do
       expect(page).to have_text("Hello Team B!")
@@ -139,35 +128,31 @@ RSpec.describe "Poll Block", type: :system do
       sign_in(admin)
       create_experience_and_go_to_manage(name: "Test Experience", code: "test-exp")
 
-      click_button "Block"
-      expect(page).to have_text("Create Block")
-      select "Poll", from: "Kind"
-      fill_in "Poll Question", with: "Original question?"
-      fill_in "Option 1", with: "yes"
-      fill_in "Option 2", with: "no"
-      click_button "Queue block"
-      expect(page).to have_css("li[aria-label='block 1']")
+      queue_block(n: 1) do
+        select "Poll", from: "Kind"
+        fill_in "Poll Question", with: "Original question?"
+        fill_in "Option 1", with: "yes"
+        fill_in "Option 2", with: "no"
+      end
 
-      within("li[aria-label='block 1']") { find("button", text: /poll/i).click }
+      select_block(1, kind: "poll")
     end
 
     context "without responses" do
       it "saves without a confirmation prompt" do
-        click_button "Edit"
-        expect(page).to have_text("Edit Block")
+        edit_block
 
         fill_in "Poll Question", with: "Updated question?"
         click_button "Save"
 
-        within("li[aria-label='block 1']") { find("button", text: /poll/i).click }
+        select_block(1, kind: "poll")
         expect(page).to have_text("Updated question?")
       end
     end
 
     context "with responses" do
       before do
-        click_button "Start"
-        expect(page).to have_button("Pause")
+        start_experience
 
         using_session(:participant) do
           register_participant(
@@ -180,8 +165,7 @@ RSpec.describe "Poll Block", type: :system do
         end
 
         visit current_path
-        within("li[aria-label='block 1']") { find("button", text: /poll/i).click }
-        click_button "Present"
+        select_and_present(1, kind: "poll")
 
         using_session(:participant) do
           expect(page).to have_button("Submit", disabled: false)
@@ -191,12 +175,11 @@ RSpec.describe "Poll Block", type: :system do
         end
 
         visit current_path
-        within("li[aria-label='block 1']") { find("button", text: /poll/i).click }
+        select_block(1, kind: "poll")
       end
 
       it "shows a warning when saving and saves after confirmation" do
-        click_button "Edit"
-        expect(page).to have_text("Edit Block")
+        edit_block
 
         fill_in "Poll Question", with: "Updated question?"
         click_button "Save"
@@ -204,13 +187,12 @@ RSpec.describe "Poll Block", type: :system do
         expect(page).to have_text("response has already been submitted")
         click_button "Save Anyway"
 
-        within("li[aria-label='block 1']") { find("button", text: /poll/i).click }
+        select_block(1, kind: "poll")
         expect(page).to have_text("Updated question?")
       end
 
       it "warns, clears responses, and saves when poll options are changed" do
-        click_button "Edit"
-        expect(page).to have_text("Edit Block")
+        edit_block
 
         fill_in "Option 1", with: "maybe"
         click_button "Save"
@@ -218,7 +200,7 @@ RSpec.describe "Poll Block", type: :system do
         expect(page).to have_text("response has already been submitted")
         click_button "Save Anyway"
 
-        within("li[aria-label='block 1']") { find("button", text: /poll/i).click }
+        select_block(1, kind: "poll")
         expect(page).to have_text("Responses (0)")
       end
     end

@@ -50,9 +50,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        ci_node_index: [0, 1, 2, 3]
+        ci_node_index: [0, 1, 2, 3, 4, 5]
     env:
-      CI_NODE_TOTAL: 4
+      CI_NODE_TOTAL: 6
       CI_NODE_INDEX: ${{ matrix.ci_node_index }}
     services:
       postgres:
@@ -63,6 +63,11 @@ jobs:
         ports: ['5432:5432']
         options: >-
           --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
+      redis:
+        image: redis:7-alpine
+        ports: ['6379:6379']
+        options: >-
+          --health-cmd "redis-cli ping" --health-interval 10s --health-timeout 5s --health-retries 5
 
     steps:
       - name: Checkout code
@@ -102,6 +107,8 @@ jobs:
           ORIGIN: 'http://example.com'
           CUPRITE_INSPECTOR: false
           DATABASE_URL: 'postgres://postgres:password@localhost:5432/test'
+          REDIS_URL: 'redis://localhost:6379/1'
+          ACTION_CABLE_ADAPTER: redis
           KNAPSACK_TEST_FILE_PATTERN: 'spec/system/**/*_spec.rb'
         run: bundle exec rake knapsack:rspec
 

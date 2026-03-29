@@ -514,4 +514,61 @@ RSpec.describe Api::ExperienceBlocksController, type: :controller do
       end
     end
   end
+
+  describe "POST #submit_poll_response" do
+    let(:audience_user) { create(:user, :user) }
+    let!(:audience_participant) { create(:experience_participant, user: audience_user, experience: experience, role: :audience) }
+    let!(:block) { create(:experience_block, experience: experience, kind: ExperienceBlock::POLL, status: :open) }
+
+    subject do
+      post(
+        :submit_poll_response,
+        params: {
+          experience_id: experience.code_slug,
+          id: block.id,
+          answer: { "selectedOptions" => ["option_a"] }
+        },
+        format: :json
+      )
+    end
+
+    before do
+      jwt = Experiences::AuthService.jwt_for_participant(experience: experience, user: audience_user)
+      request.headers["Authorization"] = "Bearer #{jwt}"
+    end
+
+    it "returns 200 when participant submits to an open block" do
+      broadcaster = instance_double(Experiences::Broadcaster, broadcast_experience_update: true)
+      allow(Experiences::Broadcaster).to receive(:new).and_return(broadcaster)
+
+      subject
+      expect(response.status).to eql(200)
+    end
+
+    context "when the block is closed" do
+      let!(:block) { create(:experience_block, experience: experience, kind: ExperienceBlock::POLL, status: :closed) }
+
+      it "returns 403 forbidden" do
+        subject
+        expect(response.status).to eql(403)
+      end
+    end
+
+    context "when the block has role-based visibility that excludes the participant" do
+      let!(:block) do
+        create(
+          :experience_block,
+          experience: experience,
+          kind: ExperienceBlock::POLL,
+          status: :open,
+          visible_to_roles: ["host"]
+        )
+      end
+
+      it "returns 403 forbidden" do
+        subject
+        expect(response.status).to eql(403)
+      end
+    end
+  end
 end
