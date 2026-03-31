@@ -260,7 +260,7 @@ interface BaseBlock {
   children?: Block[];
   responses?: {
     total: number;
-    user_responded: boolean;
+    user_responded?: boolean;
     user_response?: {
       id: string;
       answer: any;
@@ -561,6 +561,7 @@ export const WebSocketMessageTypes = {
   CONFIRM_SUBSCRIPTION: 'confirm_subscription',
   PING: 'ping',
   FAMILY_FEUD_UPDATED: 'family_feud_updated',
+  SUBMISSION_STATE: 'submission_state',
 } as const;
 
 export type WebSocketMessageType =
@@ -643,6 +644,13 @@ export interface FamilyFeudUpdatedMessage
   data: FamilyFeudDispatchPayload;
 }
 
+export type SubmissionState = Record<string, { id: string; answer: Record<string, unknown> }>;
+
+export interface SubmissionStateMessage {
+  type: 'submission_state';
+  submissions: SubmissionState;
+}
+
 export interface ConfirmSubscriptionMessage extends BaseWebSocketMessage<'confirm_subscription'> {}
 
 export interface PingMessage extends BaseWebSocketMessage<'ping'> {}
@@ -655,7 +663,8 @@ export type WebSocketMessage =
   | ResubscribeRequiredMessage
   | ConfirmSubscriptionMessage
   | PingMessage
-  | FamilyFeudUpdatedMessage;
+  | FamilyFeudUpdatedMessage
+  | SubmissionStateMessage;
 
 export interface DrawingUpdateMessage {
   type: 'drawing_update';

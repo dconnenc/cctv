@@ -239,6 +239,7 @@ class ExperienceSubscriptionChannel < ApplicationCable::Channel
           participant: participant_summary
         )
       )
+      transmit(WebsocketMessageService.submission_state(build_submission_state(@participant)))
     end
   end
 
@@ -268,6 +269,21 @@ class ExperienceSubscriptionChannel < ApplicationCable::Channel
         participant: participant_summary
       )
     )
+    transmit(WebsocketMessageService.submission_state(build_submission_state(@participant)))
+  end
+
+  def build_submission_state(participant)
+    question_block_ids = @experience.experience_blocks
+      .where(kind: ExperienceBlock::QUESTION)
+      .pluck(:id)
+
+    return {} if question_block_ids.empty?
+
+    ExperienceQuestionSubmission
+      .where(experience_block_id: question_block_ids, user_id: participant.user_id)
+      .each_with_object({}) do |s, hash|
+        hash[s.experience_block_id.to_s] = { id: s.id, answer: s.answer }
+      end
   end
 
   def find_experience_or_reject

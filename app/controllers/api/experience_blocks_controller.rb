@@ -215,7 +215,7 @@ class Api::ExperienceBlocksController < Api::BaseController
 
       Experiences::Broadcaster.new(@experience).broadcast_experience_update
 
-      render json: { success: true, data: { submission: submission } }, status: 200
+      render json: { success: true, submission: { id: submission.id, answer: submission.answer } }, status: 200
     end
   end
 
