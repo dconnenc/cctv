@@ -77,7 +77,7 @@
     "sass": "^1.92.1",
     "storybook": "^10.2.19",
     "typescript": "^5.9.3",
-    "vite": "^5.4.21",
+    "vite": "^6.4.2",
     "vite-plugin-ruby": "^5.1.1",
     "vitest": "^4.0.18"
   }
