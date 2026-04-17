@@ -72,10 +72,12 @@ export default function Poll({
   };
 
   if (userResponded) {
-    const selectedOptions =
-      (submission?.answer?.selectedOptions as string[] | undefined) ??
-      responses?.user_response?.answer?.selectedOptions;
-    const displayValue = selectedOptions?.join(', ') || 'You have already responded to this poll.';
+    const rawSelected =
+      (submission?.answer?.selectedOptions as string | string[] | undefined) ??
+      (responses?.user_response?.answer?.selectedOptions as string | string[] | undefined);
+    const displayValue = rawSelected
+      ? ([] as string[]).concat(rawSelected).join(', ')
+      : 'You have already responded to this poll.';
 
     return (
       <div className={styles.submittedValue}>

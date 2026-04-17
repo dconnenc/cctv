@@ -70,6 +70,9 @@ RSpec.configure do |config|
 
   config.around(:each, type: :system) do |example|
     example.run
-    example.run if example.exception
+
+    if ENV["CI"].present?
+      example.run if example.exception
+    end
   end
 end
