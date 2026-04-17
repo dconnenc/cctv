@@ -275,43 +275,36 @@ class ExperienceSubscriptionChannel < ApplicationCable::Channel
   def build_submission_state(participant)
     result = {}
 
-    blocks_by_kind = @experience.experience_blocks
-      .where(kind: [ExperienceBlock::QUESTION, ExperienceBlock::POLL, ExperienceBlock::BUZZER, ExperienceBlock::PHOTO_UPLOAD])
-      .pluck(:id, :kind)
-      .group_by { |_, kind| kind }
-      .transform_values { |pairs| pairs.map { |id, _| id } }
+    # block_scope is a SQL subquery — no Ruby round-trip to fetch block IDs.
+    # Each submission query below resolves to a single
+    # WHERE experience_block_id IN (SELECT id FROM experience_blocks WHERE experience_id = ?)
+    # AND user_id = ? rather than two sequential queries.
+    #
+    # If reconnect load becomes a bottleneck, the next step is to collapse
+    # question/poll/buzzer into a single UNION ALL (they share the same
+    # id/experience_block_id/answer columns), with photo handled separately
+    # for the blob join. That reduces 4 queries to 2.
+    block_scope = @experience.experience_blocks.select(:id)
 
-    question_ids = blocks_by_kind[ExperienceBlock::QUESTION] || []
-    unless question_ids.empty?
-      ExperienceQuestionSubmission
-        .where(experience_block_id: question_ids, user_id: participant.user_id)
-        .each { |s| result[s.experience_block_id.to_s] = { id: s.id, answer: s.answer } }
-    end
+    ExperienceQuestionSubmission
+      .where(experience_block_id: block_scope, user_id: participant.user_id)
+      .each { |s| result[s.experience_block_id.to_s] = { id: s.id, answer: s.answer } }
 
-    poll_ids = blocks_by_kind[ExperienceBlock::POLL] || []
-    unless poll_ids.empty?
-      ExperiencePollSubmission
-        .where(experience_block_id: poll_ids, user_id: participant.user_id)
-        .each { |s| result[s.experience_block_id.to_s] = { id: s.id, answer: s.answer } }
-    end
+    ExperiencePollSubmission
+      .where(experience_block_id: block_scope, user_id: participant.user_id)
+      .each { |s| result[s.experience_block_id.to_s] = { id: s.id, answer: s.answer } }
 
-    buzzer_ids = blocks_by_kind[ExperienceBlock::BUZZER] || []
-    unless buzzer_ids.empty?
-      ExperienceBuzzerSubmission
-        .where(experience_block_id: buzzer_ids, user_id: participant.user_id)
-        .each { |s| result[s.experience_block_id.to_s] = { id: s.id, answer: s.answer } }
-    end
+    ExperienceBuzzerSubmission
+      .where(experience_block_id: block_scope, user_id: participant.user_id)
+      .each { |s| result[s.experience_block_id.to_s] = { id: s.id, answer: s.answer } }
 
-    photo_ids = blocks_by_kind[ExperienceBlock::PHOTO_UPLOAD] || []
-    unless photo_ids.empty?
-      ExperiencePhotoUploadSubmission
-        .where(experience_block_id: photo_ids, user_id: participant.user_id)
-        .includes(photo_attachment: :blob)
-        .each do |s|
-          photo_url = s.photo.attached? ? ActiveStorageUrlService.blob_url(s.photo.blob) : nil
-          result[s.experience_block_id.to_s] = { id: s.id, answer: s.answer, photo_url: photo_url }
-        end
-    end
+    ExperiencePhotoUploadSubmission
+      .where(experience_block_id: block_scope, user_id: participant.user_id)
+      .includes(photo_attachment: :blob)
+      .each do |s|
+        photo_url = s.photo.attached? ? ActiveStorageUrlService.blob_url(s.photo.blob) : nil
+        result[s.experience_block_id.to_s] = { id: s.id, answer: s.answer, photo_url: photo_url }
+      end
 
     result
   end
