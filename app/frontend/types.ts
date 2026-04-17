@@ -260,7 +260,7 @@ interface BaseBlock {
   children?: Block[];
   responses?: {
     total: number;
-    user_responded?: boolean;
+    user_responded: boolean;
     user_response?: {
       id: string;
       answer: any;
