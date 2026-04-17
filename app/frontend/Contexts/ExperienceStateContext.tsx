@@ -1,6 +1,15 @@
-import { ReactNode, createContext, useCallback, useContext, useMemo, useState } from 'react';
+import {
+  Dispatch,
+  ReactNode,
+  SetStateAction,
+  createContext,
+  useCallback,
+  useContext,
+  useMemo,
+  useState,
+} from 'react';
 
-import { Experience, ParticipantSummary } from '@cctv/types';
+import { Experience, ParticipantSummary, SubmissionState } from '@cctv/types';
 
 export interface ExperienceStateContextType {
   experience?: Experience;
@@ -19,6 +28,8 @@ export interface ExperienceStateContextType {
   setParticipantView: (exp: Experience | undefined) => void;
   setImpersonatedParticipantId: (id: string | undefined) => void;
   setWsReady: (ready: boolean) => void;
+  submissionState: SubmissionState;
+  setSubmissionState: Dispatch<SetStateAction<SubmissionState>>;
   resetState: () => void;
 }
 
@@ -33,6 +44,7 @@ export function ExperienceStateProvider({ children }: { children: ReactNode }) {
   const [participantView, setParticipantView] = useState<Experience>();
   const [impersonatedParticipantId, setImpersonatedParticipantId] = useState<string>();
   const [wsReady, setWsReady] = useState(false);
+  const [submissionState, setSubmissionState] = useState<SubmissionState>({});
 
   const resetState = useCallback(() => {
     setExperience(undefined);
@@ -41,6 +53,7 @@ export function ExperienceStateProvider({ children }: { children: ReactNode }) {
     setParticipantView(undefined);
     setError(undefined);
     setWsReady(false);
+    setSubmissionState({});
   }, []);
 
   const value = useMemo<ExperienceStateContextType>(
@@ -61,6 +74,8 @@ export function ExperienceStateProvider({ children }: { children: ReactNode }) {
       setParticipantView,
       setImpersonatedParticipantId,
       setWsReady,
+      submissionState,
+      setSubmissionState,
       resetState,
     }),
     [
@@ -72,6 +87,7 @@ export function ExperienceStateProvider({ children }: { children: ReactNode }) {
       participantView,
       impersonatedParticipantId,
       wsReady,
+      submissionState,
       resetState,
     ],
   );

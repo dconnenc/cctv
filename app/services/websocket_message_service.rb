@@ -14,6 +14,9 @@ class WebsocketMessageService
     # Subscription management
     RESUBSCRIBE_REQUIRED: 'resubscribe_required',
 
+    # Participant-side state
+    SUBMISSION_STATE: 'submission_state',
+
     # ActionCable built-ins
     CONFIRM_SUBSCRIPTION: 'confirm_subscription',
     PING: 'ping'
@@ -78,6 +81,14 @@ class WebsocketMessageService
       reason: reason,
       participant_id: participant_id,
       timestamp: Time.current.to_f
+    }
+  end
+
+  # Build submission state message (sent to participant on subscribe)
+  def self.submission_state(submissions)
+    {
+      type: MESSAGE_TYPES[:SUBMISSION_STATE],
+      submissions: submissions
     }
   end
 

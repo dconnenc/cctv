@@ -205,17 +205,14 @@ module Experiences
         response
 
       when ExperienceBlock::QUESTION
-        submissions   = block.experience_question_submissions.to_a
-        user_response = submissions.find { |s| s.user_id == user&.id }
-
-        response = {
-          total:          submissions.count,
-          user_response:  user_response ? { id: user_response.id, answer: user_response.answer } : nil,
-          user_responded: user_response.present?
-        }
+        submissions = block.experience_question_submissions.to_a
+        response = { total: submissions.count }
 
         if mod_or_host?(participant_role) || admin_user?(user)
-          response[:all_responses] = submissions.map { |s| submission_payload(s) }
+          user_response = submissions.find { |s| s.user_id == user&.id }
+          response[:user_response]  = user_response ? { id: user_response.id, answer: user_response.answer } : nil
+          response[:user_responded] = user_response.present?
+          response[:all_responses]  = submissions.map { |s| submission_payload(s) }
         end
 
         response

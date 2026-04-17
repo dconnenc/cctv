@@ -17,6 +17,7 @@ import {
 import {
   ExperienceChannelMessage,
   FamilyFeudUpdatedMessage,
+  SubmissionStateMessage,
   WebSocketMessage,
   WebSocketMessageTypes,
   isDrawingUpdateMessage,
@@ -157,6 +158,7 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
     setMonitorView,
     setParticipantView,
     setWsReady,
+    setSubmissionState,
     impersonatedParticipantId,
   } = useExperienceState();
   const { getFamilyFeudDispatch } = useDispatchRegistry();
@@ -297,6 +299,9 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
             dispatch({ type: actionType, payload: data } as FamilyFeudAction);
           }
         }
+      } else if (target === 'main' && wsMessage.type === WebSocketMessageTypes.SUBMISSION_STATE) {
+        const ssMsg = wsMessage as SubmissionStateMessage;
+        setSubmissionState(ssMsg.submissions);
       }
     },
     [
@@ -307,6 +312,7 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
       setMonitorView,
       setParticipantView,
       setWsReady,
+      setSubmissionState,
       getFamilyFeudDispatch,
       lobbyDrawingDispatch,
       reconnectParticipantWs,

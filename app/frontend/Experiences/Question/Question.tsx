@@ -1,5 +1,6 @@
 import { FormEvent, useEffect, useState } from 'react';
 
+import { useExperienceState } from '@cctv/contexts/ExperienceStateContext';
 import { Button } from '@cctv/core/Button/Button';
 import { TextInput } from '@cctv/core/TextInput/TextInput';
 import { useSubmitQuestionResponse } from '@cctv/hooks/useSubmitQuestionResponse';
@@ -12,7 +13,7 @@ interface QuestionProps extends QuestionPayload {
   blockId?: string;
   responses?: {
     total: number;
-    user_responded: boolean;
+    user_responded?: boolean;
     user_response?: {
       id: string;
       answer: any;
@@ -35,6 +36,9 @@ export default function Question({
 }: QuestionProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { submitQuestionResponse, error } = useSubmitQuestionResponse();
+  const { submissionState } = useExperienceState();
+  const submission = blockId ? submissionState[blockId] : undefined;
+  const userResponded = !!submission || !!responses?.user_responded;
 
   useEffect(() => {
     setIsSubmitting(false);
@@ -67,9 +71,12 @@ export default function Question({
     }
   };
 
-  if (responses?.user_responded) {
+  if (userResponded) {
+    const submissionValue = submission?.answer['value'];
     const displayValue =
-      responses?.user_response?.answer?.value || 'You have already responded to this question.';
+      (typeof submissionValue === 'string' ? submissionValue : null) ||
+      responses?.user_response?.answer?.value ||
+      'You have already responded to this question.';
 
     return (
       <div className={styles.submittedValue}>
