@@ -2,6 +2,7 @@ import { useCallback, useRef, useState } from 'react';
 
 import { Camera, Check } from 'lucide-react';
 
+import { useExperienceState } from '@cctv/contexts/ExperienceStateContext';
 import { Button } from '@cctv/core';
 import { useDirectUpload, useSubmitPhotoUploadResponse } from '@cctv/hooks';
 import { PhotoUploadBlock } from '@cctv/types';
@@ -23,13 +24,15 @@ export default function PhotoUpload({
 }: PhotoUploadProps) {
   const { upload, isUploading, progress } = useDirectUpload();
   const { submitPhotoUploadResponse, isLoading: isSubmitting } = useSubmitPhotoUploadResponse();
+  const { submissionState } = useExperienceState();
   const [signedId, setSignedId] = useState<string | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  const hasResponded = responses?.user_responded;
-  const userResponse = responses?.user_response;
+  const submission = submissionState[blockId];
+  const hasResponded = !!submission || !!responses?.user_responded;
+  const photoUrl = submission?.photo_url ?? responses?.user_response?.photo_url;
 
   const handleFileSelect = useCallback(
     async (file: File) => {
@@ -62,7 +65,7 @@ export default function PhotoUpload({
     }
   }, [blockId, signedId, submitPhotoUploadResponse]);
 
-  if (hasResponded && userResponse) {
+  if (hasResponded) {
     return (
       <div className={styles.container}>
         <p className={styles.prompt}>{prompt}</p>
@@ -71,12 +74,8 @@ export default function PhotoUpload({
             <Check size={16} />
             <span>Photo submitted</span>
           </div>
-          {userResponse.photo_url && (
-            <img
-              src={userResponse.photo_url}
-              alt="Your submission"
-              className={styles.submittedPhoto}
-            />
+          {photoUrl && (
+            <img src={photoUrl} alt="Your submission" className={styles.submittedPhoto} />
           )}
         </div>
       </div>

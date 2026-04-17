@@ -183,23 +183,17 @@ module Experiences
     def serialize_response_data(block, participant_role, user)
       case block.kind
       when ExperienceBlock::POLL
-        submissions  = block.experience_poll_submissions.to_a
-        user_response = submissions.find { |s| s.user_id == user&.id }
-
-        response = {
-          total:          submissions.count,
-          user_response:  format_poll_response(user_response),
-          user_responded: user_response.present?
-        }
-
-        if mod_or_host?(participant_role) && submissions.any?
-          response[:aggregate] = calculate_poll_aggregate(submissions)
-        else
-          response[:aggregate] = mod_or_host?(participant_role) ? {} : nil
-        end
+        submissions = block.experience_poll_submissions.to_a
+        response    = { total: submissions.count }
 
         if mod_or_host?(participant_role) || admin_user?(user)
-          response[:all_responses] = submissions.map { |s| submission_payload(s) }
+          user_response = submissions.find { |s| s.user_id == user&.id }
+          response[:user_response]  = format_poll_response(user_response)
+          response[:user_responded] = user_response.present?
+          response[:aggregate]      = submissions.any? ? calculate_poll_aggregate(submissions) : {}
+          response[:all_responses]  = submissions.map { |s| submission_payload(s) }
+        else
+          response[:aggregate] = nil
         end
 
         response
@@ -228,37 +222,37 @@ module Experiences
         { total: total, user_response: nil, user_responded: false, resolved_variables: resolved_vars }
 
       when ExperienceBlock::PHOTO_UPLOAD
-        submissions   = block.experience_photo_upload_submissions.includes(photo_attachment: :blob).to_a
-        user_response = submissions.find { |s| s.user_id == user&.id }
-
-        response = {
-          total:          submissions.count,
-          user_response:  user_response && { id: user_response.id, answer: user_response.answer, photo_url: attachment_url(user_response.photo) },
-          user_responded: user_response.present?
-        }
+        submissions = block.experience_photo_upload_submissions.includes(photo_attachment: :blob).to_a
+        response    = { total: submissions.count }
 
         if mod_or_host?(participant_role) || admin_user?(user)
-          response[:all_responses] = submissions.map { |s| submission_payload(s).merge(photo_url: attachment_url(s.photo)) }
+          user_response = submissions.find { |s| s.user_id == user&.id }
+          response[:user_response]  = user_response && { id: user_response.id, answer: user_response.answer, photo_url: attachment_url(user_response.photo) }
+          response[:user_responded] = user_response.present?
+          response[:all_responses]  = submissions.map { |s| submission_payload(s).merge(photo_url: attachment_url(s.photo)) }
         end
 
         response
 
       when ExperienceBlock::BUZZER
-        submissions   = block.experience_buzzer_submissions.order(Arel.sql("answer->>'buzzed_at' ASC")).to_a
-        user_response = submissions.find { |s| s.user_id == user&.id }
-        winner        = submissions.first
-        winner_avatar = winner && @experience.experience_participants.find_by(user_id: winner.user_id)&.avatar&.presence
+        submissions = block.experience_buzzer_submissions.order(Arel.sql("answer->>'buzzed_at' ASC")).to_a
+        response    = { total: submissions.count }
 
-        {
-          total:          submissions.count,
-          user_response:  user_response ? { id: user_response.id, answer: user_response.answer } : nil,
-          user_responded: user_response.present?,
-          all_responses:  submissions.map.with_index do |s, i|
+        if mod_or_host?(participant_role) || admin_user?(user)
+          user_response = submissions.find { |s| s.user_id == user&.id }
+          winner        = submissions.first
+          winner_avatar = winner && @experience.experience_participants.find_by(user_id: winner.user_id)&.avatar&.presence
+
+          response[:user_response]  = user_response ? { id: user_response.id, answer: user_response.answer } : nil
+          response[:user_responded] = user_response.present?
+          response[:all_responses]  = submissions.map.with_index do |s, i|
             entry = submission_payload(s)
             entry[:avatar] = winner_avatar if i == 0 && winner_avatar
             entry
           end
-        }
+        end
+
+        response
 
       else
         {}

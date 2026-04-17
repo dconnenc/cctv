@@ -1,9 +1,11 @@
 import { useCallback, useState } from 'react';
 
 import { useExperience } from '@cctv/contexts/ExperienceContext';
+import { useExperienceState } from '@cctv/contexts/ExperienceStateContext';
 
 export function useSubmitBuzzerResponse() {
   const { code, experienceFetch } = useExperience();
+  const { setSubmissionState } = useExperienceState();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -31,6 +33,13 @@ export function useSubmitBuzzerResponse() {
           return { success: false, error: msg };
         }
 
+        if (data.submission) {
+          setSubmissionState((prev) => ({
+            ...prev,
+            [blockId]: { id: data.submission.id, answer: data.submission.answer },
+          }));
+        }
+
         return { success: true };
       } catch (e: unknown) {
         const msg =
@@ -43,7 +52,7 @@ export function useSubmitBuzzerResponse() {
         setIsLoading(false);
       }
     },
-    [code, experienceFetch],
+    [code, experienceFetch, setSubmissionState],
   );
 
   return { submitBuzzerResponse, isLoading, error };

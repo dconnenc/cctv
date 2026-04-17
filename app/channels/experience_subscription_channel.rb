@@ -273,17 +273,40 @@ class ExperienceSubscriptionChannel < ApplicationCable::Channel
   end
 
   def build_submission_state(participant)
-    question_block_ids = @experience.experience_blocks
-      .where(kind: ExperienceBlock::QUESTION)
-      .pluck(:id)
+    result = {}
 
-    return {} if question_block_ids.empty?
+    # block_scope is a SQL subquery — no Ruby round-trip to fetch block IDs.
+    # Each submission query below resolves to a single
+    # WHERE experience_block_id IN (SELECT id FROM experience_blocks WHERE experience_id = ?)
+    # AND user_id = ? rather than two sequential queries.
+    #
+    # If reconnect load becomes a bottleneck, the next step is to collapse
+    # question/poll/buzzer into a single UNION ALL (they share the same
+    # id/experience_block_id/answer columns), with photo handled separately
+    # for the blob join. That reduces 4 queries to 2.
+    block_scope = @experience.experience_blocks.select(:id)
 
     ExperienceQuestionSubmission
-      .where(experience_block_id: question_block_ids, user_id: participant.user_id)
-      .each_with_object({}) do |s, hash|
-        hash[s.experience_block_id.to_s] = { id: s.id, answer: s.answer }
+      .where(experience_block_id: block_scope, user_id: participant.user_id)
+      .each { |s| result[s.experience_block_id.to_s] = { id: s.id, answer: s.answer } }
+
+    ExperiencePollSubmission
+      .where(experience_block_id: block_scope, user_id: participant.user_id)
+      .each { |s| result[s.experience_block_id.to_s] = { id: s.id, answer: s.answer } }
+
+    ExperienceBuzzerSubmission
+      .where(experience_block_id: block_scope, user_id: participant.user_id)
+      .each { |s| result[s.experience_block_id.to_s] = { id: s.id, answer: s.answer } }
+
+    ExperiencePhotoUploadSubmission
+      .where(experience_block_id: block_scope, user_id: participant.user_id)
+      .includes(photo_attachment: :blob)
+      .each do |s|
+        photo_url = s.photo.attached? ? ActiveStorageUrlService.blob_url(s.photo.blob) : nil
+        result[s.experience_block_id.to_s] = { id: s.id, answer: s.answer, photo_url: photo_url }
       end
+
+    result
   end
 
   def find_experience_or_reject

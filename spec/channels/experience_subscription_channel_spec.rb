@@ -120,6 +120,50 @@ RSpec.describe ExperienceSubscriptionChannel, type: :channel do
         "experience_#{experience.id}_participant_#{participant.id}"
       )
     end
+
+    it "transmits a submission_state message after the experience state" do
+      subscribe(code: experience.code_slug, token: token)
+
+      submission_state_msg = transmissions.find { |t| t["type"] == "submission_state" }
+      expect(submission_state_msg).to be_present
+      expect(submission_state_msg["submissions"]).to be_a(Hash)
+    end
+
+    context "with prior question and poll submissions" do
+      let!(:question_block) { create(:experience_block, experience: experience, kind: ExperienceBlock::QUESTION, status: :open) }
+      let!(:poll_block) { create(:experience_block, experience: experience, kind: ExperienceBlock::POLL, status: :open) }
+      let!(:question_submission) do
+        create(:experience_question_submission, experience_block: question_block, user: regular_user,
+               answer: { "value" => "my answer" })
+      end
+      let!(:poll_submission) do
+        create(:experience_poll_submission, experience_block: poll_block, user: regular_user,
+               answer: { "selectedOptions" => ["option_a"] })
+      end
+
+      it "includes question and poll submissions in submission_state keyed by block id" do
+        subscribe(code: experience.code_slug, token: token)
+
+        msg = transmissions.find { |t| t["type"] == "submission_state" }
+        submissions = msg["submissions"]
+        expect(submissions[question_block.id.to_s]["id"]).to eq(question_submission.id)
+        expect(submissions[poll_block.id.to_s]["id"]).to eq(poll_submission.id)
+      end
+    end
+
+    context "with a prior buzzer submission" do
+      let!(:buzzer_block) { create(:experience_block, experience: experience, kind: ExperienceBlock::BUZZER, status: :open) }
+      let!(:buzzer_submission) do
+        create(:experience_buzzer_submission, experience_block: buzzer_block, user: regular_user)
+      end
+
+      it "includes the buzzer submission in submission_state" do
+        subscribe(code: experience.code_slug, token: token)
+
+        msg = transmissions.find { |t| t["type"] == "submission_state" }
+        expect(msg["submissions"][buzzer_block.id.to_s]["id"]).to eq(buzzer_submission.id)
+      end
+    end
   end
 
   describe "subscribing as a host with a valid participant JWT" do

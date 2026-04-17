@@ -1,6 +1,7 @@
 import { useCallback, useState } from 'react';
 
 import { useExperience } from '@cctv/contexts/ExperienceContext';
+import { useExperienceState } from '@cctv/contexts/ExperienceStateContext';
 import { qaLogger } from '@cctv/utils';
 
 export interface SubmitPollResponseParams {
@@ -18,6 +19,7 @@ export interface SubmitPollResponseResult {
 
 export function useSubmitPollResponse() {
   const { code, experienceFetch } = useExperience();
+  const { setSubmissionState } = useExperienceState();
   const [error, setError] = useState<string | null>(null);
 
   const submitPollResponse = useCallback(
@@ -53,6 +55,13 @@ export function useSubmitPollResponse() {
           return { success: false, error: msg };
         }
 
+        if (data.submission) {
+          setSubmissionState((prev) => ({
+            ...prev,
+            [blockId]: { id: data.submission.id, answer: data.submission.answer },
+          }));
+        }
+
         qaLogger('Successfully submitted poll response');
         return { success: true };
       } catch (e: any) {
@@ -64,7 +73,7 @@ export function useSubmitPollResponse() {
         return { success: false, error: msg };
       }
     },
-    [code, experienceFetch],
+    [code, experienceFetch, setSubmissionState],
   );
 
   return { submitPollResponse, error, setError };

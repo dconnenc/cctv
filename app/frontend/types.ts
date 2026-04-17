@@ -260,7 +260,7 @@ interface BaseBlock {
   children?: Block[];
   responses?: {
     total: number;
-    user_responded: boolean;
+    user_responded?: boolean;
     user_response?: {
       id: string;
       answer: any;
@@ -308,7 +308,7 @@ export interface PhotoUploadBlock extends BaseBlock {
   payload: PhotoUploadPayload;
   responses?: {
     total: number;
-    user_responded: boolean;
+    user_responded?: boolean;
     user_response?: {
       id: string;
       answer: Record<string, unknown>;
@@ -329,7 +329,7 @@ export interface BuzzerBlock extends BaseBlock {
   payload: BuzzerPayload;
   responses?: {
     total: number;
-    user_responded: boolean;
+    user_responded?: boolean;
     user_response?: { id: string; answer: { buzzed_at: string } } | null;
     all_responses?: Array<{
       id: string;
@@ -644,7 +644,10 @@ export interface FamilyFeudUpdatedMessage
   data: FamilyFeudDispatchPayload;
 }
 
-export type SubmissionState = Record<string, { id: string; answer: Record<string, unknown> }>;
+export type SubmissionState = Record<
+  string,
+  { id: string; answer: Record<string, unknown>; photo_url?: string }
+>;
 
 export interface SubmissionStateMessage {
   type: 'submission_state';

@@ -204,6 +204,98 @@ RSpec.describe Experiences::Visibility do
     end
   end
 
+  describe "response data serialization" do
+    let(:user) { create(:user, :user) }
+    let(:other_user) { create(:user, :user) }
+
+    context "POLL block" do
+      let!(:participant) { create(:experience_participant, user: user, experience: experience, role: :player) }
+      let!(:host_participant) { create(:experience_participant, user: other_user, experience: experience, role: :host) }
+      let!(:block) { create(:experience_block, experience: experience, kind: ExperienceBlock::POLL, status: :open) }
+
+      before do
+        create(:experience_poll_submission, experience_block: block, user: user,
+               answer: { "selectedOptions" => ["option_a"] })
+      end
+
+      it "omits user_response and user_responded for regular participants" do
+        result = described_class.for_participant(experience, participant)
+        responses = result[:blocks].first[:responses]
+        expect(responses).not_to have_key(:user_response)
+        expect(responses).not_to have_key(:user_responded)
+      end
+
+      it "includes total and aggregate for regular participants" do
+        result = described_class.for_participant(experience, participant)
+        responses = result[:blocks].first[:responses]
+        expect(responses[:total]).to eq(1)
+        expect(responses).to have_key(:aggregate)
+      end
+
+      it "includes user_response, user_responded, aggregate, and all_responses for hosts" do
+        create(:experience_poll_submission, experience_block: block, user: other_user,
+               answer: { "selectedOptions" => ["option_a"] })
+
+        result = described_class.for_participant(experience, host_participant)
+        responses = result[:blocks].first[:responses]
+        expect(responses[:user_responded]).to be true
+        expect(responses[:user_response]).to include(id: be_a(String))
+        expect(responses[:aggregate]).to eq({ "option_a" => 2 })
+        expect(responses[:all_responses]).to be_an(Array).and have_attributes(length: 2)
+      end
+    end
+
+    context "BUZZER block" do
+      let!(:participant) { create(:experience_participant, user: user, experience: experience, role: :player) }
+      let!(:host_participant) { create(:experience_participant, user: other_user, experience: experience, role: :host) }
+      let!(:block) { create(:experience_block, experience: experience, kind: ExperienceBlock::BUZZER, status: :open) }
+
+      before do
+        create(:experience_buzzer_submission, experience_block: block, user: user)
+      end
+
+      it "omits user_response and user_responded for regular participants" do
+        result = described_class.for_participant(experience, participant)
+        responses = result[:blocks].first[:responses]
+        expect(responses).not_to have_key(:user_response)
+        expect(responses).not_to have_key(:user_responded)
+      end
+
+      it "includes total for regular participants" do
+        result = described_class.for_participant(experience, participant)
+        responses = result[:blocks].first[:responses]
+        expect(responses[:total]).to eq(1)
+      end
+
+      it "includes user_response, user_responded, and all_responses for hosts" do
+        result = described_class.for_participant(experience, host_participant)
+        responses = result[:blocks].first[:responses]
+        expect(responses[:user_responded]).to be false
+        expect(responses[:user_response]).to be_nil
+        expect(responses[:all_responses]).to be_an(Array).and have_attributes(length: 1)
+      end
+    end
+
+    context "PHOTO_UPLOAD block" do
+      let!(:participant) { create(:experience_participant, user: user, experience: experience, role: :player) }
+      let!(:host_participant) { create(:experience_participant, user: other_user, experience: experience, role: :host) }
+      let!(:block) { create(:experience_block, experience: experience, kind: ExperienceBlock::PHOTO_UPLOAD, status: :open) }
+
+      it "includes only total for regular participants with no submission" do
+        result = described_class.for_participant(experience, participant)
+        responses = result[:blocks].first[:responses]
+        expect(responses).to eq({ total: 0 })
+      end
+
+      it "includes user_response and user_responded for hosts" do
+        result = described_class.for_participant(experience, host_participant)
+        responses = result[:blocks].first[:responses]
+        expect(responses).to have_key(:user_response)
+        expect(responses).to have_key(:user_responded)
+      end
+    end
+  end
+
   describe ".block_visible_to_user?" do
     let(:user) { create(:user, :user) }
     let!(:participant) { create(:experience_participant, user: user, experience: experience, role: :audience) }
