@@ -1,5 +1,6 @@
 import { FormEvent, useState } from 'react';
 
+import { useExperienceState } from '@cctv/contexts/ExperienceStateContext';
 import { Button } from '@cctv/core/Button/Button';
 import { Option } from '@cctv/core/Option/Option';
 import { useSubmitPollResponse } from '@cctv/hooks/useSubmitPollResponse';
@@ -12,7 +13,7 @@ interface PollProps extends PollPayload {
   blockId?: string;
   responses?: {
     total: number;
-    user_responded: boolean;
+    user_responded?: boolean;
     user_response?: {
       id: string;
       answer: any;
@@ -34,6 +35,9 @@ export default function Poll({
 }: PollProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { submitPollResponse, error } = useSubmitPollResponse();
+  const { submissionState } = useExperienceState();
+  const submission = blockId ? submissionState[blockId] : undefined;
+  const userResponded = !!submission || !!responses?.user_responded;
 
   const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -67,10 +71,11 @@ export default function Poll({
     }
   };
 
-  if (responses?.user_responded) {
-    const displayValue =
-      responses?.user_response?.answer?.selectedOptions?.join(', ') ||
-      'You have already responded to this poll.';
+  if (userResponded) {
+    const selectedOptions =
+      (submission?.answer?.selectedOptions as string[] | undefined) ??
+      responses?.user_response?.answer?.selectedOptions;
+    const displayValue = selectedOptions?.join(', ') || 'You have already responded to this poll.';
 
     return (
       <div className={styles.submittedValue}>

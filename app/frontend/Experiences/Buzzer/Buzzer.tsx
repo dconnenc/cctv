@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Layer, Line, Stage } from 'react-konva';
 
 import { useExperience } from '@cctv/contexts/ExperienceContext';
+import { useExperienceState } from '@cctv/contexts/ExperienceStateContext';
 import { useSubmitBuzzerResponse } from '@cctv/hooks/useSubmitBuzzerResponse';
 import { BuzzerBlock } from '@cctv/types';
 
@@ -68,9 +69,13 @@ interface BuzzerProps {
 
 export default function Buzzer({ block, viewContext = 'participant' }: BuzzerProps) {
   const { experience, monitorView } = useExperience();
+  const { submissionState } = useExperienceState();
   const { submitBuzzerResponse, isLoading } = useSubmitBuzzerResponse();
-  const [buzzed, setBuzzed] = useState(block.responses?.user_responded ?? false);
-  const [showBuzzed, setShowBuzzed] = useState(block.responses?.user_responded ?? false);
+  const priorSubmission = submissionState[block.id];
+  const [buzzed, setBuzzed] = useState(false);
+  const [showBuzzed, setShowBuzzed] = useState(false);
+  const hasBuzzed = !!priorSubmission || buzzed;
+  const shouldShowBuzzed = !!priorSubmission || showBuzzed;
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const particlesRef = useRef<Particle[]>([]);
   const animRef = useRef<number>(0);
@@ -79,13 +84,12 @@ export default function Buzzer({ block, viewContext = 'participant' }: BuzzerPro
   const firstResponse = allResponses[0] ?? null;
 
   const handleBuzz = async () => {
-    if (buzzed || isLoading) return;
+    if (hasBuzzed || isLoading) return;
     playBuzzerSound();
     setBuzzed(true);
     const result = await submitBuzzerResponse(block.id);
     if (!result?.success) {
       setBuzzed(false);
-      setShowBuzzed(false);
     } else {
       setTimeout(() => setShowBuzzed(true), 800);
     }
@@ -184,7 +188,7 @@ export default function Buzzer({ block, viewContext = 'participant' }: BuzzerPro
     );
   }
 
-  if (showBuzzed) {
+  if (shouldShowBuzzed) {
     return (
       <div className={styles.buzzedState}>
         <p className={styles.buzzedText}>Buzzed!</p>
@@ -203,7 +207,7 @@ export default function Buzzer({ block, viewContext = 'participant' }: BuzzerPro
             spawnExplosion(rect.left + rect.width / 2, rect.top + rect.height / 2);
             handleBuzz();
           }}
-          disabled={isLoading}
+          disabled={hasBuzzed || isLoading}
           aria-label="Buzz in"
         />
         <canvas ref={canvasRef} className={styles.particleLayer} />

@@ -537,12 +537,17 @@ RSpec.describe Api::ExperienceBlocksController, type: :controller do
       request.headers["Authorization"] = "Bearer #{jwt}"
     end
 
-    it "returns 200 when participant submits to an open block" do
+    it "returns the submission in the response" do
       broadcaster = instance_double(Experiences::Broadcaster, broadcast_experience_update: true)
       allow(Experiences::Broadcaster).to receive(:new).and_return(broadcaster)
 
       subject
+
+      json = JSON.parse(response.body)
       expect(response.status).to eql(200)
+      expect(json["success"]).to be(true)
+      expect(json["submission"]["id"]).to be_present
+      expect(json["submission"]["answer"]["selectedOptions"]).to eq(["option_a"])
     end
 
     context "when the block is closed" do
@@ -569,6 +574,42 @@ RSpec.describe Api::ExperienceBlocksController, type: :controller do
         subject
         expect(response.status).to eql(403)
       end
+    end
+  end
+
+  describe "POST #submit_buzzer_response" do
+    let(:audience_user) { create(:user, :user) }
+    let!(:audience_participant) { create(:experience_participant, user: audience_user, experience: experience, role: :audience) }
+    let!(:block) { create(:experience_block, experience: experience, kind: ExperienceBlock::BUZZER, status: :open) }
+
+    subject do
+      post(
+        :submit_buzzer_response,
+        params: {
+          experience_id: experience.code_slug,
+          id: block.id,
+          answer: { "buzzed_at" => Time.current.iso8601 }
+        },
+        format: :json
+      )
+    end
+
+    before do
+      jwt = Experiences::AuthService.jwt_for_participant(experience: experience, user: audience_user)
+      request.headers["Authorization"] = "Bearer #{jwt}"
+    end
+
+    it "returns the submission in the response" do
+      broadcaster = instance_double(Experiences::Broadcaster, broadcast_experience_update: true)
+      allow(Experiences::Broadcaster).to receive(:new).and_return(broadcaster)
+
+      subject
+
+      json = JSON.parse(response.body)
+      expect(response.status).to eql(200)
+      expect(json["success"]).to be(true)
+      expect(json["submission"]["id"]).to be_present
+      expect(json["submission"]["answer"]["buzzed_at"]).to be_present
     end
   end
 end

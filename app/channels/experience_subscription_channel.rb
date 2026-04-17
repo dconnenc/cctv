@@ -273,17 +273,47 @@ class ExperienceSubscriptionChannel < ApplicationCable::Channel
   end
 
   def build_submission_state(participant)
-    question_block_ids = @experience.experience_blocks
-      .where(kind: ExperienceBlock::QUESTION)
-      .pluck(:id)
+    result = {}
 
-    return {} if question_block_ids.empty?
+    blocks_by_kind = @experience.experience_blocks
+      .where(kind: [ExperienceBlock::QUESTION, ExperienceBlock::POLL, ExperienceBlock::BUZZER, ExperienceBlock::PHOTO_UPLOAD])
+      .pluck(:id, :kind)
+      .group_by { |_, kind| kind }
+      .transform_values { |pairs| pairs.map { |id, _| id } }
 
-    ExperienceQuestionSubmission
-      .where(experience_block_id: question_block_ids, user_id: participant.user_id)
-      .each_with_object({}) do |s, hash|
-        hash[s.experience_block_id.to_s] = { id: s.id, answer: s.answer }
-      end
+    question_ids = blocks_by_kind[ExperienceBlock::QUESTION] || []
+    unless question_ids.empty?
+      ExperienceQuestionSubmission
+        .where(experience_block_id: question_ids, user_id: participant.user_id)
+        .each { |s| result[s.experience_block_id.to_s] = { id: s.id, answer: s.answer } }
+    end
+
+    poll_ids = blocks_by_kind[ExperienceBlock::POLL] || []
+    unless poll_ids.empty?
+      ExperiencePollSubmission
+        .where(experience_block_id: poll_ids, user_id: participant.user_id)
+        .each { |s| result[s.experience_block_id.to_s] = { id: s.id, answer: s.answer } }
+    end
+
+    buzzer_ids = blocks_by_kind[ExperienceBlock::BUZZER] || []
+    unless buzzer_ids.empty?
+      ExperienceBuzzerSubmission
+        .where(experience_block_id: buzzer_ids, user_id: participant.user_id)
+        .each { |s| result[s.experience_block_id.to_s] = { id: s.id, answer: s.answer } }
+    end
+
+    photo_ids = blocks_by_kind[ExperienceBlock::PHOTO_UPLOAD] || []
+    unless photo_ids.empty?
+      ExperiencePhotoUploadSubmission
+        .where(experience_block_id: photo_ids, user_id: participant.user_id)
+        .includes(photo_attachment: :blob)
+        .each do |s|
+          photo_url = s.photo.attached? ? ActiveStorageUrlService.blob_url(s.photo.blob) : nil
+          result[s.experience_block_id.to_s] = { id: s.id, answer: s.answer, photo_url: photo_url }
+        end
+    end
+
+    result
   end
 
   def find_experience_or_reject

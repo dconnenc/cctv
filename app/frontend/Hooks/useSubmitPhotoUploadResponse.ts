@@ -1,6 +1,7 @@
 import { useCallback, useState } from 'react';
 
 import { useExperience } from '@cctv/contexts/ExperienceContext';
+import { useExperienceState } from '@cctv/contexts/ExperienceStateContext';
 
 export interface SubmitPhotoUploadResponseParams {
   blockId: string;
@@ -10,6 +11,7 @@ export interface SubmitPhotoUploadResponseParams {
 
 export function useSubmitPhotoUploadResponse() {
   const { code, experienceFetch } = useExperience();
+  const { setSubmissionState } = useExperienceState();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -48,6 +50,17 @@ export function useSubmitPhotoUploadResponse() {
           return { success: false, error: msg };
         }
 
+        if (data.submission) {
+          setSubmissionState((prev) => ({
+            ...prev,
+            [blockId]: {
+              id: data.submission.id,
+              answer: data.submission.answer,
+              photo_url: data.submission.photo_url,
+            },
+          }));
+        }
+
         return data;
       } catch (e: unknown) {
         const msg = e instanceof Error ? e.message : 'Connection error. Please try again.';
@@ -57,7 +70,7 @@ export function useSubmitPhotoUploadResponse() {
         setIsLoading(false);
       }
     },
-    [code, experienceFetch],
+    [code, experienceFetch, setSubmissionState],
   );
 
   return {

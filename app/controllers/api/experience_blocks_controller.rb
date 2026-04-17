@@ -182,7 +182,7 @@ class Api::ExperienceBlocksController < Api::BaseController
 
       Experiences::Broadcaster.new(@experience).broadcast_experience_update
 
-      render json: { success: true, data: { submission: submission } }, status: 200
+      render json: { success: true, submission: { id: submission.id, answer: submission.answer } }, status: 200
     end
   end
 
@@ -238,7 +238,7 @@ class Api::ExperienceBlocksController < Api::BaseController
   # POST /api/experiences/:experience_id/blocks/:id/submit_buzzer_response
   def submit_buzzer_response
     with_experience_orchestration do
-      Experiences::Orchestrator.new(
+      submission = Experiences::Orchestrator.new(
         experience: @experience, actor: @user
       ).submit_buzzer_response!(
         block_id: params[:id],
@@ -247,7 +247,7 @@ class Api::ExperienceBlocksController < Api::BaseController
 
       Experiences::Broadcaster.new(@experience).broadcast_experience_update
 
-      render json: { success: true }, status: 200
+      render json: { success: true, submission: { id: submission.id, answer: submission.answer } }, status: 200
     end
   end
 
@@ -283,7 +283,7 @@ class Api::ExperienceBlocksController < Api::BaseController
   # POST /api/experiences/:experience_id/blocks/:id/submit_photo_upload_response
   def submit_photo_upload_response
     with_experience_orchestration do
-      Experiences::Orchestrator.new(
+      submission = Experiences::Orchestrator.new(
         experience: @experience, actor: @user
       ).submit_photo_upload_response!(
         block_id: params[:id],
@@ -293,7 +293,8 @@ class Api::ExperienceBlocksController < Api::BaseController
 
       Experiences::Broadcaster.new(@experience).broadcast_experience_update
 
-      render json: { success: true }, status: 200
+      photo_url = submission.photo.attached? ? ActiveStorageUrlService.blob_url(submission.photo.blob) : nil
+      render json: { success: true, submission: { id: submission.id, answer: submission.answer, photo_url: photo_url } }, status: 200
     end
   end
 
