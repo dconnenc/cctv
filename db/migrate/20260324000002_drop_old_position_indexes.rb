@@ -1,7 +1,7 @@
 class DropOldPositionIndexes < ActiveRecord::Migration[7.2]
   def up
-    remove_index :experience_blocks, name: "index_parent_blocks_unique_position"
-    remove_index :experience_blocks, name: "index_child_blocks_unique_position"
+    remove_index :experience_blocks, name: "index_parent_blocks_unique_position", if_exists: true
+    remove_index :experience_blocks, name: "index_child_blocks_unique_position", if_exists: true
   end
 
   def down

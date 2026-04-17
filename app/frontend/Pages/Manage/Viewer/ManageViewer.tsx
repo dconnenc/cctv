@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
-import { BookOpen, Bug, Pause, Play, X } from 'lucide-react';
+import { Link } from 'react-router-dom';
+
+import { BookOpen, Bug, Columns3, Pause, Play, X } from 'lucide-react';
 
 import { useExperience } from '@cctv/contexts/ExperienceContext';
 import { Dialog, DialogContent } from '@cctv/core';
@@ -225,6 +227,14 @@ export default function ManageViewer() {
             </div>
             <div className="flex items-center gap-2">
               <ExperienceActionButton />
+              <Link
+                to={`/experiences/${experience?.code}/timeline`}
+                className="px-3 py-1.5 text-sm rounded-md border border-[hsl(var(--border))] hover:bg-[hsl(var(--muted))] transition-colors inline-flex items-center gap-1.5"
+                title="Timeline view"
+              >
+                <Columns3 size={16} />
+                <span>Timeline</span>
+              </Link>
               <button
                 onClick={() => setShowDebugPanel((prev) => !prev)}
                 className={`px-3 py-1.5 text-sm rounded-md border transition-colors ${

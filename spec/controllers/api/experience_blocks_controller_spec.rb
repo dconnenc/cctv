@@ -310,6 +310,44 @@ RSpec.describe Api::ExperienceBlocksController, type: :controller do
     end
   end
 
+  describe "POST #set_column" do
+    let!(:block_a) { create(:experience_block, :announcement, experience: experience, position: 0) }
+    let!(:block_b) { create(:experience_block, :announcement, experience: experience, position: 1) }
+
+    subject do
+      post(
+        :set_column,
+        params: {
+          experience_id: experience.code_slug,
+          id: block_a.id,
+          column: 1,
+        },
+        format: :json
+      )
+    end
+
+    it "moves only the target block without disturbing siblings" do
+      broadcaster = instance_double(Experiences::Broadcaster, broadcast_experience_update: true)
+      allow(Experiences::Broadcaster).to receive(:new).and_return(broadcaster)
+
+      subject
+
+      expect(block_a.reload.position).to eq(1)
+      expect(block_b.reload.position).to eq(1)
+    end
+
+    it "broadcasts the update and returns 200" do
+      broadcaster = instance_double(Experiences::Broadcaster, broadcast_experience_update: true)
+      allow(Experiences::Broadcaster).to receive(:new).and_return(broadcaster)
+
+      subject
+
+      expect(broadcaster).to have_received(:broadcast_experience_update)
+      expect(response.status).to eql(200)
+      expect(JSON.parse(response.body)["success"]).to be(true)
+    end
+  end
+
   describe "PATCH #update" do
     let(:player) { create(:experience_participant, :player, experience: experience) }
 

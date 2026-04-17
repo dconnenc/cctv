@@ -157,10 +157,11 @@ module Experiences
 
     def serialize_block(block, participant_role:, user: nil, depth: 0)
       {
-        id:      block.id,
-        kind:    block.kind,
-        status:  block.status,
-        payload: block.payload
+        id:       block.id,
+        kind:     block.kind,
+        status:   block.status,
+        payload:  block.payload,
+        position: block.position
       }
         .merge(responses: serialize_response_data(block, participant_role, user))
         .merge(visibility_metadata(block, participant_role, user))
