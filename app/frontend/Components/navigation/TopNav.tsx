@@ -17,7 +17,7 @@ export const TopNav = () => {
   const [activePanel, setActivePanel] = useState<MobilePanel>(null);
   const { user, logOut, isLoading } = useUser();
   const isAdmin = user?.role === 'admin' || user?.role === 'superadmin';
-  const { theme, setTheme, bgAnimated, setBgAnimated } = useTheme();
+  const { theme, setTheme } = useTheme();
   const adminExperiences = getSessionCreatedExperiences();
   const location = useLocation();
 
@@ -105,16 +105,6 @@ export const TopNav = () => {
               </span>
               <div className={styles.dropdownMenu} role="menu">
                 <div className={styles.topnav__controlRow}>
-                  <span className={styles.switchLabel}>Background</span>
-                  <Switch
-                    className={styles.switch}
-                    checked={bgAnimated}
-                    onCheckedChange={(checked) => setBgAnimated(!!checked)}
-                    aria-label={bgAnimated ? 'Animated background' : 'Solid background'}
-                    title={bgAnimated ? 'Animated background' : 'Solid background'}
-                  />
-                </div>
-                <div className={styles.topnav__controlRow}>
                   <span className={styles.switchLabel}>{theme === 'dark' ? 'Dark' : 'Light'}</span>
                   <Switch
                     withIcons
@@ -176,16 +166,6 @@ export const TopNav = () => {
 
       {activePanel === 'settings' && (
         <div className={styles.bottomPanel}>
-          <div className={styles.topnav__controlRow}>
-            <span className={styles.switchLabel}>Background</span>
-            <Switch
-              className={styles.switch}
-              checked={bgAnimated}
-              onCheckedChange={(checked) => setBgAnimated(!!checked)}
-              aria-label={bgAnimated ? 'Animated background' : 'Solid background'}
-              title={bgAnimated ? 'Animated background' : 'Solid background'}
-            />
-          </div>
           <div className={styles.topnav__controlRow}>
             <span className={styles.switchLabel}>{theme === 'dark' ? 'Dark' : 'Light'}</span>
             <Switch

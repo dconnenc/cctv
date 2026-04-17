@@ -2,7 +2,7 @@ import { Suspense, lazy, useEffect, useState } from 'react';
 
 import { Outlet, Route, useLocation } from 'react-router-dom';
 
-import { BackgroundStatic, RouteWink, TopNav } from '@cctv/components';
+import { RouteWink, TopNav } from '@cctv/components';
 import { ExperienceProvider } from '@cctv/contexts/ExperienceContext';
 import { UserProvider } from '@cctv/contexts/UserContext';
 import Create from '@cctv/pages/Create/Create';
@@ -30,6 +30,7 @@ const BlockPage = lazy(() =>
 );
 const ManageCreateBlock = lazy(() => import('@cctv/pages/ManageCreateBlock/ManageCreateBlock'));
 const ManageViewer = lazy(() => import('@cctv/pages/Manage/Viewer/ManageViewer'));
+const Timeline = lazy(() => import('@cctv/pages/Timeline/Timeline'));
 
 function App() {
   const [booting, setBooting] = useState(true);
@@ -43,7 +44,6 @@ function App() {
   return (
     <UserProvider>
       <div className={`app${booting ? ' app--booting' : ''}`}>
-        <BackgroundStatic />
         {!currentRoute.pathname.includes('/monitor') &&
           !currentRoute.pathname.includes('/playbill') && <TopNav />}
         <div className={styles.root}>
@@ -83,6 +83,7 @@ function App() {
                     <Route path="manage" element={<ManageViewer />} />
                     <Route path="manage/blocks/new" element={<ManageCreateBlock />} />
                     <Route path="manage/blocks/:blockId" element={<BlockPage />} />
+                    <Route path="timeline" element={<Timeline />} />
                   </Route>
                 </Route>
               </Route>

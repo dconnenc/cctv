@@ -56,6 +56,7 @@ Rails.application.routes.draw do
           post :close
           post :hide
           post :reorder
+          post :set_column
           post :submit_poll_response
           post :submit_question_response
           post :submit_multistep_form_response

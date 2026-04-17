@@ -1,6 +1,6 @@
 class Api::ExperienceBlocksController < Api::BaseController
   MANAGEMENT_ACTIONS = %i[
-    create update reorder open close hide clear_buzzer_responses
+    create update reorder set_column open close hide clear_buzzer_responses
     add_bucket rename_bucket delete_bucket assign_answer auto_categorize
     start_playing reveal_bucket show_x next_question restart_playing
     restart_categorizing restart_everything
@@ -110,6 +110,26 @@ class Api::ExperienceBlocksController < Api::BaseController
       ).reorder_block!(
         block_id: params[:id],
         position: params[:position].to_i
+      )
+
+      @experience.reload
+      Experiences::Broadcaster.new(@experience).broadcast_experience_update
+
+      render json: {
+        success: true,
+        data: block,
+      }, status: 200
+    end
+  end
+
+  # POST /api/experiences/:experience_id/blocks/:id/set_column
+  def set_column
+    with_experience_orchestration do
+      block = Experiences::Orchestrator.new(
+        experience: @experience, actor: @user
+      ).set_block_column!(
+        block_id: params[:id],
+        column: params[:column].to_i
       )
 
       @experience.reload

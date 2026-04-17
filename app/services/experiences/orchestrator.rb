@@ -61,7 +61,7 @@ module Experiences
       transaction do
         block = experience.experience_blocks.find(block_id)
 
-        ids = block.siblings(include_self: true).order(:position).pluck(:id)
+        ids = block.siblings(include_self: true).order(:position, :created_at).pluck(:id)
         old_index = ids.index(block.id)
         new_index = position.clamp(0, ids.length - 1)
 
@@ -75,6 +75,27 @@ module Experiences
         end
 
         block.reload
+      end
+    end
+
+    def set_block_column!(block_id:, column:)
+      transaction do
+        block = experience.experience_blocks.find(block_id)
+        target = [column.to_i, 0].max
+        block.update!(position: target) unless block.position == target
+        block.reload
+      end
+    end
+
+    def insert_block_column!(at_column:)
+      transaction do
+        bump_from = at_column.to_i
+        experience
+          .experience_blocks
+          .parent_blocks
+          .where("position >= ?", bump_from)
+          .order(position: :desc)
+          .each { |b| b.update!(position: b.position + 1) }
       end
     end
 

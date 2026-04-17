@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_03_26_000001) do
+ActiveRecord::Schema[7.2].define(version: 2026_04_17_000001) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "citext"
   enable_extension "plpgsql"
@@ -115,9 +115,9 @@ ActiveRecord::Schema[7.2].define(version: 2026_03_26_000001) do
     t.index ["experience_id"], name: "index_experience_blocks_on_experience_id"
     t.index ["kind"], name: "index_experience_blocks_on_kind"
     t.index ["parent_block_id"], name: "index_experience_blocks_on_parent_block_id"
+    t.index ["position_scope", "position"], name: "index_experience_blocks_on_position_scope_and_position"
     t.index ["target_user_ids"], name: "index_experience_blocks_on_target_user_ids", using: :gin
     t.index ["visible_to_roles"], name: "index_experience_blocks_on_visible_to_roles", using: :gin
-    t.unique_constraint ["position_scope", "position"], deferrable: :deferred, name: "unique_position_in_scope"
   end
 
   create_table "experience_buzzer_submissions", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
