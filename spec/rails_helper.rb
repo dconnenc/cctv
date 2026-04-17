@@ -67,4 +67,9 @@ RSpec.configure do |config|
   config.before(:each, type: :system) do
     driven_by :cuprite, screen_size: [1440, 900], options: { headless: ENV["HEADLESS"] != "false", process_timeout: 20 }
   end
+
+  config.around(:each, type: :system) do |example|
+    example.run
+    example.run if example.exception
+  end
 end

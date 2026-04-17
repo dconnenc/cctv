@@ -121,7 +121,8 @@ module SystemHelpers
     draw_on_canvas
     expect(page).to have_button("Submit", disabled: false)
     click_button "Submit"
-    expect(page).to have_text("Players in Lobby:", wait: 10)
+    expect(page).to have_current_path(%r{/experiences/[^/]+\z}, wait: 10)
+    expect(page).to have_text("Players in Lobby:")
   end
 
   # Starts the experience. Asserts the Pause button is visible after starting.
