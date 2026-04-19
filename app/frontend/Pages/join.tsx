@@ -1,4 +1,13 @@
-import { ChangeEvent, FormEvent, useCallback, useEffect, useRef, useState } from 'react';
+import {
+  ChangeEvent,
+  FormEvent,
+  Suspense,
+  lazy,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 
 import { useSearchParams } from 'react-router-dom';
 
@@ -10,6 +19,8 @@ import { useGet } from '@cctv/hooks/useGet';
 import { useJoinExperience } from '@cctv/hooks/useJoinExperience';
 
 import styles from './Join.module.scss';
+
+const TicketRip = lazy(() => import('./TicketRip'));
 
 const SESSION_KEY = 'cctv_last_join_code';
 
@@ -45,6 +56,7 @@ export default function Join() {
   const [code, setCode] = useState(slugFromUrl || savedCode);
   const [scanning, setScanning] = useState(false);
   const [cameraSupported, setCameraSupported] = useState(true);
+  const [joined, setJoined] = useState<{ url: string; experienceName: string } | null>(null);
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const readerRef = useRef<HTMLDivElement>(null);
 
@@ -59,7 +71,10 @@ export default function Join() {
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    await joinExperience(actualCode);
+    const result = await joinExperience(actualCode);
+    if (result) {
+      setJoined({ url: result.url, experienceName: result.experienceName });
+    }
   };
 
   const handleCodeChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -130,6 +145,24 @@ export default function Join() {
       }
     };
   }, []);
+
+  const handleAnimationComplete = useCallback(() => {
+    if (joined) {
+      window.location.href = joined.url;
+    }
+  }, [joined]);
+
+  if (joined) {
+    return (
+      <Suspense fallback={null}>
+        <TicketRip
+          code={actualCode}
+          experienceName={joined.experienceName || registrationInfo?.experience?.name}
+          onComplete={handleAnimationComplete}
+        />
+      </Suspense>
+    );
+  }
 
   return (
     <section className="page flex-centered">
