@@ -63,9 +63,6 @@ function PerformerCard({ performer }: { performer: Performer }) {
       <div className={styles.cardInfo}>
         <h3 className={styles.cardName}>{performer.name}</h3>
         {performer.bio && <p className={styles.cardBio}>{performer.bio}</p>}
-        <span className={styles.followers}>
-          {performer.follower_count} {performer.follower_count === 1 ? 'follower' : 'followers'}
-        </span>
       </div>
     </Link>
   );

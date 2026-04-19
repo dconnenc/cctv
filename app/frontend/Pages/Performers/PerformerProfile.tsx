@@ -5,9 +5,18 @@ import { Edit2 } from 'lucide-react';
 import { useUser } from '@cctv/contexts';
 import { Panel } from '@cctv/core';
 import { useFollowPerformer, usePerformer } from '@cctv/hooks';
-import { formatEventDate, formatEventTime } from '@cctv/utils/calendar';
+import { formatEventTime } from '@cctv/utils/calendar';
 
 import styles from './Performers.module.scss';
+
+const dateParts = (iso: string) => {
+  const d = new Date(iso);
+  return {
+    dow: d.toLocaleDateString('en-US', { weekday: 'short' }),
+    dom: d.toLocaleDateString('en-US', { day: 'numeric' }),
+    mo: d.toLocaleDateString('en-US', { month: 'short' }),
+  };
+};
 
 export default function PerformerProfile() {
   const { slug } = useParams<{ slug: string }>();
@@ -47,27 +56,30 @@ export default function PerformerProfile() {
     <section className="page">
       <div className={styles.profileContainer}>
         <Panel className={styles.profilePanel}>
-          <div className={styles.profileHeader}>
+          <header className={styles.hero}>
             {performer.photo_url ? (
               <img
                 src={performer.photo_url}
                 alt={performer.name}
-                className={styles.profilePhoto}
-                width={100}
-                height={100}
+                className={styles.heroPhoto}
+                width={140}
+                height={140}
               />
             ) : (
-              <div className={styles.profilePhotoPlaceholder}>
-                {performer.name.charAt(0).toUpperCase()}
+              <div className={styles.heroPhoto} aria-hidden>
+                <span className={styles.heroPhotoInitial}>
+                  {performer.name.charAt(0).toUpperCase()}
+                </span>
               </div>
             )}
-            <div className={styles.profileInfo}>
-              <h1 className={styles.profileName}>{performer.name}</h1>
-              <span className={styles.followers}>
+            <div className={styles.heroInfo}>
+              <span className={styles.heroEyebrow}>Performer</span>
+              <h1 className={styles.heroName}>{performer.name}</h1>
+              <span className={styles.heroFollowers}>
                 {performer.follower_count}{' '}
                 {performer.follower_count === 1 ? 'follower' : 'followers'}
               </span>
-              <div className={styles.profileActions}>
+              <div className={styles.heroActions}>
                 {user && !isOwner && (
                   <button
                     className={`${styles.followBtnLarge} ${performer.followed_by_current_user ? styles.following : ''}`}
@@ -85,26 +97,37 @@ export default function PerformerProfile() {
                 )}
               </div>
             </div>
-          </div>
+          </header>
 
           {performer.bio && <p className={styles.bio}>{performer.bio}</p>}
 
           {performer.upcoming_events && performer.upcoming_events.length > 0 && (
-            <div className={styles.upcomingSection}>
-              <h2 className={styles.sectionTitle}>Upcoming Events</h2>
-              <div className={styles.eventsList}>
-                {performer.upcoming_events.map((event) => (
-                  <Link key={event.id} to={`/events/${event.slug}`} className={styles.eventItem}>
-                    <span className={styles.eventDate}>{formatEventDate(event.starts_at)}</span>
-                    <span className={styles.eventItemTitle}>{event.title}</span>
-                    <span className={styles.eventItemTime}>{formatEventTime(event.starts_at)}</span>
-                    {event.venue_name && (
-                      <span className={styles.eventItemVenue}>{event.venue_name}</span>
-                    )}
-                  </Link>
-                ))}
-              </div>
-            </div>
+            <section className={styles.upcomingSection}>
+              <h2 className={styles.sectionTitle}>Upcoming Shows</h2>
+              <ol className={styles.eventsList}>
+                {performer.upcoming_events.map((event) => {
+                  const d = dateParts(event.starts_at);
+                  return (
+                    <li key={event.id} className={styles.eventItemWrapper}>
+                      <Link to={`/events/${event.slug}`} className={styles.eventItem}>
+                        <div className={styles.eventDateBlock} aria-hidden>
+                          <span className={styles.eventDateDow}>{d.dow}</span>
+                          <span className={styles.eventDateDom}>{d.dom}</span>
+                          <span className={styles.eventDateMo}>{d.mo}</span>
+                        </div>
+                        <div className={styles.eventBody}>
+                          <span className={styles.eventTitle}>{event.title}</span>
+                          {event.venue_name && (
+                            <span className={styles.eventVenue}>{event.venue_name}</span>
+                          )}
+                        </div>
+                        <span className={styles.eventTime}>{formatEventTime(event.starts_at)}</span>
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ol>
+            </section>
           )}
         </Panel>
       </div>

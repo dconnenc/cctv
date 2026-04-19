@@ -28,7 +28,7 @@ export default function Home() {
           </Button>
         </Link>
         <Link to="/about" className="link">
-          About CCTV
+          About
         </Link>
       </div>
     </section>
