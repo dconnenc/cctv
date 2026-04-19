@@ -53,6 +53,38 @@ ActiveRecord::Schema[7.2].define(version: 2026_04_17_000001) do
     t.index ["blob_id", "variation_digest"], name: "index_active_storage_variant_records_uniqueness", unique: true
   end
 
+  create_table "event_performers", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "event_id", null: false
+    t.uuid "performer_id", null: false
+    t.integer "position", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["event_id", "performer_id"], name: "index_event_performers_on_event_id_and_performer_id", unique: true
+    t.index ["performer_id"], name: "index_event_performers_on_performer_id"
+  end
+
+  create_table "events", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.string "title", null: false
+    t.text "description"
+    t.datetime "starts_at", null: false
+    t.datetime "ends_at", null: false
+    t.string "venue_name"
+    t.string "venue_address"
+    t.string "pricing_text"
+    t.string "ticket_url"
+    t.uuid "experience_id"
+    t.uuid "creator_id", null: false
+    t.string "slug", null: false
+    t.boolean "published", default: false, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["creator_id"], name: "index_events_on_creator_id"
+    t.index ["experience_id"], name: "index_events_on_experience_id"
+    t.index ["published", "starts_at"], name: "index_events_on_published_and_starts_at"
+    t.index ["slug"], name: "index_events_on_slug", unique: true
+    t.index ["starts_at"], name: "index_events_on_starts_at"
+  end
+
   create_table "experience_block_links", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.uuid "parent_block_id", null: false
     t.uuid "child_block_id", null: false
@@ -231,6 +263,15 @@ ActiveRecord::Schema[7.2].define(version: 2026_04_17_000001) do
     t.index ["status"], name: "index_experiences_on_status"
   end
 
+  create_table "follows", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "user_id", null: false
+    t.uuid "performer_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["performer_id"], name: "index_follows_on_performer_id"
+    t.index ["user_id", "performer_id"], name: "index_follows_on_user_id_and_performer_id", unique: true
+  end
+
   create_table "passwordless_sessions", force: :cascade do |t|
     t.string "authenticatable_type"
     t.uuid "authenticatable_id"
@@ -243,6 +284,17 @@ ActiveRecord::Schema[7.2].define(version: 2026_04_17_000001) do
     t.datetime "updated_at", null: false
     t.index ["authenticatable_type", "authenticatable_id"], name: "authenticatable"
     t.index ["identifier"], name: "index_passwordless_sessions_on_identifier", unique: true
+  end
+
+  create_table "performers", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "user_id", null: false
+    t.string "name", null: false
+    t.text "bio"
+    t.string "slug", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["slug"], name: "index_performers_on_slug", unique: true
+    t.index ["user_id"], name: "index_performers_on_user_id", unique: true
   end
 
   create_table "users", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -258,6 +310,10 @@ ActiveRecord::Schema[7.2].define(version: 2026_04_17_000001) do
 
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
+  add_foreign_key "event_performers", "events", on_delete: :cascade
+  add_foreign_key "event_performers", "performers", on_delete: :cascade
+  add_foreign_key "events", "experiences", on_delete: :nullify
+  add_foreign_key "events", "users", column: "creator_id", on_delete: :cascade
   add_foreign_key "experience_block_links", "experience_blocks", column: "child_block_id", on_delete: :cascade
   add_foreign_key "experience_block_links", "experience_blocks", column: "parent_block_id", on_delete: :cascade
   add_foreign_key "experience_block_segments", "experience_blocks", on_delete: :cascade
@@ -283,4 +339,7 @@ ActiveRecord::Schema[7.2].define(version: 2026_04_17_000001) do
   add_foreign_key "experience_question_submissions", "users", on_delete: :cascade
   add_foreign_key "experience_segments", "experiences", on_delete: :cascade
   add_foreign_key "experiences", "users", column: "creator_id", on_delete: :cascade
+  add_foreign_key "follows", "performers", on_delete: :cascade
+  add_foreign_key "follows", "users", on_delete: :cascade
+  add_foreign_key "performers", "users", on_delete: :cascade
 end

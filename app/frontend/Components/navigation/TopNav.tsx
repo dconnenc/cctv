@@ -64,6 +64,22 @@ export const TopNav = () => {
             >
               Join
             </NavLink>
+            <NavLink
+              to="/calendar"
+              className={({ isActive }) =>
+                `${styles.navLink} ${isActive ? styles.navLinkActive : ''}`
+              }
+            >
+              Events
+            </NavLink>
+            <NavLink
+              to="/performers"
+              className={({ isActive }) =>
+                `${styles.navLink} ${isActive ? styles.navLinkActive : ''}`
+              }
+            >
+              Performers
+            </NavLink>
             {isAdmin && (
               <>
                 <div className={styles.dropdown}>
@@ -159,7 +175,10 @@ export const TopNav = () => {
             </span>
           )}
           <NavLink to="/create" className={styles.bottomPanelLink} onClick={closePanel}>
-            <Plus size={16} /> Create
+            <Plus size={16} /> Create Experience
+          </NavLink>
+          <NavLink to="/events/new" className={styles.bottomPanelLink} onClick={closePanel}>
+            <Plus size={16} /> New Event
           </NavLink>
         </div>
       )}
@@ -228,6 +247,16 @@ export const TopNav = () => {
           >
             <Ticket size={20} />
             <span className={styles.bottomTabLabel}>Join</span>
+          </NavLink>
+          <NavLink
+            to="/calendar"
+            className={({ isActive }) =>
+              `${styles.bottomTab} ${isActive ? styles.bottomTabActive : ''}`
+            }
+            onClick={closePanel}
+          >
+            <Ticket size={20} />
+            <span className={styles.bottomTabLabel}>Events</span>
           </NavLink>
           {isAdmin && (
             <button

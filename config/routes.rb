@@ -28,6 +28,20 @@ Rails.application.routes.draw do
     resources :users, only: [] do
       get "me", on: :collection
       post "sign_out_user", on: :collection
+      get "following", on: :collection
+    end
+
+    resources :events, param: :slug, only: [:index, :show, :create, :update, :destroy] do
+      member do
+        get :ical
+      end
+    end
+
+    resources :performers, param: :slug, only: [:index, :show, :create, :update, :destroy] do
+      member do
+        post :follow
+        delete :follow, action: :unfollow
+      end
     end
     resources :experiences, only: [:create, :show] do
       collection do
