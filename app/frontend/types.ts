@@ -208,6 +208,7 @@ export interface User {
   created_at: string;
   updated_at: string;
   most_recent_participant_name?: string;
+  performer_slug?: string | null;
 }
 
 export interface AvatarStroke {

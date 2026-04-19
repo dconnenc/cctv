@@ -14,6 +14,7 @@ interface User {
   super_admin: boolean;
   most_recent_participant_name?: string;
   most_recent_avatar?: { strokes?: AvatarStroke[] } | null;
+  performer_slug?: string | null;
 }
 
 interface UserContextType {

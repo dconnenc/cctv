@@ -1,7 +1,7 @@
 class Api::UsersController < Api::BaseController
   def me
     if current_user
-      render json: current_user.as_json(methods: [:most_recent_participant_name, :most_recent_avatar])
+      render json: current_user.as_json(methods: [:most_recent_participant_name, :most_recent_avatar, :performer_slug])
     else
       render json: {}, status: :ok
     end

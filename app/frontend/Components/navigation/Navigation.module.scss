@@ -150,7 +150,9 @@
 }
 
 .dropdownItem {
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
   padding: var(--space-xs) var(--space-xs);
   color: hsl(var(--popover-foreground));
   text-decoration: none;
@@ -324,6 +326,12 @@
 
 .bottomPanelLink:hover {
   background: hsl(var(--muted));
+}
+
+.bottomPanelDivider {
+  height: 1px;
+  background: hsl(var(--border));
+  margin: var(--space-xs) 0;
 }
 
 /* ── Responsive ── */
