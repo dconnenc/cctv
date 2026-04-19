@@ -741,7 +741,8 @@ export default function TicketRip({ code, experienceName = '', onComplete }: Tic
         blending: THREE.AdditiveBlending,
       }),
     );
-    glow.position.set(0, vOffset, -0.15);
+    glow.position.set(0, vOffset, -0.9);
+    glow.renderOrder = -10;
     scene.add(glow);
 
     threeRef.current = {
@@ -914,10 +915,9 @@ export default function TicketRip({ code, experienceName = '', onComplete }: Tic
         topHalf.rotation.z = 0;
         topHalf.rotation.x = -0.05 + settle * 0.05;
         const pulse = 0.5 + 0.5 * Math.sin(tt * 6);
-        topHalf.material.emissive = new THREE.Color(colors.phosphor);
-        topHalf.material.emissiveIntensity = settle * 0.12 * (0.6 + pulse * 0.4);
         glow.material.opacity = easeOutCubic(t) * 0.55 * (0.65 + pulse * 0.35);
         glow.scale.setScalar(0.85 + easeOutCubic(t) * 0.2);
+        glow.position.y = ticketGroup.position.y + topHalf.position.y;
         const g = 11;
         const fy = -0.22 - 0.5 * g * tt * tt;
         const fx = Math.sin(tt * 2.2) * 0.35 + tt * 0.1;
@@ -954,9 +954,8 @@ export default function TicketRip({ code, experienceName = '', onComplete }: Tic
         ticketGroup.rotation.x = -0.03 + Math.sin(tt * 1.8) * 0.02;
         ticketGroup.rotation.z = Math.sin(tt * 0.8) * 0.02;
         const pulse = 0.5 + 0.5 * Math.sin(tt * 3);
-        topHalf.material.emissive = new THREE.Color(colors.phosphor);
-        topHalf.material.emissiveIntensity = 0.08 + pulse * 0.06;
         glow.material.opacity = 0.35 + pulse * 0.15;
+        glow.position.y = ticketGroup.position.y + topHalf.position.y;
         shadow.material.opacity = 0.35;
         camera.position.z = baseCameraZ - 0.25;
         if (!onCompleteFiredRef.current && tt >= SUCCESS_HOLD_DURATION) {
