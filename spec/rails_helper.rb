@@ -65,7 +65,11 @@ Capybara.enable_aria_label = true
 
 RSpec.configure do |config|
   config.before(:each, type: :system) do
-    driven_by :cuprite, screen_size: [1440, 900], options: { headless: ENV["HEADLESS"] != "false", process_timeout: 20 }
+    driven_by :cuprite, screen_size: [1440, 900], options: {
+      headless: ENV["HEADLESS"] != "false",
+      process_timeout: 20,
+      browser_options: { "force-prefers-reduced-motion" => nil }
+    }
   end
 
   config.around(:each, type: :system) do |example|
