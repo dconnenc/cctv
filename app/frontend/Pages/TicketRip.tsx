@@ -5,10 +5,26 @@ import * as Tone from 'tone';
 
 import styles from './TicketRip.module.scss';
 
-const PAPER = '#f0ede4';
 const PAPER_DK = '#dcd7c2';
-const INK = '#080808';
-const PHOSPHOR = '#c8f060';
+
+interface TicketColors {
+  paper: string;
+  ink: string;
+  phosphor: string;
+}
+
+function resolveCssVar(name: string, fallback: string): string {
+  const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  return v || fallback;
+}
+
+function resolveTicketColors(): TicketColors {
+  return {
+    paper: resolveCssVar('--hot-white', '#f0ede4'),
+    ink: resolveCssVar('--black', '#080808'),
+    phosphor: resolveCssVar('--phosphor', '#c8f060'),
+  };
+}
 
 const FONT_LINK_ID = 'cctv-ticket-fonts';
 
@@ -76,8 +92,8 @@ function punchCornerNotches(
   ctx.restore();
 }
 
-function drawPerfDots(ctx: CanvasRenderingContext2D, y: number, W: number) {
-  ctx.fillStyle = INK;
+function drawPerfDots(ctx: CanvasRenderingContext2D, y: number, W: number, ink: string) {
+  ctx.fillStyle = ink;
   for (let x = 18; x < W - 18; x += 24) {
     ctx.beginPath();
     ctx.arc(x, y, 2.8, 0, Math.PI * 2);
@@ -85,11 +101,16 @@ function drawPerfDots(ctx: CanvasRenderingContext2D, y: number, W: number) {
   }
 }
 
-function drawAdmitOneBand(ctx: CanvasRenderingContext2D, H: number, bandX: number) {
-  ctx.fillStyle = PHOSPHOR;
+function drawAdmitOneBand(
+  ctx: CanvasRenderingContext2D,
+  H: number,
+  bandX: number,
+  colors: TicketColors,
+) {
+  ctx.fillStyle = colors.phosphor;
   ctx.fillRect(0, 0, bandX, H);
 
-  ctx.strokeStyle = INK;
+  ctx.strokeStyle = colors.ink;
   ctx.lineWidth = 2;
   ctx.setLineDash([6, 5]);
   ctx.beginPath();
@@ -101,7 +122,7 @@ function drawAdmitOneBand(ctx: CanvasRenderingContext2D, H: number, bandX: numbe
   ctx.save();
   ctx.translate(bandX / 2, H / 2);
   ctx.rotate(-Math.PI / 2);
-  ctx.fillStyle = INK;
+  ctx.fillStyle = colors.ink;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.font = '700 36px "Alfa Slab One", Georgia, serif';
@@ -109,7 +130,7 @@ function drawAdmitOneBand(ctx: CanvasRenderingContext2D, H: number, bandX: numbe
   ctx.restore();
 }
 
-function createTopHalfTexture(experienceName: string): THREE.CanvasTexture {
+function createTopHalfTexture(experienceName: string, colors: TicketColors): THREE.CanvasTexture {
   const W = 700;
   const H = 1120;
   const canvas = document.createElement('canvas');
@@ -119,16 +140,16 @@ function createTopHalfTexture(experienceName: string): THREE.CanvasTexture {
   if (!ctx) throw new Error('canvas 2d context unavailable');
 
   const bg = ctx.createLinearGradient(0, 0, 0, H);
-  bg.addColorStop(0, PAPER);
+  bg.addColorStop(0, colors.paper);
   bg.addColorStop(1, PAPER_DK);
   ctx.fillStyle = bg;
   ctx.fillRect(0, 0, W, H);
   drawPaperGrain(ctx, W, H);
 
   const bandX = 82;
-  drawAdmitOneBand(ctx, H, bandX);
+  drawAdmitOneBand(ctx, H, bandX, colors);
 
-  ctx.strokeStyle = INK;
+  ctx.strokeStyle = colors.ink;
   ctx.lineWidth = 3;
   ctx.strokeRect(bandX + 20, 24, W - bandX - 44, H - 48);
   ctx.lineWidth = 1;
@@ -140,7 +161,7 @@ function createTopHalfTexture(experienceName: string): THREE.CanvasTexture {
   const contentWidth = contentRight - contentLeft;
 
   const headerTop = 60;
-  ctx.fillStyle = INK;
+  ctx.fillStyle = colors.ink;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'top';
   ctx.font = '700 26px "Bebas Neue", Impact, sans-serif';
@@ -148,7 +169,7 @@ function createTopHalfTexture(experienceName: string): THREE.CanvasTexture {
   ctx.font = '500 14px "Bebas Neue", Impact, sans-serif';
   ctx.fillText('CHICAGO COMEDY TV', contentCenter, headerTop + 34);
 
-  ctx.strokeStyle = INK;
+  ctx.strokeStyle = colors.ink;
   ctx.lineWidth = 1.5;
   ctx.beginPath();
   ctx.moveTo(contentLeft + 60, headerTop + 64);
@@ -169,7 +190,7 @@ function createTopHalfTexture(experienceName: string): THREE.CanvasTexture {
   const dateColCenterX = contentRight - dateColWidth / 2;
   const dividerX = contentLeft + titleColWidth + columnGap / 2;
 
-  ctx.strokeStyle = INK;
+  ctx.strokeStyle = colors.ink;
   ctx.lineWidth = 1.2;
   ctx.setLineDash([5, 6]);
   ctx.beginPath();
@@ -237,7 +258,7 @@ function createTopHalfTexture(experienceName: string): THREE.CanvasTexture {
   ctx.save();
   ctx.translate(titleColCenterX, titleAreaBottom - 16);
   ctx.rotate(-Math.PI / 2);
-  ctx.fillStyle = INK;
+  ctx.fillStyle = colors.ink;
   ctx.textAlign = 'left';
   ctx.textBaseline = 'middle';
   ctx.font = `700 ${titleFontSize}px ${titleFontFamily}`;
@@ -290,7 +311,7 @@ function createTopHalfTexture(experienceName: string): THREE.CanvasTexture {
   ctx.save();
   ctx.translate(dateColCenterX, titleAreaCenterY);
   ctx.rotate(-Math.PI / 2);
-  ctx.fillStyle = INK;
+  ctx.fillStyle = colors.ink;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
 
@@ -302,7 +323,7 @@ function createTopHalfTexture(experienceName: string): THREE.CanvasTexture {
 
   ctx.restore();
 
-  drawPerfDots(ctx, H - 14, W);
+  drawPerfDots(ctx, H - 14, W, colors.ink);
 
   punchCornerNotches(ctx, W, H, 22, { tl: true, tr: true });
 
@@ -346,7 +367,7 @@ function wrapCodeIntoLines(
   return chunks;
 }
 
-function createBottomHalfTexture(code: string): THREE.CanvasTexture {
+function createBottomHalfTexture(code: string, colors: TicketColors): THREE.CanvasTexture {
   const W = 700;
   const H = 440;
   const canvas = document.createElement('canvas');
@@ -357,17 +378,17 @@ function createBottomHalfTexture(code: string): THREE.CanvasTexture {
 
   const bg = ctx.createLinearGradient(0, 0, 0, H);
   bg.addColorStop(0, PAPER_DK);
-  bg.addColorStop(1, PAPER);
+  bg.addColorStop(1, colors.paper);
   ctx.fillStyle = bg;
   ctx.fillRect(0, 0, W, H);
   drawPaperGrain(ctx, W, H);
 
-  drawPerfDots(ctx, 14, W);
+  drawPerfDots(ctx, 14, W, colors.ink);
 
   const bandX = 82;
-  drawAdmitOneBand(ctx, H, bandX);
+  drawAdmitOneBand(ctx, H, bandX, colors);
 
-  ctx.strokeStyle = INK;
+  ctx.strokeStyle = colors.ink;
   ctx.lineWidth = 3;
   ctx.strokeRect(bandX + 20, 28, W - bandX - 44, H - 48);
 
@@ -380,7 +401,7 @@ function createBottomHalfTexture(code: string): THREE.CanvasTexture {
   const codeMaxWidth = contentWidth - 20;
   const codeFontFamily = '"IBM Plex Mono", "Courier New", monospace';
 
-  ctx.fillStyle = INK;
+  ctx.fillStyle = colors.ink;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'top';
   ctx.font = '700 14px "Bebas Neue", Impact, sans-serif';
@@ -400,7 +421,7 @@ function createBottomHalfTexture(code: string): THREE.CanvasTexture {
   }
 
   ctx.font = `700 ${codeSize}px ${codeFontFamily}`;
-  ctx.fillStyle = INK;
+  ctx.fillStyle = colors.ink;
   const codeLineHeight = codeSize * 1.15;
   const codeBlockHeight = codeLines.length * codeLineHeight;
   const codeAreaTop = 82;
@@ -410,7 +431,7 @@ function createBottomHalfTexture(code: string): THREE.CanvasTexture {
     ctx.fillText(line, contentCenter, codeTop + i * codeLineHeight);
   });
 
-  ctx.fillStyle = INK;
+  ctx.fillStyle = colors.ink;
   let bx = contentLeft + 20;
   const barY = H - 120;
   while (bx < contentRight - 20) {
@@ -421,7 +442,7 @@ function createBottomHalfTexture(code: string): THREE.CanvasTexture {
 
   ctx.textAlign = 'center';
   ctx.font = '700 13px "Bebas Neue", Impact, sans-serif';
-  ctx.fillStyle = INK;
+  ctx.fillStyle = colors.ink;
   ctx.fillText('KEEP THIS STUB', contentCenter, H - 50);
 
   punchCornerNotches(ctx, W, H, 22, { bl: true, br: true });
@@ -570,6 +591,8 @@ export default function TicketRip({ code, experienceName = '', onComplete }: Tic
     const mount = mountRef.current;
     if (!mount) return;
 
+    const colors = resolveTicketColors();
+
     const initAudio = async () => {
       try {
         await Tone.start();
@@ -598,10 +621,10 @@ export default function TicketRip({ code, experienceName = '', onComplete }: Tic
     mount.appendChild(renderer.domElement);
 
     scene.add(new THREE.AmbientLight(0xffffff, 0.72));
-    const key = new THREE.DirectionalLight(0xf0ede4, 0.7);
+    const key = new THREE.DirectionalLight(colors.paper, 0.7);
     key.position.set(4, 5, 6);
     scene.add(key);
-    const rim = new THREE.DirectionalLight(0xc8f060, 0.32);
+    const rim = new THREE.DirectionalLight(colors.phosphor, 0.32);
     rim.position.set(-5, 2, -3);
     scene.add(rim);
     const fill = new THREE.DirectionalLight(0xf5a623, 0.15);
@@ -612,8 +635,8 @@ export default function TicketRip({ code, experienceName = '', onComplete }: Tic
     const TOP_H = 3.84;
     const BOT_H = 1.5;
 
-    const topTex = createTopHalfTexture(experienceName);
-    const botTex = createBottomHalfTexture(code);
+    const topTex = createTopHalfTexture(experienceName, colors);
+    const botTex = createBottomHalfTexture(code, colors);
 
     const topGeom = new THREE.PlaneGeometry(TW, TOP_H, 10, 20);
     const topMat = new THREE.MeshStandardMaterial({
@@ -673,7 +696,7 @@ export default function TicketRip({ code, experienceName = '', onComplete }: Tic
     const particles: Particle[] = [];
     for (let i = 0; i < MAX_P; i++) {
       const mat = new THREE.MeshBasicMaterial({
-        color: i % 3 === 0 ? 0xc8f060 : 0xf0ede4,
+        color: i % 3 === 0 ? colors.phosphor : colors.paper,
         side: THREE.DoubleSide,
         transparent: true,
         opacity: 0,
@@ -891,7 +914,7 @@ export default function TicketRip({ code, experienceName = '', onComplete }: Tic
         topHalf.rotation.z = 0;
         topHalf.rotation.x = -0.05 + settle * 0.05;
         const pulse = 0.5 + 0.5 * Math.sin(tt * 6);
-        topHalf.material.emissive = new THREE.Color(0xc8f060);
+        topHalf.material.emissive = new THREE.Color(colors.phosphor);
         topHalf.material.emissiveIntensity = settle * 0.12 * (0.6 + pulse * 0.4);
         glow.material.opacity = easeOutCubic(t) * 0.55 * (0.65 + pulse * 0.35);
         glow.scale.setScalar(0.85 + easeOutCubic(t) * 0.2);
@@ -931,7 +954,7 @@ export default function TicketRip({ code, experienceName = '', onComplete }: Tic
         ticketGroup.rotation.x = -0.03 + Math.sin(tt * 1.8) * 0.02;
         ticketGroup.rotation.z = Math.sin(tt * 0.8) * 0.02;
         const pulse = 0.5 + 0.5 * Math.sin(tt * 3);
-        topHalf.material.emissive = new THREE.Color(0xc8f060);
+        topHalf.material.emissive = new THREE.Color(colors.phosphor);
         topHalf.material.emissiveIntensity = 0.08 + pulse * 0.06;
         glow.material.opacity = 0.35 + pulse * 0.15;
         shadow.material.opacity = 0.35;

@@ -72,9 +72,12 @@ export default function Join() {
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const result = await joinExperience(actualCode);
-    if (result) {
-      setJoined({ url: result.url, experienceName: result.experienceName });
+    if (!result) return;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      window.location.href = result.url;
+      return;
     }
+    setJoined({ url: result.url, experienceName: result.experienceName });
   };
 
   const handleCodeChange = (e: ChangeEvent<HTMLInputElement>) => {
