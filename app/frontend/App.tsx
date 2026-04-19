@@ -64,7 +64,7 @@ function App() {
               <Route path="/stylesheet" element={<Stylesheet />} />
 
               {/* Public event & performer pages */}
-              <Route path="/calendar" element={<Calendar />} />
+              <Route path="/events" element={<Calendar />} />
               <Route path="/events/:slug" element={<EventDetail />} />
               <Route path="/performers" element={<PerformersList />} />
               <Route path="/performers/:slug" element={<PerformerProfile />} />

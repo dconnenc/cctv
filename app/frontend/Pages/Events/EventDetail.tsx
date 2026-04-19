@@ -3,6 +3,7 @@ import { useMemo } from 'react';
 import { Link, useParams } from 'react-router-dom';
 
 import { Calendar, Clock, ExternalLink, MapPin, QrCode, Ticket } from 'lucide-react';
+import { QRCodeSVG } from 'qrcode.react';
 
 import { useUser } from '@cctv/contexts';
 import { Panel } from '@cctv/core';
@@ -20,11 +21,9 @@ export default function EventDetail() {
   const icalUrl = `/api/events/${slug}/ical`;
   const gcalUrl = useMemo(() => (event ? buildGoogleCalendarUrl(event) : ''), [event]);
 
-  const qrCode = useMemo(() => {
-    if (!event?.experience?.active) return null;
-    const url = `${window.location.origin}/experiences/${event.experience.code_slug}`;
-    return `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(url)}`;
-  }, [event]);
+  const joinUrl = event?.experience?.active
+    ? `${window.location.origin}/experiences/${event.experience.code_slug}`
+    : null;
 
   const handleFollowToggle = async (performerSlug: string, isFollowing: boolean) => {
     if (isFollowing) {
@@ -107,10 +106,16 @@ export default function EventDetail() {
           {/* Experience Join Section */}
           {event.experience?.active && (
             <div className={styles.joinSection}>
+              <span className={styles.joinSectionMarker}>
+                <span className={styles.joinSectionMarkerDot} aria-hidden="true" />
+                Live
+              </span>
               <h2 className={styles.sectionTitle}>Join the Experience</h2>
               <div className={styles.joinContent}>
-                {qrCode && (
-                  <img src={qrCode} alt="QR code to join experience" className={styles.qrCode} />
+                {joinUrl && (
+                  <div className={styles.qrCode} aria-label="QR code to join experience">
+                    <QRCodeSVG value={joinUrl} size={180} marginSize={2} />
+                  </div>
                 )}
                 <Link to={`/experiences/${event.experience.code_slug}`} className={styles.joinBtn}>
                   <QrCode size={16} />
@@ -132,6 +137,9 @@ export default function EventDetail() {
                         src={performer.photo_url}
                         alt={performer.name}
                         className={styles.performerPhoto}
+                        loading="lazy"
+                        width={40}
+                        height={40}
                       />
                     ) : (
                       <div className={styles.performerPhotoPlaceholder}>

@@ -705,6 +705,7 @@ export interface Performer {
   photo_url: string | null;
   follower_count: number;
   followed_by_current_user: boolean;
+  editable_by_current_user: boolean;
   upcoming_events?: EventSummary[];
 }
 

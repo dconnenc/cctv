@@ -2,7 +2,7 @@ import { useState } from 'react';
 
 import { NavLink, useLocation } from 'react-router-dom';
 
-import { Home, Info, LogIn, LogOut, Plus, Settings, Ticket, Tv } from 'lucide-react';
+import { CalendarDays, Home, Info, LogIn, LogOut, Plus, Settings, Ticket, Tv } from 'lucide-react';
 
 import { useTheme } from '@cctv/contexts/ThemeContext';
 import { useUser } from '@cctv/contexts/UserContext';
@@ -65,7 +65,7 @@ export const TopNav = () => {
               Join
             </NavLink>
             <NavLink
-              to="/calendar"
+              to="/events"
               className={({ isActive }) =>
                 `${styles.navLink} ${isActive ? styles.navLinkActive : ''}`
               }
@@ -83,7 +83,13 @@ export const TopNav = () => {
             {isAdmin && (
               <>
                 <div className={styles.dropdown}>
-                  <span className={`${styles.navLink} ${styles.dropdownTrigger}`}>Experiences</span>
+                  <button
+                    type="button"
+                    className={`${styles.navLink} ${styles.dropdownTrigger}`}
+                    aria-haspopup="menu"
+                  >
+                    Experiences
+                  </button>
                   <div className={styles.dropdownMenu} role="menu">
                     {adminExperiences.length > 0 ? (
                       adminExperiences.map((e) => (
@@ -96,7 +102,7 @@ export const TopNav = () => {
                         </NavLink>
                       ))
                     ) : (
-                      <span className={styles.dropdownItem} style={{ opacity: 0.7 }}>
+                      <span className={`${styles.dropdownItem} ${styles.dropdownItemEmpty}`}>
                         No recent
                       </span>
                     )}
@@ -116,9 +122,14 @@ export const TopNav = () => {
 
           <div className={styles.navRight}>
             <div className={styles.dropdown}>
-              <span className={`${styles.navLink} ${styles.dropdownTrigger}`} aria-haspopup="menu">
+              <button
+                type="button"
+                className={`${styles.navLink} ${styles.dropdownTrigger}`}
+                aria-haspopup="menu"
+                aria-label="Settings"
+              >
                 <Settings size={16} />
-              </span>
+              </button>
               <div className={styles.dropdownMenu} role="menu">
                 <div className={styles.topnav__controlRow}>
                   <span className={styles.switchLabel}>{theme === 'dark' ? 'Dark' : 'Light'}</span>
@@ -170,7 +181,7 @@ export const TopNav = () => {
               </NavLink>
             ))
           ) : (
-            <span className={styles.bottomPanelLink} style={{ opacity: 0.5, cursor: 'default' }}>
+            <span className={`${styles.bottomPanelLink} ${styles.bottomPanelLinkEmpty}`}>
               No recent experiences
             </span>
           )}
@@ -249,13 +260,13 @@ export const TopNav = () => {
             <span className={styles.bottomTabLabel}>Join</span>
           </NavLink>
           <NavLink
-            to="/calendar"
+            to="/events"
             className={({ isActive }) =>
               `${styles.bottomTab} ${isActive ? styles.bottomTabActive : ''}`
             }
             onClick={closePanel}
           >
-            <Ticket size={20} />
+            <CalendarDays size={20} />
             <span className={styles.bottomTabLabel}>Events</span>
           </NavLink>
           {isAdmin && (

@@ -15,7 +15,7 @@ export default function PerformerProfile() {
   const { user } = useUser();
   const { follow, unfollow, isLoading: followLoading } = useFollowPerformer();
 
-  const isOwner = user && performer && user.id === (performer as any).user_id;
+  const isOwner = !!performer?.editable_by_current_user;
 
   const handleFollowToggle = async () => {
     if (!performer) return;
@@ -49,7 +49,13 @@ export default function PerformerProfile() {
         <Panel className={styles.profilePanel}>
           <div className={styles.profileHeader}>
             {performer.photo_url ? (
-              <img src={performer.photo_url} alt={performer.name} className={styles.profilePhoto} />
+              <img
+                src={performer.photo_url}
+                alt={performer.name}
+                className={styles.profilePhoto}
+                width={100}
+                height={100}
+              />
             ) : (
               <div className={styles.profilePhotoPlaceholder}>
                 {performer.name.charAt(0).toUpperCase()}

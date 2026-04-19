@@ -7,7 +7,8 @@ class PerformerSerializer
       slug: performer.slug,
       photo_url: performer.photo_url,
       follower_count: performer.follower_count,
-      followed_by_current_user: performer.followed_by?(current_user)
+      followed_by_current_user: performer.followed_by?(current_user),
+      editable_by_current_user: editable_by?(performer, current_user)
     }
 
     if include_events
@@ -32,7 +33,14 @@ class PerformerSerializer
       slug: performer.slug,
       photo_url: performer.photo_url,
       follower_count: performer.follower_count,
-      followed_by_current_user: performer.followed_by?(current_user)
+      followed_by_current_user: performer.followed_by?(current_user),
+      editable_by_current_user: editable_by?(performer, current_user)
     }
+  end
+
+  def self.editable_by?(performer, user)
+    return false unless user
+
+    performer.user_id == user.id
   end
 end

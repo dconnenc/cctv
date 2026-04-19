@@ -13,7 +13,6 @@
   "aliases": {
     "components": "@cctv/components",
     "utils": "@cctv/utils",
-    "ui": "@cctv/components/ui",
     "lib": "@cctv/utils",
     "hooks": "@cctv/hooks"
   },

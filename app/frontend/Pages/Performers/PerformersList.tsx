@@ -11,7 +11,7 @@ import styles from './Performers.module.scss';
 export default function PerformersList() {
   const { performers, isLoading } = usePerformers();
   const { user } = useUser();
-  const hasPerformerProfile = user && performers.some((p) => p.slug);
+  const hasPerformerProfile = performers.some((p) => p.editable_by_current_user);
 
   return (
     <section className="page">
@@ -49,7 +49,14 @@ function PerformerCard({ performer }: { performer: Performer }) {
   return (
     <Link to={`/performers/${performer.slug}`} className={styles.card}>
       {performer.photo_url ? (
-        <img src={performer.photo_url} alt={performer.name} className={styles.photo} />
+        <img
+          src={performer.photo_url}
+          alt={performer.name}
+          className={styles.photo}
+          loading="lazy"
+          width={60}
+          height={60}
+        />
       ) : (
         <div className={styles.photoPlaceholder}>{performer.name.charAt(0).toUpperCase()}</div>
       )}

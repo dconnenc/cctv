@@ -44,6 +44,19 @@ export function formatEventDateFull(iso: string): string {
   });
 }
 
+export function timeFromIso(iso: string): string {
+  const d = new Date(iso);
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+export function combineDateAndTime(date: Date, time: string): string {
+  const [h, m] = time.split(':').map(Number);
+  const d = new Date(date);
+  d.setHours(h, m, 0, 0);
+  return d.toISOString();
+}
+
 export function groupEventsByDate(events: CalendarEvent[]): Map<string, CalendarEvent[]> {
   const grouped = new Map<string, CalendarEvent[]>();
 

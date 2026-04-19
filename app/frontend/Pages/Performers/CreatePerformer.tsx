@@ -1,8 +1,8 @@
-import { FormEvent, useRef, useState } from 'react';
+import { FormEvent, useEffect, useState } from 'react';
 
 import { useNavigate } from 'react-router-dom';
 
-import { Button, Panel, TextInput } from '@cctv/core';
+import { Button, ImageUpload, Panel, TextInput } from '@cctv/core';
 
 import styles from './Performers.module.scss';
 
@@ -10,7 +10,23 @@ export default function CreatePerformer() {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string>();
-  const photoRef = useRef<HTMLInputElement>(null);
+  const [photo, setPhoto] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!previewUrl) return;
+    return () => URL.revokeObjectURL(previewUrl);
+  }, [previewUrl]);
+
+  const handleFileSelected = (file: File) => {
+    setPhoto(file);
+    setPreviewUrl(URL.createObjectURL(file));
+  };
+
+  const handleRemove = () => {
+    setPhoto(null);
+    setPreviewUrl(null);
+  };
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -29,11 +45,7 @@ export default function CreatePerformer() {
 
     formData.append('name', name);
     if (bio) formData.append('bio', bio);
-
-    const photoFiles = photoRef.current?.files;
-    if (photoFiles && photoFiles.length > 0) {
-      formData.append('photo', photoFiles[0]);
-    }
+    if (photo) formData.append('photo', photo);
 
     setIsLoading(true);
     try {
@@ -64,17 +76,18 @@ export default function CreatePerformer() {
           <form className={styles.form} onSubmit={handleSubmit}>
             <TextInput label="Name" name="name" type="text" />
             <div>
-              <label className={styles.photoLabel}>Bio</label>
-              <textarea
-                name="bio"
-                className={styles.textarea}
-                placeholder="Tell us about yourself..."
-              />
+              <TextInput label="Bio" name="bio" multiline placeholder="Tell us about yourself..." />
             </div>
-            <div className={styles.photoUpload}>
-              <label className={styles.photoLabel}>Profile Photo</label>
-              <input ref={photoRef} type="file" accept="image/*" />
-            </div>
+            <ImageUpload
+              label="Profile Photo"
+              shape="circle"
+              previewSize="6rem"
+              imageUrl={previewUrl}
+              onFileSelected={handleFileSelected}
+              onRemove={previewUrl ? handleRemove : undefined}
+              uploadButtonLabel="Upload photo"
+              changeButtonLabel="Change photo"
+            />
             {error && <p className={styles.error}>{error}</p>}
             <Button type="submit" loading={isLoading} loadingText="Creating...">
               Create Profile

@@ -1,8 +1,8 @@
-import { FormEvent, useRef, useState } from 'react';
+import { FormEvent, useEffect, useState } from 'react';
 
 import { useNavigate, useParams } from 'react-router-dom';
 
-import { Button, Panel, TextInput } from '@cctv/core';
+import { Button, ImageUpload, Panel, TextInput } from '@cctv/core';
 import { usePerformer } from '@cctv/hooks';
 
 import styles from './Performers.module.scss';
@@ -13,7 +13,25 @@ export default function EditPerformer() {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string>();
-  const photoRef = useRef<HTMLInputElement>(null);
+  const [photo, setPhoto] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!previewUrl) return;
+    return () => URL.revokeObjectURL(previewUrl);
+  }, [previewUrl]);
+
+  const handleFileSelected = (file: File) => {
+    setPhoto(file);
+    setPreviewUrl(URL.createObjectURL(file));
+  };
+
+  const handleRemove = () => {
+    setPhoto(null);
+    setPreviewUrl(null);
+  };
+
+  const displayedImageUrl = previewUrl ?? performer?.photo_url ?? null;
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -32,11 +50,7 @@ export default function EditPerformer() {
 
     formData.append('name', name);
     formData.append('bio', bio);
-
-    const photoFiles = photoRef.current?.files;
-    if (photoFiles && photoFiles.length > 0) {
-      formData.append('photo', photoFiles[0]);
-    }
+    if (photo) formData.append('photo', photo);
 
     setIsLoading(true);
     try {
@@ -83,21 +97,24 @@ export default function EditPerformer() {
           <form className={styles.form} onSubmit={handleSubmit}>
             <TextInput label="Name" name="name" type="text" defaultValue={performer.name} />
             <div>
-              <label className={styles.photoLabel}>Bio</label>
-              <textarea
+              <TextInput
+                label="Bio"
                 name="bio"
-                className={styles.textarea}
-                defaultValue={performer.bio ?? ''}
+                multiline
                 placeholder="Tell us about yourself..."
+                defaultValue={performer.bio ?? ''}
               />
             </div>
-            {performer.photo_url && (
-              <img src={performer.photo_url} alt="Current photo" className={styles.photoPreview} />
-            )}
-            <div className={styles.photoUpload}>
-              <label className={styles.photoLabel}>Update Photo</label>
-              <input ref={photoRef} type="file" accept="image/*" />
-            </div>
+            <ImageUpload
+              label="Profile Photo"
+              shape="circle"
+              previewSize="6rem"
+              imageUrl={displayedImageUrl}
+              onFileSelected={handleFileSelected}
+              onRemove={previewUrl ? handleRemove : undefined}
+              uploadButtonLabel="Upload photo"
+              changeButtonLabel="Change photo"
+            />
             {error && <p className={styles.error}>{error}</p>}
             <Button type="submit" loading={isLoading} loadingText="Saving...">
               Save Changes

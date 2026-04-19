@@ -1,16 +1,50 @@
-import { InputHTMLAttributes, forwardRef, useId } from 'react';
+import type { ForwardedRef, InputHTMLAttributes, TextareaHTMLAttributes } from 'react';
+import { forwardRef, useId } from 'react';
+
+import classNames from 'classnames';
 
 import styles from './TextInput.module.scss';
 
-interface TextInputProps extends InputHTMLAttributes<HTMLInputElement> {
-  label?: string;
+interface InputComponent extends InputHTMLAttributes<HTMLInputElement> {
+  multiline?: false;
 }
 
-/** Reusable text input component */
-export const TextInput = forwardRef<HTMLInputElement, TextInputProps>(
-  ({ label, name, type = 'text', placeholder, disabled, id, ...rest }, ref) => {
+interface TextareaComponent extends TextareaHTMLAttributes<HTMLTextAreaElement> {
+  multiline: true;
+}
+
+type TextInputComponent = InputComponent | TextareaComponent;
+
+type TextInputProps = TextInputComponent & {
+  label?: string;
+};
+
+export const TextInput = forwardRef<HTMLInputElement | HTMLTextAreaElement, TextInputProps>(
+  (props, ref) => {
     const generatedId = useId();
-    const inputId = id || generatedId;
+    const inputId = props.id ?? generatedId;
+
+    if (props.multiline) {
+      const { label, className, id, ...textareaRest } = props;
+
+      return (
+        <div className={styles.input}>
+          {label && (
+            <label className={styles.label} htmlFor={inputId}>
+              {label}
+            </label>
+          )}
+          <textarea
+            ref={ref as ForwardedRef<HTMLTextAreaElement>}
+            id={inputId}
+            className={classNames(styles.control, className)}
+            {...textareaRest}
+          />
+        </div>
+      );
+    }
+
+    const { label, type = 'text', className, id, multiline: _multiline, ...inputRest } = props;
 
     return (
       <div className={styles.input}>
@@ -20,15 +54,15 @@ export const TextInput = forwardRef<HTMLInputElement, TextInputProps>(
           </label>
         )}
         <input
-          ref={ref}
+          ref={ref as ForwardedRef<HTMLInputElement>}
           id={inputId}
-          name={name}
           type={type}
-          placeholder={placeholder}
-          disabled={disabled}
-          {...rest}
+          className={classNames(styles.control, className)}
+          {...inputRest}
         />
       </div>
     );
   },
 );
+
+TextInput.displayName = 'TextInput';

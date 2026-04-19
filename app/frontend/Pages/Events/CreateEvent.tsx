@@ -2,8 +2,9 @@ import { FormEvent, useState } from 'react';
 
 import { useNavigate } from 'react-router-dom';
 
-import { Button, Panel, TextInput } from '@cctv/core';
+import { Button, NaturalDatePicker, Panel, Switch, TextInput } from '@cctv/core';
 import { usePerformers } from '@cctv/hooks';
+import { combineDateAndTime } from '@cctv/utils/calendar';
 
 import styles from './CreateEvent.module.scss';
 
@@ -14,6 +15,10 @@ export default function CreateEvent() {
   const [error, setError] = useState<string>();
   const [selectedPerformers, setSelectedPerformers] = useState<string[]>([]);
   const [published, setPublished] = useState(false);
+  const [startDate, setStartDate] = useState<Date | undefined>();
+  const [startTime, setStartTime] = useState('');
+  const [endDate, setEndDate] = useState<Date | undefined>();
+  const [endTime, setEndTime] = useState('');
 
   const togglePerformer = (id: string) => {
     setSelectedPerformers((prev) =>
@@ -30,32 +35,30 @@ export default function CreateEvent() {
       (form.elements.namedItem(name) as HTMLInputElement)?.value?.trim() ?? '';
 
     const title = getValue('title');
-    const starts_at = getValue('starts_at');
-    const ends_at = getValue('ends_at');
 
     if (!title) {
       setError('Title is required');
       return;
     }
-    if (!starts_at) {
-      setError('Start date/time is required');
+    if (!startDate || !startTime) {
+      setError('Start date and time are required');
       return;
     }
-    if (!ends_at) {
-      setError('End date/time is required');
+    if (!endDate || !endTime) {
+      setError('End date and time are required');
       return;
     }
 
     const body: Record<string, any> = {
       title,
       description: getValue('description') || null,
-      starts_at: new Date(starts_at).toISOString(),
-      ends_at: new Date(ends_at).toISOString(),
+      starts_at: combineDateAndTime(startDate, startTime),
+      ends_at: combineDateAndTime(endDate, endTime),
       venue_name: getValue('venue_name') || null,
       venue_address: getValue('venue_address') || null,
       pricing_text: getValue('pricing_text') || null,
       ticket_url: getValue('ticket_url') || null,
-      experience_id: getValue('experience_id') || null,
+      experience_code: getValue('experience_code') || null,
       published,
       performer_ids: selectedPerformers,
     };
@@ -90,24 +93,31 @@ export default function CreateEvent() {
           <form className={styles.form} onSubmit={handleSubmit}>
             <TextInput label="Title" name="title" type="text" />
 
-            <div className={styles.field}>
-              <label className={styles.label}>Description</label>
-              <textarea
-                name="description"
-                className={styles.textarea}
-                placeholder="What's this event about?"
+            <TextInput
+              label="Description"
+              name="description"
+              multiline
+              placeholder="What's this event about?"
+            />
+
+            <div className={styles.row}>
+              <NaturalDatePicker label="Start date" date={startDate} onSelect={setStartDate} />
+              <TextInput
+                label="Start time"
+                type="time"
+                value={startTime}
+                onChange={(e) => setStartTime(e.target.value)}
               />
             </div>
 
             <div className={styles.row}>
-              <div className={styles.field}>
-                <label className={styles.label}>Start</label>
-                <input name="starts_at" type="datetime-local" className={styles.input} />
-              </div>
-              <div className={styles.field}>
-                <label className={styles.label}>End</label>
-                <input name="ends_at" type="datetime-local" className={styles.input} />
-              </div>
+              <NaturalDatePicker label="End date" date={endDate} onSelect={setEndDate} />
+              <TextInput
+                label="End time"
+                type="time"
+                value={endTime}
+                onChange={(e) => setEndTime(e.target.value)}
+              />
             </div>
 
             <div className={styles.row}>
@@ -120,7 +130,12 @@ export default function CreateEvent() {
               <TextInput label="Ticket URL" name="ticket_url" type="url" />
             </div>
 
-            <TextInput label="Experience ID (optional)" name="experience_id" type="text" />
+            <TextInput
+              label="Experience code (optional)"
+              name="experience_code"
+              type="text"
+              placeholder="e.g. MYSHOW2026"
+            />
 
             {performers.length > 0 && (
               <div className={styles.field}>
@@ -140,16 +155,10 @@ export default function CreateEvent() {
               </div>
             )}
 
-            <div className={styles.field}>
-              <label className={styles.checkLabel}>
-                <input
-                  type="checkbox"
-                  checked={published}
-                  onChange={(e) => setPublished(e.target.checked)}
-                />
-                Publish immediately
-              </label>
-            </div>
+            <label className={styles.checkLabel}>
+              <Switch checked={published} onCheckedChange={setPublished} />
+              Publish immediately
+            </label>
 
             {error && <p className={styles.error}>{error}</p>}
             <Button type="submit" loading={isLoading} loadingText="Creating...">

@@ -132,9 +132,22 @@ class Api::EventsController < Api::BaseController
   private
 
   def event_params
-    params.permit(:title, :description, :starts_at, :ends_at,
-                  :venue_name, :venue_address, :pricing_text,
-                  :ticket_url, :experience_id, :published)
+    permitted = params.permit(:title, :description, :starts_at, :ends_at,
+                              :venue_name, :venue_address, :pricing_text,
+                              :ticket_url, :published)
+
+    if params.key?(:experience_code)
+      permitted[:experience_id] = resolve_experience_id(params[:experience_code])
+    end
+
+    permitted
+  end
+
+  def resolve_experience_id(code)
+    code = code.to_s.strip
+    return nil if code.blank?
+
+    Experience.find_by_code_or_slug(code)&.id
   end
 
   def update_performers(event)

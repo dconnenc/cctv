@@ -89,15 +89,17 @@ export default function Calendar() {
 function EventCard({ event }: { event: CalendarEvent }) {
   return (
     <Link to={`/events/${event.slug}`} className={styles.eventCard}>
-      <div className={styles.eventTime}>{formatEventTime(event.starts_at)}</div>
       <div className={styles.eventInfo}>
         <h3 className={styles.eventTitle}>{event.title}</h3>
-        {event.venue_name && (
-          <span className={styles.eventVenue}>
-            <MapPin size={14} />
-            {event.venue_name}
-          </span>
-        )}
+        <span className={styles.eventVenue}>
+          {formatEventTime(event.starts_at)}
+          {event.venue_name && (
+            <>
+              <MapPin size={14} />
+              {event.venue_name}
+            </>
+          )}
+        </span>
         {event.performers.length > 0 && (
           <span className={styles.eventPerformers}>
             {event.performers.map((p) => p.name).join(', ')}
@@ -105,7 +107,12 @@ function EventCard({ event }: { event: CalendarEvent }) {
         )}
         {event.pricing_text && <span className={styles.eventPricing}>{event.pricing_text}</span>}
       </div>
-      {event.experience?.active && <span className={styles.liveBadge}>LIVE</span>}
+      {event.experience?.active && (
+        <span className={styles.liveTally}>
+          <span className={styles.liveTallyDot} aria-hidden="true" />
+          LIVE
+        </span>
+      )}
     </Link>
   );
 }
