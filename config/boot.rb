@@ -1,7 +1,7 @@
 ENV["BUNDLE_GEMFILE"] ||= File.expand_path("../Gemfile", __dir__)
 
 env_file = File.expand_path("../.env", __dir__)
-if File.exist?(env_file)
+if ENV["RAILS_ENV"] != "production" && File.exist?(env_file)
   File.foreach(env_file) do |line|
     line = line.strip
     next if line.empty? || line.start_with?("#")
