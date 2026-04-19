@@ -8,11 +8,11 @@ default: &default
 
 development:
   <<: *default
-  database: cctv_development
+  database: <%= ENV.fetch("DATABASE_NAME", "cctv_development") %>
 
 test:
   <<: *default
-  database: cctv_test
+  database: <%= ENV.fetch("TEST_DATABASE_NAME", "cctv_test") %>
 
 production:
   <<: *default
