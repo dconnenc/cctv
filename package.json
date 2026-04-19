@@ -7,7 +7,7 @@
     "yarn": ">=1.22.0"
   },
   "scripts": {
-    "dev": "concurrently --kill-others -n vite,tailwind,web -c blue,magenta,green \"ruby bin/vite dev\" \"yarn tailwind:watch\" \"ruby bin/rails s\"",
+    "dev": "bin/dev",
     "format": "prettier --write \"{app,config,lib,public}/**/*.{js,jsx,ts,tsx,css,scss,md,json,yml,yaml}\"",
     "format:check": "prettier --check \"{app,config,lib,public}/**/*.{js,jsx,ts,tsx,css,scss,md,json,yml,yaml}\"",
     "typecheck": "tsc --noEmit",
