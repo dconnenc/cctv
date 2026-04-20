@@ -131,7 +131,7 @@ export default function LobbyAvatars() {
         }
 
         const node = groupRefsRef.current.get(id);
-        if (node) {
+        if (node && typeof node.position === 'function') {
           const scale = BASE_SCALE * (1 + SCALE_AMPLITUDE * Math.sin(m.scalePhase));
           node.position({ x: m.x, y: m.y });
           node.scale({ x: scale, y: scale });
@@ -171,12 +171,12 @@ export default function LobbyAvatars() {
                     if (node) {
                       groupRefsRef.current.set(p.id, node);
                       const m = motionsRef.current.get(p.id);
-                      if (m) {
+                      if (m && typeof node.position === 'function') {
                         node.position({ x: m.x, y: m.y });
                         const s = BASE_SCALE * (1 + SCALE_AMPLITUDE * Math.sin(m.scalePhase));
                         node.scale({ x: s, y: s });
                       }
-                    } else {
+                    } else if (!node) {
                       groupRefsRef.current.delete(p.id);
                     }
                   }}

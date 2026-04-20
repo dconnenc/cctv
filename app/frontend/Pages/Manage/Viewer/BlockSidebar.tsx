@@ -80,7 +80,7 @@ export default function BlockSidebar({
           })}
         >
           {!sidebarCollapsed && (
-            <button onClick={onCreateBlock} title="Create block" aria-label="Create block">
+            <button onClick={onCreateBlock} title="Create Block" aria-label="Create Block">
               <Plus size={16} />
             </button>
           )}
@@ -163,7 +163,7 @@ export default function BlockSidebar({
               );
             })}
             <li>
-              <button onClick={onCreateBlock} title="Create block" aria-label="Create block">
+              <button onClick={onCreateBlock} title="Create Block" aria-label="Create Block">
                 <Plus size={32} />
               </button>
             </li>
