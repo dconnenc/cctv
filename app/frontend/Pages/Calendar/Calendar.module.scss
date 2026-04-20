@@ -4,6 +4,12 @@
   padding: var(--space-md);
   width: 100%;
   padding-bottom: var(--bottom-nav-h);
+
+  @media (max-width: 480px) {
+    padding-left: var(--space-xs);
+    padding-right: var(--space-xs);
+    padding-top: var(--space-xs);
+  }
 }
 
 .header {

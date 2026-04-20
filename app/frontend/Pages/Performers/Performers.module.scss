@@ -3,6 +3,10 @@
   margin: 0 auto;
   padding: var(--space-md);
   width: 100%;
+
+  @media (max-width: 480px) {
+    padding: var(--space-xs);
+  }
 }
 
 .header {
@@ -166,6 +170,10 @@
   margin: 0 auto;
   padding: var(--space-md);
   width: 100%;
+
+  @media (max-width: 480px) {
+    padding: var(--space-xs);
+  }
 }
 
 .profilePanel {
@@ -479,6 +487,10 @@
   margin: 0 auto;
   padding: var(--space-md);
   width: 100%;
+
+  @media (max-width: 480px) {
+    padding: var(--space-xs);
+  }
 }
 
 .formPanel {
