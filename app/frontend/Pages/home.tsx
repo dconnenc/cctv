@@ -2,6 +2,8 @@ import { Link } from 'react-router-dom';
 
 import { Button } from '@cctv/core/Button/Button';
 
+import styles from './home.module.scss';
+
 export default function Home() {
   return (
     <section className="page flex-centered">
@@ -27,7 +29,7 @@ export default function Home() {
             Join Show
           </Button>
         </Link>
-        <Link to="/about" className="link">
+        <Link to="/about" className={`link ${styles.aboutLink}`}>
           About
         </Link>
       </div>
