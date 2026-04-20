@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 
+import type Konva from 'konva';
 import { Group, Layer, Line, Stage } from 'react-konva';
 
 import { useExperience } from '@cctv/contexts/ExperienceContext';
@@ -77,9 +78,10 @@ export default function LobbyAvatars() {
   const hasActiveBlock = !!monitorView?.blocks[0] || !!monitorView?.participant_block_active;
 
   const motionsRef = useRef<Map<string, AvatarMotion>>(new Map());
+  const groupRefsRef = useRef<Map<string, Konva.Group>>(new Map());
+  const layerRef = useRef<Konva.Layer>(null);
   const rafRef = useRef<number | null>(null);
   const lastTimeRef = useRef<number | null>(null);
-  const [, forceUpdate] = useState(0);
 
   const prevSizeRef = useRef(size);
   useEffect(() => {
@@ -108,7 +110,7 @@ export default function LobbyAvatars() {
         lastTimeRef.current !== null ? Math.min((timestamp - lastTimeRef.current) / 1000, 0.1) : 0;
       lastTimeRef.current = timestamp;
 
-      for (const m of motionsRef.current.values()) {
+      for (const [id, m] of motionsRef.current.entries()) {
         m.x += m.vx * dt;
         m.y += m.vy * dt;
         m.scalePhase += m.scaleFreq * dt;
@@ -127,9 +129,16 @@ export default function LobbyAvatars() {
           m.y = maxY;
           m.vy = -Math.abs(m.vy);
         }
+
+        const node = groupRefsRef.current.get(id);
+        if (node) {
+          const scale = BASE_SCALE * (1 + SCALE_AMPLITUDE * Math.sin(m.scalePhase));
+          node.position({ x: m.x, y: m.y });
+          node.scale({ x: scale, y: scale });
+        }
       }
 
-      forceUpdate((n) => n + 1);
+      layerRef.current?.batchDraw();
       rafRef.current = requestAnimationFrame(animate);
     };
 
@@ -144,7 +153,7 @@ export default function LobbyAvatars() {
     <div className={styles.root}>
       <div className={styles.stageWrap} ref={containerRef}>
         <Stage width={size.w} height={size.h}>
-          <Layer>
+          <Layer ref={layerRef}>
             {participants.map((p) => {
               const strokes = drawState.strokes[p.id] ?? [];
               if (!strokes.length) return null;
@@ -152,23 +161,36 @@ export default function LobbyAvatars() {
               const motion = motionsRef.current.get(p.id);
               if (!motion) return null;
 
-              const scale = BASE_SCALE * (1 + SCALE_AMPLITUDE * Math.sin(motion.scalePhase));
+              const initialScale = BASE_SCALE * (1 + SCALE_AMPLITUDE * Math.sin(motion.scalePhase));
               const isGrayed = hasActiveBlock && p.role !== 'host' && !respondedIds.has(p.id);
 
               return (
                 <Group
                   key={p.id}
+                  ref={(node) => {
+                    if (node) {
+                      groupRefsRef.current.set(p.id, node);
+                      const m = motionsRef.current.get(p.id);
+                      if (m) {
+                        node.position({ x: m.x, y: m.y });
+                        const s = BASE_SCALE * (1 + SCALE_AMPLITUDE * Math.sin(m.scalePhase));
+                        node.scale({ x: s, y: s });
+                      }
+                    } else {
+                      groupRefsRef.current.delete(p.id);
+                    }
+                  }}
                   x={motion.x}
                   y={motion.y}
-                  scaleX={scale}
-                  scaleY={scale}
+                  scaleX={initialScale}
+                  scaleY={initialScale}
                   opacity={isGrayed ? 0.3 : 1}
                 >
                   {strokes.map((s, idx) => (
                     <Line
                       key={idx}
                       points={s.points}
-                      stroke={isGrayed ? '#666' : s.color}
+                      stroke={isGrayed ? 'hsl(60 4% 35%)' : s.color}
                       strokeWidth={s.width}
                       lineCap="round"
                     />

@@ -38,7 +38,7 @@
   font-family: var(--font-body);
   font-size: 10px;
   letter-spacing: 0.3em;
-  color: var(--phosphor);
+  color: hsl(var(--muted-foreground));
   text-transform: uppercase;
   opacity: 0.7;
   text-shadow: none;
@@ -67,7 +67,7 @@
 
 .navLink {
   font-family: var(--font-body);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 400;
   letter-spacing: 0.2em;
   text-transform: uppercase;
@@ -85,7 +85,7 @@
 }
 
 .navLink:hover {
-  color: var(--phosphor);
+  color: hsl(var(--foreground));
   background: none;
 }
 
@@ -135,7 +135,6 @@
   padding: var(--space-xs);
   background: hsl(var(--popover));
   color: hsl(var(--popover-foreground));
-  backdrop-filter: blur(6px);
   border-radius: var(--radius);
   border: 1px solid hsl(var(--border));
   box-shadow: var(--shadow-1, 0 8px 16px rgba(0, 0, 0, 0.1));
@@ -143,7 +142,8 @@
   display: none;
 }
 
-.dropdown:hover .dropdownMenu {
+.dropdown:hover .dropdownMenu,
+.dropdownOpen .dropdownMenu {
   display: flex;
   flex-direction: column;
   gap: var(--space-xs);
@@ -229,8 +229,7 @@
   left: 0;
   width: 100%;
   z-index: 1000;
-  background: hsl(var(--background) / 0.92);
-  backdrop-filter: blur(10px);
+  background: hsl(var(--background));
   border-top: 1px solid hsl(var(--border));
   padding-bottom: env(safe-area-inset-bottom);
 }
@@ -257,7 +256,7 @@
   text-decoration: none;
   cursor: pointer;
   font-family: var(--font-ui);
-  font-size: 10px;
+  font-size: 12px;
   letter-spacing: 0.05em;
   text-transform: uppercase;
   transition: color 0.15s ease;
@@ -265,7 +264,7 @@
 }
 
 .bottomTab:hover {
-  color: var(--phosphor);
+  color: hsl(var(--foreground));
   background: none;
 }
 
@@ -274,7 +273,7 @@
 }
 
 .bottomTabLabel {
-  font-size: 10px;
+  font-size: 12px;
   line-height: 1;
 }
 
@@ -287,7 +286,6 @@
   z-index: 1003;
   background: hsl(var(--popover));
   color: hsl(var(--popover-foreground));
-  backdrop-filter: blur(8px);
   border: 1px solid hsl(var(--border));
   border-radius: var(--radius);
   padding: var(--space-sm);
@@ -302,7 +300,6 @@
   inset: 0;
   z-index: 1002;
   background: rgba(0, 0, 0, 0.4);
-  backdrop-filter: blur(2px);
   border: none !important;
   padding: 0 !important;
 }

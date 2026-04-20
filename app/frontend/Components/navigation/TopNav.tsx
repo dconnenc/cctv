@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import { NavLink, useLocation } from 'react-router-dom';
 
@@ -23,11 +23,14 @@ import { getSessionCreatedExperiences } from '@cctv/utils';
 import styles from './Navigation.module.scss';
 
 type MobilePanel = 'shows' | 'settings' | null;
+type DesktopDropdown = 'shows' | 'settings' | null;
 
 const SHOWS_PATH_PREFIXES = ['/events', '/performers', '/join', '/experiences', '/create'];
 
 export const TopNav = () => {
   const [activePanel, setActivePanel] = useState<MobilePanel>(null);
+  const [openDropdown, setOpenDropdown] = useState<DesktopDropdown>(null);
+  const navRef = useRef<HTMLElement>(null);
   const { user, logOut, isLoading } = useUser();
   const isAdmin = user?.role === 'admin' || user?.role === 'superadmin';
   const { theme, setTheme } = useTheme();
@@ -40,6 +43,12 @@ export const TopNav = () => {
 
   const closePanel = () => setActivePanel(null);
 
+  const toggleDropdown = (dropdown: DesktopDropdown) => {
+    setOpenDropdown((prev) => (prev === dropdown ? null : dropdown));
+  };
+
+  const closeDropdown = () => setOpenDropdown(null);
+
   const profileHref = user?.performer_slug
     ? `/performers/${user.performer_slug}`
     : '/performers/new';
@@ -49,9 +58,25 @@ export const TopNav = () => {
     activePanel === 'shows' ||
     SHOWS_PATH_PREFIXES.some((prefix) => location.pathname.startsWith(prefix));
 
+  useEffect(() => {
+    if (!openDropdown) return;
+    const onPointerDown = (e: PointerEvent) => {
+      if (!navRef.current?.contains(e.target as Node)) setOpenDropdown(null);
+    };
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpenDropdown(null);
+    };
+    document.addEventListener('pointerdown', onPointerDown);
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('pointerdown', onPointerDown);
+      document.removeEventListener('keydown', onKeyDown);
+    };
+  }, [openDropdown]);
+
   return (
     <>
-      <nav className={styles.topnav}>
+      <nav className={styles.topnav} ref={navRef}>
         <div className={styles.topnav__inner}>
           <NavLink to="/" end className={styles.logoLockup}>
             <span className={styles.logoCh}>Ch. 77</span>
@@ -78,22 +103,30 @@ export const TopNav = () => {
             >
               About
             </NavLink>
-            <div className={styles.dropdown}>
+            <div
+              className={`${styles.dropdown} ${openDropdown === 'shows' ? styles.dropdownOpen : ''}`}
+            >
               <button
                 type="button"
                 className={`${styles.navLink} ${styles.dropdownTrigger}`}
                 aria-haspopup="menu"
+                aria-expanded={openDropdown === 'shows'}
+                onClick={() => toggleDropdown('shows')}
               >
                 Shows
               </button>
               <div className={styles.dropdownMenu} role="menu">
-                <NavLink to="/events" className={() => styles.dropdownItem}>
+                <NavLink to="/events" className={() => styles.dropdownItem} onClick={closeDropdown}>
                   <CalendarDays size={14} /> Browse Events
                 </NavLink>
-                <NavLink to="/performers" className={() => styles.dropdownItem}>
+                <NavLink
+                  to="/performers"
+                  className={() => styles.dropdownItem}
+                  onClick={closeDropdown}
+                >
                   <Users size={14} /> Browse Performers
                 </NavLink>
-                <NavLink to="/join" className={() => styles.dropdownItem}>
+                <NavLink to="/join" className={() => styles.dropdownItem} onClick={closeDropdown}>
                   <Ticket size={14} /> Join Show
                 </NavLink>
                 {isAdmin && (
@@ -105,6 +138,7 @@ export const TopNav = () => {
                           key={e.code}
                           to={`/experiences/${e.code}/manage`}
                           className={() => styles.dropdownItem}
+                          onClick={closeDropdown}
                         >
                           <Tv size={14} /> {e.name}
                         </NavLink>
@@ -114,10 +148,18 @@ export const TopNav = () => {
                         No recent
                       </span>
                     )}
-                    <NavLink to="/create" className={() => styles.dropdownItem}>
+                    <NavLink
+                      to="/create"
+                      className={() => styles.dropdownItem}
+                      onClick={closeDropdown}
+                    >
                       <Plus size={14} /> Create Experience
                     </NavLink>
-                    <NavLink to="/events/new" className={() => styles.dropdownItem}>
+                    <NavLink
+                      to="/events/new"
+                      className={() => styles.dropdownItem}
+                      onClick={closeDropdown}
+                    >
                       <Plus size={14} /> New Event
                     </NavLink>
                   </>
@@ -127,12 +169,16 @@ export const TopNav = () => {
           </div>
 
           <div className={styles.navRight}>
-            <div className={styles.dropdown}>
+            <div
+              className={`${styles.dropdown} ${openDropdown === 'settings' ? styles.dropdownOpen : ''}`}
+            >
               <button
                 type="button"
                 className={`${styles.navLink} ${styles.dropdownTrigger}`}
                 aria-haspopup="menu"
+                aria-expanded={openDropdown === 'settings'}
                 aria-label="Settings"
+                onClick={() => toggleDropdown('settings')}
               >
                 <Settings size={16} />
               </button>
@@ -149,7 +195,11 @@ export const TopNav = () => {
                   />
                 </div>
                 {user && (
-                  <NavLink to={profileHref} className={() => styles.dropdownItem}>
+                  <NavLink
+                    to={profileHref}
+                    className={() => styles.dropdownItem}
+                    onClick={closeDropdown}
+                  >
                     <UserIcon size={14} /> {profileLabel}
                   </NavLink>
                 )}

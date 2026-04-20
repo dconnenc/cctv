@@ -6,7 +6,9 @@
   border: 1px solid hsl(var(--border));
   border-radius: var(--radius);
   min-height: 80px;
-  transition: all 0.3s ease;
+  transition:
+    background 0.3s ease,
+    border-color 0.3s ease;
 }
 
 .card.revealed {
@@ -69,7 +71,13 @@
 .percentage {
   font-size: 20px;
   font-weight: 800;
-  color: hsl(var(--primary));
+  color: hsl(var(--accent));
   min-width: 4ch;
   text-align: right;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card.revealed {
+    animation: none;
+  }
 }

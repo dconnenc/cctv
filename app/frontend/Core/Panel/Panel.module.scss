@@ -7,19 +7,11 @@
   color: hsl(var(--card-foreground));
   border-radius: 1rem;
   border: 1px solid hsl(var(--border));
-  border-top: 2px solid hsl(var(--primary) / 0.3);
   box-shadow: var(--shadow-1, 0 8px 12px rgba(0, 0, 0, 0.12));
   position: relative;
   z-index: 3;
   height: 100%;
   width: 100%;
-  transition:
-    border-top-color 0.3s ease,
-    box-shadow 0.3s ease;
-
-  &:hover {
-    border-top-color: hsl(var(--primary) / 0.5);
-  }
 }
 
 .header {

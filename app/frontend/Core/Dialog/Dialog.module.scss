@@ -153,3 +153,13 @@
     transform: translate(-50%, -48%) scale(0.96);
   }
 }
+
+@media (prefers-reduced-motion: reduce) {
+  .overlay,
+  .content {
+    &[data-state='open'],
+    &[data-state='closed'] {
+      animation: none;
+    }
+  }
+}

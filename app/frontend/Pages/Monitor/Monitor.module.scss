@@ -45,8 +45,7 @@
   padding: var(--space-xs);
   border: 1px solid hsl(var(--border));
   border-radius: 8px;
-  background: hsl(var(--popover) / 0.7);
-  backdrop-filter: blur(6px);
+  background: hsl(var(--popover));
   max-width: 40vw;
   max-height: 40vh;
 }
@@ -61,7 +60,7 @@
 }
 
 .error {
-  color: var(--phosphor);
+  color: hsl(var(--destructive));
   text-shadow: none;
 }
 .participantNotification {
@@ -75,8 +74,7 @@
   color: var(--hot-white);
   text-align: center;
   padding: var(--space-md) var(--space-lg);
-  background: hsl(var(--popover) / 0.85);
-  backdrop-filter: blur(8px);
+  background: hsl(var(--popover));
   border: 1px solid hsl(var(--border));
   border-radius: 12px;
   letter-spacing: 0.02em;

@@ -54,6 +54,7 @@ function PerformerCard({ performer }: { performer: Performer }) {
           alt={performer.name}
           className={styles.photo}
           loading="lazy"
+          decoding="async"
           width={60}
           height={60}
         />

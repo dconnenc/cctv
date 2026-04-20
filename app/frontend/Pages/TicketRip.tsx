@@ -1,4 +1,4 @@
-import { PointerEvent, useCallback, useEffect, useRef, useState } from 'react';
+import { KeyboardEvent, PointerEvent, useCallback, useEffect, useRef, useState } from 'react';
 
 import * as THREE from 'three';
 import * as Tone from 'tone';
@@ -569,21 +569,35 @@ export default function TicketRip({ code, experienceName = '', onComplete }: Tic
     onCompleteRef.current();
   }, []);
 
+  const activate = useCallback(() => {
+    const phase = animRef.current.phase;
+    if (phase === 'hovering') {
+      animRef.current.phase = 'shaking';
+      animRef.current.time = 0;
+      setCaption('validating');
+      return;
+    }
+    if (phase === 'success') {
+      fireComplete();
+    }
+  }, [fireComplete]);
+
   const handlePointerDown = useCallback(
     (e: PointerEvent<HTMLDivElement>) => {
       e.preventDefault();
-      const phase = animRef.current.phase;
-      if (phase === 'hovering') {
-        animRef.current.phase = 'shaking';
-        animRef.current.time = 0;
-        setCaption('validating');
-        return;
-      }
-      if (phase === 'success') {
-        fireComplete();
+      activate();
+    },
+    [activate],
+  );
+
+  const handleKeyDown = useCallback(
+    (e: KeyboardEvent<HTMLDivElement>) => {
+      if (e.key === ' ' || e.key === 'Enter') {
+        e.preventDefault();
+        activate();
       }
     },
-    [fireComplete],
+    [activate],
   );
 
   useEffect(() => {
@@ -1026,6 +1040,7 @@ export default function TicketRip({ code, experienceName = '', onComplete }: Tic
     <div
       className={styles.root}
       onPointerDown={handlePointerDown}
+      onKeyDown={handleKeyDown}
       role="button"
       tabIndex={0}
       aria-label={caption === 'tap-rip' ? 'Tap to tear ticket' : 'Tap to continue'}

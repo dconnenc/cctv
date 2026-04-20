@@ -72,21 +72,6 @@
   border-color: hsl(var(--foreground));
 }
 
-/* Explicit theme overrides for maximum clarity */
-:root[data-theme='light'] .modeActive,
-:root[data-theme='light'] .sizeActive {
-  background: #000;
-  color: #fff;
-  border-color: #000;
-}
-
-:root[data-theme='dark'] .modeActive,
-:root[data-theme='dark'] .sizeActive {
-  background: #fff;
-  color: #000;
-  border-color: #fff;
-}
-
 .palette {
   display: inline-flex;
   gap: var(--space-xs);

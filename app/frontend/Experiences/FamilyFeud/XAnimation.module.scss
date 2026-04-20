@@ -44,6 +44,16 @@
 }
 
 .xIcon {
-  color: #ef4444;
-  filter: drop-shadow(0 0 20px rgba(239, 68, 68, 0.8));
+  color: var(--red);
+  filter: drop-shadow(0 0 20px color-mix(in srgb, var(--red) 80%, transparent));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .overlay {
+    animation: none;
+  }
+
+  .xContainer {
+    animation: none;
+  }
 }

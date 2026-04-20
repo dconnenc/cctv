@@ -2,16 +2,19 @@
   margin-bottom: var(--space-xs);
   font-size: 2rem;
   font-weight: 800;
+  text-align: center;
 }
 
 // Subtitle and general text styles
 .subtitle {
   opacity: 0.85;
+  text-align: center;
 }
 
 .experienceStatus {
   font-size: 0.85rem;
   opacity: 0.85;
+  text-align: center;
 }
 
 .activeExperience {
@@ -19,6 +22,7 @@
   flex-direction: column;
   align-items: center;
   min-height: calc(100dvh - var(--nav-h) - var(--space-sm) * 2);
+  text-align: center;
 }
 
 .experienceContent {
@@ -39,6 +43,7 @@
 .error {
   color: hsl(var(--destructive));
   margin-bottom: var(--space-sm);
+  text-align: center;
 }
 
 .invalidCode {
@@ -126,6 +131,7 @@
   display: flex;
   flex-direction: column;
   padding-bottom: calc(var(--bottom-nav-h) + var(--space-sm)) !important;
+  text-align: center;
 }
 
 .avatarEditor {
@@ -180,7 +186,10 @@
   min-height: 100%;
 }
 
-.avatarToggleBtn:hover,
+.avatarToggleBtn:hover {
+  border-color: hsl(var(--foreground) / 0.45);
+}
+
 .avatarToggleBtn:focus-visible {
   border-color: var(--phosphor);
   box-shadow: var(--tv-glow);
@@ -208,10 +217,10 @@
   align-items: center;
   justify-content: center;
   background: var(--phosphor);
-  color: #000;
+  color: var(--black);
   border: none;
   cursor: pointer;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  box-shadow: var(--shadow-md);
   text-decoration: none;
 }
 
@@ -256,11 +265,11 @@
 }
 
 .connected {
-  color: var(--green);
+  color: var(--phosphor);
 }
 
 .disconnected {
-  color: var(--phosphor);
+  color: var(--amber);
 }
 
 // Admin manage link styling
@@ -287,6 +296,7 @@
   grid-template-rows: auto 1fr auto;
   height: calc(100dvh - var(--nav-h) - calc(var(--space-sm) * 2));
   gap: var(--space-xs);
+  text-align: center;
 }
 
 @media (max-width: 768px) {

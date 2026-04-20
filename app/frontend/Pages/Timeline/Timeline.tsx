@@ -189,7 +189,10 @@ export default function Timeline() {
     <section className={styles.page}>
       <div className={styles.header}>
         <div className={styles.headerLeft}>
-          <div className={styles.title}>{experience?.name || 'Experience'} — Timeline</div>
+          <div className={styles.titleStack}>
+            <span className={styles.titleKicker}>Timeline</span>
+            <span className={styles.title}>{experience?.name || 'Experience'}</span>
+          </div>
         </div>
         <div className={styles.headerRight}>
           <button
@@ -263,7 +266,7 @@ export default function Timeline() {
                     [styles.columnHeaderSelected]: selectedColumn === col,
                   })}
                 >
-                  {col + 1}
+                  {String(col + 1).padStart(2, '0')}
                 </button>
               ))}
             </div>
@@ -352,42 +355,88 @@ export default function Timeline() {
             <div className={styles.previewHeader}>
               <span>Preview</span>
               {selectedColumn !== null && (
-                <span className={styles.previewColumnLabel}>Col {selectedColumn + 1}</span>
+                <span className={styles.previewColumnLabel}>
+                  Cue {String(selectedColumn + 1).padStart(2, '0')}
+                </span>
               )}
             </div>
-            <div className={styles.previewRows}>
-              {tracks.map((track) => {
-                const blocksAtCol =
-                  selectedColumn === null ? [] : blocksByColumn.get(selectedColumn) || [];
-                const visibleBlocks = blocksAtCol.filter((b) => blockIsVisibleOnTrack(b, track));
-                const previewBlock = visibleBlocks[0];
-                const isLandscape = track.kind === 'monitor';
-                return (
-                  <div key={track.id} className={styles.previewRow}>
-                    <div
-                      className={classNames(styles.previewFrame, {
-                        [styles.previewFrameLandscape]: isLandscape,
-                        [styles.previewFramePortrait]: !isLandscape,
-                        [styles.previewEmpty]: !previewBlock,
-                      })}
-                    >
-                      {selectedColumn === null ? (
-                        <span>Select a column</span>
-                      ) : previewBlock ? (
-                        <div>
-                          <div className={styles.previewKind}>
-                            {previewBlock.kind.replace(/_/g, ' ')}
+            {selectedColumn === null ? (
+              <div className={styles.previewIdle}>
+                <span>Select a cue</span>
+              </div>
+            ) : (
+              <div className={styles.previewBody}>
+                {(() => {
+                  const blocksAtCol = blocksByColumn.get(selectedColumn) || [];
+                  const monitorTrack = tracks.find((t) => t.kind === 'monitor');
+                  const monitorBlock = monitorTrack
+                    ? blocksAtCol.filter((b) => blockIsVisibleOnTrack(b, monitorTrack))[0]
+                    : undefined;
+                  return (
+                    <div className={styles.previewMonitor}>
+                      <div className={styles.previewSectionLabel}>
+                        <MonitorIcon size={11} />
+                        <span>Monitor</span>
+                      </div>
+                      <div
+                        className={classNames(styles.previewFrame, {
+                          [styles.previewEmpty]: !monitorBlock,
+                        })}
+                      >
+                        {monitorBlock ? (
+                          <div className={styles.previewFrameInner}>
+                            <div className={styles.previewKind}>
+                              {monitorBlock.kind.replace(/_/g, ' ')}
+                            </div>
+                            <div className={styles.previewFrameLabel}>
+                              {blockLabel(monitorBlock)}
+                            </div>
                           </div>
-                          <div>{blockLabel(previewBlock)}</div>
-                        </div>
-                      ) : (
-                        <span>—</span>
-                      )}
+                        ) : (
+                          <span>—</span>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
-            </div>
+                  );
+                })()}
+
+                <div className={styles.previewSectionLabel}>
+                  <Users size={11} />
+                  <span>Participants</span>
+                </div>
+                <ul className={styles.previewList}>
+                  {tracks
+                    .filter((t) => t.kind !== 'monitor')
+                    .map((track) => {
+                      const blocksAtCol = blocksByColumn.get(selectedColumn) || [];
+                      const block = blocksAtCol.filter((b) => blockIsVisibleOnTrack(b, track))[0];
+                      return (
+                        <li key={track.id} className={styles.previewItem}>
+                          <div className={styles.previewItemTrack}>
+                            {track.kind === 'segment' && (
+                              <span
+                                className={styles.segmentSwatch}
+                                style={{ background: track.segment.color }}
+                              />
+                            )}
+                            <span>{track.label}</span>
+                          </div>
+                          {block ? (
+                            <div className={styles.previewItemContent}>
+                              <span className={styles.previewItemKind}>
+                                {block.kind.replace(/_/g, ' ')}
+                              </span>
+                              <span className={styles.previewItemBody}>{blockLabel(block)}</span>
+                            </div>
+                          ) : (
+                            <span className={styles.previewItemEmpty}>—</span>
+                          )}
+                        </li>
+                      );
+                    })}
+                </ul>
+              </div>
+            )}
           </div>
         </div>
       </DragDropContext>

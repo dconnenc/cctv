@@ -59,18 +59,6 @@
   border-color: hsl(var(--foreground));
 }
 
-:root[data-theme='light'] .modeActive {
-  background: #000;
-  color: #fff;
-  border-color: #000;
-}
-
-:root[data-theme='dark'] .modeActive {
-  background: #fff;
-  color: #000;
-  border-color: #fff;
-}
-
 .toolbar {
   display: flex;
   flex-wrap: wrap;
@@ -102,18 +90,6 @@
   background: hsl(var(--foreground));
   color: hsl(var(--background));
   border-color: hsl(var(--foreground));
-}
-
-:root[data-theme='light'] .sizeActive {
-  background: #000;
-  color: #fff;
-  border-color: #000;
-}
-
-:root[data-theme='dark'] .sizeActive {
-  background: #fff;
-  color: #000;
-  border-color: #fff;
 }
 
 .palette {

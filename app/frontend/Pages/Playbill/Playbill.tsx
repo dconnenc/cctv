@@ -70,7 +70,9 @@ export default function Playbill() {
                   <img
                     className={styles.image}
                     src={section.image_url}
-                    alt={`Section ${index + 1} Image`}
+                    alt={section.title || `Playbill section ${index + 1}`}
+                    loading="lazy"
+                    decoding="async"
                   />
                 </div>
               )}
