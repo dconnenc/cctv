@@ -11,7 +11,7 @@ interface BuzzerManagerProps {
 }
 
 export default function BuzzerManager({ block, participants }: BuzzerManagerProps) {
-  const { clearBuzzerResponses, isLoading } = useClearBuzzerResponses();
+  const { clearBuzzerResponses } = useClearBuzzerResponses();
 
   const allResponses = block.responses?.all_responses ?? [];
   const allParticipants = participants;
@@ -49,8 +49,6 @@ export default function BuzzerManager({ block, participants }: BuzzerManagerProp
       <Button
         variant="secondary"
         onClick={() => clearBuzzerResponses(block.id)}
-        loading={isLoading}
-        loadingText="Resetting…"
         disabled={allResponses.length === 0}
       >
         Reset Buzzers

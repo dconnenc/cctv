@@ -391,3 +391,49 @@
     transform: translateX(0) skewX(0deg);
   }
 }
+
+/* Touch devices: keep the static noise + scanlines as a still texture, drop the
+   moving tear bands and the staticAnim/flicker loops to save phone battery. */
+@media (hover: none) {
+  :root[data-bg='animated'] .tv-static {
+    animation: none;
+  }
+
+  :root[data-bg='animated'] .tv-static::after {
+    animation: none;
+  }
+
+  :root[data-bg='animated'] .tear-single,
+  :root[data-bg='animated'] .tear-double,
+  :root[data-bg='animated'] .tear-band {
+    display: none;
+  }
+}
+
+/* Reduced motion: drop CRT noise, scanlines, tears, and the boot flash.
+   The vignette gradient stays — it's static, not motion. */
+@media (prefers-reduced-motion: reduce) {
+  :root[data-bg='animated'] .tv-static {
+    background: hsl(var(--background));
+    filter: none;
+    animation: none;
+  }
+
+  :root[data-bg='animated'] .tv-static::after,
+  :root[data-bg='animated'] .tear-single,
+  :root[data-bg='animated'] .tear-double,
+  :root[data-bg='animated'] .tear-band {
+    display: none;
+    animation: none;
+  }
+
+  .tv-on-effect,
+  .tv-on-effect::after {
+    display: none;
+    animation: none;
+  }
+
+  .app--booting .wink-container {
+    animation: none;
+  }
+}

@@ -1,36 +1,40 @@
 .root {
   max-width: 800px;
   margin: 0 auto;
-  padding: var(--spacing-xl);
+  padding: var(--space-lg);
 }
 
 .title {
-  font-size: var(--font-size-xxl);
-  font-weight: var(--font-weight-bold);
-  color: var(--color-text-primary);
-  margin-bottom: var(--spacing-xl);
+  font-family: var(--font-display);
+  font-size: clamp(2.5rem, 7vw, 4rem);
+  line-height: 1;
+  color: hsl(var(--foreground));
+  margin-bottom: var(--space-md);
 }
 
 .content {
-  background-color: var(--color-background-secondary);
-  border: 1px solid var(--color-border);
-  border-radius: var(--border-radius-md);
-  padding: var(--spacing-lg);
+  background-color: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
+  border-radius: var(--radius);
+  padding: var(--space-md);
 }
 
 .field {
   display: flex;
-  gap: var(--spacing-md);
-  padding: var(--spacing-md) 0;
+  gap: var(--space-sm);
+  padding: var(--space-sm) 0;
 }
 
 .label {
-  font-weight: var(--font-weight-bold);
-  color: var(--color-text-secondary);
+  font-family: var(--font-ui);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: hsl(var(--muted-foreground));
   min-width: 100px;
 }
 
 .value {
-  color: var(--color-text-primary);
-  font-family: monospace;
+  color: hsl(var(--foreground));
+  font-family: var(--font-body);
 }

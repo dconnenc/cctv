@@ -5,6 +5,7 @@
   padding: var(--space-sm);
   position: relative;
   z-index: 10;
+  text-align: center;
 }
 
 .title {
@@ -33,10 +34,10 @@
   align-items: center;
   justify-content: center;
   background: var(--phosphor);
-  color: #000;
+  color: var(--black);
   border: none;
   cursor: pointer;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  box-shadow: var(--shadow-md);
   text-decoration: none;
 }
 

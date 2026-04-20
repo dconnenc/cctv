@@ -72,7 +72,7 @@
 
 .helpText {
   font-size: 16px;
-  color: var(--phosphor);
+  color: hsl(var(--muted-foreground));
   padding-top: 1.5rem;
 }
 
@@ -85,7 +85,7 @@
 
 .error {
   text-shadow: none;
-  color: var(--phosphor);
+  color: hsl(var(--destructive));
   padding-top: 0.75rem;
   font-size: 16px;
 }

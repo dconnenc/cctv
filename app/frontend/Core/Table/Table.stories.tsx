@@ -44,7 +44,7 @@ export const WithCustomCell: Story = {
         key: 'score',
         label: 'Score',
         Cell: (row: Player) => (
-          <span style={{ color: row.score > 80 ? 'var(--green)' : 'inherit' }}>{row.score}</span>
+          <span style={{ color: row.score > 80 ? 'var(--phosphor)' : 'inherit' }}>{row.score}</span>
         ),
       },
     ],

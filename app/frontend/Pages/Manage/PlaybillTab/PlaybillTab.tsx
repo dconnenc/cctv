@@ -131,7 +131,8 @@ export default function PlaybillTab({ playbill, playbillEnabled }: PlaybillTabPr
                 className={styles.iconBtn}
                 onClick={() => handleMoveUp(index)}
                 disabled={index === 0}
-                title="Move up"
+                title="Move section up"
+                aria-label={`Move section ${index + 1} up`}
               >
                 <ArrowUp size={14} />
               </button>
@@ -139,7 +140,8 @@ export default function PlaybillTab({ playbill, playbillEnabled }: PlaybillTabPr
                 className={styles.iconBtn}
                 onClick={() => handleMoveDown(index)}
                 disabled={index === sections.length - 1}
-                title="Move down"
+                title="Move section down"
+                aria-label={`Move section ${index + 1} down`}
               >
                 <ArrowDown size={14} />
               </button>
@@ -147,6 +149,7 @@ export default function PlaybillTab({ playbill, playbillEnabled }: PlaybillTabPr
                 className={styles.iconBtnDanger}
                 onClick={() => handleRemove(section.id)}
                 title="Remove section"
+                aria-label={`Remove section ${index + 1}`}
               >
                 <Trash2 size={14} />
               </button>
@@ -176,6 +179,7 @@ export default function PlaybillTab({ playbill, playbillEnabled }: PlaybillTabPr
                     className={styles.imageRemoveBtn}
                     onClick={() => handleRemoveImage(section.id)}
                     title="Remove image"
+                    aria-label="Remove image"
                   >
                     <X size={14} />
                   </button>

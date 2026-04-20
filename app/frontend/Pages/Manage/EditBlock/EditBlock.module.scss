@@ -79,17 +79,17 @@
 
 .error {
   text-shadow: none;
-  color: var(--phosphor);
+  color: hsl(var(--destructive));
   padding-top: 0.75rem;
   font-size: 16px;
 }
 
 .warning {
   text-shadow: none;
-  color: var(--phosphor);
+  color: var(--amber);
   padding: 0.75rem;
   font-size: 14px;
-  border: 1px solid var(--phosphor);
+  border: 1px solid var(--amber);
   border-radius: 4px;
   width: 100%;
   display: flex;

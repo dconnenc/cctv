@@ -25,16 +25,14 @@ import DebugPanel from './DebugPanel/DebugPanel';
 
 function ExperienceActionButton() {
   const { experience } = useExperience();
-  const { startExperience, isLoading: starting } = useExperienceStart();
-  const { pauseExperience, isLoading: pausing } = useExperiencePause();
-  const { resumeExperience, isLoading: resuming } = useExperienceResume();
+  const { startExperience } = useExperienceStart();
+  const { pauseExperience } = useExperiencePause();
+  const { resumeExperience } = useExperienceResume();
 
   if (!experience) return null;
 
   const config = ((): {
     onClick: () => void;
-    loading: boolean;
-    loadingText: string;
     icon: React.ReactNode;
     label: string;
     variant?: 'primary' | 'secondary' | 'ghost';
@@ -44,16 +42,12 @@ function ExperienceActionButton() {
       case 'lobby':
         return {
           onClick: startExperience,
-          loading: starting,
-          loadingText: 'Starting...',
           icon: <Play size={16} />,
           label: 'Start',
         };
       case 'live':
         return {
           onClick: pauseExperience,
-          loading: pausing,
-          loadingText: 'Pausing...',
           icon: <Pause size={16} />,
           label: 'Pause',
           variant: 'secondary',
@@ -61,8 +55,6 @@ function ExperienceActionButton() {
       case 'paused':
         return {
           onClick: resumeExperience,
-          loading: resuming,
-          loadingText: 'Resuming...',
           icon: <Play size={16} />,
           label: 'Resume',
         };
@@ -74,12 +66,7 @@ function ExperienceActionButton() {
   if (!config) return null;
 
   return (
-    <Button
-      variant={config.variant}
-      onClick={config.onClick}
-      loading={config.loading}
-      loadingText={config.loadingText}
-    >
+    <Button variant={config.variant} onClick={config.onClick}>
       {config.icon}
       <span>{config.label}</span>
     </Button>

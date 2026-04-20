@@ -22,6 +22,11 @@
     transform: scale(0.97);
     filter: brightness(0.95);
   }
+
+  &:focus-visible {
+    outline: 2px solid var(--phosphor);
+    outline-offset: 2px;
+  }
 }
 
 .button:disabled {
@@ -55,8 +60,8 @@
   text-transform: uppercase;
   letter-spacing: 0.1em;
   background: transparent;
-  color: var(--hot-white);
-  border: 1px solid var(--hot-white);
+  color: hsl(var(--foreground));
+  border: 1px solid hsl(var(--foreground));
   transition:
     border-color 0.15s ease,
     box-shadow 0.2s ease,
@@ -161,5 +166,13 @@
   }
   100% {
     transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    animation: none;
+    border-color: currentColor;
+    opacity: 0.5;
   }
 }
