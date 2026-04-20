@@ -183,20 +183,27 @@
 }
 
 .hero {
-  display: flex;
+  display: grid;
   gap: var(--space-md);
   align-items: center;
   padding-bottom: var(--space-md);
   border-bottom: 1px solid hsl(var(--border));
+  grid-template-columns: auto 1fr;
+  grid-template-areas:
+    'photo identity'
+    'photo meta';
 
   @media (max-width: 480px) {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: var(--space-sm);
+    align-items: start;
+    gap: var(--space-sm) var(--space-md);
+    grid-template-areas:
+      'photo meta'
+      'identity identity';
   }
 }
 
 .heroPhoto {
+  grid-area: photo;
   width: 140px;
   height: 140px;
   border-radius: 999px;
@@ -207,6 +214,11 @@
   display: flex;
   align-items: center;
   justify-content: center;
+
+  @media (max-width: 480px) {
+    width: 96px;
+    height: 96px;
+  }
 }
 
 .heroPhotoInitial {
@@ -215,14 +227,31 @@
   font-size: 4rem;
   line-height: 1;
   color: hsl(var(--muted-foreground));
+
+  @media (max-width: 480px) {
+    font-size: 2.75rem;
+  }
 }
 
-.heroInfo {
+.heroIdentity {
+  grid-area: identity;
   display: flex;
   flex-direction: column;
   gap: 0.375rem;
   min-width: 0;
-  flex: 1;
+}
+
+.heroMeta {
+  grid-area: meta;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  align-self: start;
+
+  @media (max-width: 480px) {
+    align-items: flex-end;
+    text-align: right;
+  }
 }
 
 .heroEyebrow {

@@ -72,9 +72,11 @@ export default function PerformerProfile() {
                 </span>
               </div>
             )}
-            <div className={styles.heroInfo}>
+            <div className={styles.heroIdentity}>
               <span className={styles.heroEyebrow}>Performer</span>
               <h1 className={styles.heroName}>{performer.name}</h1>
+            </div>
+            <div className={styles.heroMeta}>
               <span className={styles.heroFollowers}>
                 {performer.follower_count}{' '}
                 {performer.follower_count === 1 ? 'follower' : 'followers'}
