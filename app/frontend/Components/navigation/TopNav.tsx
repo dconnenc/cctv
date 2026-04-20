@@ -9,6 +9,7 @@ import {
   LogOut,
   Plus,
   Settings,
+  Ticket,
   Tv,
   User as UserIcon,
   Users,
@@ -23,7 +24,7 @@ import styles from './Navigation.module.scss';
 
 type MobilePanel = 'shows' | 'settings' | null;
 
-const SHOWS_PATH_PREFIXES = ['/events', '/performers', '/experiences', '/create'];
+const SHOWS_PATH_PREFIXES = ['/events', '/performers', '/join', '/experiences', '/create'];
 
 export const TopNav = () => {
   const [activePanel, setActivePanel] = useState<MobilePanel>(null);
@@ -77,64 +78,52 @@ export const TopNav = () => {
             >
               About
             </NavLink>
-            <NavLink
-              to="/join"
-              className={({ isActive }) =>
-                `${styles.navLink} ${isActive ? styles.navLinkActive : ''}`
-              }
-            >
-              Join
-            </NavLink>
-            <NavLink
-              to="/events"
-              className={({ isActive }) =>
-                `${styles.navLink} ${isActive ? styles.navLinkActive : ''}`
-              }
-            >
-              Events
-            </NavLink>
-            <NavLink
-              to="/performers"
-              className={({ isActive }) =>
-                `${styles.navLink} ${isActive ? styles.navLinkActive : ''}`
-              }
-            >
-              Performers
-            </NavLink>
-            {isAdmin && (
-              <div className={styles.dropdown}>
-                <button
-                  type="button"
-                  className={`${styles.navLink} ${styles.dropdownTrigger}`}
-                  aria-haspopup="menu"
-                >
-                  Shows
-                </button>
-                <div className={styles.dropdownMenu} role="menu">
-                  {adminExperiences.length > 0 ? (
-                    adminExperiences.map((e) => (
-                      <NavLink
-                        key={e.code}
-                        to={`/experiences/${e.code}/manage`}
-                        className={() => styles.dropdownItem}
-                      >
-                        {e.name}
-                      </NavLink>
-                    ))
-                  ) : (
-                    <span className={`${styles.dropdownItem} ${styles.dropdownItemEmpty}`}>
-                      No recent
-                    </span>
-                  )}
-                  <NavLink to="/create" className={() => styles.dropdownItem}>
-                    <Plus size={14} /> Create Experience
-                  </NavLink>
-                  <NavLink to="/events/new" className={() => styles.dropdownItem}>
-                    <Plus size={14} /> New Event
-                  </NavLink>
-                </div>
+            <div className={styles.dropdown}>
+              <button
+                type="button"
+                className={`${styles.navLink} ${styles.dropdownTrigger}`}
+                aria-haspopup="menu"
+              >
+                Shows
+              </button>
+              <div className={styles.dropdownMenu} role="menu">
+                <NavLink to="/events" className={() => styles.dropdownItem}>
+                  <CalendarDays size={14} /> Browse Events
+                </NavLink>
+                <NavLink to="/performers" className={() => styles.dropdownItem}>
+                  <Users size={14} /> Browse Performers
+                </NavLink>
+                <NavLink to="/join" className={() => styles.dropdownItem}>
+                  <Ticket size={14} /> Join Show
+                </NavLink>
+                {isAdmin && (
+                  <>
+                    <div className={styles.dropdownDivider} aria-hidden />
+                    {adminExperiences.length > 0 ? (
+                      adminExperiences.map((e) => (
+                        <NavLink
+                          key={e.code}
+                          to={`/experiences/${e.code}/manage`}
+                          className={() => styles.dropdownItem}
+                        >
+                          <Tv size={14} /> {e.name}
+                        </NavLink>
+                      ))
+                    ) : (
+                      <span className={`${styles.dropdownItem} ${styles.dropdownItemEmpty}`}>
+                        No recent
+                      </span>
+                    )}
+                    <NavLink to="/create" className={() => styles.dropdownItem}>
+                      <Plus size={14} /> Create Experience
+                    </NavLink>
+                    <NavLink to="/events/new" className={() => styles.dropdownItem}>
+                      <Plus size={14} /> New Event
+                    </NavLink>
+                  </>
+                )}
               </div>
-            )}
+            </div>
           </div>
 
           <div className={styles.navRight}>
@@ -196,6 +185,9 @@ export const TopNav = () => {
           </NavLink>
           <NavLink to="/performers" className={styles.bottomPanelLink} onClick={closePanel}>
             <Users size={16} /> Browse Performers
+          </NavLink>
+          <NavLink to="/join" className={styles.bottomPanelLink} onClick={closePanel}>
+            <Ticket size={16} /> Join Show
           </NavLink>
           {isAdmin && (
             <>

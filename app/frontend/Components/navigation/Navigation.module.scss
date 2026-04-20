@@ -175,6 +175,12 @@
   pointer-events: none;
 }
 
+.dropdownDivider {
+  height: 1px;
+  background: hsl(var(--border));
+  margin: var(--space-xs) 0;
+}
+
 .dropdownMenu .topnav__controlRow {
   flex-direction: row;
   align-items: center;
