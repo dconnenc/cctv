@@ -480,6 +480,8 @@ export interface JoinExperienceRegisteredResponse {
   type: 'success';
   url: string;
   status: 'registered';
+  experience_name: string;
+  experience_code_slug: string;
 }
 
 export interface JoinExperienceNeedsRegistrationResponse {
@@ -487,6 +489,8 @@ export interface JoinExperienceNeedsRegistrationResponse {
   experience_code: string;
   status: 'needs_registration';
   url: string;
+  experience_name: string;
+  experience_code_slug: string;
 }
 
 export interface JoinExperienceErrorResponse {
