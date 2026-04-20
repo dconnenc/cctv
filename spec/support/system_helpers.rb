@@ -51,7 +51,7 @@ module SystemHelpers
   # Creates an experience via the admin UI.
   # Leaves the page on the experience show page with the QR code visible.
   def create_experience(name:, code:)
-    click_menu_link("Create")
+    visit "/create"
 
     expect(page).to have_text("Create Experience")
     fill_in "Name", with: name

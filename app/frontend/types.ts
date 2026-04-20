@@ -208,6 +208,7 @@ export interface User {
   created_at: string;
   updated_at: string;
   most_recent_participant_name?: string;
+  performer_slug?: string | null;
 }
 
 export interface AvatarStroke {
@@ -697,6 +698,71 @@ export function isExperiencePayloadMessage(msg: WebSocketMessage): msg is Experi
 
 export function isDrawingUpdateMessage(msg: ExperienceChannelMessage): msg is DrawingUpdateMessage {
   return msg.type === 'drawing_update';
+}
+
+// ===== EVENT & PERFORMER TYPES =====
+
+export interface Performer {
+  id: string;
+  name: string;
+  bio: string | null;
+  slug: string;
+  photo_url: string | null;
+  follower_count: number;
+  followed_by_current_user: boolean;
+  editable_by_current_user: boolean;
+  upcoming_events?: EventSummary[];
+}
+
+export interface CalendarEvent {
+  id: string;
+  title: string;
+  description: string | null;
+  starts_at: string;
+  ends_at: string;
+  venue_name: string | null;
+  venue_address: string | null;
+  pricing_text: string | null;
+  ticket_url: string | null;
+  slug: string;
+  published: boolean;
+  performers: Pick<Performer, 'id' | 'name' | 'slug' | 'photo_url' | 'followed_by_current_user'>[];
+  experience: {
+    code_slug: string;
+    status: ExperienceStatus;
+    active: boolean;
+  } | null;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export type EventSummary = Pick<
+  CalendarEvent,
+  'id' | 'title' | 'starts_at' | 'ends_at' | 'slug' | 'venue_name'
+>;
+
+export interface EventsApiResponse {
+  type: 'success';
+  success: true;
+  events: CalendarEvent[];
+}
+
+export interface EventApiResponse {
+  type: 'success';
+  success: true;
+  event: CalendarEvent;
+}
+
+export interface PerformersApiResponse {
+  type: 'success';
+  success: true;
+  performers: Performer[];
+}
+
+export interface PerformerApiResponse {
+  type: 'success';
+  success: true;
+  performer: Performer;
 }
 
 // ===== CREATE EXPERIENCE FORM TYPES =====

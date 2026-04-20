@@ -2,6 +2,10 @@ class User < ApplicationRecord
   has_many :experience_participants, dependent: :destroy
   has_many :experiences, through: :experience_participants
   has_many :created_experiences, class_name: "Experience", foreign_key: :creator_id, dependent: :destroy
+  has_many :created_events, class_name: "Event", foreign_key: :creator_id, dependent: :destroy
+  has_one :performer, dependent: :destroy
+  has_many :follows, dependent: :destroy
+  has_many :followed_performers, through: :follows, source: :performer
 
   enum :role, {
     user: "user",
@@ -25,5 +29,9 @@ class User < ApplicationRecord
 
   def most_recent_avatar
     experience_participants.order(created_at: :desc).first&.avatar&.presence
+  end
+
+  def performer_slug
+    performer&.slug
   end
 end

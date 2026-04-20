@@ -30,3 +30,8 @@ export {
   useDeleteSegment,
   useAssignSegment,
 } from './useSegments';
+export { useEvents } from './useEvents';
+export { useEvent } from './useEvent';
+export { usePerformers } from './usePerformers';
+export { usePerformer } from './usePerformer';
+export { useFollowPerformer } from './useFollowPerformer';

@@ -1,0 +1,11 @@
+.picker {
+  --rdp-accent-color: var(--phosphor);
+  --rdp-accent-background-color: var(--phosphor-glow-light);
+  --rdp-range_middle-background-color: var(--phosphor-glow);
+  --rdp-range_start-color: hsl(var(--primary-foreground));
+  --rdp-range_end-color: hsl(var(--primary-foreground));
+  --rdp-day_button-border-radius: var(--radius);
+  --rdp-nav_button-height: 2.25rem;
+  --rdp-nav_button-width: 2.25rem;
+  padding: 0.75rem;
+}

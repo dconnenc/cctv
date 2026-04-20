@@ -68,6 +68,7 @@
 .navLink {
   font-family: var(--font-body);
   font-size: 11px;
+  font-weight: 400;
   letter-spacing: 0.2em;
   text-transform: uppercase;
   text-decoration: none;
@@ -149,7 +150,9 @@
 }
 
 .dropdownItem {
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
   padding: var(--space-xs) var(--space-xs);
   color: hsl(var(--popover-foreground));
   text-decoration: none;
@@ -163,6 +166,19 @@
 
 .dropdownItem:hover {
   background: hsl(var(--muted));
+}
+
+.dropdownItemEmpty,
+.bottomPanelLinkEmpty {
+  opacity: 0.6;
+  cursor: default;
+  pointer-events: none;
+}
+
+.dropdownDivider {
+  height: 1px;
+  background: hsl(var(--border));
+  margin: var(--space-xs) 0;
 }
 
 .dropdownMenu .topnav__controlRow {
@@ -316,6 +332,12 @@
 
 .bottomPanelLink:hover {
   background: hsl(var(--muted));
+}
+
+.bottomPanelDivider {
+  height: 1px;
+  background: hsl(var(--border));
+  margin: var(--space-xs) 0;
 }
 
 /* ── Responsive ── */

@@ -30,3 +30,12 @@ export const Password: Story = {
 export const Number: Story = {
   args: { label: 'Age', type: 'number', placeholder: '25' },
 };
+
+export const Multiline: Story = {
+  args: {
+    label: 'Description',
+    multiline: true,
+    placeholder: 'Write something longer…',
+    rows: 5,
+  },
+};

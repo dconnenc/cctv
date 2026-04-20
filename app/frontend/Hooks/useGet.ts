@@ -6,16 +6,15 @@ export function useGet<T>({ url, enabled }: { url: string; enabled?: boolean }) 
   const [data, setData] = useState<T>();
   const { query, abort, ...rest } = useQuery<T>({ url });
 
-  const get = useCallback(async () => query({ method: 'GET' }), [query]);
+  const get = useCallback(async () => {
+    const result = await query({ method: 'GET' });
+    if (result !== undefined) setData(result);
+    return result;
+  }, [query]);
 
   useEffect(() => {
     if (!enabled) return;
-
-    (async () => {
-      const data = await get();
-      setData(data);
-    })();
-
+    void get();
     return () => abort();
   }, [url, enabled, get, abort]);
 

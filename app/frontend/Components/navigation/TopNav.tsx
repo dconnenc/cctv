@@ -2,7 +2,18 @@ import { useState } from 'react';
 
 import { NavLink, useLocation } from 'react-router-dom';
 
-import { Home, Info, LogIn, LogOut, Plus, Settings, Ticket, Tv } from 'lucide-react';
+import {
+  CalendarDays,
+  Home,
+  LogIn,
+  LogOut,
+  Plus,
+  Settings,
+  Ticket,
+  Tv,
+  User as UserIcon,
+  Users,
+} from 'lucide-react';
 
 import { useTheme } from '@cctv/contexts/ThemeContext';
 import { useUser } from '@cctv/contexts/UserContext';
@@ -11,7 +22,9 @@ import { getSessionCreatedExperiences } from '@cctv/utils';
 
 import styles from './Navigation.module.scss';
 
-type MobilePanel = 'experiences' | 'settings' | null;
+type MobilePanel = 'shows' | 'settings' | null;
+
+const SHOWS_PATH_PREFIXES = ['/events', '/performers', '/join', '/experiences', '/create'];
 
 export const TopNav = () => {
   const [activePanel, setActivePanel] = useState<MobilePanel>(null);
@@ -26,6 +39,15 @@ export const TopNav = () => {
   };
 
   const closePanel = () => setActivePanel(null);
+
+  const profileHref = user?.performer_slug
+    ? `/performers/${user.performer_slug}`
+    : '/performers/new';
+  const profileLabel = user?.performer_slug ? 'Profile' : 'Become a Performer';
+
+  const showsTabActive =
+    activePanel === 'shows' ||
+    SHOWS_PATH_PREFIXES.some((prefix) => location.pathname.startsWith(prefix));
 
   return (
     <>
@@ -56,19 +78,27 @@ export const TopNav = () => {
             >
               About
             </NavLink>
-            <NavLink
-              to="/join"
-              className={({ isActive }) =>
-                `${styles.navLink} ${isActive ? styles.navLinkActive : ''}`
-              }
-            >
-              Join
-            </NavLink>
-            {isAdmin && (
-              <>
-                <div className={styles.dropdown}>
-                  <span className={`${styles.navLink} ${styles.dropdownTrigger}`}>Experiences</span>
-                  <div className={styles.dropdownMenu} role="menu">
+            <div className={styles.dropdown}>
+              <button
+                type="button"
+                className={`${styles.navLink} ${styles.dropdownTrigger}`}
+                aria-haspopup="menu"
+              >
+                Shows
+              </button>
+              <div className={styles.dropdownMenu} role="menu">
+                <NavLink to="/events" className={() => styles.dropdownItem}>
+                  <CalendarDays size={14} /> Browse Events
+                </NavLink>
+                <NavLink to="/performers" className={() => styles.dropdownItem}>
+                  <Users size={14} /> Browse Performers
+                </NavLink>
+                <NavLink to="/join" className={() => styles.dropdownItem}>
+                  <Ticket size={14} /> Join Show
+                </NavLink>
+                {isAdmin && (
+                  <>
+                    <div className={styles.dropdownDivider} aria-hidden />
                     {adminExperiences.length > 0 ? (
                       adminExperiences.map((e) => (
                         <NavLink
@@ -76,33 +106,36 @@ export const TopNav = () => {
                           to={`/experiences/${e.code}/manage`}
                           className={() => styles.dropdownItem}
                         >
-                          {e.name}
+                          <Tv size={14} /> {e.name}
                         </NavLink>
                       ))
                     ) : (
-                      <span className={styles.dropdownItem} style={{ opacity: 0.7 }}>
+                      <span className={`${styles.dropdownItem} ${styles.dropdownItemEmpty}`}>
                         No recent
                       </span>
                     )}
-                  </div>
-                </div>
-                <NavLink
-                  to="/create"
-                  className={({ isActive }) =>
-                    `${styles.navLink} ${isActive ? styles.navLinkActive : ''}`
-                  }
-                >
-                  Create
-                </NavLink>
-              </>
-            )}
+                    <NavLink to="/create" className={() => styles.dropdownItem}>
+                      <Plus size={14} /> Create Experience
+                    </NavLink>
+                    <NavLink to="/events/new" className={() => styles.dropdownItem}>
+                      <Plus size={14} /> New Event
+                    </NavLink>
+                  </>
+                )}
+              </div>
+            </div>
           </div>
 
           <div className={styles.navRight}>
             <div className={styles.dropdown}>
-              <span className={`${styles.navLink} ${styles.dropdownTrigger}`} aria-haspopup="menu">
+              <button
+                type="button"
+                className={`${styles.navLink} ${styles.dropdownTrigger}`}
+                aria-haspopup="menu"
+                aria-label="Settings"
+              >
                 <Settings size={16} />
-              </span>
+              </button>
               <div className={styles.dropdownMenu} role="menu">
                 <div className={styles.topnav__controlRow}>
                   <span className={styles.switchLabel}>{theme === 'dark' ? 'Dark' : 'Light'}</span>
@@ -115,6 +148,11 @@ export const TopNav = () => {
                     title={theme === 'dark' ? 'Dark mode' : 'Light mode'}
                   />
                 </div>
+                {user && (
+                  <NavLink to={profileHref} className={() => styles.dropdownItem}>
+                    <UserIcon size={14} /> {profileLabel}
+                  </NavLink>
+                )}
               </div>
             </div>
 
@@ -140,27 +178,44 @@ export const TopNav = () => {
         />
       )}
 
-      {activePanel === 'experiences' && (
+      {activePanel === 'shows' && (
         <div className={styles.bottomPanel}>
-          {adminExperiences.length > 0 ? (
-            adminExperiences.map((e) => (
-              <NavLink
-                key={e.code}
-                to={`/experiences/${e.code}/manage`}
-                className={styles.bottomPanelLink}
-                onClick={closePanel}
-              >
-                <Tv size={16} /> {e.name}
-              </NavLink>
-            ))
-          ) : (
-            <span className={styles.bottomPanelLink} style={{ opacity: 0.5, cursor: 'default' }}>
-              No recent experiences
-            </span>
-          )}
-          <NavLink to="/create" className={styles.bottomPanelLink} onClick={closePanel}>
-            <Plus size={16} /> Create
+          <NavLink to="/events" className={styles.bottomPanelLink} onClick={closePanel}>
+            <CalendarDays size={16} /> Browse Events
           </NavLink>
+          <NavLink to="/performers" className={styles.bottomPanelLink} onClick={closePanel}>
+            <Users size={16} /> Browse Performers
+          </NavLink>
+          <NavLink to="/join" className={styles.bottomPanelLink} onClick={closePanel}>
+            <Ticket size={16} /> Join Show
+          </NavLink>
+          {isAdmin && (
+            <>
+              <div className={styles.bottomPanelDivider} aria-hidden />
+              {adminExperiences.length > 0 ? (
+                adminExperiences.map((e) => (
+                  <NavLink
+                    key={e.code}
+                    to={`/experiences/${e.code}/manage`}
+                    className={styles.bottomPanelLink}
+                    onClick={closePanel}
+                  >
+                    <Tv size={16} /> {e.name}
+                  </NavLink>
+                ))
+              ) : (
+                <span className={`${styles.bottomPanelLink} ${styles.bottomPanelLinkEmpty}`}>
+                  No recent experiences
+                </span>
+              )}
+              <NavLink to="/create" className={styles.bottomPanelLink} onClick={closePanel}>
+                <Plus size={16} /> Create Experience
+              </NavLink>
+              <NavLink to="/events/new" className={styles.bottomPanelLink} onClick={closePanel}>
+                <Plus size={16} /> New Event
+              </NavLink>
+            </>
+          )}
         </div>
       )}
 
@@ -177,6 +232,11 @@ export const TopNav = () => {
               title={theme === 'dark' ? 'Dark mode' : 'Light mode'}
             />
           </div>
+          {user && (
+            <NavLink to={profileHref} className={styles.bottomPanelLink} onClick={closePanel}>
+              <UserIcon size={16} /> {profileLabel}
+            </NavLink>
+          )}
           {!isLoading &&
             (user ? (
               <button
@@ -209,40 +269,16 @@ export const TopNav = () => {
             <Home size={20} />
             <span className={styles.bottomTabLabel}>Home</span>
           </NavLink>
-          <NavLink
-            to="/about"
-            className={({ isActive }) =>
-              `${styles.bottomTab} ${isActive ? styles.bottomTabActive : ''}`
-            }
-            onClick={closePanel}
-          >
-            <Info size={20} />
-            <span className={styles.bottomTabLabel}>About</span>
-          </NavLink>
-          <NavLink
-            to="/join"
-            className={({ isActive }) =>
-              `${styles.bottomTab} ${isActive ? styles.bottomTabActive : ''}`
-            }
-            onClick={closePanel}
-          >
-            <Ticket size={20} />
-            <span className={styles.bottomTabLabel}>Join</span>
-          </NavLink>
-          {isAdmin && (
-            <button
-              className={`${styles.bottomTab} ${
-                activePanel === 'experiences' || location.pathname.includes('/experiences')
-                  ? styles.bottomTabActive
-                  : ''
-              }`}
-              onClick={() => togglePanel('experiences')}
-            >
-              <Tv size={20} />
-              <span className={styles.bottomTabLabel}>Shows</span>
-            </button>
-          )}
           <button
+            type="button"
+            className={`${styles.bottomTab} ${showsTabActive ? styles.bottomTabActive : ''}`}
+            onClick={() => togglePanel('shows')}
+          >
+            <Tv size={20} />
+            <span className={styles.bottomTabLabel}>Shows</span>
+          </button>
+          <button
+            type="button"
             className={`${styles.bottomTab} ${activePanel === 'settings' ? styles.bottomTabActive : ''}`}
             onClick={() => togglePanel('settings')}
           >
