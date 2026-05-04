@@ -26,7 +26,7 @@ module Experiences
       visible = admin_visible_blocks
 
       experience_payload(
-        blocks: visible.map { |b| serialize_block(b, participant_role: "host") }
+        blocks: visible.map { |b| serialize_block(b, participant_role: "host", view_context: :admin) }
       )
     end
 
@@ -46,10 +46,10 @@ module Experiences
       role    = participant.role
 
       if host_or_moderator?(role)
-        blocks = visible.map { |b| serialize_block(b, participant_role: role, user: participant.user) }
+        blocks = visible.map { |b| serialize_block(b, participant_role: role, user: participant.user, view_context: :participant) }
       else
         current = resolve_participant_block(visible, participant)
-        blocks  = current ? [serialize_block(current, participant_role: role, user: participant.user)] : []
+        blocks  = current ? [serialize_block(current, participant_role: role, user: participant.user, view_context: :participant)] : []
       end
 
       experience_payload(blocks: blocks)
@@ -155,12 +155,12 @@ module Experiences
 
     # --- Block serialization ---
 
-    def serialize_block(block, participant_role:, user: nil, depth: 0)
+    def serialize_block(block, participant_role:, user: nil, depth: 0, view_context: :admin)
       {
         id:       block.id,
         kind:     block.kind,
         status:   block.status,
-        payload:  block.payload,
+        payload:  shape_payload(block, participant_role, user, view_context),
         position: block.position
       }
         .merge(responses: serialize_response_data(block, participant_role, user))
@@ -168,8 +168,50 @@ module Experiences
         .merge(dag_metadata(block, participant_role, user, depth))
     end
 
+    def shape_payload(block, participant_role, user, view_context)
+      return block.payload unless block.kind == ExperienceBlock::GUESS_WHO
+
+      payload = block.payload.deep_dup || {}
+
+      payload["user_a"] = guess_who_user_summary(payload["user_a_id"])
+      payload["user_b"] = guess_who_user_summary(payload["user_b_id"])
+
+      privileged =
+        view_context == :admin ||
+        (view_context == :participant && (mod_or_host?(participant_role) || admin_user?(user)))
+
+      unless privileged
+        revealed = payload["revealed"]
+        payload.delete("user_a_id")
+        payload.delete("user_b_id")
+        unless revealed
+          payload["user_a"] = nil
+          payload["user_b"] = nil
+        end
+
+        payload["slides"] = Array(payload["slides"]).map do |slide|
+          slide.except("user_id")
+        end
+      end
+
+      payload
+    end
+
+    def guess_who_user_summary(user_id)
+      return nil if user_id.blank?
+
+      participant = @experience.experience_participants.includes(:user).find_by(user_id: user_id)
+      return nil unless participant
+
+      {
+        "user_id" => participant.user_id,
+        "name" => participant.name,
+        "avatar" => participant.avatar.presence
+      }
+    end
+
     def serialize_monitor_block(block)
-      serialized = serialize_block(block, participant_role: "host")
+      serialized = serialize_block(block, participant_role: "host", view_context: :monitor)
 
       if block.kind == ExperienceBlock::MAD_LIB
         all_resolved = @experience.experience_participants.each_with_object({}) do |participant, vars|
@@ -281,7 +323,7 @@ module Experiences
 
       if depth == 0 && block.children.any?
         metadata[:children] = block.children.map do |child|
-          serialize_block(child, participant_role: participant_role, user: user, depth: depth + 1)
+          serialize_block(child, participant_role: participant_role, user: user, depth: depth + 1, view_context: :admin)
         end
       end
 

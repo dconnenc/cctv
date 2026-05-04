@@ -29,6 +29,11 @@ import {
   familyFeudPayloadToFormData,
   validateFamilyFeud,
 } from '../CreateBlock/CreateFamilyFeud/CreateFamilyFeud';
+import {
+  buildGuessWhoPayload,
+  guessWhoPayloadToFormData,
+  validateGuessWho,
+} from '../CreateBlock/CreateGuessWho/CreateGuessWho';
 import { madLibPayloadToFormData, validateMadLib } from '../CreateBlock/CreateMadLib/CreateMadLib';
 import {
   buildPhotoUploadPayload,
@@ -92,6 +97,8 @@ function blockToFormData(block: Block, participants: ParticipantSummary[]): Form
       return { kind: BlockKind.PHOTO_UPLOAD, data: photoUploadPayloadToFormData(block.payload) };
     case BlockKind.BUZZER:
       return { kind: BlockKind.BUZZER, data: buzzerPayloadToFormData(block.payload) };
+    case BlockKind.GUESS_WHO:
+      return { kind: BlockKind.GUESS_WHO, data: guessWhoPayloadToFormData(block.payload) };
     default: {
       const _exhaust: never = block;
       throw new Error(`Unknown block kind: ${(_exhaust as Block).kind}`);
@@ -132,6 +139,8 @@ function buildUpdatePayload(blockData: FormBlockData): {
       return { payload: buildPhotoUploadPayload(blockData.data) };
     case BlockKind.BUZZER:
       return { payload: buildBuzzerPayload(blockData.data) };
+    case BlockKind.GUESS_WHO:
+      return { payload: buildGuessWhoPayload(blockData.data) };
     default: {
       const _exhaust: never = blockData;
       throw new Error(`Unknown block kind: ${(_exhaust as FormBlockData).kind}`);
@@ -221,6 +230,9 @@ export function EditBlockProvider({
         break;
       case BlockKind.BUZZER:
         validationError = validateBuzzer(blockData.data);
+        break;
+      case BlockKind.GUESS_WHO:
+        validationError = validateGuessWho(blockData.data);
         break;
       default: {
         const _exhaust: never = blockData;

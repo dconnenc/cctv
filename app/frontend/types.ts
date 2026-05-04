@@ -19,6 +19,7 @@ export enum BlockKind {
   FAMILY_FEUD = 'family_feud',
   PHOTO_UPLOAD = 'photo_upload',
   BUZZER = 'buzzer',
+  GUESS_WHO = 'guess_who',
 }
 
 export interface ExperienceSegment {
@@ -87,6 +88,36 @@ export interface PhotoUploadPayload {
 export interface BuzzerPayload {
   label?: string;
   prompt?: string;
+}
+
+export interface GuessWhoSlide {
+  slot: 'a' | 'b';
+  block_id: string;
+  block_kind: BlockKind;
+  prompt: string;
+  answer: { text?: string | null; raw?: unknown; options?: string[]; buzzed_at?: string | null };
+  photo_url: string | null;
+  position: number;
+  submitted_at: string;
+  user_id?: string;
+}
+
+export interface GuessWhoUserSummary {
+  user_id: string;
+  name: string;
+  avatar?: { strokes?: AvatarStroke[] } | null;
+}
+
+export interface GuessWhoPayload {
+  segment_id: string;
+  user_a_id?: string;
+  user_b_id?: string;
+  user_a?: GuessWhoUserSummary | null;
+  user_b?: GuessWhoUserSummary | null;
+  slides?: GuessWhoSlide[];
+  current_slide_index?: number;
+  revealed?: boolean;
+  error?: string;
 }
 
 export interface BlockLink {
@@ -178,6 +209,11 @@ export interface BuzzerApiPayload {
   prompt?: string;
 }
 
+export interface GuessWhoApiPayload {
+  type: 'guess_who';
+  segment_id: string;
+}
+
 // Discriminated union for API payloads (what gets sent to backend)
 export type ApiPayload =
   | PollApiPayload
@@ -186,7 +222,8 @@ export type ApiPayload =
   | MadLibApiPayload
   | FamilyFeudApiPayload
   | PhotoUploadApiPayload
-  | BuzzerApiPayload;
+  | BuzzerApiPayload
+  | GuessWhoApiPayload;
 
 // ===== PLAYBILL TYPES =====
 
@@ -342,6 +379,11 @@ export interface BuzzerBlock extends BaseBlock {
   };
 }
 
+export interface GuessWhoBlock extends BaseBlock {
+  kind: BlockKind.GUESS_WHO;
+  payload: GuessWhoPayload;
+}
+
 export type Block =
   | PollBlock
   | QuestionBlock
@@ -349,7 +391,8 @@ export type Block =
   | MadLibBlock
   | FamilyFeudBlock
   | PhotoUploadBlock
-  | BuzzerBlock;
+  | BuzzerBlock
+  | GuessWhoBlock;
 
 export interface Experience {
   id: string;
@@ -409,7 +452,8 @@ export interface CreateBlockPayload {
     | MadLibPayload
     | FamilyFeudPayload
     | PhotoUploadPayload
-    | BuzzerPayload;
+    | BuzzerPayload
+    | GuessWhoPayload;
   visible_to_segment_ids?: string[];
   status?: BlockStatus;
   open_immediately?: boolean;
@@ -805,6 +849,10 @@ export interface BuzzerData {
   prompt: string;
 }
 
+export interface GuessWhoData {
+  segment_id: string;
+}
+
 // Union type for all block component data
 export type BlockComponentData =
   | PollData
@@ -813,7 +861,8 @@ export type BlockComponentData =
   | MadLibData
   | FamilyFeudData
   | PhotoUploadData
-  | BuzzerData;
+  | BuzzerData
+  | GuessWhoData;
 
 // Discriminated union for form block data
 export type FormBlockData =
@@ -823,7 +872,8 @@ export type FormBlockData =
   | { kind: BlockKind.MAD_LIB; data: MadLibData }
   | { kind: BlockKind.FAMILY_FEUD; data: FamilyFeudData }
   | { kind: BlockKind.PHOTO_UPLOAD; data: PhotoUploadData }
-  | { kind: BlockKind.BUZZER; data: BuzzerData };
+  | { kind: BlockKind.BUZZER; data: BuzzerData }
+  | { kind: BlockKind.GUESS_WHO; data: GuessWhoData };
 
 export interface UpdateBlockPayload {
   payload: ApiPayload | Record<string, unknown>;

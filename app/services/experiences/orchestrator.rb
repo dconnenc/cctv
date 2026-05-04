@@ -48,6 +48,7 @@ module Experiences
     def open_block!(block_id)
       block = experience.experience_blocks.find(block_id)
       block.open!
+      start_guess_who!(block) if block.kind == ExperienceBlock::GUESS_WHO
       block
     end
 
@@ -506,6 +507,65 @@ module Experiences
       end
     end
 
+    # GuessWho ----------------------------------------------------------------
+
+    def start_guess_who!(block)
+      payload = block.payload || {}
+      return block if payload["user_a_id"].present? && payload["user_b_id"].present?
+
+      segment_id = payload["segment_id"]
+      raise ActiveRecord::RecordInvalid, block unless segment_id.present?
+
+      transaction do
+        pool = experience.experience_participants
+          .joins(:experience_segments)
+          .where(experience_segments: { id: segment_id })
+          .where.not(role: %w[host moderator])
+
+        sampled = pool.to_a.sample(2)
+
+        if sampled.length < 2
+          payload["error"] = "Need at least 2 audience members in the selected segment"
+          block.update!(payload: payload)
+          return block
+        end
+
+        user_a, user_b = sampled
+        slides_a = ParticipantSubmissions.new(experience).for_user(user_a.user_id)
+        slides_b = ParticipantSubmissions.new(experience).for_user(user_b.user_id)
+
+        slides = interleave_slides(slides_a, user_a.user_id, slides_b, user_b.user_id)
+
+        payload["user_a_id"] = user_a.user_id
+        payload["user_b_id"] = user_b.user_id
+        payload["slides"] = slides
+        payload["current_slide_index"] = 0
+        payload["revealed"] = false
+        payload.delete("error")
+
+        block.update!(payload: payload)
+        block
+      end
+    end
+
+    def next_guess_who_slide!(block_id:)
+      adjust_guess_who_slide!(block_id, 1)
+    end
+
+    def previous_guess_who_slide!(block_id:)
+      adjust_guess_who_slide!(block_id, -1)
+    end
+
+    def reveal_guess_who!(block_id:)
+      block = experience.experience_blocks.find(block_id)
+      transaction do
+        payload = block.payload || {}
+        payload["revealed"] = true
+        block.update!(payload: payload)
+      end
+      block
+    end
+
     def update_block!(block_id:, payload:, visible_to_segment_ids:, variables: nil, questions: nil)
       transaction do
         block = experience.experience_blocks.find(block_id)
@@ -609,6 +669,32 @@ module Experiences
     end
 
     private
+
+    def adjust_guess_who_slide!(block_id, delta)
+      block = experience.experience_blocks.find(block_id)
+      transaction do
+        payload = block.payload || {}
+        slides = Array(payload["slides"])
+        current = payload["current_slide_index"].to_i
+        target = (current + delta).clamp(0, [slides.length - 1, 0].max)
+        payload["current_slide_index"] = target
+        block.update!(payload: payload)
+      end
+      block
+    end
+
+    def interleave_slides(list_a, user_a_id, list_b, user_b_id)
+      tagged_a = list_a.map { |e| e.merge(user_id: user_a_id, slot: "a") }
+      tagged_b = list_b.map { |e| e.merge(user_id: user_b_id, slot: "b") }
+
+      slides = []
+      max = [tagged_a.length, tagged_b.length].max
+      max.times do |i|
+        slides << tagged_a[i] if tagged_a[i]
+        slides << tagged_b[i] if tagged_b[i]
+      end
+      slides
+    end
 
     def create_participant_source_block(parent_block:, variable:, participant_id:, position:)
       participant = experience.experience_participants.find(participant_id)

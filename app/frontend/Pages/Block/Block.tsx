@@ -6,6 +6,7 @@ import { BlockKind, type Block as BlockType } from '@cctv/types';
 
 import BuzzerManager from './BuzzerManager/BuzzerManager';
 import FamilyFeudManager from './FamilyFeudManager/FamilyFeudManager';
+import GuessWhoManager from './GuessWhoManager/GuessWhoManager';
 
 import styles from './Block.module.scss';
 
@@ -60,6 +61,10 @@ export default function Block({ blockId }: BlockProps) {
   if (block.kind === BlockKind.BUZZER) {
     const allParticipants = [...(experience.hosts || []), ...(experience.participants || [])];
     return <BuzzerManager block={block} participants={allParticipants} />;
+  }
+
+  if (block.kind === BlockKind.GUESS_WHO) {
+    return <GuessWhoManager block={block} />;
   }
 
   // Default view for other block types

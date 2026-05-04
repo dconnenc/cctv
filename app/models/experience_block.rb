@@ -8,7 +8,8 @@ class ExperienceBlock < ApplicationRecord
     MAD_LIB = "mad_lib",
     FAMILY_FEUD = "family_feud",
     PHOTO_UPLOAD = "photo_upload",
-    BUZZER = "buzzer"
+    BUZZER = "buzzer",
+    GUESS_WHO = "guess_who"
   ]
 
   belongs_to :experience

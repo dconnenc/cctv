@@ -34,6 +34,13 @@ import {
   processFamilyFeudBeforeSubmit,
   validateFamilyFeud,
 } from './CreateFamilyFeud/CreateFamilyFeud';
+import {
+  buildGuessWhoPayload,
+  canGuessWhoOpenImmediately,
+  getDefaultGuessWhoState,
+  processGuessWhoBeforeSubmit,
+  validateGuessWho,
+} from './CreateGuessWho/CreateGuessWho';
 import { getDefaultMadLibState, validateMadLib } from './CreateMadLib/CreateMadLib';
 import {
   buildPhotoUploadPayload,
@@ -99,6 +106,8 @@ export function CreateBlockProvider({
         return { kind: BlockKind.PHOTO_UPLOAD, data: getDefaultPhotoUploadState() };
       case BlockKind.BUZZER:
         return { kind: BlockKind.BUZZER, data: getDefaultBuzzerState() };
+      case BlockKind.GUESS_WHO:
+        return { kind: BlockKind.GUESS_WHO, data: getDefaultGuessWhoState() };
       default: {
         const _exhaust: never = blockKind;
         throw new Error(`Unknown block kind: ${_exhaust}`);
@@ -157,6 +166,9 @@ export function CreateBlockProvider({
         case BlockKind.BUZZER:
           validationError = validateBuzzer(blockData.data);
           break;
+        case BlockKind.GUESS_WHO:
+          validationError = validateGuessWho(blockData.data);
+          break;
         default: {
           const _exhaust: never = blockData;
           validationError = `Unknown block kind: ${(_exhaust as FormBlockData).kind}`;
@@ -190,6 +202,9 @@ export function CreateBlockProvider({
           break;
         case BlockKind.BUZZER:
           canOpenImmediately = canBuzzerOpenImmediately(blockData.data, participants);
+          break;
+        case BlockKind.GUESS_WHO:
+          canOpenImmediately = canGuessWhoOpenImmediately(blockData.data, participants);
           break;
         default: {
           const _exhaust: never = blockData;
@@ -251,6 +266,12 @@ export function CreateBlockProvider({
             data: processBuzzerBeforeSubmit(blockData.data, status, participants),
           };
           break;
+        case BlockKind.GUESS_WHO:
+          processedFormData = {
+            kind: BlockKind.GUESS_WHO,
+            data: processGuessWhoBeforeSubmit(blockData.data, status, participants),
+          };
+          break;
         default: {
           const _exhaust: never = blockData;
           processedFormData = _exhaust as FormBlockData;
@@ -283,6 +304,9 @@ export function CreateBlockProvider({
           break;
         case BlockKind.BUZZER:
           payload = buildBuzzerPayload(processedFormData.data);
+          break;
+        case BlockKind.GUESS_WHO:
+          payload = buildGuessWhoPayload(processedFormData.data);
           break;
         default: {
           const _exhaust: never = processedFormData;

@@ -4,6 +4,7 @@ class Api::ExperienceBlocksController < Api::BaseController
     add_bucket rename_bucket delete_bucket assign_answer auto_categorize
     start_playing reveal_bucket show_x next_question restart_playing
     restart_categorizing restart_everything
+    next_guess_who_slide previous_guess_who_slide reveal_guess_who
   ].freeze
 
   SUBMISSION_ACTIONS = %i[
@@ -525,6 +526,45 @@ class Api::ExperienceBlocksController < Api::BaseController
       Experiences::Orchestrator.new(
         experience: @experience, actor: @user
       ).restart_family_feud_everything!(block_id: params[:id])
+
+      Experiences::Broadcaster.new(@experience).broadcast_experience_update
+
+      render json: { success: true }, status: 200
+    end
+  end
+
+  # POST /api/experiences/:experience_id/blocks/:id/guess_who/next
+  def next_guess_who_slide
+    with_experience_orchestration do
+      Experiences::Orchestrator.new(
+        experience: @experience, actor: @user
+      ).next_guess_who_slide!(block_id: params[:id])
+
+      Experiences::Broadcaster.new(@experience).broadcast_experience_update
+
+      render json: { success: true }, status: 200
+    end
+  end
+
+  # POST /api/experiences/:experience_id/blocks/:id/guess_who/previous
+  def previous_guess_who_slide
+    with_experience_orchestration do
+      Experiences::Orchestrator.new(
+        experience: @experience, actor: @user
+      ).previous_guess_who_slide!(block_id: params[:id])
+
+      Experiences::Broadcaster.new(@experience).broadcast_experience_update
+
+      render json: { success: true }, status: 200
+    end
+  end
+
+  # POST /api/experiences/:experience_id/blocks/:id/guess_who/reveal
+  def reveal_guess_who
+    with_experience_orchestration do
+      Experiences::Orchestrator.new(
+        experience: @experience, actor: @user
+      ).reveal_guess_who!(block_id: params[:id])
 
       Experiences::Broadcaster.new(@experience).broadcast_experience_update
 
