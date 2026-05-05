@@ -11,6 +11,8 @@ import CreateBuzzer from './CreateBuzzer/CreateBuzzer';
 import CreateFamilyFeud from './CreateFamilyFeud/CreateFamilyFeud';
 import CreateGuessWho from './CreateGuessWho/CreateGuessWho';
 import CreateMadLib from './CreateMadLib/CreateMadLib';
+import CreateMinigameArithmetic from './CreateMinigameArithmetic/CreateMinigameArithmetic';
+import CreateMinigameBalloonPump from './CreateMinigameBalloonPump/CreateMinigameBalloonPump';
 import CreatePhotoUpload from './CreatePhotoUpload/CreatePhotoUpload';
 import CreatePoll from './CreatePoll/CreatePoll';
 import CreateQuestion from './CreateQuestion/CreateQuestion';
@@ -65,6 +67,8 @@ function CreateBlockForm({ onClose }: CreateBlockFormProps) {
           { label: 'Photo Upload', value: BlockKind.PHOTO_UPLOAD },
           { label: 'Buzzer', value: BlockKind.BUZZER },
           { label: 'Guess Who', value: BlockKind.GUESS_WHO },
+          { label: 'Minigame: Arithmetic', value: BlockKind.MINIGAME_ARITHMETIC },
+          { label: 'Minigame: Balloon Pump', value: BlockKind.MINIGAME_BALLOON_PUMP },
         ]}
         value={blockData.kind}
         onChange={setKind}
@@ -127,6 +131,10 @@ function BlockEditor() {
       return <CreateBuzzer data={blockData.data} onChange={onChange} />;
     case BlockKind.GUESS_WHO:
       return <CreateGuessWho data={blockData.data} onChange={onChange} />;
+    case BlockKind.MINIGAME_ARITHMETIC:
+      return <CreateMinigameArithmetic data={blockData.data} onChange={onChange} />;
+    case BlockKind.MINIGAME_BALLOON_PUMP:
+      return <CreateMinigameBalloonPump data={blockData.data} onChange={onChange} />;
     default:
       const exhaustiveCheck: never = blockData;
       return <div className={styles.details}>Unknown block type: {exhaustiveCheck}</div>;

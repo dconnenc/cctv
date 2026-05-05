@@ -43,6 +43,20 @@ import {
 } from './CreateGuessWho/CreateGuessWho';
 import { getDefaultMadLibState, validateMadLib } from './CreateMadLib/CreateMadLib';
 import {
+  buildMinigameArithmeticPayload,
+  canMinigameArithmeticOpenImmediately,
+  getDefaultMinigameArithmeticState,
+  processMinigameArithmeticBeforeSubmit,
+  validateMinigameArithmetic,
+} from './CreateMinigameArithmetic/CreateMinigameArithmetic';
+import {
+  buildMinigameBalloonPumpPayload,
+  canMinigameBalloonPumpOpenImmediately,
+  getDefaultMinigameBalloonPumpState,
+  processMinigameBalloonPumpBeforeSubmit,
+  validateMinigameBalloonPump,
+} from './CreateMinigameBalloonPump/CreateMinigameBalloonPump';
+import {
   buildPhotoUploadPayload,
   canPhotoUploadOpenImmediately,
   getDefaultPhotoUploadState,
@@ -108,6 +122,13 @@ export function CreateBlockProvider({
         return { kind: BlockKind.BUZZER, data: getDefaultBuzzerState() };
       case BlockKind.GUESS_WHO:
         return { kind: BlockKind.GUESS_WHO, data: getDefaultGuessWhoState() };
+      case BlockKind.MINIGAME_ARITHMETIC:
+        return { kind: BlockKind.MINIGAME_ARITHMETIC, data: getDefaultMinigameArithmeticState() };
+      case BlockKind.MINIGAME_BALLOON_PUMP:
+        return {
+          kind: BlockKind.MINIGAME_BALLOON_PUMP,
+          data: getDefaultMinigameBalloonPumpState(),
+        };
       default: {
         const _exhaust: never = blockKind;
         throw new Error(`Unknown block kind: ${_exhaust}`);
@@ -169,6 +190,18 @@ export function CreateBlockProvider({
         case BlockKind.GUESS_WHO:
           validationError = validateGuessWho(blockData.data);
           break;
+        case BlockKind.MINIGAME_ARITHMETIC:
+          validationError = validateMinigameArithmetic(blockData.data);
+          if (!validationError && visibleSegments.length === 0) {
+            validationError = 'A segment is required for arithmetic minigames';
+          }
+          break;
+        case BlockKind.MINIGAME_BALLOON_PUMP:
+          validationError = validateMinigameBalloonPump(blockData.data);
+          if (!validationError && visibleSegments.length === 0) {
+            validationError = 'A segment is required for balloon pump minigames';
+          }
+          break;
         default: {
           const _exhaust: never = blockData;
           validationError = `Unknown block kind: ${(_exhaust as FormBlockData).kind}`;
@@ -205,6 +238,12 @@ export function CreateBlockProvider({
           break;
         case BlockKind.GUESS_WHO:
           canOpenImmediately = canGuessWhoOpenImmediately(blockData.data, participants);
+          break;
+        case BlockKind.MINIGAME_ARITHMETIC:
+          canOpenImmediately = canMinigameArithmeticOpenImmediately(blockData.data, participants);
+          break;
+        case BlockKind.MINIGAME_BALLOON_PUMP:
+          canOpenImmediately = canMinigameBalloonPumpOpenImmediately(blockData.data, participants);
           break;
         default: {
           const _exhaust: never = blockData;
@@ -272,6 +311,18 @@ export function CreateBlockProvider({
             data: processGuessWhoBeforeSubmit(blockData.data, status, participants),
           };
           break;
+        case BlockKind.MINIGAME_ARITHMETIC:
+          processedFormData = {
+            kind: BlockKind.MINIGAME_ARITHMETIC,
+            data: processMinigameArithmeticBeforeSubmit(blockData.data, status, participants),
+          };
+          break;
+        case BlockKind.MINIGAME_BALLOON_PUMP:
+          processedFormData = {
+            kind: BlockKind.MINIGAME_BALLOON_PUMP,
+            data: processMinigameBalloonPumpBeforeSubmit(blockData.data, status, participants),
+          };
+          break;
         default: {
           const _exhaust: never = blockData;
           processedFormData = _exhaust as FormBlockData;
@@ -307,6 +358,12 @@ export function CreateBlockProvider({
           break;
         case BlockKind.GUESS_WHO:
           payload = buildGuessWhoPayload(processedFormData.data);
+          break;
+        case BlockKind.MINIGAME_ARITHMETIC:
+          payload = buildMinigameArithmeticPayload(processedFormData.data);
+          break;
+        case BlockKind.MINIGAME_BALLOON_PUMP:
+          payload = buildMinigameBalloonPumpPayload(processedFormData.data);
           break;
         default: {
           const _exhaust: never = processedFormData;

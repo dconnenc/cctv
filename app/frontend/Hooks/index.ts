@@ -37,3 +37,5 @@ export { useEvent } from './useEvent';
 export { usePerformers } from './usePerformers';
 export { usePerformer } from './usePerformer';
 export { useFollowPerformer } from './useFollowPerformer';
+export { useMinigameArithmetic } from './useMinigameArithmetic';
+export { useMinigameBalloonPump, useBalloonPumpLeader } from './useMinigameBalloonPump';
