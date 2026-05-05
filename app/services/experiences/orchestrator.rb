@@ -25,10 +25,12 @@ module Experiences
       transaction do
         max_position = experience.experience_blocks.parent_blocks.maximum(:position) || -1
 
+        prepared_payload = prepare_block_payload(kind: kind, payload: payload)
+
         block = experience.experience_blocks.create!(
           kind: kind,
           status: status,
-          payload: payload,
+          payload: prepared_payload,
           visible_to_roles: visible_to_roles,
           target_user_ids: target_user_ids,
           position: max_position + 1
@@ -37,6 +39,40 @@ module Experiences
 
         block
       end
+    end
+
+    def prepare_block_payload(kind:, payload:)
+      payload = payload.deep_dup || {}
+
+      case kind
+      when ExperienceBlock::MINIGAME_ARITHMETIC
+        question_count   = payload["question_count"].to_i
+        duration_seconds = payload["duration_seconds"].to_i
+        leaderboard_size = payload["leaderboard_size"].to_i
+
+        raise ArgumentError, "question_count must be positive"   unless question_count.positive?
+        raise ArgumentError, "duration_seconds must be positive" unless duration_seconds.positive?
+        raise ArgumentError, "leaderboard_size must be positive" unless leaderboard_size.positive?
+
+        payload["variant"]    = "arithmetic"
+        payload["questions"]  = Minigames::ArithmeticQuestionGenerator.generate(count: question_count)
+        payload["started_at"] = nil
+        payload["ended_at"]   = nil
+      when ExperienceBlock::MINIGAME_BALLOON_PUMP
+        target_units = payload["target_units"].to_i
+        raise ArgumentError, "target_units must be positive" unless target_units.positive?
+
+        payload["variant"]                  = "balloon_pump"
+        payload["target_units"]              = target_units
+        payload["started_at"]                = nil
+        payload["ended_at"]                  = nil
+        payload["winner_participant_ids"]    = []
+        payload["leader_fill"]               = 0
+        payload["leader_participant_id"]     = nil
+        payload["leader_last_broadcast_at"]  = nil
+      end
+
+      payload
     end
 
     def close_block!(block_id)
@@ -566,6 +602,160 @@ module Experiences
       block
     end
 
+    # Minigame: arithmetic ----------------------------------------------------
+
+    def start_minigame_arithmetic!(block_id:)
+      block = experience.experience_blocks.find(block_id)
+      raise ArgumentError, "Block is not an arithmetic minigame" unless block.kind == ExperienceBlock::MINIGAME_ARITHMETIC
+
+      transaction do
+        payload = block.payload || {}
+
+        unless payload["questions"].is_a?(Array) && payload["questions"].any?
+          raise ArgumentError, "Minigame has no questions configured"
+        end
+
+        started_at = Time.current
+        duration   = payload["duration_seconds"].to_i
+
+        payload["started_at"] = started_at.iso8601
+        payload["ended_at"]   = nil
+
+        block.update!(payload: payload, status: :open)
+
+        Minigames::EndArithmeticJob.set(wait: duration.seconds)
+          .perform_later(block.id, payload["started_at"])
+
+        block
+      end
+    end
+
+    def end_minigame_arithmetic!(block_id:)
+      block = experience.experience_blocks.find(block_id)
+      raise ArgumentError, "Block is not an arithmetic minigame" unless block.kind == ExperienceBlock::MINIGAME_ARITHMETIC
+
+      transaction do
+        payload = block.payload || {}
+        return block if payload["ended_at"].present?
+
+        payload["ended_at"] = Time.current.iso8601
+        block.update!(payload: payload, status: :closed)
+      end
+
+      block
+    end
+
+    def submit_minigame_arithmetic_response!(block_id:, question_index:, answer:)
+      block = experience.experience_blocks.find(block_id)
+      raise ArgumentError, "Block is not an arithmetic minigame" unless block.kind == ExperienceBlock::MINIGAME_ARITHMETIC
+
+      payload = block.payload || {}
+      raise Experiences::InvalidTransitionError, "Minigame has not started" if payload["started_at"].blank?
+      raise Experiences::InvalidTransitionError, "Minigame has ended"       if payload["ended_at"].present?
+
+      questions = Array(payload["questions"])
+      index     = question_index.to_i
+      question  = questions[index]
+      raise ActiveRecord::RecordNotFound, "Question not found" unless question
+
+      submitted_text = answer.to_s.strip
+      parsed         = Integer(submitted_text, exception: false)
+      correct        = parsed.present? && parsed == question["answer"].to_i
+
+      submission = ExperienceMinigameSubmission.find_or_initialize_by(
+        experience_block_id: block.id,
+        user_id:             actor.id,
+        question_index:      index
+      )
+
+      return submission if submission.persisted?
+
+      submission.submitted_answer = submitted_text
+      submission.correct          = correct
+      submission.submitted_at     = Time.current
+      submission.save!
+      submission
+    end
+
+    # Minigame: balloon pump --------------------------------------------------
+
+    def start_minigame_balloon_pump!(block_id:)
+      block = experience.experience_blocks.find(block_id)
+      raise ArgumentError, "Block is not a balloon pump minigame" unless block.kind == ExperienceBlock::MINIGAME_BALLOON_PUMP
+
+      transaction do
+        payload                              = block.payload || {}
+        payload["started_at"]                = Time.current.iso8601
+        payload["ended_at"]                  = nil
+        payload["winner_participant_ids"]    = []
+        payload["leader_fill"]               = 0
+        payload["leader_participant_id"]     = nil
+        payload["leader_last_broadcast_at"]  = nil
+
+        block.experience_minigame_balloon_results.delete_all
+        block.update!(payload: payload, status: :open)
+      end
+
+      block
+    end
+
+    def end_minigame_balloon_pump!(block_id:)
+      block = experience.experience_blocks.find(block_id)
+      raise ArgumentError, "Block is not a balloon pump minigame" unless block.kind == ExperienceBlock::MINIGAME_BALLOON_PUMP
+
+      transaction do
+        payload = block.payload || {}
+        return block if payload["ended_at"].present?
+
+        payload["ended_at"] = Time.current.iso8601
+        block.update!(payload: payload, status: :closed)
+      end
+
+      block
+    end
+
+    # Hot path. Returns a hash describing the resulting state so the controller
+    # can decide what (if anything) to broadcast.
+    #
+    # @return [Hash] :result — :accepted, :ignored
+    #                :winners — array of ExperienceParticipant when game just ended
+    #                :leader_changed — true if the leader for monitor display moved
+    def submit_balloon_pump_update!(block_id:, fill_amount:)
+      block = experience.experience_blocks.find(block_id)
+      raise ArgumentError, "Block is not a balloon pump minigame" unless block.kind == ExperienceBlock::MINIGAME_BALLOON_PUMP
+
+      payload      = block.payload || {}
+      target_units = payload["target_units"].to_i
+      requested    = fill_amount.to_i.clamp(0, target_units)
+
+      return { result: :ignored } if payload["started_at"].blank?
+      return { result: :ignored } if payload["ended_at"].present?
+
+      participant = experience.experience_participants.find_by(user_id: actor.id)
+      raise ActiveRecord::RecordNotFound, "Participant not found" unless participant
+
+      result = ExperienceMinigameBalloonResult
+        .where(experience_block_id: block.id, user_id: actor.id)
+        .first_or_initialize
+
+      return { result: :ignored } if result.persisted? && result.fill_amount >= requested
+
+      result.fill_amount = [result.fill_amount, requested].max
+      result.save!
+
+      crossed_target = result.fill_amount >= target_units
+      leader_changed = false
+      winners        = []
+
+      if crossed_target
+        winners = close_balloon_pump_with_winners!(block, target_units)
+      else
+        leader_changed = update_balloon_pump_leader!(block, participant, result.fill_amount)
+      end
+
+      { result: :accepted, winners: winners, leader_changed: leader_changed }
+    end
+
     def update_block!(block_id:, payload:, visible_to_segment_ids:, variables: nil, questions: nil)
       transaction do
         block = experience.experience_blocks.find(block_id)
@@ -669,6 +859,54 @@ module Experiences
     end
 
     private
+
+    def close_balloon_pump_with_winners!(block, target_units)
+      transaction do
+        block.lock!
+        payload = block.payload || {}
+        return [] if payload["ended_at"].present?
+
+        winning_results = ExperienceMinigameBalloonResult
+          .where(experience_block_id: block.id)
+          .where("fill_amount >= ?", target_units)
+          .to_a
+
+        winning_user_ids = winning_results.map(&:user_id)
+        winners = experience.experience_participants
+          .includes(:user)
+          .where(user_id: winning_user_ids)
+          .to_a
+
+        payload["ended_at"]               = Time.current.iso8601
+        payload["winner_participant_ids"] = winners.map(&:id)
+        payload["leader_fill"]            = target_units
+        payload["leader_participant_id"]  = winners.first&.id
+
+        block.update!(payload: payload, status: :closed)
+        winners
+      end
+    end
+
+    def update_balloon_pump_leader!(block, participant, fill_amount)
+      payload      = block.payload || {}
+      target_units = payload["target_units"].to_i
+      return false if target_units.zero?
+
+      current_leader_fill = payload["leader_fill"].to_i
+
+      return false if fill_amount < current_leader_fill
+      return false if fill_amount == current_leader_fill && payload["leader_participant_id"] == participant.id
+
+      block.update_columns(
+        payload: payload.merge(
+          "leader_fill"            => fill_amount,
+          "leader_participant_id"  => participant.id
+        ),
+        updated_at: Time.current
+      )
+
+      true
+    end
 
     def adjust_guess_who_slide!(block_id, delta)
       block = experience.experience_blocks.find(block_id)

@@ -36,6 +36,16 @@ import {
 } from '../CreateBlock/CreateGuessWho/CreateGuessWho';
 import { madLibPayloadToFormData, validateMadLib } from '../CreateBlock/CreateMadLib/CreateMadLib';
 import {
+  buildMinigameArithmeticPayload,
+  minigameArithmeticPayloadToFormData,
+  validateMinigameArithmetic,
+} from '../CreateBlock/CreateMinigameArithmetic/CreateMinigameArithmetic';
+import {
+  buildMinigameBalloonPumpPayload,
+  minigameBalloonPumpPayloadToFormData,
+  validateMinigameBalloonPump,
+} from '../CreateBlock/CreateMinigameBalloonPump/CreateMinigameBalloonPump';
+import {
   buildPhotoUploadPayload,
   photoUploadPayloadToFormData,
   validatePhotoUpload,
@@ -99,6 +109,16 @@ function blockToFormData(block: Block, participants: ParticipantSummary[]): Form
       return { kind: BlockKind.BUZZER, data: buzzerPayloadToFormData(block.payload) };
     case BlockKind.GUESS_WHO:
       return { kind: BlockKind.GUESS_WHO, data: guessWhoPayloadToFormData(block.payload) };
+    case BlockKind.MINIGAME_ARITHMETIC:
+      return {
+        kind: BlockKind.MINIGAME_ARITHMETIC,
+        data: minigameArithmeticPayloadToFormData(block.payload),
+      };
+    case BlockKind.MINIGAME_BALLOON_PUMP:
+      return {
+        kind: BlockKind.MINIGAME_BALLOON_PUMP,
+        data: minigameBalloonPumpPayloadToFormData(block.payload),
+      };
     default: {
       const _exhaust: never = block;
       throw new Error(`Unknown block kind: ${(_exhaust as Block).kind}`);
@@ -141,6 +161,10 @@ function buildUpdatePayload(blockData: FormBlockData): {
       return { payload: buildBuzzerPayload(blockData.data) };
     case BlockKind.GUESS_WHO:
       return { payload: buildGuessWhoPayload(blockData.data) };
+    case BlockKind.MINIGAME_ARITHMETIC:
+      return { payload: buildMinigameArithmeticPayload(blockData.data) };
+    case BlockKind.MINIGAME_BALLOON_PUMP:
+      return { payload: buildMinigameBalloonPumpPayload(blockData.data) };
     default: {
       const _exhaust: never = blockData;
       throw new Error(`Unknown block kind: ${(_exhaust as FormBlockData).kind}`);
@@ -180,8 +204,13 @@ export function EditBlockProvider({
     async (visible_to_segment_ids: string[]) => {
       const { payload, variables, questions } = buildUpdatePayload(blockData);
 
+      const payloadWithShowOnMonitor: Record<string, unknown> = {
+        ...(payload as unknown as Record<string, unknown>),
+        show_on_monitor: showOnMonitor,
+      };
+
       const result = await updateExperienceBlock(block.id, {
-        payload: { ...payload, show_on_monitor: showOnMonitor },
+        payload: payloadWithShowOnMonitor,
         visible_to_segment_ids,
         ...(variables && { variables }),
         ...(questions && { questions }),
@@ -233,6 +262,12 @@ export function EditBlockProvider({
         break;
       case BlockKind.GUESS_WHO:
         validationError = validateGuessWho(blockData.data);
+        break;
+      case BlockKind.MINIGAME_ARITHMETIC:
+        validationError = validateMinigameArithmetic(blockData.data);
+        break;
+      case BlockKind.MINIGAME_BALLOON_PUMP:
+        validationError = validateMinigameBalloonPump(blockData.data);
         break;
       default: {
         const _exhaust: never = blockData;

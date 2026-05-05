@@ -20,6 +20,8 @@ export enum BlockKind {
   PHOTO_UPLOAD = 'photo_upload',
   BUZZER = 'buzzer',
   GUESS_WHO = 'guess_who',
+  MINIGAME_ARITHMETIC = 'minigame_arithmetic',
+  MINIGAME_BALLOON_PUMP = 'minigame_balloon_pump',
 }
 
 export interface ExperienceSegment {
@@ -120,6 +122,71 @@ export interface GuessWhoPayload {
   error?: string;
 }
 
+export interface MinigameArithmeticQuestion {
+  index: number;
+  lhs: number;
+  op: '+' | '-' | '*' | '/';
+  rhs: number;
+  answer: number;
+  prompt: string;
+}
+
+export interface MinigameArithmeticCurrentQuestion {
+  index: number;
+  prompt: string;
+}
+
+export interface MinigameArithmeticLeaderboardEntry {
+  participant_id: string;
+  user_id: string;
+  name: string;
+  avatar?: { strokes?: AvatarStroke[] } | null;
+  correct: number;
+  completed: number;
+  rank: number;
+}
+
+export interface MinigameArithmeticPayload {
+  variant: 'arithmetic';
+  duration_seconds: number;
+  question_count: number;
+  leaderboard_size: number;
+  started_at: string | null;
+  ended_at: string | null;
+  questions?: MinigameArithmeticQuestion[];
+  current_question?: MinigameArithmeticCurrentQuestion | null;
+  score?: { correct: number; completed: number };
+  leaderboard?: MinigameArithmeticLeaderboardEntry[];
+  submission_count?: number;
+}
+
+export interface MinigameBalloonPumpPodiumEntry {
+  place: 1 | 2 | 3;
+  participant_id: string;
+  name: string;
+  avatar?: { strokes?: AvatarStroke[] } | null;
+  fill_amount: number;
+}
+
+export interface MinigameBalloonPumpLiveResult {
+  participant_id: string;
+  name: string;
+  fill_amount: number;
+}
+
+export interface MinigameBalloonPumpPayload {
+  variant: 'balloon_pump';
+  target_units: number;
+  started_at: string | null;
+  ended_at: string | null;
+  leader_fill: number;
+  leader_participant_id: string | null;
+  winner_participant_ids: string[];
+  own_fill?: number;
+  podium?: MinigameBalloonPumpPodiumEntry[];
+  live_results?: MinigameBalloonPumpLiveResult[];
+}
+
 export interface BlockLink {
   id: string;
   parent_block_id: string;
@@ -214,6 +281,20 @@ export interface GuessWhoApiPayload {
   segment_id: string;
 }
 
+export interface MinigameArithmeticApiPayload {
+  type: 'minigame_arithmetic';
+  variant: 'arithmetic';
+  duration_seconds: number;
+  question_count: number;
+  leaderboard_size: number;
+}
+
+export interface MinigameBalloonPumpApiPayload {
+  type: 'minigame_balloon_pump';
+  variant: 'balloon_pump';
+  target_units: number;
+}
+
 // Discriminated union for API payloads (what gets sent to backend)
 export type ApiPayload =
   | PollApiPayload
@@ -223,7 +304,9 @@ export type ApiPayload =
   | FamilyFeudApiPayload
   | PhotoUploadApiPayload
   | BuzzerApiPayload
-  | GuessWhoApiPayload;
+  | GuessWhoApiPayload
+  | MinigameArithmeticApiPayload
+  | MinigameBalloonPumpApiPayload;
 
 // ===== PLAYBILL TYPES =====
 
@@ -384,6 +467,24 @@ export interface GuessWhoBlock extends BaseBlock {
   payload: GuessWhoPayload;
 }
 
+export interface MinigameArithmeticBlock extends BaseBlock {
+  kind: BlockKind.MINIGAME_ARITHMETIC;
+  payload: MinigameArithmeticPayload;
+  responses?: {
+    total: number;
+    correct_count?: number;
+    participant_counts?: Record<string, number>;
+  };
+}
+
+export interface MinigameBalloonPumpBlock extends BaseBlock {
+  kind: BlockKind.MINIGAME_BALLOON_PUMP;
+  payload: MinigameBalloonPumpPayload;
+  responses?: {
+    total: number;
+  };
+}
+
 export type Block =
   | PollBlock
   | QuestionBlock
@@ -392,7 +493,9 @@ export type Block =
   | FamilyFeudBlock
   | PhotoUploadBlock
   | BuzzerBlock
-  | GuessWhoBlock;
+  | GuessWhoBlock
+  | MinigameArithmeticBlock
+  | MinigameBalloonPumpBlock;
 
 export interface Experience {
   id: string;
@@ -453,7 +556,9 @@ export interface CreateBlockPayload {
     | FamilyFeudPayload
     | PhotoUploadPayload
     | BuzzerPayload
-    | GuessWhoPayload;
+    | GuessWhoPayload
+    | MinigameArithmeticPayload
+    | MinigameBalloonPumpPayload;
   visible_to_segment_ids?: string[];
   status?: BlockStatus;
   open_immediately?: boolean;
@@ -610,6 +715,7 @@ export const WebSocketMessageTypes = {
   CONFIRM_SUBSCRIPTION: 'confirm_subscription',
   PING: 'ping',
   FAMILY_FEUD_UPDATED: 'family_feud_updated',
+  BALLOON_PUMP_LEADER_UPDATED: 'balloon_pump_leader_updated',
   SUBMISSION_STATE: 'submission_state',
 } as const;
 
@@ -693,6 +799,15 @@ export interface FamilyFeudUpdatedMessage
   data: FamilyFeudDispatchPayload;
 }
 
+export interface BalloonPumpLeaderUpdatedMessage {
+  type: 'balloon_pump_leader_updated';
+  block_id: string;
+  leader_fill: number;
+  target_units: number;
+  leader_participant_id: string | null;
+  timestamp: number;
+}
+
 export type SubmissionState = Record<
   string,
   { id: string; answer: Record<string, unknown>; photo_url?: string }
@@ -716,6 +831,7 @@ export type WebSocketMessage =
   | ConfirmSubscriptionMessage
   | PingMessage
   | FamilyFeudUpdatedMessage
+  | BalloonPumpLeaderUpdatedMessage
   | SubmissionStateMessage;
 
 export interface DrawingUpdateMessage {
@@ -853,6 +969,16 @@ export interface GuessWhoData {
   segment_id: string;
 }
 
+export interface MinigameArithmeticData {
+  duration_seconds: number;
+  question_count: number;
+  leaderboard_size: number;
+}
+
+export interface MinigameBalloonPumpData {
+  target_units: number;
+}
+
 // Union type for all block component data
 export type BlockComponentData =
   | PollData
@@ -862,7 +988,9 @@ export type BlockComponentData =
   | FamilyFeudData
   | PhotoUploadData
   | BuzzerData
-  | GuessWhoData;
+  | GuessWhoData
+  | MinigameArithmeticData
+  | MinigameBalloonPumpData;
 
 // Discriminated union for form block data
 export type FormBlockData =
@@ -873,7 +1001,9 @@ export type FormBlockData =
   | { kind: BlockKind.FAMILY_FEUD; data: FamilyFeudData }
   | { kind: BlockKind.PHOTO_UPLOAD; data: PhotoUploadData }
   | { kind: BlockKind.BUZZER; data: BuzzerData }
-  | { kind: BlockKind.GUESS_WHO; data: GuessWhoData };
+  | { kind: BlockKind.GUESS_WHO; data: GuessWhoData }
+  | { kind: BlockKind.MINIGAME_ARITHMETIC; data: MinigameArithmeticData }
+  | { kind: BlockKind.MINIGAME_BALLOON_PUMP; data: MinigameBalloonPumpData };
 
 export interface UpdateBlockPayload {
   payload: ApiPayload | Record<string, unknown>;

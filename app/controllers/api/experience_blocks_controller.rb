@@ -5,11 +5,14 @@ class Api::ExperienceBlocksController < Api::BaseController
     start_playing reveal_bucket show_x next_question restart_playing
     restart_categorizing restart_everything
     next_guess_who_slide previous_guess_who_slide reveal_guess_who
+    start_minigame_arithmetic end_minigame_arithmetic
+    start_minigame_balloon_pump end_minigame_balloon_pump
   ].freeze
 
   SUBMISSION_ACTIONS = %i[
     submit_poll_response submit_question_response
     submit_mad_lib_response submit_photo_upload_response submit_buzzer_response
+    submit_minigame_arithmetic_response submit_minigame_balloon_pump_update
   ].freeze
 
   before_action :authenticate_and_set_user_and_experience
@@ -556,6 +559,98 @@ class Api::ExperienceBlocksController < Api::BaseController
       Experiences::Broadcaster.new(@experience).broadcast_experience_update
 
       render json: { success: true }, status: 200
+    end
+  end
+
+  # POST /api/experiences/:experience_id/blocks/:id/minigame/start
+  def start_minigame_arithmetic
+    with_experience_orchestration do
+      block = Experiences::Orchestrator.new(
+        experience: @experience, actor: @user
+      ).start_minigame_arithmetic!(block_id: params[:id])
+
+      Experiences::Broadcaster.new(@experience).broadcast_experience_update
+
+      render json: { success: true, data: block }, status: 200
+    end
+  end
+
+  # POST /api/experiences/:experience_id/blocks/:id/minigame/end
+  def end_minigame_arithmetic
+    with_experience_orchestration do
+      block = Experiences::Orchestrator.new(
+        experience: @experience, actor: @user
+      ).end_minigame_arithmetic!(block_id: params[:id])
+
+      Experiences::Broadcaster.new(@experience).broadcast_experience_update
+
+      render json: { success: true, data: block }, status: 200
+    end
+  end
+
+  # POST /api/experiences/:experience_id/blocks/:id/minigame/responses
+  def submit_minigame_arithmetic_response
+    with_experience_orchestration do
+      submission = Experiences::Orchestrator.new(
+        experience: @experience, actor: @user
+      ).submit_minigame_arithmetic_response!(
+        block_id:       params[:id],
+        question_index: params[:question_index],
+        answer:         params[:answer]
+      )
+
+      Experiences::Broadcaster.new(@experience).broadcast_experience_update
+
+      render json: {
+        success: true,
+        submission: { id: submission.id, question_index: submission.question_index }
+      }, status: 200
+    end
+  end
+
+  # POST /api/experiences/:experience_id/blocks/:id/minigame/balloon_pump/start
+  def start_minigame_balloon_pump
+    with_experience_orchestration do
+      block = Experiences::Orchestrator.new(
+        experience: @experience, actor: @user
+      ).start_minigame_balloon_pump!(block_id: params[:id])
+
+      Experiences::Broadcaster.new(@experience).broadcast_experience_update
+
+      render json: { success: true, data: block }, status: 200
+    end
+  end
+
+  # POST /api/experiences/:experience_id/blocks/:id/minigame/balloon_pump/end
+  def end_minigame_balloon_pump
+    with_experience_orchestration do
+      block = Experiences::Orchestrator.new(
+        experience: @experience, actor: @user
+      ).end_minigame_balloon_pump!(block_id: params[:id])
+
+      Experiences::Broadcaster.new(@experience).broadcast_experience_update
+
+      render json: { success: true, data: block }, status: 200
+    end
+  end
+
+  # POST /api/experiences/:experience_id/blocks/:id/minigame/balloon_pump/pump
+  def submit_minigame_balloon_pump_update
+    with_experience_orchestration do
+      outcome = Experiences::Orchestrator.new(
+        experience: @experience, actor: @user
+      ).submit_balloon_pump_update!(
+        block_id:    params[:id],
+        fill_amount: params[:fill_amount]
+      )
+
+      if outcome[:winners]&.any?
+        Experiences::Broadcaster.new(@experience).broadcast_experience_update
+      elsif outcome[:leader_changed]
+        Experiences::Broadcaster.new(@experience).broadcast_balloon_pump_leader_update(block: @block.reload)
+      end
+
+      render json: { success: true, result: outcome[:result] }, status: 200
     end
   end
 

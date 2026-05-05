@@ -4,3 +4,5 @@ export { default as Question } from './Question/Question';
 export { default as Announcement } from './Announcement/Announcement';
 export { default as Buzzer } from './Buzzer/Buzzer';
 export { default as GuessWho } from './GuessWho/GuessWho';
+export { default as MinigameArithmetic } from './MinigameArithmetic/MinigameArithmetic';
+export { default as MinigameBalloonPump } from './MinigameBalloonPump/MinigameBalloonPump';
