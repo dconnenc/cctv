@@ -9,6 +9,7 @@ import CreateAnnouncement from './CreateAnnouncement/CreateAnnouncement';
 import { CreateBlockProvider, useCreateBlockContext } from './CreateBlockContext';
 import CreateBuzzer from './CreateBuzzer/CreateBuzzer';
 import CreateFamilyFeud from './CreateFamilyFeud/CreateFamilyFeud';
+import CreateGuessWho from './CreateGuessWho/CreateGuessWho';
 import CreateMadLib from './CreateMadLib/CreateMadLib';
 import CreatePhotoUpload from './CreatePhotoUpload/CreatePhotoUpload';
 import CreatePoll from './CreatePoll/CreatePoll';
@@ -63,6 +64,7 @@ function CreateBlockForm({ onClose }: CreateBlockFormProps) {
           { label: 'Family Feud', value: BlockKind.FAMILY_FEUD },
           { label: 'Photo Upload', value: BlockKind.PHOTO_UPLOAD },
           { label: 'Buzzer', value: BlockKind.BUZZER },
+          { label: 'Guess Who', value: BlockKind.GUESS_WHO },
         ]}
         value={blockData.kind}
         onChange={setKind}
@@ -123,6 +125,8 @@ function BlockEditor() {
       return <CreatePhotoUpload data={blockData.data} onChange={onChange} />;
     case BlockKind.BUZZER:
       return <CreateBuzzer data={blockData.data} onChange={onChange} />;
+    case BlockKind.GUESS_WHO:
+      return <CreateGuessWho data={blockData.data} onChange={onChange} />;
     default:
       const exhaustiveCheck: never = blockData;
       return <div className={styles.details}>Unknown block type: {exhaustiveCheck}</div>;

@@ -7,6 +7,7 @@ import { Block, BlockKind, FormBlockData, ParticipantSummary } from '@cctv/types
 import CreateAnnouncement from '../CreateBlock/CreateAnnouncement/CreateAnnouncement';
 import CreateBuzzer from '../CreateBlock/CreateBuzzer/CreateBuzzer';
 import CreateFamilyFeud from '../CreateBlock/CreateFamilyFeud/CreateFamilyFeud';
+import CreateGuessWho from '../CreateBlock/CreateGuessWho/CreateGuessWho';
 import CreateMadLib from '../CreateBlock/CreateMadLib/CreateMadLib';
 import CreatePhotoUpload from '../CreateBlock/CreatePhotoUpload/CreatePhotoUpload';
 import CreatePoll from '../CreateBlock/CreatePoll/CreatePoll';
@@ -46,6 +47,7 @@ const KIND_LABELS: Record<BlockKind, string> = {
   [BlockKind.FAMILY_FEUD]: 'Family Feud',
   [BlockKind.PHOTO_UPLOAD]: 'Photo Upload',
   [BlockKind.BUZZER]: 'Buzzer',
+  [BlockKind.GUESS_WHO]: 'Guess Who',
 };
 
 function EditBlockForm({ onClose, block }: EditBlockFormProps) {
@@ -131,6 +133,8 @@ function BlockEditor() {
       return <CreatePhotoUpload data={blockData.data} onChange={onChange} />;
     case BlockKind.BUZZER:
       return <CreateBuzzer data={blockData.data} onChange={onChange} />;
+    case BlockKind.GUESS_WHO:
+      return <CreateGuessWho data={blockData.data} onChange={onChange} />;
     default: {
       const _exhaust: never = blockData;
       return <div>Unknown block type: {(_exhaust as { kind: string }).kind}</div>;

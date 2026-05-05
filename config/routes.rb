@@ -91,6 +91,10 @@ Rails.application.routes.draw do
           post 'family_feud/restart_playing', action: :restart_playing
           post 'family_feud/restart_categorizing', action: :restart_categorizing
           post 'family_feud/restart_everything', action: :restart_everything
+
+          post 'guess_who/next', action: :next_guess_who_slide
+          post 'guess_who/previous', action: :previous_guess_who_slide
+          post 'guess_who/reveal', action: :reveal_guess_who
         end
 
         # collection do
@@ -108,6 +112,7 @@ Rails.application.routes.draw do
         member do
           post :avatar
           delete :kick
+          get :submissions
         end
       end
 

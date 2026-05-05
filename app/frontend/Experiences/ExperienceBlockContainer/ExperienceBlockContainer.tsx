@@ -3,6 +3,7 @@ import { Block, BlockKind, ParticipantSummary } from '@cctv/types';
 import Announcement from '../Announcement/Announcement';
 import Buzzer from '../Buzzer/Buzzer';
 import FamilyFeud from '../FamilyFeud/FamilyFeud';
+import GuessWho from '../GuessWho/GuessWho';
 import MadLib from '../MadLib/MadLib';
 import PhotoUpload from '../PhotoUpload/PhotoUpload';
 import Poll from '../Poll/Poll';
@@ -71,6 +72,8 @@ export default function ExperienceBlockContainer({
       );
     case BlockKind.BUZZER:
       return <Buzzer block={block} viewContext={viewContext} />;
+    case BlockKind.GUESS_WHO:
+      return <GuessWho payload={block.payload} />;
     default:
       const exhaustiveCheck: never = block;
       return (

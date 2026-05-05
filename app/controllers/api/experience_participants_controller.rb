@@ -2,8 +2,9 @@ class Api::ExperienceParticipantsController < Api::BaseController
   before_action :authenticate_and_set_user_and_experience
   before_action :authorize_kick!, only: [:kick]
   before_action :authorize_avatar!, only: [:avatar]
+  before_action :authorize_manage!, only: [:submissions]
 
-  after_action :verify_authorized, only: [:kick]
+  after_action :verify_authorized, only: [:kick, :submissions]
 
   # DELETE /api/experiences/:experience_id/participants/:id/kick
   def kick
@@ -40,7 +41,21 @@ class Api::ExperienceParticipantsController < Api::BaseController
     end
   end
 
+  # GET /api/experiences/:experience_id/participants/:id/submissions
+  def submissions
+    participant = @experience.experience_participants.find(params[:id])
+    entries = Experiences::ParticipantSubmissions.new(@experience).for_user(participant.user_id)
+
+    render json: { success: true, data: { submissions: entries } }
+  rescue ActiveRecord::RecordNotFound
+    render json: { success: false, error: 'participant not found' }, status: :not_found
+  end
+
   private
+
+  def authorize_manage!
+    authorize! @experience, to: :manage?
+  end
 
   def authorize_kick!
     authorize! @experience, to: :manage?
