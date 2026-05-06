@@ -16,6 +16,7 @@ import CreateMinigameBalloonPump from './CreateMinigameBalloonPump/CreateMinigam
 import CreatePhotoUpload from './CreatePhotoUpload/CreatePhotoUpload';
 import CreatePoll from './CreatePoll/CreatePoll';
 import CreateQuestion from './CreateQuestion/CreateQuestion';
+import CreateTheScene from './CreateTheScene/CreateTheScene';
 
 import styles from './CreateBlock.module.scss';
 
@@ -69,6 +70,7 @@ function CreateBlockForm({ onClose }: CreateBlockFormProps) {
           { label: 'Guess Who', value: BlockKind.GUESS_WHO },
           { label: 'Minigame: Arithmetic', value: BlockKind.MINIGAME_ARITHMETIC },
           { label: 'Minigame: Balloon Pump', value: BlockKind.MINIGAME_BALLOON_PUMP },
+          { label: 'The Scene', value: BlockKind.THE_SCENE },
         ]}
         value={blockData.kind}
         onChange={setKind}
@@ -135,6 +137,8 @@ function BlockEditor() {
       return <CreateMinigameArithmetic data={blockData.data} onChange={onChange} />;
     case BlockKind.MINIGAME_BALLOON_PUMP:
       return <CreateMinigameBalloonPump data={blockData.data} onChange={onChange} />;
+    case BlockKind.THE_SCENE:
+      return <CreateTheScene data={blockData.data} onChange={onChange} />;
     default:
       const exhaustiveCheck: never = blockData;
       return <div className={styles.details}>Unknown block type: {exhaustiveCheck}</div>;

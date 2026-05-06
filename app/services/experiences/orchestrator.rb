@@ -70,6 +70,13 @@ module Experiences
         payload["leader_fill"]               = 0
         payload["leader_participant_id"]     = nil
         payload["leader_last_broadcast_at"]  = nil
+      when ExperienceBlock::THE_SCENE
+        leaderboard_size = payload["leaderboard_size"].to_i
+        raise ArgumentError, "leaderboard_size must be positive" unless leaderboard_size.positive?
+
+        payload["leaderboard_size"] = leaderboard_size
+        payload["phase"]            = "idle"
+        payload["scene_started_at"] = nil
       end
 
       payload
@@ -755,6 +762,134 @@ module Experiences
 
       { result: :accepted, winners: winners, leader_changed: leader_changed }
     end
+
+    # The Scene -------------------------------------------------------------
+
+    SCENE_PHASES = %w[idle collecting voting ended].freeze
+
+    def advance_the_scene_phase!(block_id:, phase:)
+      raise ArgumentError, "Unknown phase: #{phase}" unless SCENE_PHASES.include?(phase.to_s)
+
+      block = experience.experience_blocks.find(block_id)
+      raise ArgumentError, "Block is not a Scene" unless block.kind == ExperienceBlock::THE_SCENE
+
+      transaction do
+        payload = block.payload || {}
+        payload["phase"] = phase.to_s
+
+        # First time we leave idle, stamp scene_started_at so votes scope cleanly.
+        if payload["phase"] != "idle" && payload["scene_started_at"].blank?
+          payload["scene_started_at"] = Time.current.iso8601(6)
+        end
+
+        new_status =
+          case payload["phase"]
+          when "idle"   then :hidden
+          when "ended"  then :closed
+          else               :open
+          end
+
+        block.update!(payload: payload, status: new_status)
+      end
+
+      block
+    end
+
+    def start_next_scene!(block_id:)
+      block = experience.experience_blocks.find(block_id)
+      raise ArgumentError, "Block is not a Scene" unless block.kind == ExperienceBlock::THE_SCENE
+
+      transaction do
+        payload = block.payload || {}
+        prior = payload["scene_started_at"]
+        candidate = Time.current.iso8601(6)
+
+        # Guarantee strict monotonic increase even if the host clicks
+        # twice in the same microsecond.
+        if prior.present? && candidate <= prior
+          candidate = (Time.iso8601(prior) + 0.001.seconds).iso8601(6)
+        end
+
+        payload["phase"]            = "collecting"
+        payload["scene_started_at"] = candidate
+        block.update!(payload: payload, status: :open)
+      end
+
+      block
+    end
+
+    def submit_the_scene_suggestion!(block_id:, text:)
+      block = experience.experience_blocks.find(block_id)
+      raise ArgumentError, "Block is not a Scene" unless block.kind == ExperienceBlock::THE_SCENE
+
+      payload = block.payload || {}
+      raise Experiences::InvalidTransitionError, "Scene is not collecting suggestions" unless %w[collecting voting].include?(payload["phase"])
+
+      trimmed = text.to_s.strip
+      raise ArgumentError, "Suggestion cannot be blank" if trimmed.empty?
+      raise ArgumentError, "Suggestion is too long (#{ImprovSuggestion::MAX_LENGTH} max)" if trimmed.length > ImprovSuggestion::MAX_LENGTH
+
+      transaction do
+        existing = block.improv_suggestions.active.find_by(user_id: actor.id)
+        raise Experiences::InvalidTransitionError, "You already submitted this scene" if existing
+
+        block.improv_suggestions.create!(user_id: actor.id, text: trimmed)
+      end
+    end
+
+    def submit_the_scene_vote!(block_id:, suggestion_id:)
+      block = experience.experience_blocks.find(block_id)
+      raise ArgumentError, "Block is not a Scene" unless block.kind == ExperienceBlock::THE_SCENE
+
+      payload = block.payload || {}
+      raise Experiences::InvalidTransitionError, "Voting is not open" unless payload["phase"] == "voting"
+
+      scene_started_at = payload["scene_started_at"]
+      raise Experiences::InvalidTransitionError, "Scene has not started" if scene_started_at.blank?
+
+      suggestion = block.improv_suggestions.active.find(suggestion_id)
+      raise ArgumentError, "Cannot vote for your own suggestion" if suggestion.user_id == actor.id
+
+      transaction do
+        vote = ImprovVote
+          .where(experience_block_id: block.id, user_id: actor.id, scene_started_at: scene_started_at)
+          .first_or_initialize
+
+        vote.improv_suggestion_id = suggestion.id
+        vote.save!
+        vote
+      end
+    end
+
+    def clear_the_scene_top!(block_id:)
+      block = experience.experience_blocks.find(block_id)
+      raise ArgumentError, "Block is not a Scene" unless block.kind == ExperienceBlock::THE_SCENE
+
+      top = TheScene::Tally.top(block: block, scene_started_at: block.payload["scene_started_at"])&.first
+      return block unless top
+
+      top.clear!
+      block
+    end
+
+    def clear_the_scene_suggestion!(block_id:, suggestion_id:)
+      block = experience.experience_blocks.find(block_id)
+      raise ArgumentError, "Block is not a Scene" unless block.kind == ExperienceBlock::THE_SCENE
+
+      suggestion = block.improv_suggestions.active.find(suggestion_id)
+      suggestion.clear!
+      block
+    end
+
+    def clear_the_scene_all!(block_id:)
+      block = experience.experience_blocks.find(block_id)
+      raise ArgumentError, "Block is not a Scene" unless block.kind == ExperienceBlock::THE_SCENE
+
+      block.improv_suggestions.active.update_all(cleared_at: Time.current)
+      block
+    end
+
+    # -----------------------------------------------------------------------
 
     def update_block!(block_id:, payload:, visible_to_segment_ids:, variables: nil, questions: nil)
       transaction do

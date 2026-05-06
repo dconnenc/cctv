@@ -77,6 +77,13 @@ import {
   processQuestionBeforeSubmit,
   validateQuestion,
 } from './CreateQuestion/CreateQuestion';
+import {
+  buildTheScenePayload,
+  canTheSceneOpenImmediately,
+  getDefaultTheSceneState,
+  processTheSceneBeforeSubmit,
+  validateTheScene,
+} from './CreateTheScene/CreateTheScene';
 
 const CreateBlockContext = createContext<CreateBlockContextValue | null>(null);
 
@@ -129,6 +136,8 @@ export function CreateBlockProvider({
           kind: BlockKind.MINIGAME_BALLOON_PUMP,
           data: getDefaultMinigameBalloonPumpState(),
         };
+      case BlockKind.THE_SCENE:
+        return { kind: BlockKind.THE_SCENE, data: getDefaultTheSceneState() };
       default: {
         const _exhaust: never = blockKind;
         throw new Error(`Unknown block kind: ${_exhaust}`);
@@ -202,6 +211,12 @@ export function CreateBlockProvider({
             validationError = 'A segment is required for balloon pump minigames';
           }
           break;
+        case BlockKind.THE_SCENE:
+          validationError = validateTheScene(blockData.data);
+          if (!validationError && visibleSegments.length === 0) {
+            validationError = 'A segment is required for The Scene';
+          }
+          break;
         default: {
           const _exhaust: never = blockData;
           validationError = `Unknown block kind: ${(_exhaust as FormBlockData).kind}`;
@@ -244,6 +259,9 @@ export function CreateBlockProvider({
           break;
         case BlockKind.MINIGAME_BALLOON_PUMP:
           canOpenImmediately = canMinigameBalloonPumpOpenImmediately(blockData.data, participants);
+          break;
+        case BlockKind.THE_SCENE:
+          canOpenImmediately = canTheSceneOpenImmediately(blockData.data, participants);
           break;
         default: {
           const _exhaust: never = blockData;
@@ -323,6 +341,12 @@ export function CreateBlockProvider({
             data: processMinigameBalloonPumpBeforeSubmit(blockData.data, status, participants),
           };
           break;
+        case BlockKind.THE_SCENE:
+          processedFormData = {
+            kind: BlockKind.THE_SCENE,
+            data: processTheSceneBeforeSubmit(blockData.data, status, participants),
+          };
+          break;
         default: {
           const _exhaust: never = blockData;
           processedFormData = _exhaust as FormBlockData;
@@ -364,6 +388,9 @@ export function CreateBlockProvider({
           break;
         case BlockKind.MINIGAME_BALLOON_PUMP:
           payload = buildMinigameBalloonPumpPayload(processedFormData.data);
+          break;
+        case BlockKind.THE_SCENE:
+          payload = buildTheScenePayload(processedFormData.data);
           break;
         default: {
           const _exhaust: never = processedFormData;
