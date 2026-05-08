@@ -22,6 +22,7 @@ export enum BlockKind {
   GUESS_WHO = 'guess_who',
   MINIGAME_ARITHMETIC = 'minigame_arithmetic',
   MINIGAME_BALLOON_PUMP = 'minigame_balloon_pump',
+  THE_SCENE = 'the_scene',
 }
 
 export interface ExperienceSegment {
@@ -174,6 +175,27 @@ export interface MinigameBalloonPumpLiveResult {
   fill_amount: number;
 }
 
+export type TheScenePhase = 'idle' | 'collecting' | 'voting' | 'ended';
+
+export interface TheSceneSuggestion {
+  id: string;
+  text: string;
+  user_id: string;
+  vote_count: number;
+  rank: number;
+}
+
+export interface TheScenePayload {
+  phase: TheScenePhase;
+  scene_started_at: string | null;
+  leaderboard_size: number;
+  leaderboard: TheSceneSuggestion[];
+  own_suggestion?: { id: string; text: string } | null;
+  own_vote_suggestion_id?: string | null;
+  votable_suggestions?: TheSceneSuggestion[];
+  all_suggestions?: TheSceneSuggestion[];
+}
+
 export interface MinigameBalloonPumpPayload {
   variant: 'balloon_pump';
   target_units: number;
@@ -289,6 +311,11 @@ export interface MinigameArithmeticApiPayload {
   leaderboard_size: number;
 }
 
+export interface TheSceneApiPayload {
+  type: 'the_scene';
+  leaderboard_size: number;
+}
+
 export interface MinigameBalloonPumpApiPayload {
   type: 'minigame_balloon_pump';
   variant: 'balloon_pump';
@@ -306,7 +333,8 @@ export type ApiPayload =
   | BuzzerApiPayload
   | GuessWhoApiPayload
   | MinigameArithmeticApiPayload
-  | MinigameBalloonPumpApiPayload;
+  | MinigameBalloonPumpApiPayload
+  | TheSceneApiPayload;
 
 // ===== PLAYBILL TYPES =====
 
@@ -485,6 +513,15 @@ export interface MinigameBalloonPumpBlock extends BaseBlock {
   };
 }
 
+export interface TheSceneBlock extends BaseBlock {
+  kind: BlockKind.THE_SCENE;
+  payload: TheScenePayload;
+  responses?: {
+    total: number;
+    vote_count?: number;
+  };
+}
+
 export type Block =
   | PollBlock
   | QuestionBlock
@@ -495,7 +532,8 @@ export type Block =
   | BuzzerBlock
   | GuessWhoBlock
   | MinigameArithmeticBlock
-  | MinigameBalloonPumpBlock;
+  | MinigameBalloonPumpBlock
+  | TheSceneBlock;
 
 export interface Experience {
   id: string;
@@ -559,7 +597,8 @@ export interface CreateBlockPayload {
     | BuzzerPayload
     | GuessWhoPayload
     | MinigameArithmeticPayload
-    | MinigameBalloonPumpPayload;
+    | MinigameBalloonPumpPayload
+    | TheScenePayload;
   visible_to_segment_ids?: string[];
   status?: BlockStatus;
   open_immediately?: boolean;
@@ -980,6 +1019,10 @@ export interface MinigameBalloonPumpData {
   target_units: number;
 }
 
+export interface TheSceneData {
+  leaderboard_size: number;
+}
+
 // Union type for all block component data
 export type BlockComponentData =
   | PollData
@@ -991,7 +1034,8 @@ export type BlockComponentData =
   | BuzzerData
   | GuessWhoData
   | MinigameArithmeticData
-  | MinigameBalloonPumpData;
+  | MinigameBalloonPumpData
+  | TheSceneData;
 
 // Discriminated union for form block data
 export type FormBlockData =
@@ -1004,7 +1048,8 @@ export type FormBlockData =
   | { kind: BlockKind.BUZZER; data: BuzzerData }
   | { kind: BlockKind.GUESS_WHO; data: GuessWhoData }
   | { kind: BlockKind.MINIGAME_ARITHMETIC; data: MinigameArithmeticData }
-  | { kind: BlockKind.MINIGAME_BALLOON_PUMP; data: MinigameBalloonPumpData };
+  | { kind: BlockKind.MINIGAME_BALLOON_PUMP; data: MinigameBalloonPumpData }
+  | { kind: BlockKind.THE_SCENE; data: TheSceneData };
 
 export interface UpdateBlockPayload {
   payload: ApiPayload | Record<string, unknown>;

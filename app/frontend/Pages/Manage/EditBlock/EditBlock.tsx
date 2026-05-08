@@ -14,6 +14,7 @@ import CreateMinigameBalloonPump from '../CreateBlock/CreateMinigameBalloonPump/
 import CreatePhotoUpload from '../CreateBlock/CreatePhotoUpload/CreatePhotoUpload';
 import CreatePoll from '../CreateBlock/CreatePoll/CreatePoll';
 import CreateQuestion from '../CreateBlock/CreateQuestion/CreateQuestion';
+import CreateTheScene from '../CreateBlock/CreateTheScene/CreateTheScene';
 import { EditBlockProvider, useEditBlockContext } from './EditBlockContext';
 
 import styles from './EditBlock.module.scss';
@@ -52,6 +53,7 @@ const KIND_LABELS: Record<BlockKind, string> = {
   [BlockKind.GUESS_WHO]: 'Guess Who',
   [BlockKind.MINIGAME_ARITHMETIC]: 'Minigame: Arithmetic',
   [BlockKind.MINIGAME_BALLOON_PUMP]: 'Minigame: Balloon Pump',
+  [BlockKind.THE_SCENE]: 'The Scene',
 };
 
 function EditBlockForm({ onClose, block }: EditBlockFormProps) {
@@ -143,6 +145,8 @@ function BlockEditor() {
       return <CreateMinigameArithmetic data={blockData.data} onChange={onChange} />;
     case BlockKind.MINIGAME_BALLOON_PUMP:
       return <CreateMinigameBalloonPump data={blockData.data} onChange={onChange} />;
+    case BlockKind.THE_SCENE:
+      return <CreateTheScene data={blockData.data} onChange={onChange} />;
     default: {
       const _exhaust: never = blockData;
       return <div>Unknown block type: {(_exhaust as { kind: string }).kind}</div>;

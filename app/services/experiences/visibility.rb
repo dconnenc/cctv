@@ -95,6 +95,7 @@ module Experiences
     def monitor_visibility_ok?(block)
       return true if block.kind == ExperienceBlock::MINIGAME_ARITHMETIC
       return true if block.kind == ExperienceBlock::MINIGAME_BALLOON_PUMP
+      return true if block.kind == ExperienceBlock::THE_SCENE
       !block.has_visibility_rules?
     end
 
@@ -182,9 +183,67 @@ module Experiences
         shape_minigame_arithmetic_payload(block, participant_role, user, view_context)
       when ExperienceBlock::MINIGAME_BALLOON_PUMP
         shape_minigame_balloon_pump_payload(block, participant_role, user, view_context)
+      when ExperienceBlock::THE_SCENE
+        shape_the_scene_payload(block, participant_role, user, view_context)
       else
         block.payload
       end
+    end
+
+    def shape_the_scene_payload(block, participant_role, user, view_context)
+      payload          = block.payload.deep_dup || {}
+      phase            = payload["phase"] || "idle"
+      scene_started_at = payload["scene_started_at"]
+      leaderboard_size = payload["leaderboard_size"].to_i
+
+      privileged =
+        view_context == :admin ||
+        (view_context == :participant && (mod_or_host?(participant_role) || admin_user?(user)))
+
+      tally = TheScene::Tally.full(block: block, scene_started_at: scene_started_at)
+
+      shaped = {
+        "phase"            => phase,
+        "scene_started_at" => scene_started_at,
+        "leaderboard_size" => leaderboard_size,
+        "leaderboard"      => tally.first(leaderboard_size).map { |entry| serialize_tally_entry(entry) }
+      }
+
+      if view_context == :participant && !privileged && user
+        own = block.improv_suggestions.active.find_by(user_id: user.id)
+        shaped["own_suggestion"] = own && { "id" => own.id, "text" => own.text }
+
+        own_vote = nil
+        if scene_started_at.present?
+          own_vote = block.improv_votes.find_by(
+            user_id: user.id,
+            scene_started_at: scene_started_at
+          )
+        end
+        shaped["own_vote_suggestion_id"] = own_vote&.improv_suggestion_id
+
+        if phase == "voting" && own.present?
+          shaped["votable_suggestions"] = tally
+            .reject { |entry| entry.suggestion.user_id == user.id }
+            .map { |entry| serialize_tally_entry(entry) }
+        end
+      end
+
+      if privileged
+        shaped["all_suggestions"] = tally.map { |entry| serialize_tally_entry(entry) }
+      end
+
+      shaped
+    end
+
+    def serialize_tally_entry(entry)
+      {
+        "id"         => entry.suggestion.id,
+        "text"       => entry.suggestion.text,
+        "user_id"    => entry.suggestion.user_id,
+        "vote_count" => entry.vote_count,
+        "rank"       => entry.rank
+      }
     end
 
     def shape_minigame_balloon_pump_payload(block, participant_role, user, view_context)
@@ -480,6 +539,16 @@ module Experiences
       when ExperienceBlock::MINIGAME_BALLOON_PUMP
         results = block.experience_minigame_balloon_results.to_a
         { total: results.count }
+
+      when ExperienceBlock::THE_SCENE
+        suggestion_count = block.improv_suggestions.active.count
+        vote_count =
+          if block.payload["scene_started_at"].present?
+            block.improv_votes.where(scene_started_at: block.payload["scene_started_at"]).count
+          else
+            0
+          end
+        { total: suggestion_count, vote_count: vote_count }
 
       when ExperienceBlock::BUZZER
         submissions = block.experience_buzzer_submissions.order(Arel.sql("answer->>'buzzed_at' ASC")).to_a
