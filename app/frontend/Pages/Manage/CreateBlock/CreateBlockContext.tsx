@@ -149,10 +149,13 @@ export function CreateBlockProvider({
     getDefaultFormData(BlockKind.POLL),
   );
 
-  const [visibleSegments, setVisibleSegments] = useState<string[]>([]);
-  const [viewAdditionalDetails, setViewAdditionalDetails] = useState<boolean>(false);
-
   const { experience } = useExperience();
+
+  const defaultSegmentName =
+    experience?.segments?.find((s) => s.id === experience.default_segment_id)?.name ?? null;
+  const initialVisibleSegments = defaultSegmentName ? [defaultSegmentName] : [];
+
+  const [visibleSegments, setVisibleSegments] = useState<string[]>(initialVisibleSegments);
 
   const {
     createExperienceBlock,
@@ -469,8 +472,7 @@ export function CreateBlockProvider({
 
       // Reset all form state
       setBlockData(getDefaultFormData(blockData.kind));
-      setVisibleSegments([]);
-      setViewAdditionalDetails(false);
+      setVisibleSegments(initialVisibleSegments);
     },
     [
       blockData,
@@ -481,6 +483,8 @@ export function CreateBlockProvider({
       onEndCurrentBlock,
       setCreateError,
       getDefaultFormData,
+      experience,
+      initialVisibleSegments,
     ],
   );
 
@@ -494,8 +498,7 @@ export function CreateBlockProvider({
     error: createError,
     visibleSegments,
     setVisibleSegments,
-    viewAdditionalDetails,
-    setViewAdditionalDetails,
+    defaultSegmentName,
   };
 
   return <CreateBlockContext.Provider value={contextValue}>{children}</CreateBlockContext.Provider>;

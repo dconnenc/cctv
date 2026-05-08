@@ -88,29 +88,40 @@ class Experience < ApplicationRecord
   def register_user(user, name:)
     return if user_registered?(user)
 
-    participant = experience_participants.create!(
-      user: user,
-      name: name,
-      avatar: user.most_recent_avatar.presence || {}
-    )
+    transaction do
+      participant = experience_participants.create!(
+        user: user,
+        name: name,
+        avatar: user.most_recent_avatar.presence || {}
+      )
 
-    attach_default_segment(participant)
-    participant
+      attach_default_segment(participant)
+      participant
+    end
   end
 
   # Idempotently returns this experience's default segment, recreating it if
   # the host previously deleted it (so registrations always have a target).
+  # Retries once on RecordNotUnique to absorb the find_or_create_by! race
+  # between concurrent registrations on a fresh experience.
   def ensure_default_segment!(name: nil)
     if default_segment_id.present?
       existing = experience_segments.find_by(id: default_segment_id)
       return existing if existing
     end
 
-    segment = experience_segments.find_or_create_by!(
-      name: name.presence || default_segment&.name || DEFAULT_SEGMENT_NAME
-    ) do |s|
-      s.color = DEFAULT_SEGMENT_COLOR
-      s.position = experience_segments.count
+    desired_name = name.presence || default_segment&.name || DEFAULT_SEGMENT_NAME
+    attempts = 0
+
+    begin
+      segment = experience_segments.find_or_create_by!(name: desired_name) do |s|
+        s.color = DEFAULT_SEGMENT_COLOR
+        s.position = (experience_segments.maximum(:position) || -1) + 1
+      end
+    rescue ActiveRecord::RecordNotUnique
+      attempts += 1
+      retry if attempts < 2
+      raise
     end
 
     update_column(:default_segment_id, segment.id) if default_segment_id != segment.id

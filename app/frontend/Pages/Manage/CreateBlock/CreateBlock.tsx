@@ -39,15 +39,7 @@ interface CreateBlockFormProps {
 }
 
 function CreateBlockForm({ onClose }: CreateBlockFormProps) {
-  const {
-    blockData,
-    setKind,
-    submit,
-    isSubmitting,
-    error,
-    viewAdditionalDetails,
-    setViewAdditionalDetails,
-  } = useCreateBlockContext();
+  const { blockData, setKind, submit, isSubmitting, error } = useCreateBlockContext();
 
   return (
     <div className={styles.root}>
@@ -78,17 +70,11 @@ function CreateBlockForm({ onClose }: CreateBlockFormProps) {
       />
 
       <BlockEditor />
-      {viewAdditionalDetails && <AdditionalDetails />}
+      <SegmentSelector />
 
       <div className={styles.actions}>
         <Button variant="secondary" onClick={onClose}>
           Back
-        </Button>
-        <Button
-          variant="secondary"
-          onClick={() => setViewAdditionalDetails(!viewAdditionalDetails)}
-        >
-          {viewAdditionalDetails ? 'Hide Additional Details' : 'View Additional Details'}
         </Button>
         <Button
           variant="secondary"
@@ -145,49 +131,52 @@ function BlockEditor() {
   }
 }
 
-function AdditionalDetails() {
-  const { visibleSegments, setVisibleSegments } = useCreateBlockContext();
+function SegmentSelector() {
+  const { visibleSegments, setVisibleSegments, defaultSegmentName } = useCreateBlockContext();
   const { experience } = useExperience();
   const definedSegments = experience?.segments || [];
+  const availableSegments = definedSegments.filter((s) => !visibleSegments.includes(s.name));
+  const placeholder = defaultSegmentName
+    ? `Defaults to ${defaultSegmentName}`
+    : 'Visible to all participants';
 
   return (
-    <div className={styles.additionalDetails}>
-      <div>
-        <label style={{ fontSize: '0.85rem' }}>Visible to segments</label>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.25rem', marginTop: '0.25rem' }}>
-          {visibleSegments.map((name) => {
-            const seg = definedSegments.find((s) => s.name === name);
-            return (
-              <SegmentBadge
-                key={name}
-                name={name}
-                color={seg?.color || '#6B7280'}
-                onRemove={() => setVisibleSegments(visibleSegments.filter((n) => n !== name))}
-              />
-            );
-          })}
-          {definedSegments.filter((s) => !visibleSegments.includes(s.name)).length > 0 && (
-            <select
-              aria-label="Visible to segments"
-              style={{ fontSize: '0.75rem', padding: '0.15rem 0.3rem' }}
-              value=""
-              onChange={(e) => {
-                if (e.target.value) {
-                  setVisibleSegments([...visibleSegments, e.target.value]);
-                }
-              }}
-            >
-              <option value="">+ Add segment...</option>
-              {definedSegments
-                .filter((s) => !visibleSegments.includes(s.name))
-                .map((s) => (
-                  <option key={s.id} value={s.name}>
-                    {s.name}
-                  </option>
-                ))}
-            </select>
-          )}
-        </div>
+    <div className={styles.segmentSelector}>
+      <label className={styles.segmentLabel}>Visible to segments</label>
+      <div className={styles.segmentRow}>
+        {visibleSegments.length === 0 && (
+          <span className={styles.segmentPlaceholder}>{placeholder}</span>
+        )}
+        {visibleSegments.map((name) => {
+          const seg = definedSegments.find((s) => s.name === name);
+          return (
+            <SegmentBadge
+              key={name}
+              name={name}
+              color={seg?.color || '#6B7280'}
+              onRemove={() => setVisibleSegments(visibleSegments.filter((n) => n !== name))}
+            />
+          );
+        })}
+        {availableSegments.length > 0 && (
+          <select
+            aria-label="Add segment"
+            className={styles.segmentSelect}
+            value=""
+            onChange={(e) => {
+              if (e.target.value) {
+                setVisibleSegments([...visibleSegments, e.target.value]);
+              }
+            }}
+          >
+            <option value="">+ Add segment...</option>
+            {availableSegments.map((s) => (
+              <option key={s.id} value={s.name}>
+                {s.name}
+              </option>
+            ))}
+          </select>
+        )}
       </div>
     </div>
   );

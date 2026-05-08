@@ -7,7 +7,7 @@ class BackfillDefaultSegments < ActiveRecord::Migration[7.2]
     Experience.where(default_segment_id: nil).find_each do |experience|
       segment = experience.experience_segments.find_or_create_by!(name: DEFAULT_NAME) do |s|
         s.color = DEFAULT_COLOR
-        s.position = experience.experience_segments.count
+        s.position = (experience.experience_segments.maximum(:position) || -1) + 1
       end
 
       participant_ids = experience.experience_participants.where(role: ASSIGNED_ROLES).pluck(:id)

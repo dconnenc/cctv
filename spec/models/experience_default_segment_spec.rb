@@ -83,5 +83,26 @@ RSpec.describe Experience, "default segment" do
       participant = experience.experience_participants.find_by(user_id: second_user.id)
       expect(participant.experience_segments).to include(experience.default_segment)
     end
+
+    it "rolls back the participant if segment attachment fails" do
+      allow(experience).to receive(:attach_default_segment).and_raise(ActiveRecord::RecordInvalid)
+
+      expect {
+        expect { experience.register_user(user, name: "Test") }.to raise_error(ActiveRecord::RecordInvalid)
+      }.not_to change { experience.experience_participants.count }
+    end
+  end
+
+  describe "position assignment" do
+    it "uses MAX(position)+1 so deleted segments don't cause collisions" do
+      # Simulate a non-contiguous position sequence: positions 0 and 2 exist,
+      # position 1 was previously deleted. `count` would produce 2 and collide
+      # with the existing segment at position 2.
+      experience.experience_segments.create!(name: "A", color: "#111111", position: 0)
+      experience.experience_segments.create!(name: "B", color: "#222222", position: 2)
+
+      segment = experience.ensure_default_segment!
+      expect(segment.position).to eq(3)
+    end
   end
 end

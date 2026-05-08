@@ -1095,11 +1095,10 @@ export interface CreateBlockContextValue {
   isSubmitting: boolean;
   error: string | null;
 
-  // Additional form state
+  // Visibility — segments default to the experience's default segment.
   visibleSegments: string[];
   setVisibleSegments: (segments: string[]) => void;
-  viewAdditionalDetails: boolean;
-  setViewAdditionalDetails: (view: boolean) => void;
+  defaultSegmentName: string | null;
 }
 
 // Props interface for block components
