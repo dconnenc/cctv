@@ -60,6 +60,11 @@ import {
   questionPayloadToFormData,
   validateQuestion,
 } from '../CreateBlock/CreateQuestion/CreateQuestion';
+import {
+  buildTheScenePayload,
+  theScenePayloadToFormData,
+  validateTheScene,
+} from '../CreateBlock/CreateTheScene/CreateTheScene';
 
 const EditBlockContext = createContext<EditBlockContextValue | null>(null);
 
@@ -119,6 +124,11 @@ function blockToFormData(block: Block, participants: ParticipantSummary[]): Form
         kind: BlockKind.MINIGAME_BALLOON_PUMP,
         data: minigameBalloonPumpPayloadToFormData(block.payload),
       };
+    case BlockKind.THE_SCENE:
+      return {
+        kind: BlockKind.THE_SCENE,
+        data: theScenePayloadToFormData(block.payload),
+      };
     default: {
       const _exhaust: never = block;
       throw new Error(`Unknown block kind: ${(_exhaust as Block).kind}`);
@@ -165,6 +175,8 @@ function buildUpdatePayload(blockData: FormBlockData): {
       return { payload: buildMinigameArithmeticPayload(blockData.data) };
     case BlockKind.MINIGAME_BALLOON_PUMP:
       return { payload: buildMinigameBalloonPumpPayload(blockData.data) };
+    case BlockKind.THE_SCENE:
+      return { payload: buildTheScenePayload(blockData.data) };
     default: {
       const _exhaust: never = blockData;
       throw new Error(`Unknown block kind: ${(_exhaust as FormBlockData).kind}`);
@@ -268,6 +280,9 @@ export function EditBlockProvider({
         break;
       case BlockKind.MINIGAME_BALLOON_PUMP:
         validationError = validateMinigameBalloonPump(blockData.data);
+        break;
+      case BlockKind.THE_SCENE:
+        validationError = validateTheScene(blockData.data);
         break;
       default: {
         const _exhaust: never = blockData;

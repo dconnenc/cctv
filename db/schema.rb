@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_05_05_000002) do
+ActiveRecord::Schema[7.2].define(version: 2026_05_05_000004) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "citext"
   enable_extension "plpgsql"
@@ -298,6 +298,32 @@ ActiveRecord::Schema[7.2].define(version: 2026_05_05_000002) do
     t.index ["user_id", "performer_id"], name: "index_follows_on_user_id_and_performer_id", unique: true
   end
 
+  create_table "improv_suggestions", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "experience_block_id", null: false
+    t.uuid "user_id", null: false
+    t.text "text", null: false
+    t.datetime "cleared_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["experience_block_id", "user_id"], name: "index_improv_suggestions_one_active_per_user", unique: true, where: "(cleared_at IS NULL)"
+    t.index ["experience_block_id"], name: "index_improv_suggestions_on_experience_block_id"
+    t.index ["user_id"], name: "index_improv_suggestions_on_user_id"
+  end
+
+  create_table "improv_votes", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "experience_block_id", null: false
+    t.uuid "user_id", null: false
+    t.uuid "improv_suggestion_id", null: false
+    t.datetime "scene_started_at", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["experience_block_id", "scene_started_at", "improv_suggestion_id"], name: "index_improv_votes_for_tally"
+    t.index ["experience_block_id", "user_id", "scene_started_at"], name: "index_improv_votes_one_per_user_per_scene", unique: true
+    t.index ["experience_block_id"], name: "index_improv_votes_on_experience_block_id"
+    t.index ["improv_suggestion_id"], name: "index_improv_votes_on_improv_suggestion_id"
+    t.index ["user_id"], name: "index_improv_votes_on_user_id"
+  end
+
   create_table "passwordless_sessions", force: :cascade do |t|
     t.string "authenticatable_type"
     t.uuid "authenticatable_id"
@@ -371,5 +397,10 @@ ActiveRecord::Schema[7.2].define(version: 2026_05_05_000002) do
   add_foreign_key "experiences", "users", column: "creator_id", on_delete: :cascade
   add_foreign_key "follows", "performers", on_delete: :cascade
   add_foreign_key "follows", "users", on_delete: :cascade
+  add_foreign_key "improv_suggestions", "experience_blocks", on_delete: :cascade
+  add_foreign_key "improv_suggestions", "users", on_delete: :cascade
+  add_foreign_key "improv_votes", "experience_blocks", on_delete: :cascade
+  add_foreign_key "improv_votes", "improv_suggestions", on_delete: :cascade
+  add_foreign_key "improv_votes", "users", on_delete: :cascade
   add_foreign_key "performers", "users", on_delete: :cascade
 end

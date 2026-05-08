@@ -27,6 +27,14 @@ class ExperienceBlockPolicy < ApplicationPolicy
     user_allowed_to_interact_with_block?
   end
 
+  def submit_the_scene_suggestion?
+    user_allowed_to_interact_with_block?
+  end
+
+  def submit_the_scene_vote?
+    user_allowed_to_interact_with_block?
+  end
+
   private
 
   def user_allowed_to_interact_with_block?
