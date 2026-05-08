@@ -13,6 +13,14 @@ class Experience < ApplicationRecord
     -> { order(position: :asc) },
     dependent: :destroy
 
+  belongs_to :default_segment,
+    class_name: "ExperienceSegment",
+    optional: true
+
+  DEFAULT_SEGMENT_NAME  = "Audience".freeze
+  DEFAULT_SEGMENT_COLOR = "#6B7280".freeze
+  AUTO_ASSIGNED_ROLES   = %w[audience player].freeze
+
   has_many :experience_blocks,
     -> { order(position: :asc) },
     dependent: :destroy
@@ -80,10 +88,47 @@ class Experience < ApplicationRecord
   def register_user(user, name:)
     return if user_registered?(user)
 
-    experience_participants.create!(
+    participant = experience_participants.create!(
       user: user,
       name: name,
       avatar: user.most_recent_avatar.presence || {}
+    )
+
+    attach_default_segment(participant)
+    participant
+  end
+
+  # Idempotently returns this experience's default segment, recreating it if
+  # the host previously deleted it (so registrations always have a target).
+  def ensure_default_segment!(name: nil)
+    if default_segment_id.present?
+      existing = experience_segments.find_by(id: default_segment_id)
+      return existing if existing
+    end
+
+    segment = experience_segments.find_or_create_by!(
+      name: name.presence || default_segment&.name || DEFAULT_SEGMENT_NAME
+    ) do |s|
+      s.color = DEFAULT_SEGMENT_COLOR
+      s.position = experience_segments.count
+    end
+
+    update_column(:default_segment_id, segment.id) if default_segment_id != segment.id
+    segment
+  end
+
+  def attach_default_segment(participant)
+    return unless AUTO_ASSIGNED_ROLES.include?(participant.role.to_s)
+
+    segment = ensure_default_segment!
+    return if ExperienceParticipantSegment.exists?(
+      experience_participant_id: participant.id,
+      experience_segment_id: segment.id
+    )
+
+    ExperienceParticipantSegment.create!(
+      experience_participant: participant,
+      experience_segment: segment
     )
   end
 

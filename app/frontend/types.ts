@@ -512,6 +512,7 @@ export interface Experience {
   playbill_enabled?: boolean;
   playbill?: PlaybillSection[];
   segments?: ExperienceSegment[];
+  default_segment_id?: string | null;
   created_at: string;
   updated_at: string;
   participant_block_active?: boolean;
