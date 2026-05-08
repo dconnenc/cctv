@@ -575,7 +575,7 @@ export interface FamilyFeudUpdatedMessageMetadata extends WebSocketMessageMetada
   data: FamilyFeudDispatchPayload;
 }
 
-export type StreamType = 'role' | 'role_segments' | 'targeted';
+export type StreamType = 'role' | 'role_segments' | 'targeted' | 'profile';
 
 export interface WebSocketMessageMetadata {
   participant_id: string;

@@ -125,7 +125,10 @@ class ExperienceSubscriptionChannel < ApplicationCable::Channel
     return unless target_participant
 
     @impersonated_participant = target_participant
-    @current_stream = stream_key_for_participant(target_participant)
+    fingerprint = Experiences::Broadcaster.visibility_fingerprint(
+      @experience, target_participant
+    )
+    @current_stream = Experiences::Broadcaster.profile_stream_key(@experience, fingerprint)
     @view_type = 'impersonation'
     stream_from @current_stream
     log_stream_subscription
@@ -148,7 +151,10 @@ class ExperienceSubscriptionChannel < ApplicationCable::Channel
       @view_type = 'admin'
       Rails.logger.info("[ExperienceChannel] Routed to admin stream: #{@current_stream}")
     else
-      @current_stream = stream_key_for_participant(@participant)
+      fingerprint = Experiences::Broadcaster.visibility_fingerprint(
+        @experience, @participant
+      )
+      @current_stream = Experiences::Broadcaster.profile_stream_key(@experience, fingerprint)
       @view_type = 'participant'
       Rails.logger.info("[ExperienceChannel] Routed to participant stream: #{@current_stream}")
     end
@@ -239,7 +245,7 @@ class ExperienceSubscriptionChannel < ApplicationCable::Channel
           participant: participant_summary
         )
       )
-      transmit(WebsocketMessageService.submission_state(build_submission_state(@participant)))
+      transmit(WebsocketMessageService.submission_state(build_client_state(@participant)))
     end
   end
 
@@ -269,10 +275,10 @@ class ExperienceSubscriptionChannel < ApplicationCable::Channel
         participant: participant_summary
       )
     )
-    transmit(WebsocketMessageService.submission_state(build_submission_state(@participant)))
+    transmit(WebsocketMessageService.submission_state(build_client_state(@participant)))
   end
 
-  def build_submission_state(participant)
+  def build_client_state(participant)
     result = {}
 
     # block_scope is a SQL subquery — no Ruby round-trip to fetch block IDs.
@@ -425,10 +431,6 @@ class ExperienceSubscriptionChannel < ApplicationCable::Channel
     end
 
     target
-  end
-
-  def stream_key_for_participant(participant)
-    "experience_#{participant.experience_id}_participant_#{participant.id}"
   end
 
   def log_stream_subscription
