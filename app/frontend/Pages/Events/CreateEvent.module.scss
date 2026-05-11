@@ -1,0 +1,127 @@
+.container {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: var(--space-md);
+  width: 100%;
+
+  @media (max-width: 480px) {
+    padding: var(--space-xs);
+  }
+}
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.title {
+  font-family: var(--font-display);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  font-size: clamp(1.75rem, 5vw, 2.25rem);
+  font-weight: 400;
+  line-height: 1;
+  margin: 0;
+  text-align: left;
+  padding-bottom: var(--space-sm);
+  border-bottom: 1px solid hsl(var(--border));
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-sm);
+
+  @media (max-width: 500px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  overflow: hidden;
+}
+
+.label {
+  font-family: var(--font-ui);
+  font-size: 20px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+  color: hsl(var(--foreground));
+  text-align: left;
+  align-self: flex-start;
+}
+
+.performerPicker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
+}
+
+.performerChip {
+  padding: 0.625rem 0.875rem;
+  border: 1px solid hsl(var(--border));
+  background: none;
+  color: hsl(var(--foreground));
+  border-radius: 2px;
+  font-family: var(--font-ui);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 600;
+  cursor: pointer;
+  min-height: 2.75rem;
+  transition:
+    border-color 0.15s,
+    background 0.15s;
+
+  &:hover {
+    border-color: hsl(var(--primary));
+    color: hsl(var(--primary));
+  }
+
+  &.selected {
+    background: hsl(var(--primary));
+    color: hsl(var(--primary-foreground));
+    border-color: hsl(var(--primary));
+
+    &:hover {
+      color: hsl(var(--primary-foreground));
+      filter: brightness(1.05);
+    }
+  }
+}
+
+.checkLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-sm);
+  font-family: var(--font-ui);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  color: hsl(var(--foreground));
+  align-self: flex-start;
+}
+
+.error {
+  font-family: var(--font-ui);
+  color: var(--red);
+  font-size: 0.8125rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 600;
+  margin: 0;
+}

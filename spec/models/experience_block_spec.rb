@@ -3,81 +3,26 @@ require "rails_helper"
 RSpec.describe ExperienceBlock do
   let(:experience) { create(:experience) }
 
-  describe "position validations" do
-    context "when the block is a parent" do
-      before do
-        create(:experience_block, experience: experience, position: 0)
-      end
-
-      it "is invalid with a duplicate position in the same experience" do
-        duplicate = build(:experience_block, experience: experience, position: 0)
-        expect(duplicate).not_to be_valid
-        expect(duplicate.errors[:position]).to include("has already been taken")
-      end
+  describe "position" do
+    it "requires a non-negative integer" do
+      block = build(:experience_block, experience: experience, position: -1)
+      expect(block).not_to be_valid
+      expect(block.errors[:position]).to be_present
     end
 
-    context "when there are children with the same position" do
-      let(:child1) do
-        build(
-          :experience_block,
-          experience: experience,
-          parent_block: parent1,
-          position: 0
-        )
-      end
-
-      let(:child2) do
-        build(
-          :experience_block,
-          experience: experience,
-          parent_block: parent2,
-          position: 0
-        )
-      end
-
-      context "with different parents" do
-        let(:parent1) { create(:experience_block, experience: experience) }
-        let(:parent2) { create(:experience_block, experience: experience) }
-
-        it "is valid" do
-          expect(child1).to be_valid
-          expect(child2).to be_valid
-        end
-      end
-
-      context "with the same parents" do
-        let(:parent1) { create(:experience_block, experience: experience) }
-        let(:parent2) { parent1 }
-
-        it "is invalid with a duplicate position under the same parent" do
-          child1.save!
-
-          expect(child2).not_to be_valid
-          expect(child2.errors[:position]).to include("has already been taken")
-        end
-      end
+    it "allows two parent blocks to share a position (timeline simultaneity)" do
+      create(:experience_block, experience: experience, position: 0)
+      duplicate = build(:experience_block, experience: experience, position: 0)
+      expect(duplicate).to be_valid
+      expect { duplicate.save! }.not_to raise_error
     end
 
-    describe "update_all reorder" do
-      it "reorders positions in a single pass without violating the deferred index" do
-        block_a = create(:experience_block, experience: experience, position: 0)
-        block_b = create(:experience_block, experience: experience, position: 1)
-        block_c = create(:experience_block, experience: experience, position: 2)
-
-        new_order = [block_c.id, block_a.id, block_b.id]
-
-        expect {
-          ActiveRecord::Base.transaction do
-            new_order.each_with_index do |id, idx|
-              ExperienceBlock.where(id: id).update_all(position: idx)
-            end
-          end
-        }.not_to raise_error
-
-        expect(block_c.reload.position).to eq(0)
-        expect(block_a.reload.position).to eq(1)
-        expect(block_b.reload.position).to eq(2)
-      end
+    it "allows two children of the same parent to share a position" do
+      parent = create(:experience_block, experience: experience, position: 0)
+      create(:experience_block, experience: experience, parent_block: parent, position: 0)
+      duplicate = build(:experience_block, experience: experience, parent_block: parent, position: 0)
+      expect(duplicate).to be_valid
+      expect { duplicate.save! }.not_to raise_error
     end
   end
 

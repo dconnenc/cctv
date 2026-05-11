@@ -1,0 +1,12 @@
+.content {
+  z-index: 200;
+  width: auto;
+  overflow: hidden;
+  border-radius: var(--radius);
+  border: 1px solid hsl(var(--border));
+  background: hsl(var(--popover));
+  padding: 0;
+  color: hsl(var(--popover-foreground));
+  box-shadow: var(--shadow-1, 0 8px 12px rgba(0, 0, 0, 0.12));
+  outline: none;
+}

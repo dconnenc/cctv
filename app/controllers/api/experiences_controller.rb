@@ -203,14 +203,18 @@ class Api::ExperiencesController < Api::BaseController
       render json: {
         type: 'success',
         url: experience_lobby_path(code: experience.code_slug),
-        status: "registered"
+        status: "registered",
+        experience_name: experience.name,
+        experience_code_slug: experience.code_slug
       }
     else
       render json: {
         type: 'needs_registration',
         experience_code: code,
         status: "needs_registration",
-        url: experience_register_path(code: experience.code_slug)
+        url: experience_register_path(code: experience.code_slug),
+        experience_name: experience.name,
+        experience_code_slug: experience.code_slug
       }
     end
   end

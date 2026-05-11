@@ -1,4 +1,4 @@
-import { FormEvent, useMemo, useRef, useState } from 'react';
+import { ChangeEvent, FormEvent, useMemo, useRef, useState } from 'react';
 
 import { Button } from '@cctv/core/Button/Button';
 import { Panel } from '@cctv/core/Panel/Panel';
@@ -9,15 +9,39 @@ import { addSessionCreatedExperience, getFormData } from '@cctv/utils';
 
 import styles from './Create.module.scss';
 
+function slugifyName(value: string): string {
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9-]+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '');
+}
+
 /** Form page for creating a new experience */
 export default function Create() {
   const [experienceUrl, setExperienceUrl] = useState<string>();
   const [experienceName, setExperienceName] = useState<string>();
+  const [nameValue, setNameValue] = useState('');
+  const [codeValue, setCodeValue] = useState('');
+  const codeTouchedRef = useRef(false);
   const nameRef = useRef<HTMLInputElement>(null);
 
   const { post, isLoading, error, setError } = usePost<CreateExperienceApiResponse>({
     url: '/api/experiences',
   });
+
+  const handleNameChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const next = e.target.value;
+    setNameValue(next);
+    if (!codeTouchedRef.current) {
+      setCodeValue(slugifyName(next));
+    }
+  };
+
+  const handleCodeChange = (e: ChangeEvent<HTMLInputElement>) => {
+    codeTouchedRef.current = true;
+    setCodeValue(e.target.value);
+  };
 
   const handleCreate = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -88,8 +112,21 @@ export default function Create() {
       <Panel className={styles.container}>
         <h1 className={styles.title}>{'Create Experience'}</h1>
         <form className={styles.form} onSubmit={handleCreate}>
-          <TextInput ref={nameRef} label="Name" name="name" type="text" />
-          <TextInput label="Code" name="code" type="text" />
+          <TextInput
+            ref={nameRef}
+            label="Name"
+            name="name"
+            type="text"
+            value={nameValue}
+            onChange={handleNameChange}
+          />
+          <TextInput
+            label="Code"
+            name="code"
+            type="text"
+            value={codeValue}
+            onChange={handleCodeChange}
+          />
           {error && <p className={styles.error}>{error}</p>}
           <Button type="submit" loading={isLoading} loadingText="Creating...">
             {'Create'}

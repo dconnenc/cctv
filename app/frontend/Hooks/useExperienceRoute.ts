@@ -6,7 +6,7 @@ export function useExperienceRoute() {
   const { pathname } = useLocation();
   return {
     code: code ?? '',
-    isManagePage: pathname.includes('/manage'),
+    isManagePage: pathname.includes('/manage') || pathname.includes('/timeline'),
     isMonitorPage: pathname.includes('/monitor'),
   };
 }

@@ -10,7 +10,10 @@ end
 
 begin
   FileUtils.chdir APP_ROOT do
-    puts "== Installing JS dependencies =="
+    puts "== Ensuring .env for this worktree =="
+    system! "bin/wt-env"
+
+    puts "\n== Installing JS dependencies =="
     system! "yarn install"
 
     puts "\n== Installing Ruby dependencies =="

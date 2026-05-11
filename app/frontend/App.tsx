@@ -2,13 +2,21 @@ import { Suspense, lazy, useEffect, useState } from 'react';
 
 import { Outlet, Route, useLocation } from 'react-router-dom';
 
-import { BackgroundStatic, RouteWink, TopNav } from '@cctv/components';
+import { RouteWink, TopNav } from '@cctv/components';
 import { ExperienceProvider } from '@cctv/contexts/ExperienceContext';
 import { UserProvider } from '@cctv/contexts/UserContext';
+import Calendar from '@cctv/pages/Calendar/Calendar';
 import Create from '@cctv/pages/Create/Create';
+import CreateEvent from '@cctv/pages/Events/CreateEvent';
+import EditEvent from '@cctv/pages/Events/EditEvent';
+import EventDetail from '@cctv/pages/Events/EventDetail';
 import Avatar from '@cctv/pages/Experience/Avatar';
 import Experience from '@cctv/pages/Experience/Experience';
 import Monitor from '@cctv/pages/Monitor/Monitor';
+import CreatePerformer from '@cctv/pages/Performers/CreatePerformer';
+import EditPerformer from '@cctv/pages/Performers/EditPerformer';
+import PerformerProfile from '@cctv/pages/Performers/PerformerProfile';
+import PerformersList from '@cctv/pages/Performers/PerformersList';
 import Playbill from '@cctv/pages/Playbill/Playbill';
 import Register from '@cctv/pages/Register';
 import About from '@cctv/pages/about';
@@ -19,6 +27,7 @@ import Stylesheet from '@cctv/pages/stylesheet';
 import {
   AllowRegisterRoute,
   RequireAdmin,
+  RequireAuth,
   RequireExperienceHostOrAdmin,
   RequireExperienceParticipantOrAdmin,
 } from './RouteRules';
@@ -30,6 +39,7 @@ const BlockPage = lazy(() =>
 );
 const ManageCreateBlock = lazy(() => import('@cctv/pages/ManageCreateBlock/ManageCreateBlock'));
 const ManageViewer = lazy(() => import('@cctv/pages/Manage/Viewer/ManageViewer'));
+const Timeline = lazy(() => import('@cctv/pages/Timeline/Timeline'));
 
 function App() {
   const [booting, setBooting] = useState(true);
@@ -43,7 +53,6 @@ function App() {
   return (
     <UserProvider>
       <div className={`app${booting ? ' app--booting' : ''}`}>
-        <BackgroundStatic />
         {!currentRoute.pathname.includes('/monitor') &&
           !currentRoute.pathname.includes('/playbill') && <TopNav />}
         <div className={styles.root}>
@@ -54,9 +63,23 @@ function App() {
               <Route path="/join" element={<Join />} />
               <Route path="/stylesheet" element={<Stylesheet />} />
 
+              {/* Public event & performer pages */}
+              <Route path="/events" element={<Calendar />} />
+              <Route path="/events/:slug" element={<EventDetail />} />
+              <Route path="/performers" element={<PerformersList />} />
+              <Route path="/performers/:slug" element={<PerformerProfile />} />
+
+              {/* Logged-in user routes */}
+              <Route element={<RequireAuth />}>
+                <Route path="/performers/new" element={<CreatePerformer />} />
+                <Route path="/performers/:slug/edit" element={<EditPerformer />} />
+              </Route>
+
               {/* Admin-only */}
               <Route element={<RequireAdmin />}>
                 <Route path="/create" element={<Create />} />
+                <Route path="/events/new" element={<CreateEvent />} />
+                <Route path="/events/:slug/edit" element={<EditEvent />} />
               </Route>
 
               <Route
@@ -83,6 +106,7 @@ function App() {
                     <Route path="manage" element={<ManageViewer />} />
                     <Route path="manage/blocks/new" element={<ManageCreateBlock />} />
                     <Route path="manage/blocks/:blockId" element={<BlockPage />} />
+                    <Route path="timeline" element={<Timeline />} />
                   </Route>
                 </Route>
               </Route>

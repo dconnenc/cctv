@@ -8,7 +8,11 @@ class ExperienceBlock < ApplicationRecord
     MAD_LIB = "mad_lib",
     FAMILY_FEUD = "family_feud",
     PHOTO_UPLOAD = "photo_upload",
-    BUZZER = "buzzer"
+    BUZZER = "buzzer",
+    GUESS_WHO = "guess_who",
+    MINIGAME_ARITHMETIC = "minigame_arithmetic",
+    MINIGAME_BALLOON_PUMP = "minigame_balloon_pump",
+    THE_SCENE = "the_scene"
   ]
 
   belongs_to :experience
@@ -27,6 +31,10 @@ class ExperienceBlock < ApplicationRecord
   has_many :experience_mad_lib_submissions, dependent: :destroy
   has_many :experience_photo_upload_submissions, dependent: :destroy
   has_many :experience_buzzer_submissions, dependent: :destroy
+  has_many :experience_minigame_submissions, dependent: :destroy
+  has_many :experience_minigame_balloon_results, dependent: :destroy
+  has_many :improv_suggestions, dependent: :destroy
+  has_many :improv_votes, dependent: :destroy
 
   has_many :parent_links,
     class_name: "ExperienceBlockLink",
@@ -62,7 +70,6 @@ class ExperienceBlock < ApplicationRecord
   validates :position,
     presence: true,
     numericality: { only_integer: true, greater_than_or_equal_to: 0 }
-  validate :position_unique_within_scope
 
   after_create :sync_parent_from_links
 
@@ -213,18 +220,6 @@ class ExperienceBlock < ApplicationRecord
     if parent_links.any? && parent_block_id.nil?
       link = parent_links.first
       update_column(:parent_block_id, link.parent_block_id)
-    end
-  end
-
-  def position_unique_within_scope
-    scope = if parent_block_id.nil?
-      experience.experience_blocks.where(parent_block_id: nil)
-    else
-      ExperienceBlock.where(parent_block_id: parent_block_id)
-    end
-
-    if scope.where(position: position).where.not(id: id).exists?
-      errors.add(:position, :taken)
     end
   end
 

@@ -23,6 +23,8 @@ export { useSubmitPhotoUploadResponse } from './useSubmitPhotoUploadResponse';
 export { useBlockPresentation } from './useBlockPresentation';
 export { useSubmitBuzzerResponse } from './useSubmitBuzzerResponse';
 export { useClearBuzzerResponses } from './useClearBuzzerResponses';
+export { useGuessWhoControls } from './useGuessWhoControls';
+export { useParticipantSubmissions } from './useParticipantSubmissions';
 export { useKickParticipant } from './useKickParticipant';
 export {
   useCreateSegment,
@@ -30,3 +32,11 @@ export {
   useDeleteSegment,
   useAssignSegment,
 } from './useSegments';
+export { useEvents } from './useEvents';
+export { useEvent } from './useEvent';
+export { usePerformers } from './usePerformers';
+export { usePerformer } from './usePerformer';
+export { useFollowPerformer } from './useFollowPerformer';
+export { useMinigameArithmetic } from './useMinigameArithmetic';
+export { useMinigameBalloonPump, useBalloonPumpLeader } from './useMinigameBalloonPump';
+export { useTheScene } from './useTheScene';

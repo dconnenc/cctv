@@ -1,0 +1,17 @@
+.trigger {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: var(--space-xs);
+  cursor: pointer;
+  text-align: left;
+}
+
+.trigger:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.placeholder {
+  color: hsl(var(--muted-foreground));
+}

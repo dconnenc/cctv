@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+cd "$(dirname "$0")/.."
+
+if [ -f .env ]; then
+  exit 0
+fi
+
+offset=$(printf '%s' "$PWD" | cksum | awk '{print $1 % 100}')
+
+cat > .env <<EOF
+# Auto-generated for this worktree. Edit freely; regeneration won't overwrite.
+PORT=$((3000 + offset))
+VITE_RUBY_PORT=$((3100 + offset))
+APP_BASE_URL=http://127.0.0.1:$((3000 + offset))
+DATABASE_NAME=cctv_development_${offset}
+TEST_DATABASE_NAME=cctv_test_${offset}
+EOF
+
+echo "→ Created .env for this worktree (offset=${offset})."

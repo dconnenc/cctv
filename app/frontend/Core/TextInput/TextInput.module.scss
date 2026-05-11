@@ -21,7 +21,7 @@
   color: var(--phosphor);
 }
 
-.input input {
+.control {
   padding: var(--space-xs) var(--space-xs);
   font-size: 16px;
   border: 1px solid hsl(var(--border));
@@ -33,11 +33,17 @@
     box-shadow 0.12s ease;
 }
 
-.input input::placeholder {
+.control:is(textarea) {
+  line-height: 1.4;
+  resize: vertical;
+  min-height: 6rem;
+}
+
+.control::placeholder {
   color: hsl(var(--muted-foreground));
 }
 
-.input input:focus {
+.control:focus {
   outline: none;
   border-color: var(--phosphor);
   box-shadow:

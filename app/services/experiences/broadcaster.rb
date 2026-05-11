@@ -31,6 +31,39 @@ class Experiences::Broadcaster
     broadcast_admin_view
   end
 
+  # Lightweight monitor-only broadcast for balloon pump leader updates.
+  # Server-side throttle: only broadcasts if MIN_BROADCAST_INTERVAL_MS has
+  # elapsed since the last broadcast for this block.
+  MIN_BALLOON_BROADCAST_INTERVAL_MS = 150
+
+  def broadcast_balloon_pump_leader_update(block:)
+    payload      = block.payload || {}
+    last_at_iso  = payload["leader_last_broadcast_at"]
+    now          = Time.current
+
+    if last_at_iso.present?
+      last_at = Time.iso8601(last_at_iso) rescue nil
+      if last_at && ((now - last_at) * 1000.0) < MIN_BALLOON_BROADCAST_INTERVAL_MS
+        return
+      end
+    end
+
+    block.update_columns(
+      payload: payload.merge("leader_last_broadcast_at" => now.iso8601),
+      updated_at: now
+    )
+
+    message = WebsocketMessageService.balloon_pump_leader_updated(
+      block_id: block.id,
+      leader_fill: payload["leader_fill"].to_i,
+      target_units: payload["target_units"].to_i,
+      leader_participant_id: payload["leader_participant_id"]
+    )
+
+    send_broadcast(self.class.monitor_stream_key(experience), message)
+    send_broadcast(self.class.admin_stream_key(experience), message)
+  end
+
   def broadcast_family_feud_update(block_id:, operation:, data:)
     Rails.logger.info(
       "[Broadcaster] Broadcasting family_feud_updated to experience #{experience.code}"

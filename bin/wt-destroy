@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+cd "$(dirname "$0")/.."
+
+if [ ! -f .env ]; then
+  echo "No .env in this worktree — nothing to clean up."
+  exit 0
+fi
+
+set -a
+# shellcheck disable=SC1091
+source .env
+set +a
+
+dev_db="${DATABASE_NAME:-}"
+test_db="${TEST_DATABASE_NAME:-}"
+
+if [ -z "$dev_db" ] && [ -z "$test_db" ]; then
+  echo "No DATABASE_NAME / TEST_DATABASE_NAME set — nothing to drop."
+  exit 0
+fi
+
+echo "Dropping Postgres databases for this worktree:"
+[ -n "$dev_db" ]  && echo "  - $dev_db"
+[ -n "$test_db" ] && echo "  - $test_db"
+
+# Prompt only when run interactively; hooks (no TTY) and `-y` skip the prompt.
+if [ "${1:-}" != "-y" ] && [ -t 0 ]; then
+  read -r -p "Continue? [y/N] " answer
+  case "$answer" in
+    [yY]|[yY][eE][sS]) ;;
+    *) echo "Aborted."; exit 1 ;;
+  esac
+fi
+
+[ -n "$dev_db" ]  && dropdb --if-exists "$dev_db"
+[ -n "$test_db" ] && dropdb --if-exists "$test_db"
+
+rm -f .env
+echo "Done. You can now archive this worktree."

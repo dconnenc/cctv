@@ -107,6 +107,44 @@ RSpec.describe Experiences::Orchestrator do
     end
   end
 
+  describe "#set_block_column!" do
+    let(:participant_role) { ExperienceParticipant.roles[:host] }
+
+    let!(:block_a) { create(:experience_block, experience: experience, position: 0) }
+    let!(:block_b) { create(:experience_block, experience: experience, position: 1) }
+    let!(:block_c) { create(:experience_block, experience: experience, position: 2) }
+
+    it "moves only the target block's position and leaves siblings unchanged" do
+      described_class.new(actor: user, experience: experience).set_block_column!(
+        block_id: block_a.id,
+        column: 2
+      )
+
+      expect(block_a.reload.position).to eq(2)
+      expect(block_b.reload.position).to eq(1)
+      expect(block_c.reload.position).to eq(2)
+    end
+
+    it "allows two blocks to share a column (simultaneity)" do
+      described_class.new(actor: user, experience: experience).set_block_column!(
+        block_id: block_a.id,
+        column: 1
+      )
+
+      expect(block_a.reload.position).to eq(1)
+      expect(block_b.reload.position).to eq(1)
+    end
+
+    it "clamps negative columns to zero" do
+      described_class.new(actor: user, experience: experience).set_block_column!(
+        block_id: block_b.id,
+        column: -5
+      )
+
+      expect(block_b.reload.position).to eq(0)
+    end
+  end
+
   describe "#open_lobby!" do
     let(:participant_role) { ExperienceParticipant.roles[:host] }
 

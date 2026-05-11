@@ -11,6 +11,7 @@ public/vite
 public/vite-dev
 storage/
 .claude/settings.local.json
+.claude/*.lock
 
 *storybook.log
 storybook-static
