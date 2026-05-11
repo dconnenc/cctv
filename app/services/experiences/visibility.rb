@@ -48,8 +48,7 @@ module Experiences
       if host_or_moderator?(role)
         blocks = visible.map { |b| serialize_block(b, participant_role: role, user: participant.user, view_context: :participant) }
       else
-        # NOTE: Check this method, main regressed and put participant back into the resolve_participant_block
-        current = resolve_participant_block(visible, participant)
+        current = resolve_participant_block(visible)
         blocks  = current ? [serialize_block(current, participant_role: role, user: participant.user, view_context: :participant)] : []
       end
 
@@ -592,21 +591,10 @@ module Experiences
           parent_block_ids: block.parents.map(&:id)
         }
 
-<<<<<<< HEAD
         if depth == 0 && block.children.any?
           metadata[:children] = block.children.map do |child|
-            serialize_block(child, participant_role: participant_role, user: user, depth: depth + 1)
+            serialize_block(child, participant_role: participant_role, user: user, depth: depth + 1, view_context: :admin)
           end
-=======
-      metadata = {
-        child_block_ids:  block.children.map(&:id),
-        parent_block_ids: block.parents.map(&:id)
-      }
-
-      if depth == 0 && block.children.any?
-        metadata[:children] = block.children.map do |child|
-          serialize_block(child, participant_role: participant_role, user: user, depth: depth + 1, view_context: :admin)
->>>>>>> main
         end
 
         if block.kind == ExperienceBlock::MAD_LIB
