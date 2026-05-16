@@ -441,6 +441,7 @@ export function CreateBlockProvider({
             ? {
                 type: 'participant',
                 participant_id: v.assigned_participant_id,
+                question: v.question,
               }
             : {
                 kind: 'question',

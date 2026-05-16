@@ -972,6 +972,7 @@ module Experiences
                   parent_block: parent_block,
                   variable: variable,
                   participant_id: var_spec["source"]["participant_id"],
+                  question: var_spec["source"]["question"],
                   position: index
                 )
               else
@@ -1070,14 +1071,14 @@ module Experiences
       slides
     end
 
-    def create_participant_source_block(parent_block:, variable:, participant_id:, position:)
+    def create_participant_source_block(parent_block:, variable:, participant_id:, question:, position:)
       participant = experience.experience_participants.find(participant_id)
 
       child_block = experience.experience_blocks.create!(
         kind: ExperienceBlock::QUESTION,
         status: parent_block.status,
         payload: {
-          question: variable.label,
+          question: question.presence || variable.label,
           formKey: variable.key,
           inputType: variable.datatype == "number" ? "number" : "text"
         },
