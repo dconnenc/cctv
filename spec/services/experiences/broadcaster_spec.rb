@@ -315,18 +315,43 @@ RSpec.describe Experiences::Broadcaster do
     end
   end
 
-  describe "ActionCable integration" do
-    let!(:participant) do
-      create(:experience_participant, experience: experience)
+  describe "profile_changes: resubscribe notifications" do
+    let!(:participant) { create(:experience_participant, experience: experience) }
+    let(:segment) { experience.experience_segments.create!(name: "Team A", color: "#FF0000", position: 0) }
+
+    it "sends resubscribe_required to the old stream when a participant's fingerprint has changed" do
+      old_fingerprint = described_class.visibility_fingerprint(experience, participant)
+      participant.experience_segments << segment
+
+      broadcaster.broadcast_experience_update(
+        profile_changes: [{ participant: participant, old_fingerprint: old_fingerprint }]
+      )
+
+      old_stream = described_class.profile_stream_key(experience, old_fingerprint)
+      resubscribe_call = broadcast_calls.find { |c| c[:stream_key] == old_stream }
+      expect(resubscribe_call).to be_present
+      expect(resubscribe_call[:message][:type]).to eq("resubscribe_required")
     end
 
-    before do
-      allow(broadcaster).to receive(:send_broadcast).and_call_original
+    it "does not send resubscribe_required when the fingerprint is unchanged" do
+      old_fingerprint = described_class.visibility_fingerprint(experience, participant)
+
+      broadcaster.broadcast_experience_update(
+        profile_changes: [{ participant: participant, old_fingerprint: old_fingerprint }]
+      )
+
+      old_stream = described_class.profile_stream_key(experience, old_fingerprint)
+      resubscribe_call = broadcast_calls.find { |c|
+        c[:stream_key] == old_stream && c[:message][:type] == "resubscribe_required"
+      }
+      expect(resubscribe_call).to be_nil
     end
 
-    it "calls ActionCable.server.broadcast when broadcasting" do
-      expect(ActionCable.server).to receive(:broadcast).at_least(:once)
+    it "sends no resubscribe_required messages when profile_changes is empty" do
       broadcaster.broadcast_experience_update
+
+      resubscribe_calls = broadcast_calls.select { |c| c[:message][:type] == "resubscribe_required" }
+      expect(resubscribe_calls).to be_empty
     end
   end
 
