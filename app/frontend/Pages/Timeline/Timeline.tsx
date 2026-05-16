@@ -196,23 +196,15 @@ export default function Timeline() {
           </div>
         </div>
         <div className={styles.headerRight}>
-          <button
-            type="button"
-            onClick={() => setIsCreateBlockOpen(true)}
-            className={styles.navToggle}
-          >
+          <Button variant="outline" size="sm" onClick={() => setIsCreateBlockOpen(true)}>
             <Plus size={14} />
             <span>Add block</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setIsSegmentsOpen(true)}
-            className={styles.navToggle}
-          >
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => setIsSegmentsOpen(true)}>
             <Layers size={14} />
             <span>Segments</span>
-          </button>
-          <Button to={`/experiences/${code}/manage`} className={styles.navToggle}>
+          </Button>
+          <Button to={`/experiences/${code}/manage`} variant="outline" size="sm">
             <LayoutList size={14} />
             <span>Manage view</span>
           </Button>
@@ -352,7 +344,7 @@ export default function Timeline() {
             {topLevelBlocks.length === 0 && (
               <div className={styles.emptyState}>
                 <div>No blocks yet.</div>
-                <Button to={`/experiences/${code}/manage`} className={styles.navToggle}>
+                <Button to={`/experiences/${code}/manage`} variant="outline" size="sm">
                   Create blocks in Manage view
                 </Button>
               </div>

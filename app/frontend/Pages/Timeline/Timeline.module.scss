@@ -75,42 +75,6 @@
   flex-shrink: 0;
 }
 
-.navToggle {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4375rem;
-  padding: 0.4375rem 0.75rem;
-  font-family: var(--font-ui);
-  font-size: 0.75rem;
-  font-weight: 600;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: hsl(var(--foreground));
-  background: transparent;
-  border: 1px solid var(--rule-color);
-  border-radius: 0;
-  cursor: pointer;
-  text-decoration: none;
-  text-shadow: none;
-  transition:
-    border-color 0.12s ease,
-    color 0.12s ease,
-    background 0.12s ease;
-
-  &:hover {
-    border-color: hsl(var(--foreground) / 0.45);
-    color: hsl(var(--foreground));
-    background: hsl(var(--muted));
-  }
-
-  &:focus-visible {
-    border-color: var(--phosphor);
-    color: hsl(var(--foreground));
-    background: hsl(var(--muted));
-    outline: none;
-  }
-}
-
 /* ─── Board ─── */
 
 .board {
