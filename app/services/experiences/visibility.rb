@@ -63,10 +63,10 @@ module Experiences
       visible = profile_visible_blocks(role: role, segments: segments, user_id: user_id)
 
       if host_or_moderator?(role)
-        blocks = visible.map { |b| serialize_block(b, participant_role: role, user: nil, view_context: :participant) }
+        blocks = visible.map { |b| serialize_block(b, participant_role: role, user: nil, view_context: :participant, visibility_user_id: user_id, visibility_segments: segments) }
       else
         current = resolve_participant_block(visible)
-        blocks  = current ? [serialize_block(current, participant_role: role, user: nil, view_context: :participant)] : []
+        blocks  = current ? [serialize_block(current, participant_role: role, user: nil, view_context: :participant, visibility_user_id: user_id, visibility_segments: segments)] : []
       end
 
       experience_payload(blocks: blocks)
@@ -563,7 +563,7 @@ module Experiences
       }
     end
 
-    def dag_metadata(block, participant_role, user, depth)
+    def dag_metadata(block, participant_role, user, depth, visibility_user_id: nil, visibility_segments: nil)
       if mod_or_host?(participant_role) || admin_user?(user)
         metadata = {
           child_block_ids:  block.children.map(&:id),
@@ -583,9 +583,14 @@ module Experiences
 
         metadata
       elsif depth == 0 && block.kind == ExperienceBlock::MAD_LIB && block.has_dependencies?
-        participant = user && @experience.experience_participants.find_by(user_id: user.id)
-        segments    = participant&.segment_names || []
-        user_id     = participant&.user_id
+        if user
+          participant = @experience.experience_participants.find_by(user_id: user.id)
+          segments    = participant&.segment_names || []
+          user_id     = participant&.user_id
+        else
+          segments = visibility_segments || []
+          user_id  = visibility_user_id
+        end
 
         visible_children = block.children.select do |child|
           child.visible_by_status?(@experience) &&
