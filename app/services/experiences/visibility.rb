@@ -183,7 +183,8 @@ module Experiences
 
     # --- Block serialization ---
 
-    def serialize_block(block, participant_role:, user: nil, depth: 0, view_context: :admin)
+    def serialize_block(block, participant_role:, user: nil, depth: 0, view_context: :admin,
+                        visibility_user_id: nil, visibility_segments: nil)
       {
         id:       block.id,
         kind:     block.kind,
@@ -193,7 +194,9 @@ module Experiences
       }
         .merge(responses: serialize_response_data(block, participant_role, user))
         .merge(visibility_metadata(block, participant_role, user))
-        .merge(dag_metadata(block, participant_role, user, depth))
+        .merge(dag_metadata(block, participant_role, user, depth,
+                            visibility_user_id: visibility_user_id,
+                            visibility_segments: visibility_segments))
     end
 
     def shape_payload(block, participant_role, user, view_context)
