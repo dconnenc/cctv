@@ -147,7 +147,7 @@ export default function FamilyFeudPlayingControls({
 
         <div className={styles.actions}>
           <Button
-            variant="secondary"
+            variant="destructive"
             size="sm"
             onClick={handleShowX}
             disabled={showingX}
