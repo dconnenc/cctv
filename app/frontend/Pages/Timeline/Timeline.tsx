@@ -1,13 +1,11 @@
 import { CSSProperties, useCallback, useMemo, useState } from 'react';
 
-import { Link } from 'react-router-dom';
-
 import { DragDropContext, Draggable, type DropResult, Droppable } from '@hello-pangea/dnd';
 import classNames from 'classnames';
 import { Layers, LayoutList, Monitor as MonitorIcon, Plus, Users } from 'lucide-react';
 
 import { useExperience } from '@cctv/contexts/ExperienceContext';
-import { Dialog, DialogContent } from '@cctv/core';
+import { Button, Dialog, DialogContent } from '@cctv/core';
 import { useBlockPresentation } from '@cctv/hooks/useBlockPresentation';
 import { useReorderBlock } from '@cctv/hooks/useReorderBlock';
 import { Block, BlockStatus, ExperienceSegment, ParticipantSummary } from '@cctv/types';
@@ -214,10 +212,10 @@ export default function Timeline() {
             <Layers size={14} />
             <span>Segments</span>
           </button>
-          <Link to={`/experiences/${code}/manage`} className={styles.navToggle}>
+          <Button to={`/experiences/${code}/manage`} className={styles.navToggle}>
             <LayoutList size={14} />
             <span>Manage view</span>
-          </Link>
+          </Button>
         </div>
       </div>
 
@@ -354,9 +352,9 @@ export default function Timeline() {
             {topLevelBlocks.length === 0 && (
               <div className={styles.emptyState}>
                 <div>No blocks yet.</div>
-                <Link to={`/experiences/${code}/manage`} className={styles.navToggle}>
+                <Button to={`/experiences/${code}/manage`} className={styles.navToggle}>
                   Create blocks in Manage view
-                </Link>
+                </Button>
               </div>
             )}
           </div>
