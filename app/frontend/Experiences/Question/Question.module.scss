@@ -22,8 +22,9 @@
   z-index: 3;
   font-size: 28px;
   width: 100%;
-  color: var(--phosphor);
+  color: hsl(var(--foreground));
   padding-top: var(--space-xs);
+  text-align: center;
 }
 
 .legend {

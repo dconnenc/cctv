@@ -10,6 +10,7 @@
   font-size: 32px;
   padding: var(--space-xs);
   width: 100%;
+  text-align: center;
 }
 
 .value {
@@ -17,8 +18,9 @@
   z-index: 3;
   font-size: 28px;
   width: 100%;
-  color: var(--phosphor);
+  color: hsl(var(--foreground));
   padding: var(--space-xs) 0;
+  text-align: center;
 }
 
 .submit {

@@ -83,3 +83,10 @@
     transform: scale(0.95);
   }
 }
+
+@media (prefers-reduced-motion: reduce) {
+  .content[data-state='open'],
+  .content[data-state='closed'] {
+    animation: none;
+  }
+}

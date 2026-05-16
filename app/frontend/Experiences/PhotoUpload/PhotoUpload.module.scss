@@ -8,14 +8,18 @@
 }
 
 .prompt {
+  font-family: var(--font-body);
   font-size: 1.125rem;
   font-weight: 600;
   margin: 0;
+  text-shadow: none;
 }
 
 .error {
   color: hsl(var(--destructive));
+  font-family: var(--font-body);
   font-size: 0.875rem;
+  text-shadow: none;
 }
 
 .uploadArea {
@@ -28,15 +32,20 @@
   max-width: 20rem;
   min-height: 10rem;
   padding: var(--space-md);
-  border: 2px dashed hsl(var(--border));
-  border-radius: 0.75rem;
+  border: 1px dashed hsl(var(--border));
+  border-radius: 0;
   background: transparent;
   color: hsl(var(--muted-foreground));
   cursor: pointer;
+  font-family: var(--font-body);
   font-size: 0.875rem;
+  text-shadow: none;
+  transition:
+    border-color 0.15s ease,
+    color 0.15s ease;
 
   &:hover {
-    border-color: hsl(var(--foreground));
+    border-color: hsl(var(--foreground) / 0.45);
     color: hsl(var(--foreground));
   }
 
@@ -54,9 +63,9 @@
 
 .preview {
   width: 100%;
-  border-radius: 0.75rem;
   border: 1px solid hsl(var(--border));
   object-fit: cover;
+  display: block;
 }
 
 .progressOverlay {
@@ -66,7 +75,6 @@
   right: 0;
   height: 0.25rem;
   background: hsl(var(--muted));
-  border-radius: 0 0 0.75rem 0.75rem;
   overflow: hidden;
 }
 
@@ -87,18 +95,21 @@
   display: inline-flex;
   align-items: center;
   gap: 0.375rem;
-  padding: 0.375rem 0.75rem;
-  border-radius: 999px;
-  background: hsl(var(--primary) / 0.15);
-  color: hsl(var(--primary));
-  font-size: 0.875rem;
-  font-weight: 500;
+  padding: 0.25rem 0.625rem;
+  border: 1px solid hsl(var(--accent));
+  color: hsl(var(--accent));
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  text-shadow: none;
 }
 
 .submittedPhoto {
   max-width: 20rem;
   width: 100%;
-  border-radius: 0.75rem;
   border: 1px solid hsl(var(--border));
   object-fit: cover;
+  display: block;
 }

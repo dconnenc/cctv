@@ -74,18 +74,28 @@ export default function Register() {
       </div>
       <form className={styles.form} onSubmit={handleSubmit}>
         {!isAuthenticated && (
-          <input
-            className={styles.input}
-            type="email"
-            placeholder="Your Email"
-            value={email}
-            onChange={handleEmailChange}
-            onKeyPress={handleKeyPress}
-            disabled={isLoading}
-            maxLength={100}
-          />
+          <>
+            <label htmlFor="register-email" className="sr-only">
+              Your email
+            </label>
+            <input
+              id="register-email"
+              className={styles.input}
+              type="email"
+              placeholder="Your Email"
+              value={email}
+              onChange={handleEmailChange}
+              onKeyPress={handleKeyPress}
+              disabled={isLoading}
+              maxLength={100}
+            />
+          </>
         )}
+        <label htmlFor="register-name" className="sr-only">
+          Your name
+        </label>
         <input
+          id="register-name"
           className={styles.input}
           type="text"
           placeholder="Your Name"
@@ -95,7 +105,11 @@ export default function Register() {
           disabled={isLoading}
           maxLength={100}
         />
-        {error && <p className={`error-message ${styles.error}`}>{error}</p>}
+        {error && (
+          <p className={`error-message ${styles.error}`} role="alert" aria-live="polite">
+            {error}
+          </p>
+        )}
         <Button
           className="join-submit"
           type="submit"

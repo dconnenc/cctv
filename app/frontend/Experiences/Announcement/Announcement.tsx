@@ -13,9 +13,7 @@ export default function Announcement({ participant, message }: AnnouncementProps
 
   return (
     <div className={styles.announcement}>
-      <div className={styles.content}>
-        <p className={styles.message}>{processedMessage}</p>
-      </div>
+      <p className={styles.message}>{processedMessage}</p>
     </div>
   );
 }
