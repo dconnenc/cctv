@@ -28,8 +28,9 @@ FROM base AS build
 # Install packages needed to build gems AND Node.js for Vite
 RUN apt-get update -qq && \
     apt-get install --no-install-recommends -y build-essential git libpq-dev pkg-config curl && \
-    curl -fsSL https://deb.nodesource.com/setup_18.x | bash - && \
+    curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
     apt-get install -y nodejs && \
+    npm install -g yarn && \
     rm -rf /var/lib/apt/lists /var/cache/apt/archives
 
 # Install application gems
@@ -43,7 +44,7 @@ RUN bundle install && \
 COPY . .
 
 # Install Node dependencies and build Vite assets
-RUN npm install
+RUN yarn install --frozen-lockfile
 RUN bin/vite build
 
 # Precompile bootsnap code for faster boot times
