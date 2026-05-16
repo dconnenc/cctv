@@ -63,10 +63,10 @@ module Experiences
       visible = profile_visible_blocks(role: role, segments: segments, user_id: user_id)
 
       if host_or_moderator?(role)
-        blocks = visible.map { |b| serialize_block(b, participant_role: role, user: nil, view_context: :participant, visibility_user_id: user_id, visibility_segments: segments) }
+        blocks = visible.map { |b| serialize_block(b, participant_role: role, user: nil, view_context: :participant) }
       else
         current = resolve_participant_block(visible)
-        blocks  = current ? [serialize_block(current, participant_role: role, user: nil, view_context: :participant, visibility_user_id: user_id, visibility_segments: segments)] : []
+        blocks  = current ? [serialize_block(current, participant_role: role, user: nil, view_context: :participant)] : []
       end
 
       experience_payload(blocks: blocks)
@@ -174,8 +174,7 @@ module Experiences
 
       responded_user_ids = [
         ExperiencePollSubmission,
-        ExperienceQuestionSubmission,
-        ExperienceMadLibSubmission
+        ExperienceQuestionSubmission
       ].flat_map { |klass| klass.where(experience_block_id: all_block_ids).distinct.pluck(:user_id) }.uniq
 
       @experience.experience_participants.where(user_id: responded_user_ids).pluck(:id)
@@ -183,8 +182,7 @@ module Experiences
 
     # --- Block serialization ---
 
-    def serialize_block(block, participant_role:, user: nil, depth: 0, view_context: :admin,
-                        visibility_user_id: nil, visibility_segments: nil)
+    def serialize_block(block, participant_role:, user: nil, depth: 0, view_context: :admin)
       {
         id:       block.id,
         kind:     block.kind,
@@ -194,9 +192,7 @@ module Experiences
       }
         .merge(responses: serialize_response_data(block, participant_role, user))
         .merge(visibility_metadata(block, participant_role, user))
-        .merge(dag_metadata(block, participant_role, user, depth,
-                            visibility_user_id: visibility_user_id,
-                            visibility_segments: visibility_segments))
+        .merge(dag_metadata(block, participant_role, user, depth))
     end
 
     def shape_payload(block, participant_role, user, view_context)
@@ -213,6 +209,7 @@ module Experiences
         block.payload
       end
     end
+
 
     def shape_the_scene_payload(block, participant_role, user, view_context)
       payload          = block.payload.deep_dup || {}
@@ -431,16 +428,7 @@ module Experiences
     end
 
     def serialize_monitor_block(block)
-      serialized = serialize_block(block, participant_role: "host", view_context: :monitor)
-
-      if block.kind == ExperienceBlock::MAD_LIB
-        all_resolved = @experience.experience_participants.each_with_object({}) do |participant, vars|
-          vars.merge!(BlockResolver.resolve_variables(block: block, participant: participant))
-        end
-        serialized[:responses][:resolved_variables] = all_resolved
-      end
-
-      serialized
+      serialize_block(block, participant_role: "host", view_context: :monitor)
     end
 
     def serialize_response_data(block, participant_role, user)
@@ -476,18 +464,6 @@ module Experiences
 
       when ExperienceBlock::ANNOUNCEMENT
         {}
-
-      when ExperienceBlock::MAD_LIB
-        total    = block.has_dependencies? ? block.children.sum { |c| c.experience_question_submissions.count + c.experience_poll_submissions.count } : 0
-        response = { total: total, user_response: nil, user_responded: false }
-
-        if mod_or_host?(participant_role) || admin_user?(user)
-          participant   = user && @experience.experience_participants.find_by(user_id: user.id)
-          resolved_vars = participant ? BlockResolver.resolve_variables(block: block, participant: participant) : {}
-          response[:resolved_variables] = resolved_vars
-        end
-
-        response
 
       when ExperienceBlock::PHOTO_UPLOAD
         submissions = block.experience_photo_upload_submissions.includes(photo_attachment: :blob).to_a
@@ -563,7 +539,7 @@ module Experiences
       }
     end
 
-    def dag_metadata(block, participant_role, user, depth, visibility_user_id: nil, visibility_segments: nil)
+    def dag_metadata(block, participant_role, user, depth)
       if mod_or_host?(participant_role) || admin_user?(user)
         metadata = {
           child_block_ids:  block.children.map(&:id),
@@ -576,32 +552,7 @@ module Experiences
           end
         end
 
-        if block.kind == ExperienceBlock::MAD_LIB
-          metadata[:variables]         = block.variables.map { |v| { id: v.id, key: v.key, label: v.label, datatype: v.datatype, required: v.required } }
-          metadata[:variable_bindings] = block.variables.flat_map { |v| v.bindings.map { |b| { id: b.id, variable_id: b.variable_id, source_block_id: b.source_block_id } } }
-        end
-
         metadata
-      elsif depth == 0 && block.kind == ExperienceBlock::MAD_LIB && block.has_dependencies?
-        if user
-          participant = @experience.experience_participants.find_by(user_id: user.id)
-          segments    = participant&.segment_names || []
-          user_id     = participant&.user_id
-        else
-          segments = visibility_segments || []
-          user_id  = visibility_user_id
-        end
-
-        visible_children = block.children.select do |child|
-          child.visible_by_status?(@experience) &&
-            child.visible_to?(role: participant_role, segments: segments, user_id: user_id)
-        end
-
-        {
-          children:          visible_children.map { |child| serialize_block(child, participant_role: participant_role, user: user, depth: depth + 1) },
-          variables:         block.variables.map { |v| { id: v.id, key: v.key, label: v.label, datatype: v.datatype, required: v.required } },
-          variable_bindings: block.variables.flat_map { |v| v.bindings.map { |b| { id: b.id, variable_id: b.variable_id, source_block_id: b.source_block_id } } }
-        }
       else
         {}
       end

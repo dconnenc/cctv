@@ -15,7 +15,6 @@ export enum BlockKind {
   POLL = 'poll',
   QUESTION = 'question',
   ANNOUNCEMENT = 'announcement',
-  MAD_LIB = 'mad_lib',
   FAMILY_FEUD = 'family_feud',
   PHOTO_UPLOAD = 'photo_upload',
   BUZZER = 'buzzer',
@@ -214,44 +213,6 @@ export interface BlockLink {
   position: number;
 }
 
-export interface BlockVariable {
-  id: string;
-  key: string;
-  label: string;
-  datatype: 'string' | 'number' | 'text';
-  required: boolean;
-}
-
-export interface BlockVariableBinding {
-  id: string;
-  variable_id: string;
-  source_block_id: string;
-}
-
-export interface MadLibVariable {
-  id: string;
-  name: string;
-  question: string;
-  dataType: 'text' | 'number';
-  assigned_participant_id?: string;
-}
-
-export interface MadLibPart {
-  id: string;
-  type: 'text' | 'variable';
-  content: string;
-}
-
-export interface MadLibSegment {
-  id: string;
-  type: 'text' | 'variable';
-  content: string;
-}
-
-export interface MadLibPayload {
-  parts: MadLibPart[];
-}
-
 // Individual API payload types for builder functions
 export interface PollApiPayload {
   type: 'poll';
@@ -272,11 +233,6 @@ export interface AnnouncementApiPayload {
   type: 'announcement';
   message: string;
   show_on_monitor: boolean;
-}
-
-export interface MadLibApiPayload {
-  type: 'mad_lib';
-  parts: MadLibPart[];
 }
 
 export interface FamilyFeudApiPayload {
@@ -324,7 +280,6 @@ export type ApiPayload =
   | PollApiPayload
   | QuestionApiPayload
   | AnnouncementApiPayload
-  | MadLibApiPayload
   | FamilyFeudApiPayload
   | PhotoUploadApiPayload
   | BuzzerApiPayload
@@ -431,19 +386,6 @@ export interface AnnouncementBlock extends BaseBlock {
   payload: AnnouncementPayload;
 }
 
-export interface MadLibBlock extends BaseBlock {
-  kind: BlockKind.MAD_LIB;
-  payload: MadLibPayload;
-  variables?: BlockVariable[];
-  variable_bindings?: BlockVariableBinding[];
-  responses?: {
-    total: number;
-    user_responded: boolean;
-    user_response: null;
-    resolved_variables?: Record<string, string>;
-  };
-}
-
 export interface FamilyFeudBlock extends BaseBlock {
   kind: BlockKind.FAMILY_FEUD;
   payload: FamilyFeudPayload;
@@ -523,7 +465,6 @@ export type Block =
   | PollBlock
   | QuestionBlock
   | AnnouncementBlock
-  | MadLibBlock
   | FamilyFeudBlock
   | PhotoUploadBlock
   | BuzzerBlock
@@ -587,7 +528,6 @@ export interface CreateBlockPayload {
     | PollPayload
     | QuestionPayload
     | AnnouncementPayload
-    | MadLibPayload
     | FamilyFeudPayload
     | PhotoUploadPayload
     | BuzzerPayload
@@ -598,15 +538,6 @@ export interface CreateBlockPayload {
   visible_to_segment_ids?: string[];
   status?: BlockStatus;
   open_immediately?: boolean;
-  variables?: Array<{
-    key: string;
-    label: string;
-    datatype: string;
-    required: boolean;
-    source?:
-      | { type: string; participant_id: string }
-      | { kind: string; question: string; input_type: string };
-  }>;
   questions?: Array<{
     payload: Record<string, string>;
   }>;
@@ -990,11 +921,6 @@ export interface AnnouncementData {
   show_on_monitor: boolean;
 }
 
-export interface MadLibData {
-  parts: MadLibPart[];
-  variables: MadLibVariable[];
-}
-
 export interface FamilyFeudData {
   title: string;
   questions: Array<{ id: string; question: string }>;
@@ -1032,7 +958,6 @@ export type BlockComponentData =
   | PollData
   | QuestionData
   | AnnouncementData
-  | MadLibData
   | FamilyFeudData
   | PhotoUploadData
   | BuzzerData
@@ -1046,7 +971,6 @@ export type FormBlockData =
   | { kind: BlockKind.POLL; data: PollData }
   | { kind: BlockKind.QUESTION; data: QuestionData }
   | { kind: BlockKind.ANNOUNCEMENT; data: AnnouncementData }
-  | { kind: BlockKind.MAD_LIB; data: MadLibData }
   | { kind: BlockKind.FAMILY_FEUD; data: FamilyFeudData }
   | { kind: BlockKind.PHOTO_UPLOAD; data: PhotoUploadData }
   | { kind: BlockKind.BUZZER; data: BuzzerData }
@@ -1058,12 +982,6 @@ export type FormBlockData =
 export interface UpdateBlockPayload {
   payload: ApiPayload | Record<string, unknown>;
   visible_to_segment_ids: string[];
-  variables?: Array<{
-    key: string;
-    label: string;
-    datatype: string;
-    required: boolean;
-  }>;
   questions?: Array<{ id: string; question: string }>;
 }
 

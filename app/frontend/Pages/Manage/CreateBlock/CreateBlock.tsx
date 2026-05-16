@@ -10,7 +10,6 @@ import { CreateBlockProvider, useCreateBlockContext } from './CreateBlockContext
 import CreateBuzzer from './CreateBuzzer/CreateBuzzer';
 import CreateFamilyFeud from './CreateFamilyFeud/CreateFamilyFeud';
 import CreateGuessWho from './CreateGuessWho/CreateGuessWho';
-import CreateMadLib from './CreateMadLib/CreateMadLib';
 import CreateMinigameArithmetic from './CreateMinigameArithmetic/CreateMinigameArithmetic';
 import CreateMinigameBalloonPump from './CreateMinigameBalloonPump/CreateMinigameBalloonPump';
 import CreatePhotoUpload from './CreatePhotoUpload/CreatePhotoUpload';
@@ -63,7 +62,6 @@ function CreateBlockForm({ onClose }: CreateBlockFormProps) {
           { label: 'Poll', value: BlockKind.POLL },
           { label: 'Question', value: BlockKind.QUESTION },
           { label: 'Announcement', value: BlockKind.ANNOUNCEMENT },
-          { label: 'Mad Lib', value: BlockKind.MAD_LIB },
           { label: 'Family Feud', value: BlockKind.FAMILY_FEUD },
           { label: 'Photo Upload', value: BlockKind.PHOTO_UPLOAD },
           { label: 'Buzzer', value: BlockKind.BUZZER },
@@ -107,7 +105,7 @@ function CreateBlockForm({ onClose }: CreateBlockFormProps) {
 }
 
 function BlockEditor() {
-  const { blockData, setBlockData, participants } = useCreateBlockContext();
+  const { blockData, setBlockData } = useCreateBlockContext();
 
   const onChange = (updates: any) => {
     setBlockData((prev) => ({
@@ -123,8 +121,6 @@ function BlockEditor() {
       return <CreateQuestion data={blockData.data} onChange={onChange} />;
     case BlockKind.ANNOUNCEMENT:
       return <CreateAnnouncement data={blockData.data} onChange={onChange} />;
-    case BlockKind.MAD_LIB:
-      return <CreateMadLib data={blockData.data} onChange={onChange} participants={participants} />;
     case BlockKind.FAMILY_FEUD:
       return <CreateFamilyFeud data={blockData.data} onChange={onChange} />;
     case BlockKind.PHOTO_UPLOAD:
