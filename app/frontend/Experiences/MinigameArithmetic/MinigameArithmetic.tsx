@@ -1,5 +1,6 @@
 import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 
+import { useExperienceState } from '@cctv/contexts/ExperienceStateContext';
 import { Button } from '@cctv/core/Button/Button';
 import { useMinigameArithmetic } from '@cctv/hooks/useMinigameArithmetic';
 import { MinigameArithmeticBlock } from '@cctv/types';
@@ -50,8 +51,11 @@ export default function MinigameArithmetic({
 
 function ParticipantView({ block }: { block: MinigameArithmeticBlock }) {
   const { submitAnswer, isSubmitting } = useMinigameArithmetic();
-  const { duration_seconds, started_at, ended_at, current_question, score, leaderboard } =
-    block.payload;
+  const { submissionState } = useExperienceState();
+  const { duration_seconds, started_at, ended_at, leaderboard } = block.payload;
+  const blockProgress = submissionState[block.id];
+  const current_question = blockProgress?.current_question ?? null;
+  const score = blockProgress?.score ?? { correct: 0, completed: 0 };
   const remaining = useCountdown(started_at, duration_seconds, ended_at);
   const inputRef = useRef<HTMLInputElement>(null);
   const [value, setValue] = useState('');

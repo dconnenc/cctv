@@ -47,14 +47,6 @@ function ParticipantView({ block }: { block: MinigameBalloonPumpBlock }) {
     }
   }, [started_at]);
 
-  // Reconcile with server when own_fill arrives larger than local (e.g. on reconnect).
-  useEffect(() => {
-    if ((own_fill ?? 0) > localFillRef.current) {
-      setLocalFill(own_fill ?? 0);
-      localFillRef.current = own_fill ?? 0;
-    }
-  }, [own_fill]);
-
   const handlePumpUnits = (units: number) => {
     if (!started_at || ended_at) return;
     if (localFillRef.current >= target_units) return;

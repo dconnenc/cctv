@@ -190,9 +190,6 @@ export interface TheScenePayload {
   scene_started_at: string | null;
   leaderboard_size: number;
   leaderboard: TheSceneSuggestion[];
-  own_suggestion?: { id: string; text: string } | null;
-  own_vote_suggestion_id?: string | null;
-  votable_suggestions?: TheSceneSuggestion[];
   all_suggestions?: TheSceneSuggestion[];
 }
 
@@ -849,7 +846,15 @@ export interface BalloonPumpLeaderUpdatedMessage {
 
 export type SubmissionState = Record<
   string,
-  { id: string; answer: Record<string, unknown>; photo_url?: string }
+  {
+    id?: string;
+    answer?: Record<string, unknown>;
+    photo_url?: string;
+    own_suggestion?: { id: string; text: string } | null;
+    own_vote_suggestion_id?: string | null;
+    current_question?: { index: number; prompt: string } | null;
+    score?: { correct: number; completed: number };
+  }
 >;
 
 export interface SubmissionStateMessage {

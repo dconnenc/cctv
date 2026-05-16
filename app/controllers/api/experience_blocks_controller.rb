@@ -602,9 +602,16 @@ class Api::ExperienceBlocksController < Api::BaseController
 
       Experiences::Broadcaster.new(@experience).broadcast_experience_update
 
+      progress = Minigames::ArithmeticProgress.for_participant(
+        block: @block.reload,
+        user:  @user
+      )
+
       render json: {
-        success: true,
-        submission: { id: submission.id, question_index: submission.question_index }
+        success:          true,
+        submission:       { id: submission.id, question_index: submission.question_index },
+        current_question: progress["current_question"],
+        score:            progress["score"]
       }, status: 200
     end
   end

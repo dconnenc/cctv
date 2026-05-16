@@ -14,6 +14,10 @@ module Experiences
       new(experience).for_participant(participant)
     end
 
+    def self.for_profile(experience, role:, segments:, user_id: nil)
+      new(experience).for_profile(role: role, segments: segments, user_id: user_id)
+    end
+
     def self.block_visible_to_user?(block:, user:)
       new(block.experience).block_visible_to_user?(block, user)
     end
@@ -50,6 +54,19 @@ module Experiences
       else
         current = resolve_participant_block(visible)
         blocks  = current ? [serialize_block(current, participant_role: role, user: participant.user, view_context: :participant)] : []
+      end
+
+      experience_payload(blocks: blocks)
+    end
+
+    def for_profile(role:, segments:, user_id: nil)
+      visible = profile_visible_blocks(role: role, segments: segments, user_id: user_id)
+
+      if host_or_moderator?(role)
+        blocks = visible.map { |b| serialize_block(b, participant_role: role, user: nil, view_context: :participant) }
+      else
+        current = resolve_participant_block(visible)
+        blocks  = current ? [serialize_block(current, participant_role: role, user: nil, view_context: :participant)] : []
       end
 
       experience_payload(blocks: blocks)
@@ -109,6 +126,17 @@ module Experiences
       parents
         .select { |b| b.visible_by_status?(@experience) }
         .select { |b| b.visible_to?(role: participant.role, segments: participant.segment_names, user_id: participant.user_id) }
+    end
+
+    def profile_visible_blocks(role:, segments:, user_id: nil)
+      all     = @experience.experience_blocks.includes(:experience_segments).order(position: :asc).to_a
+      parents = all.select(&:parent_block?)
+
+      return parents if host_or_moderator?(role)
+
+      parents
+        .select { |b| b.visible_by_status?(@experience) }
+        .select { |b| b.visible_to?(role: role, segments: segments, user_id: user_id) }
     end
 
     def resolve_participant_block(blocks)
@@ -201,26 +229,6 @@ module Experiences
         "leaderboard_size" => leaderboard_size,
         "leaderboard"      => tally.first(leaderboard_size).map { |entry| serialize_tally_entry(entry) }
       }
-
-      if view_context == :participant && !privileged && user
-        own = block.improv_suggestions.active.find_by(user_id: user.id)
-        shaped["own_suggestion"] = own && { "id" => own.id, "text" => own.text }
-
-        own_vote = nil
-        if scene_started_at.present?
-          own_vote = block.improv_votes.find_by(
-            user_id: user.id,
-            scene_started_at: scene_started_at
-          )
-        end
-        shaped["own_vote_suggestion_id"] = own_vote&.improv_suggestion_id
-
-        if phase == "voting" && own.present?
-          shaped["votable_suggestions"] = tally
-            .reject { |entry| entry.suggestion.user_id == user.id }
-            .map { |entry| serialize_tally_entry(entry) }
-        end
-      end
 
       if privileged
         shaped["all_suggestions"] = tally.map { |entry| serialize_tally_entry(entry) }
@@ -390,43 +398,11 @@ module Experiences
         shaped["leaderboard"] = leaderboard_top_n(full, size)
       end
 
-      if view_context == :participant && !privileged
-        shaped.merge!(participant_minigame_view(block, user, started, ended, payload))
-      end
-
       if view_context == :monitor
         shaped["submission_count"] = ExperienceMinigameSubmission.where(experience_block_id: block.id).count
       end
 
       shaped
-    end
-
-    def participant_minigame_view(block, user, started, ended, payload)
-      return { "current_question" => nil, "score" => { "correct" => 0, "completed" => 0 } } unless user
-
-      submissions = ExperienceMinigameSubmission
-        .where(experience_block_id: block.id, user_id: user.id)
-        .order(question_index: :asc)
-        .to_a
-
-      answered_indexes = submissions.map(&:question_index).to_set
-      questions = Array(payload["questions"])
-
-      next_question = nil
-      if started && !ended
-        next_q = questions.find { |q| !answered_indexes.include?(q["index"]) }
-        if next_q
-          next_question = { "index" => next_q["index"], "prompt" => next_q["prompt"] }
-        end
-      end
-
-      {
-        "current_question" => next_question,
-        "score" => {
-          "correct"   => submissions.count(&:correct),
-          "completed" => submissions.size
-        }
-      }
     end
 
     def leaderboard_top_n(entries, size)

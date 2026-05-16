@@ -12,8 +12,11 @@ class Experiences::Broadcaster
   end
 
   def self.visibility_fingerprint(experience, participant)
-    segments = participant.experience_segments.map(&:name).sort
-    Digest::SHA1.hexdigest([participant.role, segments.join(","), participant.user_id.to_s].join(":"))
+    segments     = participant.experience_segments.map(&:name).sort
+    targeted_ids = experience.experience_blocks
+      .where("? = ANY(target_user_ids)", participant.user_id)
+      .order(:id).pluck(:id)
+    Digest::SHA1.hexdigest([participant.role, segments.join(","), targeted_ids.join(",")].join(":"))
   end
 
   def broadcast_experience_update(profile_changes: [])
@@ -31,9 +34,12 @@ class Experiences::Broadcaster
     experience.experience_participants.includes(:user, :experience_segments)
       .group_by { |p| self.class.visibility_fingerprint(experience, p) }
       .each do |fingerprint, participants|
+        rep = participants.first
         broadcast_to_profile(
           self.class.profile_stream_key(experience, fingerprint),
-          participants.first
+          role:     rep.role,
+          segments: rep.experience_segments.map(&:name),
+          user_id:  rep.user_id
         )
       end
 
@@ -161,14 +167,9 @@ class Experiences::Broadcaster
     end
   end
 
-  # `representative` is one participant from the profile group. Only its role
-  # and segments are used to compute the payload — it is not personal to that
-  # participant. When user_id is removed from the fingerprint, a group will
-  # contain multiple participants sharing an identical visibility profile and
-  # any one of them can serve as the representative here.
-  def broadcast_to_profile(stream_key, representative)
+  def broadcast_to_profile(stream_key, role:, segments:, user_id: nil)
     begin
-      payload = Experiences::Visibility.for_participant(experience, representative)
+      payload = Experiences::Visibility.for_profile(experience, role: role, segments: segments, user_id: user_id)
 
       send_broadcast(
         stream_key,
@@ -177,8 +178,8 @@ class Experiences::Broadcaster
           stream_key: stream_key,
           stream_type: :profile,
           participant_id: nil,
-          role: representative.role.to_sym,
-          segments: representative.experience_segments.map(&:name)
+          role: role.to_sym,
+          segments: segments
         )
       )
     rescue => e
