@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 
 import { CalendarDays, ChevronLeft, ChevronRight, MapPin } from 'lucide-react';
 
+import { Button } from '@cctv/core';
 import { useEvents } from '@cctv/hooks';
 import { CalendarEvent } from '@cctv/types';
 import { formatEventTime, groupEventsByDate } from '@cctv/utils/calendar';
@@ -51,13 +52,13 @@ export default function Calendar() {
             Events
           </h1>
           <div className={styles.monthNav}>
-            <button className={styles.navBtn} onClick={prevMonth} aria-label="Previous month">
-              <ChevronLeft size={20} />
-            </button>
+            <Button variant="ghost" icon={<ChevronLeft size={20} />} hideLabel onClick={prevMonth}>
+              Previous month
+            </Button>
             <span className={styles.monthLabel}>{monthLabel}</span>
-            <button className={styles.navBtn} onClick={nextMonth} aria-label="Next month">
-              <ChevronRight size={20} />
-            </button>
+            <Button variant="ghost" icon={<ChevronRight size={20} />} hideLabel onClick={nextMonth}>
+              Next month
+            </Button>
           </div>
         </div>
 
