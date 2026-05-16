@@ -576,7 +576,7 @@ RSpec.describe Api::ExperienceBlocksController, type: :controller do
     end
 
     it "returns the submission in the response" do
-      broadcaster = instance_double(Experiences::Broadcaster, broadcast_experience_update: true)
+      broadcaster = instance_double(Experiences::Broadcaster, broadcast_experience_update: true, broadcast_resubscribe_if_profile_changed: nil)
       allow(Experiences::Broadcaster).to receive(:new).and_return(broadcaster)
 
       subject
