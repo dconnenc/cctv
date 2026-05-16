@@ -72,7 +72,7 @@ export default function Question({
   };
 
   if (userResponded) {
-    const submissionValue = submission?.answer['value'];
+    const submissionValue = submission?.answer?.['value'];
     const displayValue =
       (typeof submissionValue === 'string' ? submissionValue : null) ||
       responses?.user_response?.answer?.value ||

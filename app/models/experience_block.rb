@@ -5,7 +5,6 @@ class ExperienceBlock < ApplicationRecord
     POLL = "poll",
     QUESTION = "question",
     ANNOUNCEMENT = "announcement",
-    MAD_LIB = "mad_lib",
     FAMILY_FEUD = "family_feud",
     PHOTO_UPLOAD = "photo_upload",
     BUZZER = "buzzer",
@@ -28,7 +27,6 @@ class ExperienceBlock < ApplicationRecord
 
   has_many :experience_poll_submissions, dependent: :destroy
   has_many :experience_question_submissions, dependent: :destroy
-  has_many :experience_mad_lib_submissions, dependent: :destroy
   has_many :experience_photo_upload_submissions, dependent: :destroy
   has_many :experience_buzzer_submissions, dependent: :destroy
   has_many :experience_minigame_submissions, dependent: :destroy
@@ -51,10 +49,6 @@ class ExperienceBlock < ApplicationRecord
     through: :child_links,
     source: :child_block
 
-  has_many :variables,
-    class_name: "ExperienceBlockVariable",
-    dependent: :destroy
-
   has_many :experience_block_segments, dependent: :destroy
   has_many :experience_segments, through: :experience_block_segments
 
@@ -76,10 +70,6 @@ class ExperienceBlock < ApplicationRecord
   scope :parent_blocks, -> { where(parent_block_id: nil) }
   scope :child_blocks, -> { where.not(parent_block_id: nil) }
   scope :ordered, -> { order(position: :asc) }
-
-  def has_dependencies?
-    children.loaded? ? children.any? : children.exists?
-  end
 
   def depth
     return 0 if children.empty?

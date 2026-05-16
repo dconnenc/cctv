@@ -280,16 +280,6 @@ class ExperienceSubscriptionChannel < ApplicationCable::Channel
 
   def build_client_state(participant)
     result = {}
-
-    # block_scope is a SQL subquery — no Ruby round-trip to fetch block IDs.
-    # Each submission query below resolves to a single
-    # WHERE experience_block_id IN (SELECT id FROM experience_blocks WHERE experience_id = ?)
-    # AND user_id = ? rather than two sequential queries.
-    #
-    # If reconnect load becomes a bottleneck, the next step is to collapse
-    # question/poll/buzzer into a single UNION ALL (they share the same
-    # id/experience_block_id/answer columns), with photo handled separately
-    # for the blob join. That reduces 4 queries to 2.
     block_scope = @experience.experience_blocks.select(:id)
 
     ExperienceQuestionSubmission
@@ -311,6 +301,35 @@ class ExperienceSubscriptionChannel < ApplicationCable::Channel
         photo_url = s.photo.attached? ? ActiveStorageUrlService.blob_url(s.photo.blob) : nil
         result[s.experience_block_id.to_s] = { id: s.id, answer: s.answer, photo_url: photo_url }
       end
+
+    ImprovSuggestion.active
+      .where(experience_block_id: block_scope, user_id: participant.user_id)
+      .each do |s|
+        result[s.experience_block_id.to_s] ||= {}
+        result[s.experience_block_id.to_s][:own_suggestion] = { id: s.id, text: s.text }
+      end
+
+    @experience.experience_blocks.where(kind: ExperienceBlock::THE_SCENE).each do |block|
+      scene_started_at = block.payload&.dig("scene_started_at")
+      next unless scene_started_at.present?
+
+      vote = ImprovVote.find_by(
+        experience_block_id: block.id,
+        user_id: participant.user_id,
+        scene_started_at: scene_started_at
+      )
+      next unless vote
+
+      result[block.id.to_s] ||= {}
+      result[block.id.to_s][:own_vote_suggestion_id] = vote.improv_suggestion_id
+    end
+
+    @experience.experience_blocks.where(kind: ExperienceBlock::MINIGAME_ARITHMETIC).each do |block|
+      result[block.id.to_s] = Minigames::ArithmeticProgress.for_participant(
+        block: block,
+        user: participant.user
+      )
+    end
 
     result
   end

@@ -4,7 +4,6 @@ import Announcement from '../Announcement/Announcement';
 import Buzzer from '../Buzzer/Buzzer';
 import FamilyFeud from '../FamilyFeud/FamilyFeud';
 import GuessWho from '../GuessWho/GuessWho';
-import MadLib from '../MadLib/MadLib';
 import MinigameArithmetic from '../MinigameArithmetic/MinigameArithmetic';
 import MinigameBalloonPump from '../MinigameBalloonPump/MinigameBalloonPump';
 import PhotoUpload from '../PhotoUpload/PhotoUpload';
@@ -60,8 +59,6 @@ export default function ExperienceBlockContainer({
       );
     case BlockKind.ANNOUNCEMENT:
       return <Announcement participant={participant} {...block.payload} />;
-    case BlockKind.MAD_LIB:
-      return <MadLib block={block} />;
     case BlockKind.FAMILY_FEUD:
       return <FamilyFeud {...block.payload} contained={viewContext !== 'participant'} />;
     case BlockKind.PHOTO_UPLOAD:

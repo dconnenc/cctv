@@ -13,7 +13,7 @@ class Api::ExperienceBlocksController < Api::BaseController
 
   SUBMISSION_ACTIONS = %i[
     submit_poll_response submit_question_response
-    submit_mad_lib_response submit_photo_upload_response submit_buzzer_response
+    submit_photo_upload_response submit_buzzer_response
     submit_minigame_arithmetic_response submit_minigame_balloon_pump_update
     submit_the_scene_suggestion submit_the_scene_vote
   ].freeze
@@ -34,14 +34,13 @@ class Api::ExperienceBlocksController < Api::BaseController
 
       segment_ids = create_params[:visible_to_segment_ids] || []
 
-      block = if create_params[:variables].present? || create_params[:questions].present?
+      block = if create_params[:questions].present?
         orchestrator.add_block_with_dependencies!(
           kind: create_params[:kind],
           payload: create_params[:payload] || {},
           visible_to_roles: create_params[:visible_to_roles] || [],
           target_user_ids: create_params[:target_user_ids] || [],
           status: create_params[:status] || :hidden,
-          variables: create_params[:variables] || [],
           questions: create_params[:questions] || []
         )
       else
@@ -98,7 +97,6 @@ class Api::ExperienceBlocksController < Api::BaseController
           block_id: params[:id],
           payload: update_params[:payload] || {},
           visible_to_segment_ids: update_params[:visible_to_segment_ids] || [],
-          variables: update_params[:variables],
           questions: update_params[:questions]
         )
 
@@ -241,22 +239,6 @@ class Api::ExperienceBlocksController < Api::BaseController
       Experiences::Broadcaster.new(@experience).broadcast_experience_update
 
       render json: { success: true, submission: { id: submission.id, answer: submission.answer } }, status: 200
-    end
-  end
-
-  # POST /api/experiences/:experience_id/blocks/:id/submit_mad_lib_response
-  def submit_mad_lib_response
-    with_experience_orchestration do
-      submission = Experiences::Orchestrator.new(
-        experience: @experience, actor: @user
-      ).submit_mad_lib_response!(
-        block_id: params[:id],
-        answer: params[:answer]
-      )
-
-      Experiences::Broadcaster.new(@experience).broadcast_experience_update
-
-      render json: { success: true, data: { submission: submission } }, status: 200
     end
   end
 
@@ -602,9 +584,16 @@ class Api::ExperienceBlocksController < Api::BaseController
 
       Experiences::Broadcaster.new(@experience).broadcast_experience_update
 
+      progress = Minigames::ArithmeticProgress.for_participant(
+        block: @block.reload,
+        user:  @user
+      )
+
       render json: {
-        success: true,
-        submission: { id: submission.id, question_index: submission.question_index }
+        success:          true,
+        submission:       { id: submission.id, question_index: submission.question_index },
+        current_question: progress["current_question"],
+        score:            progress["score"]
       }, status: 200
     end
   end
@@ -800,7 +789,6 @@ class Api::ExperienceBlocksController < Api::BaseController
     )
 
     permitted[:payload] = params[:block][:payload] if params[:block][:payload]
-    permitted[:variables] = params[:block][:variables] if params[:block][:variables]
     permitted[:questions] = params[:block][:questions] if params[:block][:questions]
 
     permitted
@@ -809,7 +797,6 @@ class Api::ExperienceBlocksController < Api::BaseController
   def update_params
     permitted = params.require(:block).permit(visible_to_segment_ids: [])
     permitted[:payload] = params[:block][:payload] if params[:block][:payload]
-    permitted[:variables] = params[:block][:variables] if params[:block][:variables]
     permitted[:questions] = params[:block][:questions] if params[:block][:questions]
     permitted
   end

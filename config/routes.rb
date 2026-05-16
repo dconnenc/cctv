@@ -74,7 +74,6 @@ Rails.application.routes.draw do
           post :submit_poll_response
           post :submit_question_response
           post :submit_multistep_form_response
-          post :submit_mad_lib_response
           post :submit_photo_upload_response
           post :submit_buzzer_response
           delete :clear_buzzer_responses

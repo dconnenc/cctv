@@ -215,20 +215,6 @@ module Experiences
       submission
     end
 
-    def submit_mad_lib_response!(block_id:, answer:)
-      block = experience.experience_blocks.find(block_id)
-
-      submission = ExperienceMadLibSubmission.find_or_initialize_by(
-        experience_block_id: block.id,
-        user_id: actor.id
-      )
-
-      submission.answer = answer
-      submission.save!
-
-      submission
-    end
-
     def submit_photo_upload_response!(block_id:, photo_signed_id:, answer: {})
       block = experience.experience_blocks.find(block_id)
 
@@ -892,7 +878,7 @@ module Experiences
 
     # -----------------------------------------------------------------------
 
-    def update_block!(block_id:, payload:, visible_to_segment_ids:, variables: nil, questions: nil)
+    def update_block!(block_id:, payload:, visible_to_segment_ids:, questions: nil)
       transaction do
         block = experience.experience_blocks.find(block_id)
         safety_check_edit!(block, payload)
@@ -904,16 +890,6 @@ module Experiences
           ExperienceBlockSegment.insert_all(
             visible_to_segment_ids.map { |sid| { experience_block_id: block.id, experience_segment_id: sid } }
           )
-        end
-
-        if block.kind == ExperienceBlock::MAD_LIB && variables.present?
-          block.variables.destroy_all
-          variables.each do |v|
-            block.variables.create!(
-              key: v[:key], label: v[:label], datatype: v[:datatype],
-              required: v.fetch(:required, true)
-            )
-          end
         end
 
         if block.kind == ExperienceBlock::FAMILY_FEUD && questions.present?
@@ -934,7 +910,6 @@ module Experiences
       visible_to_roles: [],
       target_user_ids: [],
       status: :hidden,
-      variables: [],
       questions: []
     )
       transaction do
@@ -943,7 +918,7 @@ module Experiences
         parent_block = experience.experience_blocks.create!(
           kind: kind,
           status: status,
-          payload: payload.except(:variables, :questions),
+          payload: payload.except(:questions),
           visible_to_roles: visible_to_roles,
           target_user_ids: target_user_ids,
           position: max_position + 1
@@ -956,38 +931,6 @@ module Experiences
               question_spec: question_spec,
               position: index
             )
-          end
-        else
-          variables.each_with_index do |var_spec, index|
-            variable = parent_block.variables.create!(
-              key: var_spec["key"],
-              label: var_spec["label"],
-              datatype: var_spec["datatype"] || "string",
-              required: var_spec["required"].nil? ? true : var_spec["required"]
-            )
-
-            if var_spec["source"]
-              child_block = if var_spec["source"]["type"] == "participant"
-                create_participant_source_block(
-                  parent_block: parent_block,
-                  variable: variable,
-                  participant_id: var_spec["source"]["participant_id"],
-                  question: var_spec["source"]["question"],
-                  position: index
-                )
-              else
-                create_child_block(
-                  parent_block: parent_block,
-                  source_spec: var_spec["source"],
-                  position: index
-                )
-              end
-
-              ExperienceBlockVariableBinding.create!(
-                variable: variable,
-                source_block_id: child_block.id
-              )
-            end
           end
         end
 
@@ -1071,56 +1014,6 @@ module Experiences
       slides
     end
 
-    def create_participant_source_block(parent_block:, variable:, participant_id:, question:, position:)
-      participant = experience.experience_participants.find(participant_id)
-
-      child_block = experience.experience_blocks.create!(
-        kind: ExperienceBlock::QUESTION,
-        status: parent_block.status,
-        payload: {
-          question: question.presence || variable.label,
-          formKey: variable.key,
-          inputType: variable.datatype == "number" ? "number" : "text"
-        },
-        visible_to_roles: parent_block.visible_to_roles,
-        target_user_ids: [participant.user_id],
-        parent_block_id: parent_block.id,
-        position: position
-      )
-
-      copy_block_segments(from: parent_block, to: child_block)
-
-      ExperienceBlockLink.create!(
-        parent_block: parent_block,
-        child_block: child_block,
-        relationship: :depends_on
-      )
-
-      child_block
-    end
-
-    def create_child_block(parent_block:, source_spec:, position:)
-      child_block = experience.experience_blocks.create!(
-        kind: source_spec["kind"],
-        status: parent_block.status,
-        payload: source_spec["payload"] || {},
-        visible_to_roles: parent_block.visible_to_roles,
-        target_user_ids: source_spec["target_user_ids"] || [],
-        parent_block_id: parent_block.id,
-        position: position
-      )
-
-      copy_block_segments(from: parent_block, to: child_block)
-
-      ExperienceBlockLink.create!(
-        parent_block: parent_block,
-        child_block: child_block,
-        relationship: :depends_on
-      )
-
-      child_block
-    end
-
     def create_family_feud_question(parent_block:, question_spec:, position:)
       child_block = experience.experience_blocks.create!(
         kind: ExperienceBlock::QUESTION,
@@ -1198,17 +1091,6 @@ module Experiences
           old_opts = Array(block.payload["options"]).sort
           new_opts = Array(new_payload["options"]).sort
           block.experience_poll_submissions.delete_all if old_opts != new_opts
-        end
-      when ExperienceBlock::MAD_LIB
-        if block.experience_mad_lib_submissions.exists?
-          if block.status == "open"
-            raise Experiences::UnsafeEditError,
-              "Cannot edit a Mad Lib while it is active."
-          else
-            block.experience_mad_lib_submissions.delete_all
-            child_ids = block.child_blocks.pluck(:id)
-            ExperienceQuestionSubmission.where(experience_block_id: child_ids).delete_all
-          end
         end
       end
     end

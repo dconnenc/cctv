@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_05_06_000002) do
+ActiveRecord::Schema[7.2].define(version: 2026_05_16_184105) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "citext"
   enable_extension "plpgsql"
@@ -108,28 +108,6 @@ ActiveRecord::Schema[7.2].define(version: 2026_05_06_000002) do
     t.index ["experience_segment_id"], name: "index_experience_block_segments_on_experience_segment_id"
   end
 
-  create_table "experience_block_variable_bindings", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
-    t.uuid "variable_id", null: false
-    t.uuid "source_block_id", null: false
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.index ["source_block_id"], name: "index_experience_block_variable_bindings_on_source_block_id"
-    t.index ["variable_id", "source_block_id"], name: "idx_eb_var_bind_unique", unique: true
-    t.index ["variable_id"], name: "index_experience_block_variable_bindings_on_variable_id"
-  end
-
-  create_table "experience_block_variables", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
-    t.uuid "experience_block_id", null: false
-    t.string "key", null: false
-    t.string "label", null: false
-    t.enum "datatype", default: "string", null: false, enum_type: "block_variable_datatype"
-    t.boolean "required", default: true, null: false
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.index ["experience_block_id", "key"], name: "idx_eb_vars_block_key", unique: true
-    t.index ["experience_block_id"], name: "index_experience_block_variables_on_experience_block_id"
-  end
-
   create_table "experience_blocks", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.uuid "experience_id", null: false
     t.string "kind", null: false
@@ -161,16 +139,6 @@ ActiveRecord::Schema[7.2].define(version: 2026_05_06_000002) do
     t.index ["experience_block_id", "user_id"], name: "index_buzzer_submissions_on_block_and_user", unique: true
     t.index ["experience_block_id"], name: "index_experience_buzzer_submissions_on_experience_block_id"
     t.index ["user_id"], name: "index_experience_buzzer_submissions_on_user_id"
-  end
-
-  create_table "experience_mad_lib_submissions", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
-    t.uuid "experience_block_id", null: false
-    t.uuid "user_id", null: false
-    t.jsonb "answer", default: {}, null: false
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.index ["experience_block_id"], name: "index_experience_mad_lib_submissions_on_experience_block_id"
-    t.index ["user_id"], name: "index_experience_mad_lib_submissions_on_user_id"
   end
 
   create_table "experience_minigame_balloon_results", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -372,15 +340,10 @@ ActiveRecord::Schema[7.2].define(version: 2026_05_06_000002) do
   add_foreign_key "experience_block_links", "experience_blocks", column: "parent_block_id", on_delete: :cascade
   add_foreign_key "experience_block_segments", "experience_blocks", on_delete: :cascade
   add_foreign_key "experience_block_segments", "experience_segments", on_delete: :cascade
-  add_foreign_key "experience_block_variable_bindings", "experience_block_variables", column: "variable_id", on_delete: :cascade
-  add_foreign_key "experience_block_variable_bindings", "experience_blocks", column: "source_block_id", on_delete: :cascade
-  add_foreign_key "experience_block_variables", "experience_blocks", on_delete: :cascade
   add_foreign_key "experience_blocks", "experience_blocks", column: "parent_block_id"
   add_foreign_key "experience_blocks", "experiences", on_delete: :cascade
   add_foreign_key "experience_buzzer_submissions", "experience_blocks", on_delete: :cascade
   add_foreign_key "experience_buzzer_submissions", "users", on_delete: :cascade
-  add_foreign_key "experience_mad_lib_submissions", "experience_blocks", on_delete: :cascade
-  add_foreign_key "experience_mad_lib_submissions", "users", on_delete: :cascade
   add_foreign_key "experience_minigame_balloon_results", "experience_blocks", on_delete: :cascade
   add_foreign_key "experience_minigame_balloon_results", "users", on_delete: :cascade
   add_foreign_key "experience_minigame_submissions", "experience_blocks", on_delete: :cascade
