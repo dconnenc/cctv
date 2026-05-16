@@ -83,13 +83,14 @@ export default function PerformerProfile() {
               </span>
               <div className={styles.heroActions}>
                 {user && !isOwner && (
-                  <button
-                    className={`${styles.followBtnLarge} ${performer.followed_by_current_user ? styles.following : ''}`}
+                  <Button
+                    variant={performer.followed_by_current_user ? 'outline' : 'primary'}
+                    aria-pressed={performer.followed_by_current_user}
                     onClick={handleFollowToggle}
                     disabled={followLoading}
                   >
                     {performer.followed_by_current_user ? 'Following' : 'Follow'}
-                  </button>
+                  </Button>
                 )}
                 {isOwner && (
                   <Button to={`/performers/${performer.slug}/edit`} variant="outline" size="sm">

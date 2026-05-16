@@ -279,44 +279,6 @@
   gap: var(--space-xs);
 }
 
-.followBtnLarge {
-  padding: 0.625rem 1.25rem;
-  border: 1px solid hsl(var(--primary));
-  background: hsl(var(--primary));
-  color: hsl(var(--primary-foreground));
-  border-radius: 2px;
-  font-family: var(--font-ui);
-  font-size: 0.8125rem;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  font-weight: 700;
-  cursor: pointer;
-  min-height: 2.75rem;
-  transition:
-    filter 0.15s,
-    transform 0.08s;
-
-  &:hover {
-    filter: brightness(1.08);
-  }
-
-  &:active {
-    transform: scale(0.99);
-  }
-
-  &.following {
-    background: hsl(var(--muted));
-    border-color: hsl(var(--border));
-    color: hsl(var(--muted-foreground));
-
-    &:hover {
-      filter: none;
-      border-color: var(--red);
-      color: var(--red);
-    }
-  }
-}
-
 .bio {
   font-family: var(--font-body);
   font-size: 0.9375rem;
