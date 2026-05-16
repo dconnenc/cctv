@@ -116,41 +116,35 @@ export default function BlockDetailPanel({
           <div
             role="group"
             aria-label="Preview mode"
-            className="flex items-center gap-1 p-1 bg-[hsl(var(--muted))] rounded-lg"
+            className="inline-flex items-center gap-1 p-1 bg-[hsl(var(--muted))] rounded-lg"
           >
-            <button
+            <Button
+              variant="ghost"
+              size="sm"
+              icon={<Monitor size={14} />}
+              aria-pressed={viewMode === 'monitor'}
               onClick={() => onViewModeChange('monitor')}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm transition-colors ${
-                viewMode === 'monitor'
-                  ? 'bg-[hsl(var(--background))] text-white'
-                  : 'text-[hsl(var(--muted-foreground))] hover:text-white'
-              }`}
             >
-              <Monitor size={14} />
               Monitor
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              icon={<User size={14} />}
+              aria-pressed={viewMode === 'participant'}
               onClick={() => onViewModeChange('participant')}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm transition-colors ${
-                viewMode === 'participant'
-                  ? 'bg-[hsl(var(--background))] text-white'
-                  : 'text-[hsl(var(--muted-foreground))] hover:text-white'
-              }`}
             >
-              <User size={14} />
               Participant
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              icon={<MessageSquare size={14} />}
+              aria-pressed={viewMode === 'responses'}
               onClick={() => onViewModeChange('responses')}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm transition-colors ${
-                viewMode === 'responses'
-                  ? 'bg-[hsl(var(--background))] text-white'
-                  : 'text-[hsl(var(--muted-foreground))] hover:text-white'
-              }`}
             >
-              <MessageSquare size={14} />
               Responses ({selectedBlock?.responses?.total ?? 0})
-            </button>
+            </Button>
           </div>
 
           {viewMode === 'participant' && (
