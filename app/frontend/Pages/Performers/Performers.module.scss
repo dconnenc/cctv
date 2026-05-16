@@ -35,31 +35,6 @@
   justify-content: flex-start;
 }
 
-.createBtn {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-xs);
-  padding: 0.625rem 1rem;
-  border: 1px solid hsl(var(--primary));
-  color: hsl(var(--primary));
-  text-decoration: none;
-  border-radius: 2px;
-  font-family: var(--font-ui);
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  font-weight: 700;
-  min-height: 2.75rem;
-  transition:
-    background 0.15s,
-    color 0.15s;
-
-  &:hover {
-    background: hsl(var(--primary));
-    color: hsl(var(--primary-foreground));
-  }
-}
-
 .loading,
 .empty {
   font-family: var(--font-body);
