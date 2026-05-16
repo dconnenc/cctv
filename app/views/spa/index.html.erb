@@ -1,1 +1,18 @@
+<% content_for :title, @og_title %>
+<% content_for :head do %>
+  <meta name="description" content="<%= @og_description %>">
+
+  <meta property="og:site_name" content="<%= @og_site_name %>">
+  <meta property="og:title" content="<%= @og_title %>">
+  <meta property="og:description" content="<%= @og_description %>">
+  <meta property="og:url" content="<%= @og_url %>">
+  <meta property="og:image" content="<%= @og_image %>">
+  <meta property="og:type" content="<%= @og_type %>">
+
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="<%= @og_title %>">
+  <meta name="twitter:description" content="<%= @og_description %>">
+  <meta name="twitter:image" content="<%= @og_image %>">
+<% end %>
+
 <div id="root"></div>
