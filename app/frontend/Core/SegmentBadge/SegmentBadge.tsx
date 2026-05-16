@@ -1,5 +1,7 @@
 import styles from './SegmentBadge.module.scss';
 
+export const DEFAULT_SEGMENT_COLOR = '#6B7280';
+
 interface SegmentBadgeProps {
   name: string;
   color: string;

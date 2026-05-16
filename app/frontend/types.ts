@@ -488,6 +488,7 @@ export interface Experience {
   playbill_enabled?: boolean;
   playbill?: PlaybillSection[];
   segments?: ExperienceSegment[];
+  default_segment_id?: string | null;
   created_at: string;
   updated_at: string;
   participant_block_active?: boolean;
@@ -1017,9 +1018,10 @@ export interface CreateBlockContextValue {
   isSubmitting: boolean;
   error: string | null;
 
-  // Additional form state
+  // Visibility — segments default to the experience's default segment.
   visibleSegments: string[];
   setVisibleSegments: (segments: string[]) => void;
+  defaultSegmentName: string | null;
   viewAdditionalDetails: boolean;
   setViewAdditionalDetails: (view: boolean) => void;
 }

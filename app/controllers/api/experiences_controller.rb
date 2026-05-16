@@ -28,6 +28,8 @@ class Api::ExperiencesController < Api::BaseController
       )
 
       if experience.save
+        experience.ensure_default_segment!(name: params[:experience][:default_segment_name])
+
         render json: {
           type: 'success',
           success: true,

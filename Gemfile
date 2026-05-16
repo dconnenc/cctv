@@ -23,6 +23,8 @@ gem "action_policy"
 
 gem "image_processing", "~> 1.2"
 
+gem "aws-sdk-s3", require: false
+
 group :development, :test do
   gem "rspec-rails"
   gem "factory_bot_rails"

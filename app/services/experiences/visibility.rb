@@ -576,9 +576,10 @@ module Experiences
         created_at:       @experience.created_at,
         updated_at:       @experience.updated_at,
         blocks:           blocks,
-        playbill_enabled: @experience.playbill_enabled,
-        playbill:         serialize_playbill,
-        segments:         serialize_segments,
+        playbill_enabled:   @experience.playbill_enabled,
+        playbill:           serialize_playbill,
+        segments:           serialize_segments,
+        default_segment_id: @experience.default_segment_id,
         hosts:            serialize_participants(participants.select { |p| p.role == "host" }),
         participants:     serialize_participants(participants)
       }

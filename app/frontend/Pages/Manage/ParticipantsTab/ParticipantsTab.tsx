@@ -13,9 +13,14 @@ import styles from './ParticipantsTab.module.scss';
 interface ParticipantsTabProps {
   participants: ParticipantSummary[];
   segments: ExperienceSegment[];
+  defaultSegmentId?: string | null;
 }
 
-export default function ParticipantsTab({ participants, segments }: ParticipantsTabProps) {
+export default function ParticipantsTab({
+  participants,
+  segments,
+  defaultSegmentId,
+}: ParticipantsTabProps) {
   const { assignSegment } = useAssignSegment();
   const { kickParticipant } = useKickParticipant();
   const [assigningFor, setAssigningFor] = useState<string | null>(null);
@@ -129,7 +134,7 @@ export default function ParticipantsTab({ participants, segments }: Participants
 
   return (
     <div className={styles.root}>
-      <SegmentManager segments={segments} />
+      <SegmentManager segments={segments} defaultSegmentId={defaultSegmentId ?? null} />
       <Table columns={columns} data={participants} emptyState="No participants yet." />
       <SubmissionsDrawer participant={submissionsFor} onClose={() => setSubmissionsFor(null)} />
     </div>
