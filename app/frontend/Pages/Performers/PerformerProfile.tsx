@@ -3,7 +3,7 @@ import { Link, useParams } from 'react-router-dom';
 import { Edit2 } from 'lucide-react';
 
 import { useUser } from '@cctv/contexts';
-import { Panel } from '@cctv/core';
+import { Button, Panel } from '@cctv/core';
 import { useFollowPerformer, usePerformer } from '@cctv/hooks';
 import { formatEventTime } from '@cctv/utils/calendar';
 
@@ -92,10 +92,10 @@ export default function PerformerProfile() {
                   </button>
                 )}
                 {isOwner && (
-                  <Link to={`/performers/${performer.slug}/edit`} className={styles.editBtn}>
+                  <Button to={`/performers/${performer.slug}/edit`} variant="outline" size="sm">
                     <Edit2 size={14} />
                     Edit Profile
-                  </Link>
+                  </Button>
                 )}
               </div>
             </div>
