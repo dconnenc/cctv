@@ -146,27 +146,18 @@ export default function FamilyFeudPlayingControls({
         </div>
 
         <div className={styles.actions}>
-          <button
+          <Button
+            variant="secondary"
+            size="sm"
             onClick={handleShowX}
             disabled={showingX}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm transition-colors ${
-              showingX
-                ? 'bg-[hsl(var(--muted))] text-[hsl(var(--muted-foreground))] cursor-not-allowed'
-                : 'bg-red-500 text-white hover:bg-red-600'
-            }`}
+            loading={showingX}
+            loadingText="Showing X..."
           >
-            {showingX ? 'Showing X...' : 'Show X'}
-          </button>
+            Show X
+          </Button>
 
-          <button
-            onClick={handleNextQuestion}
-            disabled={advancing}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm transition-colors ${
-              advancing
-                ? 'bg-[hsl(var(--muted))] text-[hsl(var(--muted-foreground))] cursor-not-allowed'
-                : 'bg-[hsl(var(--primary))] text-white hover:bg-[hsl(var(--primary))]/90'
-            }`}
-          >
+          <Button variant="primary" size="sm" onClick={handleNextQuestion} disabled={advancing}>
             {isLastQuestion ? (
               'Close Game'
             ) : (
@@ -174,22 +165,19 @@ export default function FamilyFeudPlayingControls({
                 Next Question <ChevronRight size={16} />
               </>
             )}
-          </button>
+          </Button>
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button
+              <Button
+                variant="ghost"
+                size="sm"
+                icon={<RotateCcw size={16} />}
                 disabled={restarting !== null}
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm transition-colors ${
-                  restarting !== null
-                    ? 'text-[hsl(var(--muted-foreground))] cursor-not-allowed'
-                    : 'text-white hover:text-white hover:bg-[hsl(var(--background))]'
-                }`}
               >
-                <RotateCcw size={16} />
                 Reset
                 <ChevronDown size={14} />
-              </button>
+              </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem
