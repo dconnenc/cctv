@@ -52,22 +52,6 @@
   background: transparent;
 }
 
-.addBtn,
-.smallBtn {
-  padding: 0.2rem 0.5rem;
-  font-size: 0.7rem;
-  border: 1px solid hsl(var(--border));
-  border-radius: 4px;
-  background: hsl(var(--muted));
-  color: hsl(var(--foreground));
-  cursor: pointer;
-
-  &:hover {
-    background: hsl(var(--accent));
-    color: hsl(var(--accent-foreground));
-  }
-}
-
 .error {
   color: var(--red);
   font-size: 0.7rem;
