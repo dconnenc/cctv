@@ -68,25 +68,6 @@
   align-items: center;
 }
 
-.sizeBtn {
-  border: 1px solid hsl(var(--border));
-  background: hsl(var(--muted));
-  color: hsl(var(--foreground));
-  border-radius: 999px;
-  padding: 0 var(--space-xs);
-  font-size: 0.8rem;
-  cursor: pointer;
-  height: 36px;
-  display: inline-flex;
-  align-items: center;
-}
-
-.sizeActive {
-  background: hsl(var(--foreground));
-  color: hsl(var(--background));
-  border-color: hsl(var(--foreground));
-}
-
 .palette {
   display: inline-flex;
   gap: var(--space-xs);

@@ -257,13 +257,15 @@ export default function DrawingCanvas({
       <div className={styles.toolbar}>
         <div className={styles.sizeGroup}>
           {brushSizes.map((sz) => (
-            <button
+            <Button
               key={sz}
-              className={`${styles.sizeBtn} ${penWidth === sz ? styles.sizeActive : ''}`}
+              variant="outline"
+              size="sm"
+              aria-pressed={penWidth === sz}
               onClick={() => setPenWidth(sz)}
             >
               {sz === 2 ? 'Thin' : sz === 4 ? 'Medium' : sz === 8 ? 'Thick' : 'Huge'}
-            </button>
+            </Button>
           ))}
         </div>
         <div className={styles.palette}>
