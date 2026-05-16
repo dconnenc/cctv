@@ -34,4 +34,17 @@ export {
   DialogTitle,
   DialogDescription,
 } from './Dialog/Dialog';
+export {
+  Drawer,
+  DrawerPortal,
+  DrawerOverlay,
+  DrawerTrigger,
+  DrawerClose,
+  DrawerContent,
+  DrawerHeader,
+  DrawerBody,
+  DrawerFooter,
+  DrawerTitle,
+  DrawerDescription,
+} from './Drawer/Drawer';
 export { Switch } from './Switch/Switch';
