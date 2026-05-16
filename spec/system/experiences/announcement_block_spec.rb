@@ -12,6 +12,7 @@ RSpec.describe "Announcement Block", type: :system do
     queue_block(n: 1) do
       select "Announcement", from: "Kind"
       fill_in "Announcement Message", with: "Welcome {{ participant_name }} to the show!"
+      clear_default_segment
     end
 
     start_experience
@@ -73,6 +74,7 @@ RSpec.describe "Announcement Block", type: :system do
       queue_block(n: 1) do
         select "Announcement", from: "Kind"
         fill_in "Announcement Message", with: "Original message"
+        clear_default_segment
       end
 
       select_block(1, kind: "announcement")

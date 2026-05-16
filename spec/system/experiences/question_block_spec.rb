@@ -44,6 +44,7 @@ RSpec.describe "Question Block", type: :system do
       queue_block(n: 1) do
         select "Question", from: "Kind"
         fill_in "Question", with: "Original question?"
+        clear_default_segment
       end
 
       select_block(1, kind: "question")

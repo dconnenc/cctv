@@ -171,6 +171,17 @@ module SystemHelpers
     present_block
   end
 
+  # Removes the default "Audience" segment from the Create/Edit Block form.
+  # Use inside `queue_block` (or an edit form) when a test needs the block
+  # to be visible to the monitor or to a non-audience segment in isolation —
+  # new blocks default to the experience's default segment, which hides them
+  # from the monitor view.
+  def clear_default_segment
+    if page.has_button?("Remove Audience", wait: 0)
+      click_button "Remove Audience"
+    end
+  end
+
   # Opens the edit form for the currently selected block.
   # Pre-asserts "Edit" is available; post-asserts "Edit Block" heading appears.
   def edit_block
