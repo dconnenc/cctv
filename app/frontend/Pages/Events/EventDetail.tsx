@@ -6,7 +6,7 @@ import { Calendar, Clock, ExternalLink, MapPin, QrCode, Ticket } from 'lucide-re
 import { QRCodeSVG } from 'qrcode.react';
 
 import { useUser } from '@cctv/contexts';
-import { Panel } from '@cctv/core';
+import { Button, Panel } from '@cctv/core';
 import { useEvent, useFollowPerformer } from '@cctv/hooks';
 import { buildGoogleCalendarUrl, formatEventDateFull, formatEventTime } from '@cctv/utils/calendar';
 
@@ -117,10 +117,10 @@ export default function EventDetail() {
                     <QRCodeSVG value={joinUrl} size={180} marginSize={2} />
                   </div>
                 )}
-                <Link to={`/experiences/${event.experience.code_slug}`} className={styles.joinBtn}>
+                <Button to={`/experiences/${event.experience.code_slug}`} size="lg">
                   <QrCode size={16} />
                   Join Now
-                </Link>
+                </Button>
               </div>
             </div>
           )}
