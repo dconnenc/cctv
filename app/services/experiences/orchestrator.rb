@@ -1,5 +1,6 @@
 module Experiences
   class Orchestrator < BaseService
+    attr_reader :profile_changes
     def kick_participant!(participant_id)
       participant = experience.experience_participants.find(participant_id)
       participant.destroy!
@@ -1146,8 +1147,13 @@ module Experiences
       assignments = block.payload&.dig("segmentAssignments")
       return if assignments.blank?
 
-      participant = experience.experience_participants.find_by(user_id: actor.id)
+      participant = experience.experience_participants
+        .includes(:experience_segments)
+        .find_by(user_id: actor.id)
       return unless participant
+
+      old_fingerprint = Experiences::Broadcaster.visibility_fingerprint(experience, participant)
+      @profile_changes ||= []
 
       removed_options = old_selected - new_selected
       segments_to_remove = removed_options.filter_map { |opt| assignments[opt] }
@@ -1171,6 +1177,8 @@ module Experiences
           )
         end
       end
+
+      @profile_changes << { participant: participant, old_fingerprint: old_fingerprint }
     end
 
     def copy_block_segments(from:, to:)

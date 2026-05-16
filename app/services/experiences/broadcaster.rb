@@ -16,19 +16,14 @@ class Experiences::Broadcaster
     Digest::SHA1.hexdigest([participant.role, segments.join(","), participant.user_id.to_s].join(":"))
   end
 
-  def broadcast_resubscribe_if_profile_changed(participant:, old_fingerprint:)
-    participant.experience_segments.reload
-    new_fingerprint = self.class.visibility_fingerprint(experience, participant)
-    return if old_fingerprint == new_fingerprint
+  def broadcast_experience_update(profile_changes: [])
+    Array(profile_changes).each do |change|
+      broadcast_resubscribe_if_profile_changed(
+        participant: change[:participant],
+        old_fingerprint: change[:old_fingerprint]
+      )
+    end
 
-    old_stream = self.class.profile_stream_key(experience, old_fingerprint)
-    send_broadcast(
-      old_stream,
-      WebsocketMessageService.resubscribe_required(participant_id: participant.id)
-    )
-  end
-
-  def broadcast_experience_update
     Rails.logger.info(
       "[Broadcaster] Broadcasting to experience #{experience.code}"
     )
@@ -99,6 +94,18 @@ class Experiences::Broadcaster
   end
 
   private
+
+  def broadcast_resubscribe_if_profile_changed(participant:, old_fingerprint:)
+    participant.experience_segments.reload
+    new_fingerprint = self.class.visibility_fingerprint(experience, participant)
+    return if old_fingerprint == new_fingerprint
+
+    old_stream = self.class.profile_stream_key(experience, old_fingerprint)
+    send_broadcast(
+      old_stream,
+      WebsocketMessageService.resubscribe_required(participant_id: participant.id)
+    )
+  end
 
   def broadcast_monitor_view
     begin

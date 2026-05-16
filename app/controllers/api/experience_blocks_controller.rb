@@ -200,26 +200,12 @@ class Api::ExperienceBlocksController < Api::BaseController
   # POST /api/experiences/:experience_id/blocks/:id/submit_poll_response
   def submit_poll_response
     with_experience_orchestration do
-      broadcaster = Experiences::Broadcaster.new(@experience)
+      orchestrator = Experiences::Orchestrator.new(experience: @experience, actor: @user)
+      submission = orchestrator.submit_poll_response!(block_id: params[:id], answer: params[:answer])
 
-      participant = @experience.experience_participants
-        .includes(:experience_segments)
-        .find_by(user_id: @user.id)
-      old_fingerprint = participant && Experiences::Broadcaster.visibility_fingerprint(@experience, participant)
-
-      submission = Experiences::Orchestrator.new(
-        experience: @experience, actor: @user
-      ).submit_poll_response!(
-        block_id: params[:id],
-        answer: params[:answer]
+      Experiences::Broadcaster.new(@experience).broadcast_experience_update(
+        profile_changes: orchestrator.profile_changes
       )
-
-      broadcaster.broadcast_resubscribe_if_profile_changed(
-        participant: participant,
-        old_fingerprint: old_fingerprint
-      ) if participant && old_fingerprint
-
-      broadcaster.broadcast_experience_update
 
       render json: { success: true, submission: { id: submission.id, answer: submission.answer } }, status: 200
     end
