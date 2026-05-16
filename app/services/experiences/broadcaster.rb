@@ -31,7 +31,10 @@ class Experiences::Broadcaster
     experience.experience_participants.includes(:user, :experience_segments)
       .group_by { |p| self.class.visibility_fingerprint(experience, p) }
       .each do |fingerprint, participants|
-        broadcast_to_profile(self.class.profile_stream_key(experience, fingerprint), participants.first)
+        broadcast_to_profile(
+          self.class.profile_stream_key(experience, fingerprint),
+          participants.first
+        )
       end
 
     broadcast_monitor_view
