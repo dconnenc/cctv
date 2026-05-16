@@ -1,6 +1,7 @@
 import { useCallback, useState } from 'react';
 
 import { useExperience } from '@cctv/contexts/ExperienceContext';
+import { useExperienceState } from '@cctv/contexts/ExperienceStateContext';
 import { AvatarStroke } from '@cctv/types';
 
 export interface SaveAvatarParams {
@@ -10,6 +11,7 @@ export interface SaveAvatarParams {
 
 export function useSaveAvatar() {
   const { code, experienceFetch } = useExperience();
+  const { participant, setParticipant } = useExperienceState();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -41,6 +43,9 @@ export function useSaveAvatar() {
           setError(msg);
           return { success: false, error: msg } as const;
         }
+        if (participant && data.avatar) {
+          setParticipant({ ...participant, avatar: data.avatar });
+        }
         return { success: true } as const;
       } catch (e: any) {
         const msg =
@@ -53,7 +58,7 @@ export function useSaveAvatar() {
         setIsLoading(false);
       }
     },
-    [code, experienceFetch],
+    [code, experienceFetch, participant, setParticipant],
   );
 
   return { saveAvatar, isLoading, error, setError };

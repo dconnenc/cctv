@@ -151,14 +151,6 @@ RSpec.describe Api::ExperienceBlocksController, type: :controller do
           # The mad lib depends on two child blocks. Each child block
           # provides data for one variable through a variable binding.
 
-          broadcaster = instance_double(
-            Experiences::Broadcaster,
-            broadcast_experience_update: true
-          )
-          allow(Experiences::Broadcaster).to receive(:new).and_return(
-            broadcaster
-          )
-
           expect { subject }.to change {
             ExperienceBlock
               .where(
@@ -245,11 +237,6 @@ RSpec.describe Api::ExperienceBlocksController, type: :controller do
             "pollType" => "single"
           })
 
-          # Verify broadcaster was called
-          expect(broadcaster).to have_received(
-            :broadcast_experience_update
-          )
-
           # Verify response format and status
           expect(response.status).to eql(200)
           json_response = JSON.parse(response.body)
@@ -279,9 +266,6 @@ RSpec.describe Api::ExperienceBlocksController, type: :controller do
     end
 
     it "updates block positions in the database" do
-      broadcaster = instance_double(Experiences::Broadcaster, broadcast_experience_update: true)
-      allow(Experiences::Broadcaster).to receive(:new).and_return(broadcaster)
-
       subject
 
       expect(block_a.reload.position).to eq(2)
@@ -289,19 +273,7 @@ RSpec.describe Api::ExperienceBlocksController, type: :controller do
       expect(block_c.reload.position).to eq(1)
     end
 
-    it "calls the broadcaster" do
-      broadcaster = instance_double(Experiences::Broadcaster, broadcast_experience_update: true)
-      allow(Experiences::Broadcaster).to receive(:new).and_return(broadcaster)
-
-      subject
-
-      expect(broadcaster).to have_received(:broadcast_experience_update)
-    end
-
     it "returns success with 200" do
-      broadcaster = instance_double(Experiences::Broadcaster, broadcast_experience_update: true)
-      allow(Experiences::Broadcaster).to receive(:new).and_return(broadcaster)
-
       subject
 
       expect(response.status).to eql(200)
@@ -327,22 +299,15 @@ RSpec.describe Api::ExperienceBlocksController, type: :controller do
     end
 
     it "moves only the target block without disturbing siblings" do
-      broadcaster = instance_double(Experiences::Broadcaster, broadcast_experience_update: true)
-      allow(Experiences::Broadcaster).to receive(:new).and_return(broadcaster)
-
       subject
 
       expect(block_a.reload.position).to eq(1)
       expect(block_b.reload.position).to eq(1)
     end
 
-    it "broadcasts the update and returns 200" do
-      broadcaster = instance_double(Experiences::Broadcaster, broadcast_experience_update: true)
-      allow(Experiences::Broadcaster).to receive(:new).and_return(broadcaster)
-
+    it "returns 200" do
       subject
 
-      expect(broadcaster).to have_received(:broadcast_experience_update)
       expect(response.status).to eql(200)
       expect(JSON.parse(response.body)["success"]).to be(true)
     end
@@ -576,9 +541,6 @@ RSpec.describe Api::ExperienceBlocksController, type: :controller do
     end
 
     it "returns the submission in the response" do
-      broadcaster = instance_double(Experiences::Broadcaster, broadcast_experience_update: true)
-      allow(Experiences::Broadcaster).to receive(:new).and_return(broadcaster)
-
       subject
 
       json = JSON.parse(response.body)
@@ -638,9 +600,6 @@ RSpec.describe Api::ExperienceBlocksController, type: :controller do
     end
 
     it "returns the submission in the response" do
-      broadcaster = instance_double(Experiences::Broadcaster, broadcast_experience_update: true)
-      allow(Experiences::Broadcaster).to receive(:new).and_return(broadcaster)
-
       subject
 
       json = JSON.parse(response.body)

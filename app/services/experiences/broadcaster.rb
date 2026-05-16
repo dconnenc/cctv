@@ -1,3 +1,5 @@
+require 'digest'
+
 class Experiences::Broadcaster
   attr_reader :experience
 
@@ -5,18 +7,35 @@ class Experiences::Broadcaster
     @experience = experience
   end
 
-  def self.stream_key_for_participant(participant)
-    "experience_#{participant.experience_id}_participant_#{participant.id}"
+  def self.profile_stream_key(experience, fingerprint)
+    "experience_#{experience.id}_profile_#{fingerprint}"
   end
 
-  def broadcast_experience_update
+  def self.visibility_fingerprint(experience, participant)
+    segments = participant.experience_segments.map(&:name).sort
+    Digest::SHA1.hexdigest([participant.role, segments.join(","), participant.user_id.to_s].join(":"))
+  end
+
+  def broadcast_experience_update(profile_changes: [])
+    Array(profile_changes).each do |change|
+      broadcast_resubscribe_if_profile_changed(
+        participant: change[:participant],
+        old_fingerprint: change[:old_fingerprint]
+      )
+    end
+
     Rails.logger.info(
       "[Broadcaster] Broadcasting to experience #{experience.code}"
     )
 
-    experience.experience_participants.includes(:user, :experience_segments).each do |participant|
-      broadcast_to_participant(participant)
-    end
+    experience.experience_participants.includes(:user, :experience_segments)
+      .group_by { |p| self.class.visibility_fingerprint(experience, p) }
+      .each do |fingerprint, participants|
+        broadcast_to_profile(
+          self.class.profile_stream_key(experience, fingerprint),
+          participants.first
+        )
+      end
 
     broadcast_monitor_view
     broadcast_admin_view
@@ -79,6 +98,18 @@ class Experiences::Broadcaster
 
   private
 
+  def broadcast_resubscribe_if_profile_changed(participant:, old_fingerprint:)
+    participant.experience_segments.reload
+    new_fingerprint = self.class.visibility_fingerprint(experience, participant)
+    return if old_fingerprint == new_fingerprint
+
+    old_stream = self.class.profile_stream_key(experience, old_fingerprint)
+    send_broadcast(
+      old_stream,
+      WebsocketMessageService.resubscribe_required(participant_id: participant.id)
+    )
+  end
+
   def broadcast_monitor_view
     begin
       payload = Experiences::Visibility.for_monitor(experience)
@@ -130,34 +161,29 @@ class Experiences::Broadcaster
     end
   end
 
-  def broadcast_to_participant(participant)
+  # `representative` is one participant from the profile group. Only its role
+  # and segments are used to compute the payload — it is not personal to that
+  # participant. When user_id is removed from the fingerprint, a group will
+  # contain multiple participants sharing an identical visibility profile and
+  # any one of them can serve as the representative here.
+  def broadcast_to_profile(stream_key, representative)
     begin
-      participant_summary = {
-        id: participant.id,
-        user_id: participant.user_id,
-        name: participant.name,
-        email: participant.user.email,
-        role: participant.role,
-        avatar: participant.avatar.presence
-      }
-
-      payload = Experiences::Visibility.for_participant(experience, participant)
+      payload = Experiences::Visibility.for_participant(experience, representative)
 
       send_broadcast(
-        self.class.stream_key_for_participant(participant),
+        stream_key,
         WebsocketMessageService.experience_updated(
           payload,
-          stream_key: "participant_#{participant.id}",
-          stream_type: :direct,
-          participant_id: participant.id,
-          role: participant.role.to_sym,
-          segments: participant.segment_names,
-          participant: participant_summary
+          stream_key: stream_key,
+          stream_type: :profile,
+          participant_id: nil,
+          role: representative.role.to_sym,
+          segments: representative.experience_segments.map(&:name)
         )
       )
     rescue => e
       Rails.logger.error(
-        "Error broadcasting to participant #{participant.id}: #{e.message}"
+        "Error broadcasting to profile #{stream_key}: #{e.message}"
       )
 
       return

@@ -37,7 +37,7 @@ class Api::ExperienceParticipantsController < Api::BaseController
         }
       )
 
-      render json: { success: true }
+      render json: { success: true, avatar: participant.avatar }
     end
   end
 

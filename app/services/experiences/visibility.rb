@@ -48,7 +48,7 @@ module Experiences
       if host_or_moderator?(role)
         blocks = visible.map { |b| serialize_block(b, participant_role: role, user: participant.user, view_context: :participant) }
       else
-        current = resolve_participant_block(visible, participant)
+        current = resolve_participant_block(visible)
         blocks  = current ? [serialize_block(current, participant_role: role, user: participant.user, view_context: :participant)] : []
       end
 
@@ -111,15 +111,8 @@ module Experiences
         .select { |b| b.visible_to?(role: participant.role, segments: participant.segment_names, user_id: participant.user_id) }
     end
 
-    def resolve_participant_block(blocks, participant)
-      blocks.sort_by(&:position).each do |block|
-        if block.has_dependencies?
-          unresolved = BlockResolver.next_unresolved_child(block: block, participant: participant)
-          return unresolved if unresolved
-        end
-        return block
-      end
-      nil
+    def resolve_participant_block(blocks)
+      blocks.first
     end
 
     def resolve_monitor_entry(parent, children)
@@ -506,11 +499,16 @@ module Experiences
         {}
 
       when ExperienceBlock::MAD_LIB
-        participant    = user && @experience.experience_participants.find_by(user_id: user.id)
-        resolved_vars  = participant ? BlockResolver.resolve_variables(block: block, participant: participant) : {}
-        total          = block.has_dependencies? ? block.children.sum { |c| c.experience_question_submissions.count + c.experience_poll_submissions.count } : 0
+        total    = block.has_dependencies? ? block.children.sum { |c| c.experience_question_submissions.count + c.experience_poll_submissions.count } : 0
+        response = { total: total, user_response: nil, user_responded: false }
 
-        { total: total, user_response: nil, user_responded: false, resolved_variables: resolved_vars }
+        if mod_or_host?(participant_role) || admin_user?(user)
+          participant   = user && @experience.experience_participants.find_by(user_id: user.id)
+          resolved_vars = participant ? BlockResolver.resolve_variables(block: block, participant: participant) : {}
+          response[:resolved_variables] = resolved_vars
+        end
+
+        response
 
       when ExperienceBlock::PHOTO_UPLOAD
         submissions = block.experience_photo_upload_submissions.includes(photo_attachment: :blob).to_a
@@ -587,25 +585,42 @@ module Experiences
     end
 
     def dag_metadata(block, participant_role, user, depth)
-      return {} unless mod_or_host?(participant_role) || admin_user?(user)
+      if mod_or_host?(participant_role) || admin_user?(user)
+        metadata = {
+          child_block_ids:  block.children.map(&:id),
+          parent_block_ids: block.parents.map(&:id)
+        }
 
-      metadata = {
-        child_block_ids:  block.children.map(&:id),
-        parent_block_ids: block.parents.map(&:id)
-      }
-
-      if depth == 0 && block.children.any?
-        metadata[:children] = block.children.map do |child|
-          serialize_block(child, participant_role: participant_role, user: user, depth: depth + 1, view_context: :admin)
+        if depth == 0 && block.children.any?
+          metadata[:children] = block.children.map do |child|
+            serialize_block(child, participant_role: participant_role, user: user, depth: depth + 1, view_context: :admin)
+          end
         end
-      end
 
-      if block.kind == ExperienceBlock::MAD_LIB
-        metadata[:variables]        = block.variables.map { |v| { id: v.id, key: v.key, label: v.label, datatype: v.datatype, required: v.required } }
-        metadata[:variable_bindings] = block.variables.flat_map { |v| v.bindings.map { |b| { id: b.id, variable_id: b.variable_id, source_block_id: b.source_block_id } } }
-      end
+        if block.kind == ExperienceBlock::MAD_LIB
+          metadata[:variables]         = block.variables.map { |v| { id: v.id, key: v.key, label: v.label, datatype: v.datatype, required: v.required } }
+          metadata[:variable_bindings] = block.variables.flat_map { |v| v.bindings.map { |b| { id: b.id, variable_id: b.variable_id, source_block_id: b.source_block_id } } }
+        end
 
-      metadata
+        metadata
+      elsif depth == 0 && block.kind == ExperienceBlock::MAD_LIB && block.has_dependencies?
+        participant = user && @experience.experience_participants.find_by(user_id: user.id)
+        segments    = participant&.segment_names || []
+        user_id     = participant&.user_id
+
+        visible_children = block.children.select do |child|
+          child.visible_by_status?(@experience) &&
+            child.visible_to?(role: participant_role, segments: segments, user_id: user_id)
+        end
+
+        {
+          children:          visible_children.map { |child| serialize_block(child, participant_role: participant_role, user: user, depth: depth + 1) },
+          variables:         block.variables.map { |v| { id: v.id, key: v.key, label: v.label, datatype: v.datatype, required: v.required } },
+          variable_bindings: block.variables.flat_map { |v| v.bindings.map { |b| { id: b.id, variable_id: b.variable_id, source_block_id: b.source_block_id } } }
+        }
+      else
+        {}
+      end
     end
 
     # --- Experience serialization ---
