@@ -38,15 +38,8 @@ interface CreateBlockFormProps {
 }
 
 function CreateBlockForm({ onClose }: CreateBlockFormProps) {
-  const {
-    blockData,
-    setKind,
-    submit,
-    isSubmitting,
-    error,
-    viewAdditionalDetails,
-    setViewAdditionalDetails,
-  } = useCreateBlockContext();
+  const { blockData, setKind, submit, error, viewAdditionalDetails, setViewAdditionalDetails } =
+    useCreateBlockContext();
 
   return (
     <div className={styles.root}>
@@ -88,17 +81,10 @@ function CreateBlockForm({ onClose }: CreateBlockFormProps) {
         >
           {viewAdditionalDetails ? 'Hide Additional Details' : 'View Additional Details'}
         </Button>
-        <Button
-          variant="secondary"
-          onClick={() => submit('hidden')}
-          loading={isSubmitting}
-          loadingText="Creating..."
-        >
+        <Button variant="secondary" onClick={() => submit('hidden')}>
           Queue block
         </Button>
-        <Button onClick={() => submit('open')} loading={isSubmitting} loadingText="Creating...">
-          Play now
-        </Button>
+        <Button onClick={() => submit('open')}>Play now</Button>
       </div>
     </div>
   );

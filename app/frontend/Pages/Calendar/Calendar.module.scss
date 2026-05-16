@@ -69,9 +69,9 @@
   font-family: var(--font-display);
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  font-size: 1.5rem;
+  font-size: clamp(1.25rem, 5vw, 1.5rem);
   font-weight: 400;
-  min-width: 200px;
+  min-width: clamp(8rem, 50vw, 12.5rem);
   text-align: center;
   line-height: 1;
 }
@@ -122,7 +122,6 @@
   gap: var(--space-md);
   padding: var(--space-sm) var(--space-md);
   border: 1px solid hsl(var(--border));
-  border-left: 2px solid hsl(var(--border));
   border-radius: 2px;
   text-decoration: none;
   color: inherit;
@@ -133,7 +132,6 @@
 
   &:hover {
     border-color: hsl(var(--primary));
-    border-left-color: hsl(var(--primary));
     background: hsl(var(--primary) / 0.04);
     z-index: 1;
     position: relative;
@@ -221,9 +219,7 @@
   height: 0.5rem;
   border-radius: 999px;
   background: var(--phosphor);
-  box-shadow:
-    0 0 4px var(--phosphor-glow-strong),
-    0 0 10px var(--phosphor-glow-medium);
+  box-shadow: 0 0 6px var(--phosphor-glow-medium);
 }
 
 :root[data-theme='dark'] .liveTally {
@@ -239,13 +235,9 @@
 @keyframes tally-flicker {
   0%,
   100% {
-    box-shadow:
-      0 0 4px var(--phosphor-glow-strong),
-      0 0 10px var(--phosphor-glow-medium);
+    opacity: 1;
   }
   50% {
-    box-shadow:
-      0 0 6px var(--phosphor-glow-strong),
-      0 0 16px var(--phosphor-glow-strong);
+    opacity: 0.55;
   }
 }

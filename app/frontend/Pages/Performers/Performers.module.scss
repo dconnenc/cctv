@@ -70,39 +70,48 @@
 }
 
 .grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 0;
+  display: flex;
+  flex-direction: column;
   border-top: 1px solid hsl(var(--border));
-  border-left: 1px solid hsl(var(--border));
 }
 
 .card {
   display: flex;
-  gap: var(--space-sm);
-  padding: var(--space-md);
-  border-right: 1px solid hsl(var(--border));
+  gap: var(--space-md);
+  align-items: center;
+  padding: var(--space-sm) var(--space-xs);
   border-bottom: 1px solid hsl(var(--border));
   text-decoration: none;
   color: inherit;
   transition: background 0.15s;
-  position: relative;
-
-  &::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    border: 0 solid hsl(var(--primary));
-    pointer-events: none;
-    transition: border-width 0.15s;
-  }
 
   &:hover {
     background: hsl(var(--primary) / 0.04);
   }
 
-  &:hover::before {
-    border-left-width: 2px;
+  &:first-child {
+    padding-top: var(--space-md);
+    padding-bottom: var(--space-md);
+    gap: var(--space-md);
+  }
+
+  &:first-child .photo,
+  &:first-child .photoPlaceholder {
+    width: 96px;
+    height: 96px;
+  }
+
+  &:first-child .photoPlaceholder {
+    font-size: 2.75rem;
+  }
+
+  &:first-child .cardName {
+    font-size: clamp(1.75rem, 4vw, 2.25rem);
+  }
+
+  &:first-child .cardBio {
+    font-size: 0.9375rem;
+    -webkit-line-clamp: 3;
   }
 }
 
@@ -265,7 +274,7 @@
   text-transform: uppercase;
   letter-spacing: 0.18em;
   font-weight: 700;
-  color: var(--phosphor);
+  color: hsl(var(--muted-foreground));
   text-align: left;
   line-height: 1;
 }
@@ -412,26 +421,10 @@
   padding: var(--space-sm) var(--space-xs);
   text-decoration: none;
   color: inherit;
-  position: relative;
   transition: background 0.15s;
-
-  &::before {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 0;
-    bottom: 0;
-    width: 0;
-    background: hsl(var(--primary));
-    transition: width 0.15s ease;
-  }
 
   &:hover {
     background: hsl(var(--primary) / 0.04);
-  }
-
-  &:hover::before {
-    width: 2px;
   }
 }
 
