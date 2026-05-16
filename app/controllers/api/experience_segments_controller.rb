@@ -19,7 +19,7 @@ class Api::ExperienceSegmentsController < Api::BaseController
     with_experience_orchestration do
       segment = orchestrator.create_segment!(
         name: segment_params[:name],
-        color: segment_params[:color] || '#6B7280'
+        color: segment_params[:color].presence || Experience::DEFAULT_SEGMENT_COLOR
       )
 
       broadcast_and_render(segment)

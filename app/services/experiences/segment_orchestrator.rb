@@ -1,6 +1,6 @@
 module Experiences
   class SegmentOrchestrator < BaseService
-    def create_segment!(name:, color: '#6B7280')
+    def create_segment!(name:, color: Experience::DEFAULT_SEGMENT_COLOR)
       position = (experience.experience_segments.maximum(:position) || -1) + 1
 
       experience.experience_segments.create!(

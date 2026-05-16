@@ -58,7 +58,7 @@ Rails.application.configure do
   # config.i18n.raise_on_missing_translations = true
 
   # Annotate rendered view with file names.
-  config.active_storage.service = :local
+  config.active_storage.service = :amazon
 
   config.action_view.annotate_rendered_view_with_filenames = true
 

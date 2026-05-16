@@ -252,8 +252,10 @@ ActiveRecord::Schema[7.2].define(version: 2026_05_16_184105) do
     t.string "code_slug", null: false
     t.jsonb "playbill", default: [], null: false
     t.boolean "playbill_enabled", default: true, null: false
+    t.uuid "default_segment_id"
     t.index ["code_slug"], name: "index_experiences_on_code_slug", unique: true
     t.index ["creator_id"], name: "index_experiences_on_creator_id"
+    t.index ["default_segment_id"], name: "index_experiences_on_default_segment_id"
     t.index ["status"], name: "index_experiences_on_status"
   end
 
@@ -357,6 +359,7 @@ ActiveRecord::Schema[7.2].define(version: 2026_05_16_184105) do
   add_foreign_key "experience_question_submissions", "experience_blocks", on_delete: :cascade
   add_foreign_key "experience_question_submissions", "users", on_delete: :cascade
   add_foreign_key "experience_segments", "experiences", on_delete: :cascade
+  add_foreign_key "experiences", "experience_segments", column: "default_segment_id", on_delete: :nullify
   add_foreign_key "experiences", "users", column: "creator_id", on_delete: :cascade
   add_foreign_key "follows", "performers", on_delete: :cascade
   add_foreign_key "follows", "users", on_delete: :cascade

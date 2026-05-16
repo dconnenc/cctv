@@ -69,4 +69,35 @@ RSpec.describe Api::ExperiencesController, type: :controller do
   describe "PATCH #update_playbill" do
     it_behaves_like "requires manage_blocks or host access", :patch, :update_playbill, { playbill: [] }
   end
+
+  describe "POST #create" do
+    let(:base_params) do
+      { experience: { name: "Show", code: "SHOW#{rand(100_000)}" } }
+    end
+
+    it "seeds an Audience default segment when no name is provided" do
+      post :create, params: base_params, format: :json
+      expect(response).to be_successful
+
+      experience = Experience.find(JSON.parse(response.body)["experience"]["id"])
+      expect(experience.default_segment).to be_present
+      expect(experience.default_segment.name).to eq("Audience")
+    end
+
+    it "honors a custom default_segment_name" do
+      post :create, params: base_params.deep_merge(experience: { default_segment_name: "Crowd" }), format: :json
+      expect(response).to be_successful
+
+      experience = Experience.find(JSON.parse(response.body)["experience"]["id"])
+      expect(experience.default_segment.name).to eq("Crowd")
+    end
+
+    it "falls back to Audience when default_segment_name is blank" do
+      post :create, params: base_params.deep_merge(experience: { default_segment_name: "  " }), format: :json
+      expect(response).to be_successful
+
+      experience = Experience.find(JSON.parse(response.body)["experience"]["id"])
+      expect(experience.default_segment.name).to eq("Audience")
+    end
+  end
 end

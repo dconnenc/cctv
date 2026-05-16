@@ -8,9 +8,10 @@ import styles from './SegmentManager.module.scss';
 
 interface SegmentManagerProps {
   segments: ExperienceSegment[];
+  defaultSegmentId?: string | null;
 }
 
-export default function SegmentManager({ segments }: SegmentManagerProps) {
+export default function SegmentManager({ segments, defaultSegmentId }: SegmentManagerProps) {
   const [isAdding, setIsAdding] = useState(false);
   const [newName, setNewName] = useState('');
   const [newColor, setNewColor] = useState('#6B7280');
@@ -88,12 +89,37 @@ export default function SegmentManager({ segments }: SegmentManagerProps) {
                 </button>
               </div>
             ) : (
-              <span key={seg.id} onClick={() => startEditing(seg)} style={{ cursor: 'pointer' }}>
+              <span
+                key={seg.id}
+                onClick={() => startEditing(seg)}
+                style={{
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.35rem',
+                }}
+              >
                 <SegmentBadge
                   name={seg.name}
                   color={seg.color}
                   onRemove={() => handleDelete(seg.id)}
                 />
+                {seg.id === defaultSegmentId && (
+                  <span
+                    title="Auto-assigned to new audience members"
+                    style={{
+                      fontSize: '0.65rem',
+                      letterSpacing: '0.08em',
+                      textTransform: 'uppercase',
+                      padding: '0.1rem 0.35rem',
+                      borderRadius: '0.25rem',
+                      border: '1px solid var(--phosphor)',
+                      color: 'var(--phosphor)',
+                    }}
+                  >
+                    Default
+                  </span>
+                )}
               </span>
             ),
           )}

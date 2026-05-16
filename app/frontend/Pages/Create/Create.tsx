@@ -45,9 +45,12 @@ export default function Create() {
 
   const handleCreate = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const formData = getFormData<{ code: string; name: string }>(e.currentTarget);
+    const formData = getFormData<{ code: string; name: string; default_segment_name?: string }>(
+      e.currentTarget,
+    );
     const code = formData.code;
     const name = formData.name;
+    const defaultSegmentName = formData.default_segment_name?.trim();
 
     if (!code || code.trim() === '') {
       setError('Please enter a code');
@@ -64,6 +67,7 @@ export default function Create() {
         experience: {
           code: code.trim(),
           name: name.trim(),
+          ...(defaultSegmentName && { default_segment_name: defaultSegmentName }),
         },
       }),
     );
@@ -126,6 +130,12 @@ export default function Create() {
             type="text"
             value={codeValue}
             onChange={handleCodeChange}
+          />
+          <TextInput
+            label="Default segment (optional)"
+            name="default_segment_name"
+            type="text"
+            placeholder="Audience"
           />
           {error && <p className={styles.error}>{error}</p>}
           <Button type="submit" loading={isLoading} loadingText="Creating...">
