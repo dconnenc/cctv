@@ -275,33 +275,3 @@
     color: hsl(var(--primary));
   }
 }
-
-.followBtn {
-  padding: 0.625rem 1rem;
-  border: 1px solid hsl(var(--border));
-  background: none;
-  color: hsl(var(--foreground));
-  border-radius: 2px;
-  font-family: var(--font-ui);
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  font-weight: 700;
-  cursor: pointer;
-  min-height: 2.75rem;
-  transition:
-    border-color 0.15s,
-    color 0.15s,
-    background 0.15s;
-
-  &:hover {
-    border-color: hsl(var(--primary));
-    color: hsl(var(--primary));
-  }
-
-  &.following {
-    background: hsl(var(--muted));
-    border-color: hsl(var(--border));
-    color: hsl(var(--muted-foreground));
-  }
-}

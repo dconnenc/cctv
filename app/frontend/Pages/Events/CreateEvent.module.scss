@@ -68,40 +68,6 @@
   gap: var(--space-xs);
 }
 
-.performerChip {
-  padding: 0.625rem 0.875rem;
-  border: 1px solid hsl(var(--border));
-  background: none;
-  color: hsl(var(--foreground));
-  border-radius: 2px;
-  font-family: var(--font-ui);
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  font-weight: 600;
-  cursor: pointer;
-  min-height: 2.75rem;
-  transition:
-    border-color 0.15s,
-    background 0.15s;
-
-  &:hover {
-    border-color: hsl(var(--primary));
-    color: hsl(var(--primary));
-  }
-
-  &.selected {
-    background: hsl(var(--primary));
-    color: hsl(var(--primary-foreground));
-    border-color: hsl(var(--primary));
-
-    &:hover {
-      color: hsl(var(--primary-foreground));
-      filter: brightness(1.05);
-    }
-  }
-}
-
 .checkLabel {
   display: inline-flex;
   align-items: center;

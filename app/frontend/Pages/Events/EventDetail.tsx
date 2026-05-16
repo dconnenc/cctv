@@ -150,15 +150,17 @@ export default function EventDetail() {
                       {performer.name}
                     </Link>
                     {user && (
-                      <button
-                        className={`${styles.followBtn} ${performer.followed_by_current_user ? styles.following : ''}`}
+                      <Button
+                        variant={performer.followed_by_current_user ? 'outline' : 'primary'}
+                        size="sm"
+                        aria-pressed={performer.followed_by_current_user}
                         onClick={() =>
                           handleFollowToggle(performer.slug, performer.followed_by_current_user)
                         }
                         disabled={followLoading}
                       >
                         {performer.followed_by_current_user ? 'Following' : 'Follow'}
-                      </button>
+                      </Button>
                     )}
                   </div>
                 ))}
