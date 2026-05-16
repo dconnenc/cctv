@@ -12,10 +12,7 @@ interface MadLibProps {
 
 function computeResolvedVariables(
   block: MadLibBlock,
-  submissionState: Record<
-    string,
-    { id: string; answer: Record<string, unknown>; photo_url?: string }
-  >,
+  submissionState: Record<string, { id?: string; answer?: Record<string, unknown> }>,
 ): Record<string, string> {
   const result: Record<string, string> = {};
 
@@ -30,10 +27,10 @@ function computeResolvedVariables(
     if (!sourceBlock) continue;
 
     if (sourceBlock.kind === BlockKind.QUESTION) {
-      const value = submission.answer.value as string | undefined;
+      const value = submission.answer?.value as string | undefined;
       if (value) result[variable.key] = value;
     } else if (sourceBlock.kind === BlockKind.POLL) {
-      const options = submission.answer.selectedOptions as string[] | string | undefined;
+      const options = submission.answer?.selectedOptions as string[] | string | undefined;
       const first = Array.isArray(options) ? options[0] : options;
       if (first) result[variable.key] = first;
     }
