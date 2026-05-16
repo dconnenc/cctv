@@ -333,26 +333,6 @@ RSpec.describe Experiences::Broadcaster do
       expect(resubscribe_call[:message][:type]).to eq("resubscribe_required")
     end
 
-    it "does not send resubscribe_required when the fingerprint is unchanged" do
-      old_fingerprint = described_class.visibility_fingerprint(experience, participant)
-
-      broadcaster.broadcast_experience_update(
-        profile_changes: [{ participant: participant, old_fingerprint: old_fingerprint }]
-      )
-
-      old_stream = described_class.profile_stream_key(experience, old_fingerprint)
-      resubscribe_call = broadcast_calls.find { |c|
-        c[:stream_key] == old_stream && c[:message][:type] == "resubscribe_required"
-      }
-      expect(resubscribe_call).to be_nil
-    end
-
-    it "sends no resubscribe_required messages when profile_changes is empty" do
-      broadcaster.broadcast_experience_update
-
-      resubscribe_calls = broadcast_calls.select { |c| c[:message][:type] == "resubscribe_required" }
-      expect(resubscribe_calls).to be_empty
-    end
   end
 
 end

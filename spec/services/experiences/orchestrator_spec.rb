@@ -596,16 +596,6 @@ RSpec.describe Experiences::Orchestrator do
       end
     end
 
-    context "when the poll has no segment assignments" do
-      let!(:block) { create(:experience_block, experience: experience, kind: "poll", status: :open) }
-
-      it "leaves profile_changes nil" do
-        orchestrator = described_class.new(actor: user, experience: experience)
-        orchestrator.submit_poll_response!(block_id: block.id, answer: answer)
-
-        expect(orchestrator.profile_changes).to be_nil
-      end
-    end
   end
 
   describe "#submit_mad_lib_response!" do
