@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 import { createPortal } from 'react-dom';
 
@@ -9,7 +9,15 @@ import { BookOpen } from 'lucide-react';
 import { ParticipantsList } from '@cctv/components';
 import { useExperience } from '@cctv/contexts/ExperienceContext';
 import { useUser } from '@cctv/contexts/UserContext';
-import { Button } from '@cctv/core/Button/Button';
+import {
+  Button,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@cctv/core';
 import ExperienceBlockContainer from '@cctv/experiences/ExperienceBlockContainer/ExperienceBlockContainer';
 import { useClearAvatars } from '@cctv/hooks/useClearAvatars';
 import { AvatarStroke } from '@cctv/types';
@@ -77,6 +85,7 @@ export default function Experience() {
   const { experience, participant, code, isLoading, experienceStatus, error } = useExperience();
   const { isAdmin } = useUser();
   const { clearAvatars, isLoading: clearing } = useClearAvatars();
+  const [confirmClearOpen, setConfirmClearOpen] = useState(false);
 
   const participants = experience?.participants || [];
   const needsAvatar = !isAdmin && !participant?.avatar;
@@ -201,18 +210,34 @@ export default function Experience() {
           {/* Admin/Host control: clear avatars (lobby view without a current block) */}
           {(isAdmin || experience?.hosts?.some((h) => h.user_id === participant?.user_id)) && (
             <div className={styles.adminControls}>
-              <Button
-                onClick={async () => {
-                  if (
-                    confirm('Clear all participant avatars and drawings? This cannot be undone.')
-                  ) {
-                    await clearAvatars();
-                  }
-                }}
-                disabled={clearing}
-              >
+              <Button onClick={() => setConfirmClearOpen(true)} disabled={clearing}>
                 {clearing ? 'Clearing…' : 'Clear Avatars'}
               </Button>
+              <Dialog open={confirmClearOpen} onOpenChange={setConfirmClearOpen}>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Clear all avatars?</DialogTitle>
+                    <DialogDescription>
+                      This will erase every participant&apos;s avatar and drawings. It cannot be
+                      undone.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <DialogFooter>
+                    <Button variant="secondary" onClick={() => setConfirmClearOpen(false)}>
+                      Cancel
+                    </Button>
+                    <Button
+                      onClick={async () => {
+                        setConfirmClearOpen(false);
+                        await clearAvatars();
+                      }}
+                      disabled={clearing}
+                    >
+                      Clear Avatars
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
             </div>
           )}
 

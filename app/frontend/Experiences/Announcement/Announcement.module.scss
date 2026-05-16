@@ -1,34 +1,16 @@
 .announcement {
   width: 100%;
-  max-width: 600px;
+  max-width: 36rem;
   margin: 0 auto;
-}
-
-.content {
-  background: hsl(var(--card));
-  border: 2px solid hsl(var(--border));
-  border-radius: 8px;
-  padding: 1.5rem;
+  padding: var(--space-md);
   text-align: center;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .message {
-  font-size: 1.1rem;
-  line-height: 1.5;
-  color: hsl(var(--card-foreground));
-  margin: 0;
+  font-family: var(--font-body);
+  font-size: clamp(1.125rem, 3vw, 1.5rem);
+  line-height: 1.55;
+  color: hsl(var(--foreground));
   white-space: pre-wrap;
-}
-
-// Responsive design
-@media (max-width: 768px) {
-  .content {
-    padding: var(--space-sm);
-    margin: 0 var(--space-sm);
-  }
-
-  .message {
-    font-size: 1rem;
-  }
+  text-shadow: none;
 }

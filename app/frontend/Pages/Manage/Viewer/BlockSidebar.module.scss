@@ -29,7 +29,7 @@
 .headerTitle {
   font-size: 0.875rem;
   font-weight: 600;
-  color: white;
+  color: hsl(var(--foreground));
   padding-left: 0.5rem;
 }
 
@@ -61,7 +61,7 @@
 
 .iconButton {
   width: 100%;
-  height: 2.5rem;
+  min-height: 2.75rem;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -70,7 +70,7 @@
 
   &.selected {
     background: hsl(var(--muted));
-    box-shadow: inset 0 0 0 2px var(--green);
+    box-shadow: inset 0 0 0 2px hsl(var(--accent));
   }
 
   &.hiddenBlock {
@@ -86,7 +86,7 @@
   transition: border-color 0.15s ease;
 
   &:has(button:hover) {
-    border-color: var(--phosphor);
+    border-color: hsl(var(--foreground) / 0.45);
   }
 }
 
@@ -107,7 +107,7 @@
 
   &.selected {
     background: hsl(var(--muted));
-    box-shadow: inset 0 0 0 2px var(--green);
+    box-shadow: inset 0 0 0 2px hsl(var(--accent));
   }
 
   &.hiddenBlock {
@@ -138,7 +138,7 @@
 
   &.selected {
     background: hsl(var(--muted));
-    box-shadow: inset 0 0 0 2px var(--green);
+    box-shadow: inset 0 0 0 2px hsl(var(--accent));
   }
 
   &.hiddenBlock {
@@ -191,7 +191,7 @@
   flex-shrink: 0;
 
   &[data-status='open'] {
-    background: var(--green);
+    background: var(--phosphor);
   }
 
   &[data-status='closed'] {
@@ -199,7 +199,7 @@
   }
 
   &[data-status='hidden'] {
-    background: #4b5563;
+    background: hsl(var(--muted-foreground));
   }
 }
 
@@ -213,7 +213,7 @@
 .liveBadge {
   font-size: 0.625rem;
   font-weight: 700;
-  color: var(--green);
+  color: var(--phosphor);
   text-transform: uppercase;
   letter-spacing: 0.05em;
   flex-shrink: 0;
@@ -250,7 +250,7 @@
   flex-shrink: 0;
 
   &[data-status='open'] {
-    background: var(--green);
+    background: var(--phosphor);
   }
 
   &[data-status='closed'] {
@@ -258,12 +258,12 @@
   }
 
   &[data-status='hidden'] {
-    background: #4b5563;
+    background: hsl(var(--muted-foreground));
   }
 }
 
 .statusBadgeIndex {
   font-size: 0.625rem;
-  color: white;
+  color: hsl(var(--foreground));
   line-height: 1;
 }

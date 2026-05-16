@@ -3,12 +3,11 @@
   top: var(--space-sm);
   left: var(--space-sm);
   z-index: 10;
-  width: 220px;
+  width: min(220px, calc(100vw - 2 * var(--space-sm)));
   padding: var(--space-xs) var(--space-xs);
   border-radius: 0.5rem;
   border: 1px solid hsl(var(--border));
-  background: hsl(var(--popover) / 0.7);
-  backdrop-filter: blur(6px);
+  background: hsl(var(--popover));
   overflow: hidden;
 }
 

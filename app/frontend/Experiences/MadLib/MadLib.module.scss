@@ -1,156 +1,29 @@
 .madLib {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
-  max-width: 600px;
+  gap: var(--space-md);
+  max-width: 36rem;
   margin: 0 auto;
-  padding: 1rem;
+  padding: var(--space-md);
+  text-align: center;
 }
 
 .template {
-  border: 2px solid var(--card-border, #e9ecef);
-  border-radius: 12px;
-  padding: 2rem;
-  font-size: 1.2rem;
+  font-family: var(--font-body);
+  font-size: clamp(1.125rem, 3vw, 1.5rem);
   line-height: 1.6;
-  text-align: center;
-  box-shadow: var(--card-shadow, 0 2px 4px rgba(0, 0, 0, 0.1));
+  color: hsl(var(--foreground));
+  text-shadow: none;
 }
 
 .template strong {
-  color: var(--phosphor);
-  padding: 0.25rem var(--space-xs);
-  border-radius: 6px;
-  font-weight: 600;
+  color: hsl(var(--accent));
+  font-weight: 700;
 }
 
 .template em {
-  color: var(--muted-fg, #6b7280);
-  padding: 0.25rem var(--space-xs);
-  border-radius: 6px;
+  color: hsl(var(--muted-foreground));
   font-style: normal;
-  border: 2px dashed var(--border-muted, #d1d5db);
-}
-
-.inputSection {
-  border: 1px solid var(--input-border, #e5e7eb);
-  border-radius: 12px;
-  padding: 1.5rem;
-  box-shadow: var(--card-shadow, 0 1px 3px rgba(0, 0, 0, 0.1));
-}
-
-.inputSection h3 {
-  margin: 0 0 var(--space-xs) 0;
-  color: var(--text-primary, #1f2937);
-  font-size: 1.25rem;
-}
-
-.inputSection p {
-  margin: 0 0 1rem 0;
-  color: var(--phosphor);
-}
-
-.inputGroup {
-  display: flex;
-  gap: var(--space-xs);
-  align-items: flex-end;
-}
-
-.inputGroup > div {
-  flex: 1;
-}
-
-.submitted {
-  border: 1px solid var(--success-border, #bfdbfe);
-  color: var(--success-fg, #1e40af);
-  border-radius: 12px;
-  padding: 1.5rem;
-  text-align: center;
-}
-
-.submitted p {
-  margin: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-xs);
-}
-
-.submitted strong {
-  padding: 0.25rem var(--space-xs);
-  border-radius: 6px;
-}
-
-.waiting {
-  border: 1px solid var(--info-border, #bfdbfe);
-  color: var(--info-fg, #1e40af);
-  border-radius: 12px;
-  padding: 1.5rem;
-  text-align: center;
-}
-
-.waiting p {
-  margin: 0 0 var(--space-xs) 0;
-}
-
-.waiting p:last-child {
-  margin: 0;
-  font-weight: 600;
-}
-
-.error {
-  border: 1px solid var(--error-border, #fecaca);
-  color: var(--error-fg, #991b1b);
-  border-radius: 12px;
-  padding: 1rem;
-  margin-top: 1rem;
-}
-
-.error p {
-  margin: 0;
-  font-weight: 500;
-}
-
-.progressIndicator {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-xs);
-  margin-top: 1rem;
-  padding: var(--space-xs);
-  border-radius: 8px;
-  border: 1px solid var(--border-light, #f1f3f4);
-}
-
-.progressIndicator .dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-}
-
-.progressIndicator .dot.filled {
-}
-
-@media (max-width: 640px) {
-  .madLib {
-    padding: var(--space-xs);
-  }
-
-  .template {
-    padding: 1.5rem;
-    font-size: 1.1rem;
-  }
-
-  .inputSection {
-    padding: 1rem;
-  }
-
-  .inputGroup {
-    flex-direction: column;
-    gap: var(--space-xs);
-  }
-
-  .inputGroup > div {
-    width: 100%;
-  }
+  border-bottom: 1px dashed hsl(var(--muted-foreground) / 0.5);
+  padding-bottom: 1px;
 }

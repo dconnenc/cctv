@@ -11,7 +11,7 @@ import {
 
 import { useSearchParams } from 'react-router-dom';
 
-import { Html5Qrcode } from 'html5-qrcode';
+import type { Html5Qrcode } from 'html5-qrcode';
 import { Camera } from 'lucide-react';
 
 import { Button } from '@cctv/core/Button/Button';
@@ -108,6 +108,9 @@ export default function Join() {
   const startScanner = useCallback(async () => {
     if (!readerRef.current || scannerRef.current) return;
 
+    const { Html5Qrcode } = await import('html5-qrcode');
+    if (!readerRef.current || scannerRef.current) return;
+
     const scanner = new Html5Qrcode(readerRef.current.id);
     scannerRef.current = scanner;
 
@@ -171,10 +174,11 @@ export default function Join() {
     <section className="page flex-centered">
       <div className={styles.header}>
         {registrationInfo?.experience?.name && <p>{registrationInfo.experience.name}</p>}
-        <p>Enter the secret code:</p>
+        <label htmlFor="join-code">Enter the secret code:</label>
       </div>
       <form className={styles.form} onSubmit={handleSubmit}>
         <input
+          id="join-code"
           type="text"
           placeholder="Secret Code"
           value={actualCode}
@@ -184,7 +188,11 @@ export default function Join() {
           autoCapitalize="characters"
           style={{ textTransform: 'uppercase' }}
         />
-        {error && <p className={`error-message ${styles.error}`}>{error}</p>}
+        {error && (
+          <p className={`error-message ${styles.error}`} role="alert" aria-live="polite">
+            {error}
+          </p>
+        )}
         <Button
           className="join-submit"
           type="submit"

@@ -1,12 +1,13 @@
 :root {
   --phosphor: #c8f060;
+  /* HSL form of --phosphor for shadcn-style consumers (--primary derives from this in dark mode). */
+  --phosphor-hsl: 78 86% 60%;
   --amber: #f5a623;
   --hot-white: #f0ede4;
   --black: #080808;
   --deep: #0d0d0f;
   --dim: #3a3a3a;
   --red: #ff4911;
-  --green: #c8f060;
   --phosphor-glow-faint: rgba(200, 240, 96, 0.05);
   --phosphor-glow: rgba(200, 240, 96, 0.15);
   --phosphor-glow-light: rgba(200, 240, 96, 0.2);
@@ -48,7 +49,10 @@
   --input: 42 10% 90%;
   --ring: 78 86% 40%;
   --radius: 0.75rem;
-  --shadow-1: 0 8px 16px hsl(var(--foreground) / 0.08);
+  --shadow-sm: 0 1px 3px hsl(var(--foreground) / 0.08);
+  --shadow-md: 0 2px 8px hsl(var(--foreground) / 0.1);
+  --shadow-lg: 0 8px 16px hsl(var(--foreground) / 0.12);
+  --shadow-1: var(--shadow-lg);
 }
 
 :root[data-theme='dark'] {
@@ -58,7 +62,7 @@
   --card-foreground: 42 15% 91%;
   --popover: 60 4% 5.5%;
   --popover-foreground: 42 15% 91%;
-  --primary: 78 86% 60%;
+  --primary: var(--phosphor-hsl);
   --primary-foreground: 0 0% 3%;
   --secondary: 0 0% 10%;
   --secondary-foreground: 42 15% 91%;
@@ -70,9 +74,12 @@
   --destructive-foreground: 0 0% 100%;
   --border: 50 8% 16%;
   --input: 0 0% 10%;
-  --ring: 78 86% 60%;
+  --ring: var(--phosphor-hsl);
   --radius: 0.75rem;
-  --shadow-1: 0 8px 16px rgba(0, 0, 0, 0.4);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.4);
+  --shadow-1: var(--shadow-lg);
 }
 
 .app {
@@ -156,6 +163,7 @@ body {
   align-items: center;
   min-height: calc(100dvh - var(--nav-h));
   width: 100%;
+  text-align: center;
 }
 
 h1,
@@ -169,7 +177,6 @@ h6 {
   position: relative;
   z-index: 10;
   font-weight: 800;
-  text-align: center;
   line-height: 1;
   font-family: var(--font-display);
   color: hsl(var(--foreground));
@@ -200,7 +207,6 @@ label,
 body {
   font-family: var(--font-primary);
   margin: 0;
-  text-align: center;
   font-size: clamp(1rem, 4vw, 24px);
   color: hsl(var(--foreground));
   text-shadow: none;
@@ -212,12 +218,6 @@ body {
 :root[data-theme='dark'] h4,
 :root[data-theme='dark'] h5,
 :root[data-theme='dark'] h6 {
-  text-shadow: var(--tv-glow);
-}
-
-:root[data-theme='dark'] p,
-:root[data-theme='dark'] label,
-:root[data-theme='dark'] body {
   text-shadow: var(--tv-glow);
 }
 
@@ -324,6 +324,11 @@ input:focus {
   outline: none;
   border-color: hsl(var(--ring));
   box-shadow: 0 0 0 0.125rem hsl(var(--ring) / 0.3);
+}
+
+input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 button {
@@ -563,4 +568,28 @@ button:active {
 .error-message {
   color: hsl(var(--destructive));
   text-shadow: none;
+}
+
+:where(button, a, [role='button'], [tabindex='0']):focus-visible {
+  outline: 2px solid var(--phosphor);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .glitch,
+  .glitch::before,
+  .glitch::after {
+    animation: none;
+    transform: none;
+  }
+
+  .glitch::before,
+  .glitch::after {
+    display: none;
+  }
+
+  .wink-container.is-wink-out,
+  .wink-container.is-wink-in {
+    animation: none;
+  }
 }

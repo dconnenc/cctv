@@ -150,7 +150,7 @@ describe('LobbyAvatars', () => {
 
     // Charlie (p3) — not responded, grayed
     expect(groups[1].dataset.opacity).toBe('0.3');
-    expect(lines[1].dataset.stroke).toBe('#666');
+    expect(lines[1].dataset.stroke).toBe('hsl(60 4% 35%)');
 
     // Host (p1) — never grayed
     expect(groups[2].dataset.opacity).toBe('1');
@@ -194,7 +194,7 @@ describe('LobbyAvatars', () => {
 
     // Bob — not responded, grayed
     expect(groups[0].dataset.opacity).toBe('0.3');
-    expect(lines[0].dataset.stroke).toBe('#666');
+    expect(lines[0].dataset.stroke).toBe('hsl(60 4% 35%)');
 
     // Charlie — responded, full color
     expect(groups[1].dataset.opacity).toBe('1');
