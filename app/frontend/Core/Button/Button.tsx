@@ -1,4 +1,4 @@
-import { AnchorHTMLAttributes, ButtonHTMLAttributes, Ref } from 'react';
+import { AnchorHTMLAttributes, ButtonHTMLAttributes, ReactNode, Ref } from 'react';
 
 import { Link, LinkProps } from 'react-router-dom';
 
@@ -12,6 +12,10 @@ interface SharedProps {
   loadingText?: string;
   variant?: ButtonVariant;
   size?: ButtonSize;
+  /** Optional icon rendered before the label. Use lucide icons or any ReactNode. */
+  icon?: ReactNode;
+  /** Visually hide the label (children) but keep it for screen readers. Requires `icon`. */
+  hideLabel?: boolean;
 }
 
 type NativeButtonProps = Omit<ButtonHTMLAttributes<HTMLButtonElement>, keyof SharedProps>;
@@ -42,16 +46,41 @@ function buildClassName({
   variant,
   size,
   loading,
+  hideLabel,
   className,
 }: {
   variant: ButtonVariant;
   size: ButtonSize;
   loading: boolean;
+  hideLabel: boolean;
   className?: string;
 }) {
   const sizeClass = size !== 'default' ? styles[size] : '';
   const loadingClass = loading ? styles.loading : '';
-  return `${styles.button} ${styles[variant]} ${sizeClass} ${loadingClass} ${className ?? ''}`.trim();
+  const hideLabelClass = hideLabel ? styles.hideLabel : '';
+  return `${styles.button} ${styles[variant]} ${sizeClass} ${loadingClass} ${hideLabelClass} ${className ?? ''}`
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function ButtonContent({
+  icon,
+  hideLabel,
+  children,
+}: {
+  icon?: ReactNode;
+  hideLabel: boolean;
+  children: ReactNode;
+}) {
+  if (!icon) return <>{children}</>;
+  return (
+    <>
+      <span className={styles.icon} aria-hidden="true">
+        {icon}
+      </span>
+      {hideLabel ? <span className={styles.srOnly}>{children}</span> : children}
+    </>
+  );
 }
 
 export function Button(props: ButtonProps) {
@@ -61,16 +90,36 @@ export function Button(props: ButtonProps) {
     loadingText,
     variant = 'primary',
     size = 'default',
+    icon,
+    hideLabel = false,
     className,
   } = props;
 
-  const classes = buildClassName({ variant, size, loading, className });
+  if (hideLabel && !icon) {
+    throw new Error(
+      'Button: `hideLabel` requires an `icon` prop so the button has something visible.',
+    );
+  }
+
+  const classes = buildClassName({ variant, size, loading, hideLabel, className });
 
   if (isLinkProps(props)) {
-    const { to, ref, loading: _l, loadingText: _lt, variant: _v, size: _s, ...rest } = props;
+    const {
+      to,
+      ref,
+      loading: _l,
+      loadingText: _lt,
+      variant: _v,
+      size: _s,
+      icon: _i,
+      hideLabel: _h,
+      ...rest
+    } = props;
     return (
       <Link {...rest} to={to} ref={ref} className={classes}>
-        {children}
+        <ButtonContent icon={icon} hideLabel={hideLabel}>
+          {children}
+        </ButtonContent>
       </Link>
     );
   }
@@ -83,6 +132,8 @@ export function Button(props: ButtonProps) {
     loadingText: _lt,
     variant: _v,
     size: _s,
+    icon: _i,
+    hideLabel: _h,
     ...rest
   } = props;
   const isDisabled = disabled || loading;
@@ -95,7 +146,9 @@ export function Button(props: ButtonProps) {
           {loadingText && <span>{loadingText}</span>}
         </>
       ) : (
-        children
+        <ButtonContent icon={icon} hideLabel={hideLabel}>
+          {children}
+        </ButtonContent>
       )}
     </button>
   );

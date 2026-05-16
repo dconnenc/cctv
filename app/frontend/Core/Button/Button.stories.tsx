@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { Plus, Save, Trash2, X } from 'lucide-react';
 
 import { Button } from './Button';
 
@@ -126,6 +127,41 @@ export const Gallery: Story = {
             </Button>
           ))}
         </div>
+      </section>
+
+      <section style={sectionStyle}>
+        <span style={labelStyle}>Icon + label</span>
+        <div style={rowStyle}>
+          <Button icon={<Plus size={14} />}>Add block</Button>
+          <Button variant="secondary" icon={<Save size={14} />}>
+            Save
+          </Button>
+          <Button variant="outline" icon={<Trash2 size={14} />}>
+            Remove
+          </Button>
+          <Button variant="ghost" icon={<X size={14} />}>
+            Cancel
+          </Button>
+        </div>
+      </section>
+
+      <section style={sectionStyle}>
+        <span style={labelStyle}>Icon only (hideLabel — label still announced)</span>
+        {SIZES.map((size) => (
+          <div key={size} style={rowStyle}>
+            {VARIANTS.map((variant) => (
+              <Button
+                key={`${variant}-${size}-icon`}
+                variant={variant}
+                size={size}
+                icon={<X size={size === 'lg' ? 18 : size === 'sm' ? 12 : 14} />}
+                hideLabel
+              >
+                Close
+              </Button>
+            ))}
+          </div>
+        ))}
       </section>
     </div>
   ),

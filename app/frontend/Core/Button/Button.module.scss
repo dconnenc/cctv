@@ -114,6 +114,44 @@
   }
 }
 
+/* ─── Icon + label ────────────────────────────────────────── */
+
+.icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  line-height: 0;
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* hideLabel → icon-only square. Width follows height so the button is a
+   true square regardless of size variant. */
+.hideLabel {
+  width: 2.25rem;
+  padding-inline: 0;
+  gap: 0;
+
+  &.sm {
+    width: 1.75rem;
+  }
+
+  &.lg {
+    width: 2.75rem;
+  }
+}
+
 /* ─── Sizes ───────────────────────────────────────────────── */
 
 .sm {
