@@ -76,11 +76,34 @@
   padding-top: 1.5rem;
 }
 
-.additionalDetails {
+.segmentSelector {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
+  flex-direction: column;
+  gap: 0.35rem;
   width: 100%;
+}
+
+.segmentLabel {
+  font-size: 0.85rem;
+  color: var(--hot-white);
+}
+
+.segmentRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  align-items: center;
+}
+
+.segmentPlaceholder {
+  font-size: 0.8rem;
+  color: var(--phosphor);
+  font-style: italic;
+}
+
+.segmentSelect {
+  font-size: 0.75rem;
+  padding: 0.15rem 0.3rem;
 }
 
 .error {
