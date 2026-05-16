@@ -30,3 +30,103 @@ export const LoadingNoText: Story = {
 export const Submit: Story = {
   args: { children: 'Submit', type: 'submit' },
 };
+
+const VARIANTS = ['primary', 'secondary', 'outline', 'ghost'] as const;
+const SIZES = ['sm', 'default', 'lg'] as const;
+
+const sectionStyle: React.CSSProperties = {
+  display: 'flex',
+  flexDirection: 'column',
+  gap: '0.5rem',
+};
+
+const rowStyle: React.CSSProperties = {
+  display: 'flex',
+  flexWrap: 'wrap',
+  gap: '0.75rem',
+  alignItems: 'center',
+};
+
+const labelStyle: React.CSSProperties = {
+  fontFamily: 'var(--font-body)',
+  fontSize: '0.6875rem',
+  letterSpacing: '0.22em',
+  textTransform: 'uppercase',
+  color: 'hsl(var(--muted-foreground))',
+};
+
+export const Gallery: Story = {
+  render: () => (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem', padding: '1rem' }}>
+      <section style={sectionStyle}>
+        <span style={labelStyle}>Variants</span>
+        <div style={rowStyle}>
+          {VARIANTS.map((variant) => (
+            <Button key={variant} variant={variant}>
+              {variant}
+            </Button>
+          ))}
+        </div>
+      </section>
+
+      <section style={sectionStyle}>
+        <span style={labelStyle}>Sizes</span>
+        {SIZES.map((size) => (
+          <div key={size} style={rowStyle}>
+            {VARIANTS.map((variant) => (
+              <Button key={`${variant}-${size}`} variant={variant} size={size}>
+                {`${variant} / ${size}`}
+              </Button>
+            ))}
+          </div>
+        ))}
+      </section>
+
+      <section style={sectionStyle}>
+        <span style={labelStyle}>Disabled</span>
+        <div style={rowStyle}>
+          {VARIANTS.map((variant) => (
+            <Button key={`${variant}-disabled`} variant={variant} disabled>
+              {variant}
+            </Button>
+          ))}
+        </div>
+      </section>
+
+      <section style={sectionStyle}>
+        <span style={labelStyle}>Loading</span>
+        <div style={rowStyle}>
+          {VARIANTS.map((variant) => (
+            <Button key={`${variant}-loading`} variant={variant} loading loadingText="Saving…">
+              {variant}
+            </Button>
+          ))}
+        </div>
+      </section>
+
+      <section style={sectionStyle}>
+        <span style={labelStyle}>HTML type</span>
+        <div style={rowStyle}>
+          <Button type="button">type="button"</Button>
+          <Button type="submit" variant="secondary">
+            type="submit"
+          </Button>
+          <Button type="reset" variant="ghost">
+            type="reset"
+          </Button>
+        </div>
+      </section>
+
+      <section style={sectionStyle}>
+        <span style={labelStyle}>As Link (to=…)</span>
+        <div style={rowStyle}>
+          {VARIANTS.map((variant) => (
+            <Button key={`${variant}-link`} to="/example" variant={variant}>
+              {variant} link
+            </Button>
+          ))}
+        </div>
+      </section>
+    </div>
+  ),
+};
