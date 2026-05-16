@@ -146,6 +146,38 @@ export const Gallery: Story = {
       </section>
 
       <section style={sectionStyle}>
+        <span style={labelStyle}>aria-pressed (toggle / segmented control)</span>
+        <div style={rowStyle}>
+          {VARIANTS.map((variant) => (
+            <Button key={`${variant}-pressed`} variant={variant} aria-pressed>
+              {variant} pressed
+            </Button>
+          ))}
+        </div>
+        <div
+          role="group"
+          aria-label="Segmented control example"
+          style={{
+            display: 'inline-flex',
+            gap: '0.25rem',
+            padding: '0.25rem',
+            background: 'hsl(var(--muted))',
+            borderRadius: 'var(--radius)',
+          }}
+        >
+          <Button variant="ghost" size="sm" aria-pressed="true">
+            Monitor
+          </Button>
+          <Button variant="ghost" size="sm" aria-pressed="false">
+            Participant
+          </Button>
+          <Button variant="ghost" size="sm" aria-pressed="false">
+            Responses
+          </Button>
+        </div>
+      </section>
+
+      <section style={sectionStyle}>
         <span style={labelStyle}>Icon only (hideLabel — label still announced)</span>
         {SIZES.map((size) => (
           <div key={size} style={rowStyle}>
