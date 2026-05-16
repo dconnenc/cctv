@@ -1,8 +1,7 @@
 import { useExperience } from '@cctv/contexts/ExperienceContext';
-import { DialogDescription, DialogTitle } from '@cctv/core';
+import { DialogDescription, DialogTitle, SegmentMultiSelect } from '@cctv/core';
 import { Button } from '@cctv/core/Button/Button';
 import { Dropdown } from '@cctv/core/Dropdown/Dropdown';
-import { SegmentBadge } from '@cctv/core/SegmentBadge/SegmentBadge';
 import { BlockKind, ParticipantSummary } from '@cctv/types';
 
 import CreateAnnouncement from './CreateAnnouncement/CreateAnnouncement';
@@ -132,52 +131,15 @@ function BlockEditor() {
 }
 
 function SegmentSelector() {
-  const { visibleSegments, setVisibleSegments, defaultSegmentName } = useCreateBlockContext();
+  const { visibleSegments, setVisibleSegments } = useCreateBlockContext();
   const { experience } = useExperience();
   const definedSegments = experience?.segments || [];
-  const availableSegments = definedSegments.filter((s) => !visibleSegments.includes(s.name));
-  const placeholder = defaultSegmentName
-    ? `Defaults to ${defaultSegmentName}`
-    : 'Visible to all participants';
 
   return (
-    <div className={styles.segmentSelector}>
-      <label className={styles.segmentLabel}>Visible to segments</label>
-      <div className={styles.segmentRow}>
-        {visibleSegments.length === 0 && (
-          <span className={styles.segmentPlaceholder}>{placeholder}</span>
-        )}
-        {visibleSegments.map((name) => {
-          const seg = definedSegments.find((s) => s.name === name);
-          return (
-            <SegmentBadge
-              key={name}
-              name={name}
-              color={seg?.color || '#6B7280'}
-              onRemove={() => setVisibleSegments(visibleSegments.filter((n) => n !== name))}
-            />
-          );
-        })}
-        {availableSegments.length > 0 && (
-          <select
-            aria-label="Add segment"
-            className={styles.segmentSelect}
-            value=""
-            onChange={(e) => {
-              if (e.target.value) {
-                setVisibleSegments([...visibleSegments, e.target.value]);
-              }
-            }}
-          >
-            <option value="">+ Add segment...</option>
-            {availableSegments.map((s) => (
-              <option key={s.id} value={s.name}>
-                {s.name}
-              </option>
-            ))}
-          </select>
-        )}
-      </div>
-    </div>
+    <SegmentMultiSelect
+      segments={definedSegments}
+      value={visibleSegments}
+      onChange={setVisibleSegments}
+    />
   );
 }
