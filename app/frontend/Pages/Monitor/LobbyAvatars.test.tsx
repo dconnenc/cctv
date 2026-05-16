@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { type ReactNode, type Ref, forwardRef, useImperativeHandle } from 'react';
 
 import { render, screen } from '@testing-library/react';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
@@ -20,22 +20,45 @@ interface MockComponentProps {
   [key: string]: unknown;
 }
 
-vi.mock('react-konva', () => ({
-  Stage: ({ children, ...props }: MockComponentProps) => (
+interface MockKonvaNode {
+  position: (pos: { x: number; y: number }) => void;
+  scale: (s: { x: number; y: number }) => void;
+  batchDraw: () => void;
+}
+
+vi.mock('react-konva', () => {
+  const Stage = ({ children, ...props }: MockComponentProps) => (
     <div data-testid="konva-stage" {...props}>
       {children}
     </div>
-  ),
-  Layer: ({ children }: MockComponentProps) => <div data-testid="konva-layer">{children}</div>,
-  Group: ({ children, opacity, ...props }: MockComponentProps) => (
-    <div data-testid="konva-group" data-opacity={opacity} {...props}>
-      {children}
-    </div>
-  ),
-  Line: ({ stroke, ...props }: MockComponentProps) => (
+  );
+  const Layer = forwardRef(({ children }: MockComponentProps, ref: Ref<MockKonvaNode>) => {
+    useImperativeHandle(ref, () => ({
+      position: () => {},
+      scale: () => {},
+      batchDraw: () => {},
+    }));
+    return <div data-testid="konva-layer">{children}</div>;
+  });
+  const Group = forwardRef(
+    ({ children, opacity, ...props }: MockComponentProps, ref: Ref<MockKonvaNode>) => {
+      useImperativeHandle(ref, () => ({
+        position: () => {},
+        scale: () => {},
+        batchDraw: () => {},
+      }));
+      return (
+        <div data-testid="konva-group" data-opacity={opacity} {...props}>
+          {children}
+        </div>
+      );
+    },
+  );
+  const Line = ({ stroke, ...props }: MockComponentProps) => (
     <div data-testid="konva-line" data-stroke={stroke} {...props} />
-  ),
-}));
+  );
+  return { Stage, Layer, Group, Line };
+});
 
 const mockMonitorView = vi.fn();
 const mockDrawState = vi.fn();

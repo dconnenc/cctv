@@ -93,6 +93,7 @@ interface BlockCardProps {
 }
 
 function BlockCard({ block, ghost, dragging }: BlockCardProps) {
+  const label = blockLabel(block);
   return (
     <div
       className={classNames(styles.blockCard, {
@@ -105,7 +106,9 @@ function BlockCard({ block, ghost, dragging }: BlockCardProps) {
         <span className={classNames(styles.blockStatusDot, statusDotClass(block.status))} />
         <span className={styles.blockKind}>{block.kind.replace(/_/g, ' ')}</span>
       </div>
-      <div className={styles.blockLabel}>{blockLabel(block)}</div>
+      <div className={styles.blockLabel} title={label}>
+        {label}
+      </div>
       {block.children && block.children.length > 0 && (
         <div className={styles.blockChildren}>
           {block.children.map((child) => (
@@ -259,7 +262,7 @@ export default function Timeline() {
             className={styles.scroll}
             style={
               {
-                '--col-template': `repeat(${columns.length}, 12rem)`,
+                '--col-template': `repeat(${columns.length}, var(--col-w))`,
               } as CSSProperties
             }
           >
@@ -379,6 +382,7 @@ export default function Timeline() {
                   const monitorBlock = monitorTrack
                     ? blocksAtCol.filter((b) => blockIsVisibleOnTrack(b, monitorTrack))[0]
                     : undefined;
+                  const monitorLabel = monitorBlock ? blockLabel(monitorBlock) : '';
                   return (
                     <div className={styles.previewMonitor}>
                       <div className={styles.previewSectionLabel}>
@@ -395,8 +399,8 @@ export default function Timeline() {
                             <div className={styles.previewKind}>
                               {monitorBlock.kind.replace(/_/g, ' ')}
                             </div>
-                            <div className={styles.previewFrameLabel}>
-                              {blockLabel(monitorBlock)}
+                            <div className={styles.previewFrameLabel} title={monitorLabel}>
+                              {monitorLabel}
                             </div>
                           </div>
                         ) : (
@@ -417,6 +421,7 @@ export default function Timeline() {
                     .map((track) => {
                       const blocksAtCol = blocksByColumn.get(selectedColumn) || [];
                       const block = blocksAtCol.filter((b) => blockIsVisibleOnTrack(b, track))[0];
+                      const itemLabel = block ? blockLabel(block) : '';
                       return (
                         <li key={track.id} className={styles.previewItem}>
                           <div className={styles.previewItemTrack}>
@@ -433,7 +438,9 @@ export default function Timeline() {
                               <span className={styles.previewItemKind}>
                                 {block.kind.replace(/_/g, ' ')}
                               </span>
-                              <span className={styles.previewItemBody}>{blockLabel(block)}</span>
+                              <span className={styles.previewItemBody} title={itemLabel}>
+                                {itemLabel}
+                              </span>
                             </div>
                           ) : (
                             <span className={styles.previewItemEmpty}>—</span>

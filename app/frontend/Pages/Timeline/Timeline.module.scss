@@ -8,11 +8,13 @@
   color: hsl(var(--foreground));
   overflow: hidden;
   --row-h: 5.5rem;
+  --col-w: 12rem;
   --rule-color: hsl(var(--border));
   --rule-color-soft: hsl(var(--border) / 0.55);
 
   @media (max-width: 768px) {
     --row-h: 4.5rem;
+    --col-w: 9rem;
   }
 }
 
@@ -218,7 +220,7 @@
   overflow: auto;
   display: flex;
   flex-direction: column;
-  --col-template: repeat(1, 12rem);
+  --col-template: repeat(1, var(--col-w));
 }
 
 .columnHeaderRow {

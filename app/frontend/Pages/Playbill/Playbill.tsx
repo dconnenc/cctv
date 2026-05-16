@@ -73,6 +73,8 @@ export default function Playbill() {
                     alt={section.title || `Playbill section ${index + 1}`}
                     loading="lazy"
                     decoding="async"
+                    width={section.image_width}
+                    height={section.image_height}
                   />
                 </div>
               )}

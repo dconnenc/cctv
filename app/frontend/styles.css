@@ -239,13 +239,16 @@ body {
 
 .link:hover {
   text-decoration: underline;
+  text-decoration-color: hsl(var(--foreground) / 0.55);
+  text-underline-offset: 2px;
+  text-decoration-thickness: 1px;
 }
 .link--active {
   font-weight: 800;
 }
 
 :root[data-theme='light'] .link {
-  color: hsl(var(--foreground));
+  color: hsl(var(--primary));
   text-shadow: none;
 }
 :root[data-theme='dark'] .link {
