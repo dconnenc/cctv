@@ -80,18 +80,28 @@ export default function BlockSidebar({
           })}
         >
           {!sidebarCollapsed && (
-            <button onClick={onCreateBlock} title="Create Block" aria-label="Create Block">
-              <Plus size={16} />
-            </button>
+            <Button
+              variant="ghost"
+              size="sm"
+              icon={<Plus size={16} />}
+              hideLabel
+              onClick={onCreateBlock}
+              title="Create Block"
+            >
+              Create Block
+            </Button>
           )}
-          <button
+          <Button
+            variant="ghost"
+            size="sm"
+            icon={sidebarCollapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
+            hideLabel
             onClick={onToggleSidebar}
             title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-            aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
             aria-expanded={!sidebarCollapsed}
           >
-            {sidebarCollapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
-          </button>
+            {sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          </Button>
         </div>
       </div>
 
@@ -163,9 +173,16 @@ export default function BlockSidebar({
               );
             })}
             <li>
-              <button onClick={onCreateBlock} title="Create Block" aria-label="Create Block">
-                <Plus size={32} />
-              </button>
+              <Button
+                variant="outline"
+                size="lg"
+                icon={<Plus size={20} />}
+                hideLabel
+                onClick={onCreateBlock}
+                title="Create Block"
+              >
+                Create Block
+              </Button>
             </li>
           </ul>
         ) : (
