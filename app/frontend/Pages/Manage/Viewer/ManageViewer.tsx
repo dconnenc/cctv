@@ -3,8 +3,7 @@ import { ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
 import { BookOpen, Bug, Columns3, Pause, Play, X } from 'lucide-react';
 
 import { useExperience } from '@cctv/contexts/ExperienceContext';
-import { Drawer, DrawerBody, DrawerContent } from '@cctv/core';
-import { Button } from '@cctv/core/Button/Button';
+import { Button, Drawer, DrawerBody, DrawerContent } from '@cctv/core';
 import { Pill } from '@cctv/core/Pill/Pill';
 import { useBlockPresentation } from '@cctv/hooks/useBlockPresentation';
 import { useExperiencePause } from '@cctv/hooks/useExperiencePause';
@@ -250,12 +249,15 @@ export default function ManageViewer() {
           {errorMessage && (
             <div className="mx-4 mt-4 px-4 py-3 bg-red-500/10 border border-red-500 text-red-400 rounded-md flex items-center justify-between">
               <span>{errorMessage}</span>
-              <button
+              <Button
+                variant="ghost"
+                size="sm"
+                icon={<X size={16} />}
+                hideLabel
                 onClick={() => setDismissedError(true)}
-                className="p-1 hover:bg-red-500/20 rounded"
               >
-                <X size={16} />
-              </button>
+                Dismiss error
+              </Button>
             </div>
           )}
 
@@ -289,13 +291,15 @@ export default function ManageViewer() {
           <aside className="z-10 absolute h-full top-0 right-0 w-[420px] shrink-0 border-l border-[hsl(var(--border))] bg-[hsl(var(--card))] flex flex-col">
             <div className="p-4 h-20 border-b border-[hsl(var(--border))] flex items-center justify-between">
               <div className="text-sm font-semibold text-white">Participants</div>
-              <button
+              <Button
+                variant="ghost"
+                size="sm"
+                icon={<X size={16} />}
+                hideLabel
                 onClick={() => setShowParticipantDetails(false)}
-                className="p-1 rounded hover:bg-[hsl(var(--muted))] transition-colors text-[hsl(var(--muted-foreground))]"
-                aria-label="Close participants panel"
               >
-                <X size={16} />
-              </button>
+                Close participants panel
+              </Button>
             </div>
             <div className="flex-1 overflow-y-auto">
               <ParticipantsTab
