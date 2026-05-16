@@ -4,11 +4,18 @@ class Api::ExperienceBlocksController < Api::BaseController
     add_bucket rename_bucket delete_bucket assign_answer auto_categorize
     start_playing reveal_bucket show_x next_question restart_playing
     restart_categorizing restart_everything
+    next_guess_who_slide previous_guess_who_slide reveal_guess_who
+    start_minigame_arithmetic end_minigame_arithmetic
+    start_minigame_balloon_pump end_minigame_balloon_pump
+    advance_the_scene_phase start_next_the_scene
+    clear_the_scene_top clear_the_scene_suggestion clear_the_scene_all
   ].freeze
 
   SUBMISSION_ACTIONS = %i[
     submit_poll_response submit_question_response
     submit_mad_lib_response submit_photo_upload_response submit_buzzer_response
+    submit_minigame_arithmetic_response submit_minigame_balloon_pump_update
+    submit_the_scene_suggestion submit_the_scene_vote
   ].freeze
 
   before_action :authenticate_and_set_user_and_experience
@@ -529,6 +536,243 @@ class Api::ExperienceBlocksController < Api::BaseController
       Experiences::Broadcaster.new(@experience).broadcast_experience_update
 
       render json: { success: true }, status: 200
+    end
+  end
+
+  # POST /api/experiences/:experience_id/blocks/:id/guess_who/next
+  def next_guess_who_slide
+    with_experience_orchestration do
+      Experiences::Orchestrator.new(
+        experience: @experience, actor: @user
+      ).next_guess_who_slide!(block_id: params[:id])
+
+      Experiences::Broadcaster.new(@experience).broadcast_experience_update
+
+      render json: { success: true }, status: 200
+    end
+  end
+
+  # POST /api/experiences/:experience_id/blocks/:id/guess_who/previous
+  def previous_guess_who_slide
+    with_experience_orchestration do
+      Experiences::Orchestrator.new(
+        experience: @experience, actor: @user
+      ).previous_guess_who_slide!(block_id: params[:id])
+
+      Experiences::Broadcaster.new(@experience).broadcast_experience_update
+
+      render json: { success: true }, status: 200
+    end
+  end
+
+  # POST /api/experiences/:experience_id/blocks/:id/minigame/start
+  def start_minigame_arithmetic
+    with_experience_orchestration do
+      block = Experiences::Orchestrator.new(
+        experience: @experience, actor: @user
+      ).start_minigame_arithmetic!(block_id: params[:id])
+
+      Experiences::Broadcaster.new(@experience).broadcast_experience_update
+
+      render json: { success: true, data: block }, status: 200
+    end
+  end
+
+  # POST /api/experiences/:experience_id/blocks/:id/minigame/end
+  def end_minigame_arithmetic
+    with_experience_orchestration do
+      block = Experiences::Orchestrator.new(
+        experience: @experience, actor: @user
+      ).end_minigame_arithmetic!(block_id: params[:id])
+
+      Experiences::Broadcaster.new(@experience).broadcast_experience_update
+
+      render json: { success: true, data: block }, status: 200
+    end
+  end
+
+  # POST /api/experiences/:experience_id/blocks/:id/minigame/responses
+  def submit_minigame_arithmetic_response
+    with_experience_orchestration do
+      submission = Experiences::Orchestrator.new(
+        experience: @experience, actor: @user
+      ).submit_minigame_arithmetic_response!(
+        block_id:       params[:id],
+        question_index: params[:question_index],
+        answer:         params[:answer]
+      )
+
+      Experiences::Broadcaster.new(@experience).broadcast_experience_update
+
+      render json: {
+        success: true,
+        submission: { id: submission.id, question_index: submission.question_index }
+      }, status: 200
+    end
+  end
+
+  # POST /api/experiences/:experience_id/blocks/:id/minigame/balloon_pump/start
+  def start_minigame_balloon_pump
+    with_experience_orchestration do
+      block = Experiences::Orchestrator.new(
+        experience: @experience, actor: @user
+      ).start_minigame_balloon_pump!(block_id: params[:id])
+
+      Experiences::Broadcaster.new(@experience).broadcast_experience_update
+
+      render json: { success: true, data: block }, status: 200
+    end
+  end
+
+  # POST /api/experiences/:experience_id/blocks/:id/minigame/balloon_pump/end
+  def end_minigame_balloon_pump
+    with_experience_orchestration do
+      block = Experiences::Orchestrator.new(
+        experience: @experience, actor: @user
+      ).end_minigame_balloon_pump!(block_id: params[:id])
+
+      Experiences::Broadcaster.new(@experience).broadcast_experience_update
+
+      render json: { success: true, data: block }, status: 200
+    end
+  end
+
+  # POST /api/experiences/:experience_id/blocks/:id/minigame/balloon_pump/pump
+  def submit_minigame_balloon_pump_update
+    with_experience_orchestration do
+      outcome = Experiences::Orchestrator.new(
+        experience: @experience, actor: @user
+      ).submit_balloon_pump_update!(
+        block_id:    params[:id],
+        fill_amount: params[:fill_amount]
+      )
+
+      if outcome[:winners]&.any?
+        Experiences::Broadcaster.new(@experience).broadcast_experience_update
+      elsif outcome[:leader_changed]
+        Experiences::Broadcaster.new(@experience).broadcast_balloon_pump_leader_update(block: @block.reload)
+      end
+
+      render json: { success: true, result: outcome[:result] }, status: 200
+    end
+  end
+
+  # POST /api/experiences/:experience_id/blocks/:id/guess_who/reveal
+  def reveal_guess_who
+    with_experience_orchestration do
+      Experiences::Orchestrator.new(
+        experience: @experience, actor: @user
+      ).reveal_guess_who!(block_id: params[:id])
+
+      Experiences::Broadcaster.new(@experience).broadcast_experience_update
+
+      render json: { success: true }, status: 200
+    end
+  end
+
+  # POST /api/experiences/:experience_id/blocks/:id/the_scene/phase
+  def advance_the_scene_phase
+    with_experience_orchestration do
+      block = Experiences::Orchestrator.new(
+        experience: @experience, actor: @user
+      ).advance_the_scene_phase!(block_id: params[:id], phase: params[:phase])
+
+      Experiences::Broadcaster.new(@experience).broadcast_experience_update
+
+      render json: { success: true, data: block }, status: 200
+    end
+  end
+
+  # POST /api/experiences/:experience_id/blocks/:id/the_scene/next
+  def start_next_the_scene
+    with_experience_orchestration do
+      block = Experiences::Orchestrator.new(
+        experience: @experience, actor: @user
+      ).start_next_scene!(block_id: params[:id])
+
+      Experiences::Broadcaster.new(@experience).broadcast_experience_update
+
+      render json: { success: true, data: block }, status: 200
+    end
+  end
+
+  # POST /api/experiences/:experience_id/blocks/:id/the_scene/clear_top
+  def clear_the_scene_top
+    with_experience_orchestration do
+      Experiences::Orchestrator.new(
+        experience: @experience, actor: @user
+      ).clear_the_scene_top!(block_id: params[:id])
+
+      Experiences::Broadcaster.new(@experience).broadcast_experience_update
+
+      render json: { success: true }, status: 200
+    end
+  end
+
+  # POST /api/experiences/:experience_id/blocks/:id/the_scene/clear/:suggestion_id
+  def clear_the_scene_suggestion
+    with_experience_orchestration do
+      Experiences::Orchestrator.new(
+        experience: @experience, actor: @user
+      ).clear_the_scene_suggestion!(
+        block_id: params[:id],
+        suggestion_id: params[:suggestion_id]
+      )
+
+      Experiences::Broadcaster.new(@experience).broadcast_experience_update
+
+      render json: { success: true }, status: 200
+    end
+  end
+
+  # POST /api/experiences/:experience_id/blocks/:id/the_scene/clear_all
+  def clear_the_scene_all
+    with_experience_orchestration do
+      Experiences::Orchestrator.new(
+        experience: @experience, actor: @user
+      ).clear_the_scene_all!(block_id: params[:id])
+
+      Experiences::Broadcaster.new(@experience).broadcast_experience_update
+
+      render json: { success: true }, status: 200
+    end
+  end
+
+  # POST /api/experiences/:experience_id/blocks/:id/the_scene/suggestions
+  def submit_the_scene_suggestion
+    with_experience_orchestration do
+      suggestion = Experiences::Orchestrator.new(
+        experience: @experience, actor: @user
+      ).submit_the_scene_suggestion!(
+        block_id: params[:id],
+        text: params[:text]
+      )
+
+      Experiences::Broadcaster.new(@experience).broadcast_experience_update
+
+      render json: {
+        success: true,
+        suggestion: { id: suggestion.id, text: suggestion.text }
+      }, status: 200
+    end
+  end
+
+  # POST /api/experiences/:experience_id/blocks/:id/the_scene/votes
+  def submit_the_scene_vote
+    with_experience_orchestration do
+      vote = Experiences::Orchestrator.new(
+        experience: @experience, actor: @user
+      ).submit_the_scene_vote!(
+        block_id: params[:id],
+        suggestion_id: params[:suggestion_id]
+      )
+
+      Experiences::Broadcaster.new(@experience).broadcast_experience_update
+
+      render json: {
+        success: true,
+        vote: { id: vote.id, improv_suggestion_id: vote.improv_suggestion_id }
+      }, status: 200
     end
   end
 

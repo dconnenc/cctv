@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { CSSProperties, useCallback, useMemo, useState } from 'react';
 
 import { Link } from 'react-router-dom';
 
@@ -255,7 +255,14 @@ export default function Timeline() {
             ))}
           </div>
 
-          <div className={styles.scroll}>
+          <div
+            className={styles.scroll}
+            style={
+              {
+                '--col-template': `repeat(${columns.length}, 12rem)`,
+              } as CSSProperties
+            }
+          >
             <div className={styles.columnHeaderRow}>
               {columns.map((col) => (
                 <button

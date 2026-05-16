@@ -3,10 +3,14 @@ import { Block, BlockKind, ParticipantSummary } from '@cctv/types';
 import Announcement from '../Announcement/Announcement';
 import Buzzer from '../Buzzer/Buzzer';
 import FamilyFeud from '../FamilyFeud/FamilyFeud';
+import GuessWho from '../GuessWho/GuessWho';
 import MadLib from '../MadLib/MadLib';
+import MinigameArithmetic from '../MinigameArithmetic/MinigameArithmetic';
+import MinigameBalloonPump from '../MinigameBalloonPump/MinigameBalloonPump';
 import PhotoUpload from '../PhotoUpload/PhotoUpload';
 import Poll from '../Poll/Poll';
 import Question from '../Question/Question';
+import TheScene from '../TheScene/TheScene';
 
 interface ExperienceBlockContainerProps {
   block: Block;
@@ -71,6 +75,14 @@ export default function ExperienceBlockContainer({
       );
     case BlockKind.BUZZER:
       return <Buzzer block={block} viewContext={viewContext} />;
+    case BlockKind.GUESS_WHO:
+      return <GuessWho payload={block.payload} />;
+    case BlockKind.MINIGAME_ARITHMETIC:
+      return <MinigameArithmetic block={block} viewContext={viewContext} />;
+    case BlockKind.MINIGAME_BALLOON_PUMP:
+      return <MinigameBalloonPump block={block} viewContext={viewContext} />;
+    case BlockKind.THE_SCENE:
+      return <TheScene block={block} viewContext={viewContext} />;
     default:
       const exhaustiveCheck: never = block;
       return (

@@ -1,0 +1,287 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 1.5rem;
+  padding: 1.25rem;
+  min-height: 60vh;
+}
+
+.heading {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  letter-spacing: 0.05em;
+  text-align: center;
+  color: var(--phosphor);
+  text-shadow: var(--tv-glow);
+}
+
+.subheading {
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  text-align: center;
+  opacity: 0.8;
+}
+
+.suggestionForm {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  width: min(28rem, 100%);
+}
+
+.input {
+  font-family: var(--font-body);
+  font-size: 1.15rem;
+  padding: 0.75rem 1rem;
+  background: transparent;
+  color: var(--foreground);
+  border: 2px solid var(--phosphor);
+  border-radius: 0.5rem;
+
+  &:focus {
+    outline: none;
+    box-shadow: 0 0 0 4px var(--phosphor-glow);
+  }
+}
+
+.charCount {
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  opacity: 0.6;
+  text-align: right;
+}
+
+.patience {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 2rem 1rem;
+  font-family: var(--font-body);
+  text-align: center;
+}
+
+.patienceTitle {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  letter-spacing: 0.05em;
+  color: var(--phosphor);
+  text-shadow: var(--tv-glow);
+}
+
+.ownSuggestion {
+  font-family: var(--font-body);
+  font-size: 1rem;
+  padding: 0.75rem 1rem;
+  border: 1px dashed var(--phosphor-glow-medium);
+  border-radius: 0.5rem;
+  width: min(28rem, 100%);
+  text-align: center;
+  font-style: italic;
+}
+
+.dotPulse {
+  display: inline-block;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: var(--phosphor);
+  margin: 0 0.15rem;
+  animation: pulse 1.4s infinite ease-in-out both;
+}
+
+.dotPulse:nth-child(2) {
+  animation-delay: 0.2s;
+}
+.dotPulse:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes pulse {
+  0%,
+  80%,
+  100% {
+    opacity: 0.2;
+    transform: scale(0.7);
+  }
+  40% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.votingList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  width: min(36rem, 100%);
+}
+
+.voteRow {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 1rem;
+  align-items: center;
+  padding: 0.85rem 1rem;
+  border: 2px solid transparent;
+  border-radius: 0.5rem;
+  background: var(--card);
+  font-family: var(--font-body);
+  font-size: 1.05rem;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease;
+  color: inherit;
+
+  &:hover {
+    border-color: var(--phosphor-glow-medium);
+  }
+}
+
+.voteRowActive {
+  border-color: var(--phosphor);
+  background: color-mix(in srgb, var(--phosphor) 12%, transparent);
+}
+
+.voteCount {
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  letter-spacing: 0.05em;
+  color: var(--phosphor);
+  min-width: 2.5rem;
+  text-align: right;
+}
+
+// Monitor
+
+.monitorRoot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2rem;
+  padding: 3rem;
+  min-height: 70vh;
+}
+
+.monitorTitle {
+  font-family: var(--font-display);
+  font-size: 2.5rem;
+  letter-spacing: 0.1em;
+  color: var(--foreground);
+  opacity: 0.85;
+  text-align: center;
+}
+
+.monitorPhase {
+  font-family: var(--font-body);
+  font-size: 1.1rem;
+  opacity: 0.6;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+}
+
+.monitorLeaderboard {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  width: min(56rem, 100%);
+}
+
+.leaderboardRow {
+  position: absolute;
+  left: 0;
+  right: 0;
+  display: grid;
+  grid-template-columns: 4rem 1fr auto;
+  gap: 1rem;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  border: 2px solid var(--phosphor-glow-medium);
+  border-radius: 0.5rem;
+  background: var(--card);
+  transition:
+    top 0.4s cubic-bezier(0.22, 1, 0.36, 1),
+    background 0.3s ease,
+    border-color 0.3s ease;
+}
+
+.leaderboardRow[data-rank='1'] {
+  border-color: var(--phosphor);
+  box-shadow: 0 0 18px var(--phosphor-glow);
+}
+
+.leaderboardRank {
+  font-family: var(--font-display);
+  font-size: 2rem;
+  letter-spacing: 0.05em;
+  color: var(--phosphor);
+}
+
+.leaderboardText {
+  font-family: var(--font-body);
+  font-size: 1.5rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.leaderboardVotes {
+  font-family: var(--font-display);
+  font-size: 1.75rem;
+  letter-spacing: 0.05em;
+  color: var(--phosphor);
+}
+
+// Manage
+
+.manageRoot {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1rem;
+}
+
+.manageRow {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.manageStat {
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  opacity: 0.85;
+}
+
+.manageList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  max-height: 18rem;
+  overflow-y: auto;
+  padding: 0.5rem;
+  border: 1px dashed var(--phosphor-glow-medium);
+  border-radius: 0.5rem;
+}
+
+.manageListRow {
+  display: grid;
+  grid-template-columns: auto 1fr auto auto;
+  gap: 0.75rem;
+  align-items: center;
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  padding: 0.25rem 0.4rem;
+}
+
+.manageListRowText {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

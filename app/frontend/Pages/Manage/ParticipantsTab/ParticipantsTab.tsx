@@ -6,6 +6,7 @@ import { useAssignSegment, useKickParticipant } from '@cctv/hooks';
 import { ExperienceSegment, ParticipantSummary } from '@cctv/types';
 
 import SegmentManager from './SegmentManager/SegmentManager';
+import SubmissionsDrawer from './SubmissionsDrawer/SubmissionsDrawer';
 
 import styles from './ParticipantsTab.module.scss';
 
@@ -18,6 +19,7 @@ export default function ParticipantsTab({ participants, segments }: Participants
   const { assignSegment } = useAssignSegment();
   const { kickParticipant } = useKickParticipant();
   const [assigningFor, setAssigningFor] = useState<string | null>(null);
+  const [submissionsFor, setSubmissionsFor] = useState<ParticipantSummary | null>(null);
 
   const handleAssign = useCallback(
     async (participantId: string, segmentId: string) => {
@@ -102,14 +104,24 @@ export default function ParticipantsTab({ participants, segments }: Participants
         key: 'actions',
         label: '',
         Cell: (p) => (
-          <button
-            className={styles.kickBtn}
-            onClick={() => kickParticipant(p.id)}
-            title="Remove participant"
-            aria-label={`Remove ${p.name || p.email}`}
-          >
-            ✕
-          </button>
+          <div className={styles.actionsCell}>
+            <button
+              className={styles.viewBtn}
+              onClick={() => setSubmissionsFor(p)}
+              title="View submissions"
+              aria-label={`View submissions for ${p.name || p.email}`}
+            >
+              View
+            </button>
+            <button
+              className={styles.kickBtn}
+              onClick={() => kickParticipant(p.id)}
+              title="Remove participant"
+              aria-label={`Remove ${p.name || p.email}`}
+            >
+              ✕
+            </button>
+          </div>
         ),
       },
     ];
@@ -119,6 +131,7 @@ export default function ParticipantsTab({ participants, segments }: Participants
     <div className={styles.root}>
       <SegmentManager segments={segments} />
       <Table columns={columns} data={participants} emptyState="No participants yet." />
+      <SubmissionsDrawer participant={submissionsFor} onClose={() => setSubmissionsFor(null)} />
     </div>
   );
 }

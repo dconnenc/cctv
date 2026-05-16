@@ -26,7 +26,7 @@ module Experiences
       visible = admin_visible_blocks
 
       experience_payload(
-        blocks: visible.map { |b| serialize_block(b, participant_role: "host") }
+        blocks: visible.map { |b| serialize_block(b, participant_role: "host", view_context: :admin) }
       )
     end
 
@@ -46,10 +46,10 @@ module Experiences
       role    = participant.role
 
       if host_or_moderator?(role)
-        blocks = visible.map { |b| serialize_block(b, participant_role: role, user: participant.user) }
+        blocks = visible.map { |b| serialize_block(b, participant_role: role, user: participant.user, view_context: :participant) }
       else
         current = resolve_participant_block(visible, participant)
-        blocks  = current ? [serialize_block(current, participant_role: role, user: participant.user)] : []
+        blocks  = current ? [serialize_block(current, participant_role: role, user: participant.user, view_context: :participant)] : []
       end
 
       experience_payload(blocks: blocks)
@@ -81,15 +81,22 @@ module Experiences
       children_by_parent = all.reject { |b| b.parent_block_id.nil? }.group_by(&:parent_block_id)
 
       candidates = if @experience.status == "lobby"
-        parents.select { |b| b.show_in_lobby? && !b.has_visibility_rules? }
+        parents.select { |b| b.show_in_lobby? && monitor_visibility_ok?(b) }
       else
-        parents.select { |b| b.open? && !b.has_visibility_rules? }
+        parents.select { |b| b.open? && monitor_visibility_ok?(b) }
       end
 
       candidates
         .reject { |b| b.payload["show_on_monitor"] == false }
         .sort_by(&:position)
         .flat_map { |parent| resolve_monitor_entry(parent, children_by_parent[parent.id] || []) }
+    end
+
+    def monitor_visibility_ok?(block)
+      return true if block.kind == ExperienceBlock::MINIGAME_ARITHMETIC
+      return true if block.kind == ExperienceBlock::MINIGAME_BALLOON_PUMP
+      return true if block.kind == ExperienceBlock::THE_SCENE
+      !block.has_visibility_rules?
     end
 
     def participant_visible_blocks(participant)
@@ -155,12 +162,12 @@ module Experiences
 
     # --- Block serialization ---
 
-    def serialize_block(block, participant_role:, user: nil, depth: 0)
+    def serialize_block(block, participant_role:, user: nil, depth: 0, view_context: :admin)
       {
         id:       block.id,
         kind:     block.kind,
         status:   block.status,
-        payload:  block.payload,
+        payload:  shape_payload(block, participant_role, user, view_context),
         position: block.position
       }
         .merge(responses: serialize_response_data(block, participant_role, user))
@@ -168,8 +175,291 @@ module Experiences
         .merge(dag_metadata(block, participant_role, user, depth))
     end
 
+    def shape_payload(block, participant_role, user, view_context)
+      case block.kind
+      when ExperienceBlock::GUESS_WHO
+        shape_guess_who_payload(block, participant_role, user, view_context)
+      when ExperienceBlock::MINIGAME_ARITHMETIC
+        shape_minigame_arithmetic_payload(block, participant_role, user, view_context)
+      when ExperienceBlock::MINIGAME_BALLOON_PUMP
+        shape_minigame_balloon_pump_payload(block, participant_role, user, view_context)
+      when ExperienceBlock::THE_SCENE
+        shape_the_scene_payload(block, participant_role, user, view_context)
+      else
+        block.payload
+      end
+    end
+
+    def shape_the_scene_payload(block, participant_role, user, view_context)
+      payload          = block.payload.deep_dup || {}
+      phase            = payload["phase"] || "idle"
+      scene_started_at = payload["scene_started_at"]
+      leaderboard_size = payload["leaderboard_size"].to_i
+
+      privileged =
+        view_context == :admin ||
+        (view_context == :participant && (mod_or_host?(participant_role) || admin_user?(user)))
+
+      tally = TheScene::Tally.full(block: block, scene_started_at: scene_started_at)
+
+      shaped = {
+        "phase"            => phase,
+        "scene_started_at" => scene_started_at,
+        "leaderboard_size" => leaderboard_size,
+        "leaderboard"      => tally.first(leaderboard_size).map { |entry| serialize_tally_entry(entry) }
+      }
+
+      if view_context == :participant && !privileged && user
+        own = block.improv_suggestions.active.find_by(user_id: user.id)
+        shaped["own_suggestion"] = own && { "id" => own.id, "text" => own.text }
+
+        own_vote = nil
+        if scene_started_at.present?
+          own_vote = block.improv_votes.find_by(
+            user_id: user.id,
+            scene_started_at: scene_started_at
+          )
+        end
+        shaped["own_vote_suggestion_id"] = own_vote&.improv_suggestion_id
+
+        if phase == "voting" && own.present?
+          shaped["votable_suggestions"] = tally
+            .reject { |entry| entry.suggestion.user_id == user.id }
+            .map { |entry| serialize_tally_entry(entry) }
+        end
+      end
+
+      if privileged
+        shaped["all_suggestions"] = tally.map { |entry| serialize_tally_entry(entry) }
+      end
+
+      shaped
+    end
+
+    def serialize_tally_entry(entry)
+      {
+        "id"         => entry.suggestion.id,
+        "text"       => entry.suggestion.text,
+        "user_id"    => entry.suggestion.user_id,
+        "vote_count" => entry.vote_count,
+        "rank"       => entry.rank
+      }
+    end
+
+    def shape_minigame_balloon_pump_payload(block, participant_role, user, view_context)
+      payload = block.payload.deep_dup || {}
+
+      privileged =
+        view_context == :admin ||
+        (view_context == :participant && (mod_or_host?(participant_role) || admin_user?(user)))
+
+      target_units = payload["target_units"].to_i
+      ended        = payload["ended_at"].present?
+
+      shaped = {
+        "variant"                => payload["variant"],
+        "target_units"           => target_units,
+        "started_at"             => payload["started_at"],
+        "ended_at"               => payload["ended_at"],
+        "leader_fill"            => payload["leader_fill"].to_i,
+        "leader_participant_id"  => payload["leader_participant_id"],
+        "winner_participant_ids" => Array(payload["winner_participant_ids"])
+      }
+
+      if view_context == :participant && !privileged && user
+        own = ExperienceMinigameBalloonResult.find_by(experience_block_id: block.id, user_id: user.id)
+        shaped["own_fill"] = own&.fill_amount.to_i
+      end
+
+      if ended
+        shaped["podium"] = balloon_pump_podium(block, shaped["winner_participant_ids"])
+      end
+
+      if privileged
+        shaped["live_results"] = balloon_pump_live_results(block)
+      end
+
+      shaped
+    end
+
+    def balloon_pump_live_results(block)
+      participants_by_user_id = @experience.experience_participants
+        .includes(:user)
+        .index_by(&:user_id)
+
+      ExperienceMinigameBalloonResult
+        .where(experience_block_id: block.id)
+        .order(fill_amount: :desc)
+        .map do |r|
+          participant = participants_by_user_id[r.user_id]
+          next nil unless participant
+
+          {
+            "participant_id" => participant.id,
+            "name"           => participant.name,
+            "fill_amount"    => r.fill_amount
+          }
+        end.compact
+    end
+
+    def balloon_pump_podium(block, winner_ids)
+      participants_by_user_id = @experience.experience_participants
+        .includes(:user)
+        .index_by(&:user_id)
+      participants_by_id = @experience.experience_participants.index_by(&:id)
+
+      winners = winner_ids.filter_map { |id| participants_by_id[id] }
+
+      results = ExperienceMinigameBalloonResult
+        .where(experience_block_id: block.id)
+        .where.not(user_id: winners.map(&:user_id))
+        .order(fill_amount: :desc)
+        .limit(2)
+        .to_a
+
+      runners_up = results.filter_map do |r|
+        participants_by_user_id[r.user_id]
+      end
+
+      podium_for = ->(participant, place, fill) do
+        next nil unless participant
+        {
+          "place"          => place,
+          "participant_id" => participant.id,
+          "name"           => participant.name,
+          "avatar"         => participant.avatar.presence,
+          "fill_amount"    => fill
+        }
+      end
+
+      target_units = block.payload["target_units"].to_i
+
+      gold = winners.map { |p| podium_for.call(p, 1, target_units) }
+      silver = runners_up[0] && [podium_for.call(runners_up[0], 2, results[0]&.fill_amount.to_i)]
+      bronze = runners_up[1] && [podium_for.call(runners_up[1], 3, results[1]&.fill_amount.to_i)]
+
+      [gold, silver, bronze].compact.flatten.compact
+    end
+
+    def shape_guess_who_payload(block, participant_role, user, view_context)
+      payload = block.payload.deep_dup || {}
+
+      payload["user_a"] = guess_who_user_summary(payload["user_a_id"])
+      payload["user_b"] = guess_who_user_summary(payload["user_b_id"])
+
+      privileged =
+        view_context == :admin ||
+        (view_context == :participant && (mod_or_host?(participant_role) || admin_user?(user)))
+
+      unless privileged
+        revealed = payload["revealed"]
+        payload.delete("user_a_id")
+        payload.delete("user_b_id")
+        unless revealed
+          payload["user_a"] = nil
+          payload["user_b"] = nil
+        end
+
+        payload["slides"] = Array(payload["slides"]).map do |slide|
+          slide.except("user_id")
+        end
+      end
+
+      payload
+    end
+
+    def shape_minigame_arithmetic_payload(block, participant_role, user, view_context)
+      payload = block.payload.deep_dup || {}
+
+      privileged =
+        view_context == :admin ||
+        (view_context == :participant && (mod_or_host?(participant_role) || admin_user?(user)))
+
+      ended  = payload["ended_at"].present?
+      started = payload["started_at"].present?
+
+      shaped = {
+        "variant"          => payload["variant"],
+        "duration_seconds" => payload["duration_seconds"],
+        "question_count"   => payload["question_count"],
+        "leaderboard_size" => payload["leaderboard_size"],
+        "started_at"       => payload["started_at"],
+        "ended_at"         => payload["ended_at"]
+      }
+
+      if privileged
+        shaped["questions"] = payload["questions"]
+      end
+
+      if ended
+        size = payload["leaderboard_size"].to_i
+        full = Minigames::ArithmeticLeaderboard.compute(block: block)
+        shaped["leaderboard"] = leaderboard_top_n(full, size)
+      end
+
+      if view_context == :participant && !privileged
+        shaped.merge!(participant_minigame_view(block, user, started, ended, payload))
+      end
+
+      if view_context == :monitor
+        shaped["submission_count"] = ExperienceMinigameSubmission.where(experience_block_id: block.id).count
+      end
+
+      shaped
+    end
+
+    def participant_minigame_view(block, user, started, ended, payload)
+      return { "current_question" => nil, "score" => { "correct" => 0, "completed" => 0 } } unless user
+
+      submissions = ExperienceMinigameSubmission
+        .where(experience_block_id: block.id, user_id: user.id)
+        .order(question_index: :asc)
+        .to_a
+
+      answered_indexes = submissions.map(&:question_index).to_set
+      questions = Array(payload["questions"])
+
+      next_question = nil
+      if started && !ended
+        next_q = questions.find { |q| !answered_indexes.include?(q["index"]) }
+        if next_q
+          next_question = { "index" => next_q["index"], "prompt" => next_q["prompt"] }
+        end
+      end
+
+      {
+        "current_question" => next_question,
+        "score" => {
+          "correct"   => submissions.count(&:correct),
+          "completed" => submissions.size
+        }
+      }
+    end
+
+    def leaderboard_top_n(entries, size)
+      return entries if size <= 0 || entries.empty?
+
+      cutoff = entries[size - 1]
+      return entries if cutoff.nil?
+
+      entries.select { |e| e["correct"] >= cutoff["correct"] }
+    end
+
+    def guess_who_user_summary(user_id)
+      return nil if user_id.blank?
+
+      participant = @experience.experience_participants.includes(:user).find_by(user_id: user_id)
+      return nil unless participant
+
+      {
+        "user_id" => participant.user_id,
+        "name" => participant.name,
+        "avatar" => participant.avatar.presence
+      }
+    end
+
     def serialize_monitor_block(block)
-      serialized = serialize_block(block, participant_role: "host")
+      serialized = serialize_block(block, participant_role: "host", view_context: :monitor)
 
       if block.kind == ExperienceBlock::MAD_LIB
         all_resolved = @experience.experience_participants.each_with_object({}) do |participant, vars|
@@ -235,6 +525,31 @@ module Experiences
 
         response
 
+      when ExperienceBlock::MINIGAME_ARITHMETIC
+        submissions = block.experience_minigame_submissions.to_a
+        response    = { total: submissions.count }
+
+        if mod_or_host?(participant_role) || admin_user?(user)
+          response[:correct_count]   = submissions.count(&:correct)
+          response[:participant_counts] = submissions.group_by(&:user_id).transform_values(&:size)
+        end
+
+        response
+
+      when ExperienceBlock::MINIGAME_BALLOON_PUMP
+        results = block.experience_minigame_balloon_results.to_a
+        { total: results.count }
+
+      when ExperienceBlock::THE_SCENE
+        suggestion_count = block.improv_suggestions.active.count
+        vote_count =
+          if block.payload["scene_started_at"].present?
+            block.improv_votes.where(scene_started_at: block.payload["scene_started_at"]).count
+          else
+            0
+          end
+        { total: suggestion_count, vote_count: vote_count }
+
       when ExperienceBlock::BUZZER
         submissions = block.experience_buzzer_submissions.order(Arel.sql("answer->>'buzzed_at' ASC")).to_a
         response    = { total: submissions.count }
@@ -281,7 +596,7 @@ module Experiences
 
       if depth == 0 && block.children.any?
         metadata[:children] = block.children.map do |child|
-          serialize_block(child, participant_role: participant_role, user: user, depth: depth + 1)
+          serialize_block(child, participant_role: participant_role, user: user, depth: depth + 1, view_context: :admin)
         end
       end
 

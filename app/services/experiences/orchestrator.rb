@@ -25,10 +25,12 @@ module Experiences
       transaction do
         max_position = experience.experience_blocks.parent_blocks.maximum(:position) || -1
 
+        prepared_payload = prepare_block_payload(kind: kind, payload: payload)
+
         block = experience.experience_blocks.create!(
           kind: kind,
           status: status,
-          payload: payload,
+          payload: prepared_payload,
           visible_to_roles: visible_to_roles,
           target_user_ids: target_user_ids,
           position: max_position + 1
@@ -37,6 +39,47 @@ module Experiences
 
         block
       end
+    end
+
+    def prepare_block_payload(kind:, payload:)
+      payload = payload.deep_dup || {}
+
+      case kind
+      when ExperienceBlock::MINIGAME_ARITHMETIC
+        question_count   = payload["question_count"].to_i
+        duration_seconds = payload["duration_seconds"].to_i
+        leaderboard_size = payload["leaderboard_size"].to_i
+
+        raise ArgumentError, "question_count must be positive"   unless question_count.positive?
+        raise ArgumentError, "duration_seconds must be positive" unless duration_seconds.positive?
+        raise ArgumentError, "leaderboard_size must be positive" unless leaderboard_size.positive?
+
+        payload["variant"]    = "arithmetic"
+        payload["questions"]  = Minigames::ArithmeticQuestionGenerator.generate(count: question_count)
+        payload["started_at"] = nil
+        payload["ended_at"]   = nil
+      when ExperienceBlock::MINIGAME_BALLOON_PUMP
+        target_units = payload["target_units"].to_i
+        raise ArgumentError, "target_units must be positive" unless target_units.positive?
+
+        payload["variant"]                  = "balloon_pump"
+        payload["target_units"]              = target_units
+        payload["started_at"]                = nil
+        payload["ended_at"]                  = nil
+        payload["winner_participant_ids"]    = []
+        payload["leader_fill"]               = 0
+        payload["leader_participant_id"]     = nil
+        payload["leader_last_broadcast_at"]  = nil
+      when ExperienceBlock::THE_SCENE
+        leaderboard_size = payload["leaderboard_size"].to_i
+        raise ArgumentError, "leaderboard_size must be positive" unless leaderboard_size.positive?
+
+        payload["leaderboard_size"] = leaderboard_size
+        payload["phase"]            = "idle"
+        payload["scene_started_at"] = nil
+      end
+
+      payload
     end
 
     def close_block!(block_id)
@@ -48,6 +91,7 @@ module Experiences
     def open_block!(block_id)
       block = experience.experience_blocks.find(block_id)
       block.open!
+      start_guess_who!(block) if block.kind == ExperienceBlock::GUESS_WHO
       block
     end
 
@@ -506,6 +550,347 @@ module Experiences
       end
     end
 
+    # GuessWho ----------------------------------------------------------------
+
+    def start_guess_who!(block)
+      payload = block.payload || {}
+      return block if payload["user_a_id"].present? && payload["user_b_id"].present?
+
+      segment_id = payload["segment_id"]
+      raise ActiveRecord::RecordInvalid, block unless segment_id.present?
+
+      transaction do
+        pool = experience.experience_participants
+          .joins(:experience_segments)
+          .where(experience_segments: { id: segment_id })
+          .where.not(role: %w[host moderator])
+
+        sampled = pool.to_a.sample(2)
+
+        if sampled.length < 2
+          payload["error"] = "Need at least 2 audience members in the selected segment"
+          block.update!(payload: payload)
+          return block
+        end
+
+        user_a, user_b = sampled
+        slides_a = ParticipantSubmissions.new(experience).for_user(user_a.user_id)
+        slides_b = ParticipantSubmissions.new(experience).for_user(user_b.user_id)
+
+        slides = interleave_slides(slides_a, user_a.user_id, slides_b, user_b.user_id)
+
+        payload["user_a_id"] = user_a.user_id
+        payload["user_b_id"] = user_b.user_id
+        payload["slides"] = slides
+        payload["current_slide_index"] = 0
+        payload["revealed"] = false
+        payload.delete("error")
+
+        block.update!(payload: payload)
+        block
+      end
+    end
+
+    def next_guess_who_slide!(block_id:)
+      adjust_guess_who_slide!(block_id, 1)
+    end
+
+    def previous_guess_who_slide!(block_id:)
+      adjust_guess_who_slide!(block_id, -1)
+    end
+
+    def reveal_guess_who!(block_id:)
+      block = experience.experience_blocks.find(block_id)
+      transaction do
+        payload = block.payload || {}
+        payload["revealed"] = true
+        block.update!(payload: payload)
+      end
+      block
+    end
+
+    # Minigame: arithmetic ----------------------------------------------------
+
+    def start_minigame_arithmetic!(block_id:)
+      block = experience.experience_blocks.find(block_id)
+      raise ArgumentError, "Block is not an arithmetic minigame" unless block.kind == ExperienceBlock::MINIGAME_ARITHMETIC
+
+      transaction do
+        payload = block.payload || {}
+
+        unless payload["questions"].is_a?(Array) && payload["questions"].any?
+          raise ArgumentError, "Minigame has no questions configured"
+        end
+
+        started_at = Time.current
+        duration   = payload["duration_seconds"].to_i
+
+        payload["started_at"] = started_at.iso8601
+        payload["ended_at"]   = nil
+
+        block.update!(payload: payload, status: :open)
+
+        Minigames::EndArithmeticJob.set(wait: duration.seconds)
+          .perform_later(block.id, payload["started_at"])
+
+        block
+      end
+    end
+
+    def end_minigame_arithmetic!(block_id:)
+      block = experience.experience_blocks.find(block_id)
+      raise ArgumentError, "Block is not an arithmetic minigame" unless block.kind == ExperienceBlock::MINIGAME_ARITHMETIC
+
+      transaction do
+        payload = block.payload || {}
+        return block if payload["ended_at"].present?
+
+        payload["ended_at"] = Time.current.iso8601
+        block.update!(payload: payload, status: :closed)
+      end
+
+      block
+    end
+
+    def submit_minigame_arithmetic_response!(block_id:, question_index:, answer:)
+      block = experience.experience_blocks.find(block_id)
+      raise ArgumentError, "Block is not an arithmetic minigame" unless block.kind == ExperienceBlock::MINIGAME_ARITHMETIC
+
+      payload = block.payload || {}
+      raise Experiences::InvalidTransitionError, "Minigame has not started" if payload["started_at"].blank?
+      raise Experiences::InvalidTransitionError, "Minigame has ended"       if payload["ended_at"].present?
+
+      questions = Array(payload["questions"])
+      index     = question_index.to_i
+      question  = questions[index]
+      raise ActiveRecord::RecordNotFound, "Question not found" unless question
+
+      submitted_text = answer.to_s.strip
+      parsed         = Integer(submitted_text, exception: false)
+      correct        = parsed.present? && parsed == question["answer"].to_i
+
+      submission = ExperienceMinigameSubmission.find_or_initialize_by(
+        experience_block_id: block.id,
+        user_id:             actor.id,
+        question_index:      index
+      )
+
+      return submission if submission.persisted?
+
+      submission.submitted_answer = submitted_text
+      submission.correct          = correct
+      submission.submitted_at     = Time.current
+      submission.save!
+      submission
+    end
+
+    # Minigame: balloon pump --------------------------------------------------
+
+    def start_minigame_balloon_pump!(block_id:)
+      block = experience.experience_blocks.find(block_id)
+      raise ArgumentError, "Block is not a balloon pump minigame" unless block.kind == ExperienceBlock::MINIGAME_BALLOON_PUMP
+
+      transaction do
+        payload                              = block.payload || {}
+        payload["started_at"]                = Time.current.iso8601
+        payload["ended_at"]                  = nil
+        payload["winner_participant_ids"]    = []
+        payload["leader_fill"]               = 0
+        payload["leader_participant_id"]     = nil
+        payload["leader_last_broadcast_at"]  = nil
+
+        block.experience_minigame_balloon_results.delete_all
+        block.update!(payload: payload, status: :open)
+      end
+
+      block
+    end
+
+    def end_minigame_balloon_pump!(block_id:)
+      block = experience.experience_blocks.find(block_id)
+      raise ArgumentError, "Block is not a balloon pump minigame" unless block.kind == ExperienceBlock::MINIGAME_BALLOON_PUMP
+
+      transaction do
+        payload = block.payload || {}
+        return block if payload["ended_at"].present?
+
+        payload["ended_at"] = Time.current.iso8601
+        block.update!(payload: payload, status: :closed)
+      end
+
+      block
+    end
+
+    # Hot path. Returns a hash describing the resulting state so the controller
+    # can decide what (if anything) to broadcast.
+    #
+    # @return [Hash] :result — :accepted, :ignored
+    #                :winners — array of ExperienceParticipant when game just ended
+    #                :leader_changed — true if the leader for monitor display moved
+    def submit_balloon_pump_update!(block_id:, fill_amount:)
+      block = experience.experience_blocks.find(block_id)
+      raise ArgumentError, "Block is not a balloon pump minigame" unless block.kind == ExperienceBlock::MINIGAME_BALLOON_PUMP
+
+      payload      = block.payload || {}
+      target_units = payload["target_units"].to_i
+      requested    = fill_amount.to_i.clamp(0, target_units)
+
+      return { result: :ignored } if payload["started_at"].blank?
+      return { result: :ignored } if payload["ended_at"].present?
+
+      participant = experience.experience_participants.find_by(user_id: actor.id)
+      raise ActiveRecord::RecordNotFound, "Participant not found" unless participant
+
+      result = ExperienceMinigameBalloonResult
+        .where(experience_block_id: block.id, user_id: actor.id)
+        .first_or_initialize
+
+      return { result: :ignored } if result.persisted? && result.fill_amount >= requested
+
+      result.fill_amount = [result.fill_amount, requested].max
+      result.save!
+
+      crossed_target = result.fill_amount >= target_units
+      leader_changed = false
+      winners        = []
+
+      if crossed_target
+        winners = close_balloon_pump_with_winners!(block, target_units)
+      else
+        leader_changed = update_balloon_pump_leader!(block, participant, result.fill_amount)
+      end
+
+      { result: :accepted, winners: winners, leader_changed: leader_changed }
+    end
+
+    # The Scene -------------------------------------------------------------
+
+    SCENE_PHASES = %w[idle collecting voting ended].freeze
+
+    def advance_the_scene_phase!(block_id:, phase:)
+      raise ArgumentError, "Unknown phase: #{phase}" unless SCENE_PHASES.include?(phase.to_s)
+
+      block = experience.experience_blocks.find(block_id)
+      raise ArgumentError, "Block is not a Scene" unless block.kind == ExperienceBlock::THE_SCENE
+
+      transaction do
+        payload = block.payload || {}
+        payload["phase"] = phase.to_s
+
+        # First time we leave idle, stamp scene_started_at so votes scope cleanly.
+        if payload["phase"] != "idle" && payload["scene_started_at"].blank?
+          payload["scene_started_at"] = Time.current.iso8601(6)
+        end
+
+        new_status =
+          case payload["phase"]
+          when "idle"   then :hidden
+          when "ended"  then :closed
+          else               :open
+          end
+
+        block.update!(payload: payload, status: new_status)
+      end
+
+      block
+    end
+
+    def start_next_scene!(block_id:)
+      block = experience.experience_blocks.find(block_id)
+      raise ArgumentError, "Block is not a Scene" unless block.kind == ExperienceBlock::THE_SCENE
+
+      transaction do
+        payload = block.payload || {}
+        prior = payload["scene_started_at"]
+        candidate = Time.current.iso8601(6)
+
+        # Guarantee strict monotonic increase even if the host clicks
+        # twice in the same microsecond.
+        if prior.present? && candidate <= prior
+          candidate = (Time.iso8601(prior) + 0.001.seconds).iso8601(6)
+        end
+
+        payload["phase"]            = "collecting"
+        payload["scene_started_at"] = candidate
+        block.update!(payload: payload, status: :open)
+      end
+
+      block
+    end
+
+    def submit_the_scene_suggestion!(block_id:, text:)
+      block = experience.experience_blocks.find(block_id)
+      raise ArgumentError, "Block is not a Scene" unless block.kind == ExperienceBlock::THE_SCENE
+
+      payload = block.payload || {}
+      raise Experiences::InvalidTransitionError, "Scene is not collecting suggestions" unless %w[collecting voting].include?(payload["phase"])
+
+      trimmed = text.to_s.strip
+      raise ArgumentError, "Suggestion cannot be blank" if trimmed.empty?
+      raise ArgumentError, "Suggestion is too long (#{ImprovSuggestion::MAX_LENGTH} max)" if trimmed.length > ImprovSuggestion::MAX_LENGTH
+
+      transaction do
+        existing = block.improv_suggestions.active.find_by(user_id: actor.id)
+        raise Experiences::InvalidTransitionError, "You already submitted this scene" if existing
+
+        block.improv_suggestions.create!(user_id: actor.id, text: trimmed)
+      end
+    end
+
+    def submit_the_scene_vote!(block_id:, suggestion_id:)
+      block = experience.experience_blocks.find(block_id)
+      raise ArgumentError, "Block is not a Scene" unless block.kind == ExperienceBlock::THE_SCENE
+
+      payload = block.payload || {}
+      raise Experiences::InvalidTransitionError, "Voting is not open" unless payload["phase"] == "voting"
+
+      scene_started_at = payload["scene_started_at"]
+      raise Experiences::InvalidTransitionError, "Scene has not started" if scene_started_at.blank?
+
+      suggestion = block.improv_suggestions.active.find(suggestion_id)
+      raise ArgumentError, "Cannot vote for your own suggestion" if suggestion.user_id == actor.id
+
+      transaction do
+        vote = ImprovVote
+          .where(experience_block_id: block.id, user_id: actor.id, scene_started_at: scene_started_at)
+          .first_or_initialize
+
+        vote.improv_suggestion_id = suggestion.id
+        vote.save!
+        vote
+      end
+    end
+
+    def clear_the_scene_top!(block_id:)
+      block = experience.experience_blocks.find(block_id)
+      raise ArgumentError, "Block is not a Scene" unless block.kind == ExperienceBlock::THE_SCENE
+
+      top = TheScene::Tally.top(block: block, scene_started_at: block.payload["scene_started_at"])&.first
+      return block unless top
+
+      top.clear!
+      block
+    end
+
+    def clear_the_scene_suggestion!(block_id:, suggestion_id:)
+      block = experience.experience_blocks.find(block_id)
+      raise ArgumentError, "Block is not a Scene" unless block.kind == ExperienceBlock::THE_SCENE
+
+      suggestion = block.improv_suggestions.active.find(suggestion_id)
+      suggestion.clear!
+      block
+    end
+
+    def clear_the_scene_all!(block_id:)
+      block = experience.experience_blocks.find(block_id)
+      raise ArgumentError, "Block is not a Scene" unless block.kind == ExperienceBlock::THE_SCENE
+
+      block.improv_suggestions.active.update_all(cleared_at: Time.current)
+      block
+    end
+
+    # -----------------------------------------------------------------------
+
     def update_block!(block_id:, payload:, visible_to_segment_ids:, variables: nil, questions: nil)
       transaction do
         block = experience.experience_blocks.find(block_id)
@@ -609,6 +994,80 @@ module Experiences
     end
 
     private
+
+    def close_balloon_pump_with_winners!(block, target_units)
+      transaction do
+        block.lock!
+        payload = block.payload || {}
+        return [] if payload["ended_at"].present?
+
+        winning_results = ExperienceMinigameBalloonResult
+          .where(experience_block_id: block.id)
+          .where("fill_amount >= ?", target_units)
+          .to_a
+
+        winning_user_ids = winning_results.map(&:user_id)
+        winners = experience.experience_participants
+          .includes(:user)
+          .where(user_id: winning_user_ids)
+          .to_a
+
+        payload["ended_at"]               = Time.current.iso8601
+        payload["winner_participant_ids"] = winners.map(&:id)
+        payload["leader_fill"]            = target_units
+        payload["leader_participant_id"]  = winners.first&.id
+
+        block.update!(payload: payload, status: :closed)
+        winners
+      end
+    end
+
+    def update_balloon_pump_leader!(block, participant, fill_amount)
+      payload      = block.payload || {}
+      target_units = payload["target_units"].to_i
+      return false if target_units.zero?
+
+      current_leader_fill = payload["leader_fill"].to_i
+
+      return false if fill_amount < current_leader_fill
+      return false if fill_amount == current_leader_fill && payload["leader_participant_id"] == participant.id
+
+      block.update_columns(
+        payload: payload.merge(
+          "leader_fill"            => fill_amount,
+          "leader_participant_id"  => participant.id
+        ),
+        updated_at: Time.current
+      )
+
+      true
+    end
+
+    def adjust_guess_who_slide!(block_id, delta)
+      block = experience.experience_blocks.find(block_id)
+      transaction do
+        payload = block.payload || {}
+        slides = Array(payload["slides"])
+        current = payload["current_slide_index"].to_i
+        target = (current + delta).clamp(0, [slides.length - 1, 0].max)
+        payload["current_slide_index"] = target
+        block.update!(payload: payload)
+      end
+      block
+    end
+
+    def interleave_slides(list_a, user_a_id, list_b, user_b_id)
+      tagged_a = list_a.map { |e| e.merge(user_id: user_a_id, slot: "a") }
+      tagged_b = list_b.map { |e| e.merge(user_id: user_b_id, slot: "b") }
+
+      slides = []
+      max = [tagged_a.length, tagged_b.length].max
+      max.times do |i|
+        slides << tagged_a[i] if tagged_a[i]
+        slides << tagged_b[i] if tagged_b[i]
+      end
+      slides
+    end
 
     def create_participant_source_block(parent_block:, variable:, participant_id:, position:)
       participant = experience.experience_participants.find(participant_id)

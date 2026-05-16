@@ -91,6 +91,26 @@ Rails.application.routes.draw do
           post 'family_feud/restart_playing', action: :restart_playing
           post 'family_feud/restart_categorizing', action: :restart_categorizing
           post 'family_feud/restart_everything', action: :restart_everything
+
+          post 'guess_who/next', action: :next_guess_who_slide
+          post 'guess_who/previous', action: :previous_guess_who_slide
+          post 'guess_who/reveal', action: :reveal_guess_who
+
+          post 'minigame/arithmetic/start', action: :start_minigame_arithmetic
+          post 'minigame/arithmetic/end', action: :end_minigame_arithmetic
+          post 'minigame/arithmetic/responses', action: :submit_minigame_arithmetic_response
+
+          post 'minigame/balloon_pump/start', action: :start_minigame_balloon_pump
+          post 'minigame/balloon_pump/end', action: :end_minigame_balloon_pump
+          post 'minigame/balloon_pump/pump', action: :submit_minigame_balloon_pump_update
+
+          post 'the_scene/phase', action: :advance_the_scene_phase
+          post 'the_scene/next', action: :start_next_the_scene
+          post 'the_scene/clear_top', action: :clear_the_scene_top
+          post 'the_scene/clear/:suggestion_id', action: :clear_the_scene_suggestion
+          post 'the_scene/clear_all', action: :clear_the_scene_all
+          post 'the_scene/suggestions', action: :submit_the_scene_suggestion
+          post 'the_scene/votes', action: :submit_the_scene_vote
         end
 
         # collection do
@@ -108,6 +128,7 @@ Rails.application.routes.draw do
         member do
           post :avatar
           delete :kick
+          get :submissions
         end
       end
 

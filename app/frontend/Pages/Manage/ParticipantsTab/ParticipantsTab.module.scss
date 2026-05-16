@@ -52,6 +52,29 @@
   }
 }
 
+.actionsCell {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.viewBtn {
+  height: 24px;
+  padding: 0 0.5rem;
+  border-radius: 4px;
+  border: 1px solid hsl(var(--border));
+  background: transparent;
+  color: hsl(var(--muted-foreground));
+  font-size: 0.75rem;
+  cursor: pointer;
+
+  &:hover {
+    background: hsl(var(--muted) / 0.4);
+    color: hsl(var(--foreground));
+    border-color: hsl(var(--foreground));
+  }
+}
+
 .kickBtn {
   min-width: 2.75rem;
   min-height: 2.75rem;

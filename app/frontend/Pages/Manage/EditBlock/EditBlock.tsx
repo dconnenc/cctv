@@ -7,10 +7,14 @@ import { Block, BlockKind, FormBlockData, ParticipantSummary } from '@cctv/types
 import CreateAnnouncement from '../CreateBlock/CreateAnnouncement/CreateAnnouncement';
 import CreateBuzzer from '../CreateBlock/CreateBuzzer/CreateBuzzer';
 import CreateFamilyFeud from '../CreateBlock/CreateFamilyFeud/CreateFamilyFeud';
+import CreateGuessWho from '../CreateBlock/CreateGuessWho/CreateGuessWho';
 import CreateMadLib from '../CreateBlock/CreateMadLib/CreateMadLib';
+import CreateMinigameArithmetic from '../CreateBlock/CreateMinigameArithmetic/CreateMinigameArithmetic';
+import CreateMinigameBalloonPump from '../CreateBlock/CreateMinigameBalloonPump/CreateMinigameBalloonPump';
 import CreatePhotoUpload from '../CreateBlock/CreatePhotoUpload/CreatePhotoUpload';
 import CreatePoll from '../CreateBlock/CreatePoll/CreatePoll';
 import CreateQuestion from '../CreateBlock/CreateQuestion/CreateQuestion';
+import CreateTheScene from '../CreateBlock/CreateTheScene/CreateTheScene';
 import { EditBlockProvider, useEditBlockContext } from './EditBlockContext';
 
 import styles from './EditBlock.module.scss';
@@ -46,6 +50,10 @@ const KIND_LABELS: Record<BlockKind, string> = {
   [BlockKind.FAMILY_FEUD]: 'Family Feud',
   [BlockKind.PHOTO_UPLOAD]: 'Photo Upload',
   [BlockKind.BUZZER]: 'Buzzer',
+  [BlockKind.GUESS_WHO]: 'Guess Who',
+  [BlockKind.MINIGAME_ARITHMETIC]: 'Minigame: Arithmetic',
+  [BlockKind.MINIGAME_BALLOON_PUMP]: 'Minigame: Balloon Pump',
+  [BlockKind.THE_SCENE]: 'The Scene',
 };
 
 function EditBlockForm({ onClose, block }: EditBlockFormProps) {
@@ -131,6 +139,14 @@ function BlockEditor() {
       return <CreatePhotoUpload data={blockData.data} onChange={onChange} />;
     case BlockKind.BUZZER:
       return <CreateBuzzer data={blockData.data} onChange={onChange} />;
+    case BlockKind.GUESS_WHO:
+      return <CreateGuessWho data={blockData.data} onChange={onChange} />;
+    case BlockKind.MINIGAME_ARITHMETIC:
+      return <CreateMinigameArithmetic data={blockData.data} onChange={onChange} />;
+    case BlockKind.MINIGAME_BALLOON_PUMP:
+      return <CreateMinigameBalloonPump data={blockData.data} onChange={onChange} />;
+    case BlockKind.THE_SCENE:
+      return <CreateTheScene data={blockData.data} onChange={onChange} />;
     default: {
       const _exhaust: never = blockData;
       return <div>Unknown block type: {(_exhaust as { kind: string }).kind}</div>;

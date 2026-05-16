@@ -8,12 +8,10 @@
   color: hsl(var(--foreground));
   overflow: hidden;
   --row-h: 5.5rem;
-  --col-min-w: 13rem;
   --rule-color: hsl(var(--border));
   --rule-color-soft: hsl(var(--border) / 0.55);
 
   @media (max-width: 768px) {
-    --col-min-w: 9rem;
     --row-h: 4.5rem;
   }
 }
@@ -216,22 +214,29 @@
 .scroll {
   flex: 1;
   min-width: 0;
-  overflow-x: auto;
-  overflow-y: hidden;
+  min-height: 0;
+  overflow: auto;
   display: flex;
   flex-direction: column;
+  --col-template: repeat(1, 12rem);
 }
 
 .columnHeaderRow {
-  composes: headerStrip;
-  display: flex;
-  border-bottom: 1px solid var(--rule-color);
+  display: grid;
+  grid-template-columns: var(--col-template);
+  width: max-content;
+  min-width: 100%;
+  height: 2.5rem;
+  border-bottom: 1px solid hsl(var(--border));
+  flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  z-index: 1;
   background: hsl(var(--background));
 }
 
 .columnHeader {
-  width: var(--col-min-w);
-  flex-shrink: 0;
+  min-width: 0;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -283,16 +288,16 @@
 }
 
 .rows {
-  flex: 1;
   display: flex;
   flex-direction: column;
-  min-height: 0;
-  overflow-y: auto;
+  flex-shrink: 0;
+  width: max-content;
+  min-width: 100%;
 }
 
 .row {
-  display: flex;
-  flex: 0 0 var(--row-h);
+  display: grid;
+  grid-template-columns: var(--col-template);
   height: var(--row-h);
   border-bottom: 1px solid var(--rule-color-soft);
 
@@ -302,9 +307,9 @@
 }
 
 .cell {
-  width: var(--col-min-w);
-  flex-shrink: 0;
-  border-right: 1px solid var(--rule-color-soft);
+  min-width: 0;
+  overflow: hidden;
+  border-right: 1px solid hsl(var(--border));
   padding: 0.5rem;
   display: flex;
   flex-direction: column;

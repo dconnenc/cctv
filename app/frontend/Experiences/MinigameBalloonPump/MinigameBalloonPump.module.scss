@@ -1,0 +1,249 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 1rem;
+  padding: 1rem;
+  min-height: 70vh;
+  user-select: none;
+  touch-action: none;
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  font-family: var(--font-display);
+  letter-spacing: 0.05em;
+  text-align: center;
+}
+
+.fillLabel {
+  font-size: 1.5rem;
+  color: var(--phosphor);
+  text-shadow: var(--tv-glow);
+}
+
+.targetLabel {
+  font-size: 1rem;
+  opacity: 0.65;
+}
+
+.balloonStage {
+  position: relative;
+  width: min(80vw, 320px);
+  height: 280px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.balloonSvg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.balloonString {
+  stroke: var(--dim);
+  stroke-width: 1.5;
+  fill: none;
+}
+
+.pumpStage {
+  position: relative;
+  width: min(85vw, 320px);
+  height: 360px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.pumpCanvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+  border-radius: 0.5rem;
+}
+
+.pumpHint {
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  opacity: 0.7;
+  margin-top: 0.5rem;
+  text-align: center;
+}
+
+.waiting {
+  font-family: var(--font-display);
+  font-size: 2rem;
+  color: var(--foreground);
+  opacity: 0.7;
+  text-align: center;
+}
+
+.endedBanner {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  color: var(--phosphor);
+  text-align: center;
+  letter-spacing: 0.05em;
+}
+
+// Monitor
+
+.monitorRoot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2rem;
+  padding: 3rem;
+  min-height: 70vh;
+}
+
+.monitorTitle {
+  font-family: var(--font-display);
+  font-size: 2.25rem;
+  letter-spacing: 0.1em;
+  color: var(--foreground);
+  opacity: 0.85;
+  text-align: center;
+}
+
+.monitorBalloonStage {
+  position: relative;
+  width: min(60vw, 600px);
+  height: 60vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.monitorPercent {
+  font-family: var(--font-display);
+  font-size: 4rem;
+  letter-spacing: 0.05em;
+  color: var(--phosphor);
+  text-shadow: var(--tv-glow);
+}
+
+// Podium
+
+.podium {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 1.5rem;
+  margin-top: 2rem;
+}
+
+.podiumColumn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  width: 14rem;
+}
+
+.podiumPlace {
+  font-family: var(--font-display);
+  font-size: 2rem;
+  letter-spacing: 0.1em;
+}
+
+.podiumPlace[data-place='1'] {
+  color: #ffd700;
+  text-shadow: 0 0 12px rgba(255, 215, 0, 0.6);
+}
+
+.podiumPlace[data-place='2'] {
+  color: #c0c0c0;
+  text-shadow: 0 0 8px rgba(192, 192, 192, 0.5);
+}
+
+.podiumPlace[data-place='3'] {
+  color: #cd7f32;
+  text-shadow: 0 0 8px rgba(205, 127, 50, 0.5);
+}
+
+.podiumName {
+  font-family: var(--font-body);
+  font-size: 1.5rem;
+  text-align: center;
+}
+
+.podiumAvatar {
+  width: 7rem;
+  height: 7rem;
+  border-radius: 50%;
+  background: var(--card);
+  border: 3px solid var(--phosphor-glow-medium);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.podiumPlatform {
+  width: 100%;
+  background: linear-gradient(180deg, var(--phosphor-glow-strong) 0%, var(--phosphor-glow) 100%);
+  border-radius: 0.5rem 0.5rem 0 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  color: var(--black);
+}
+
+.podiumPlatform[data-place='1'] {
+  height: 7rem;
+}
+
+.podiumPlatform[data-place='2'] {
+  height: 5rem;
+}
+
+.podiumPlatform[data-place='3'] {
+  height: 3.5rem;
+}
+
+// Manage
+
+.manageRoot {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1rem;
+}
+
+.manageStat {
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  opacity: 0.85;
+}
+
+.manageActions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.liveResults {
+  max-height: 16rem;
+  overflow-y: auto;
+  border: 1px dashed var(--phosphor-glow-medium);
+  border-radius: 0.5rem;
+  padding: 0.5rem;
+}
+
+.liveResultRow {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 1rem;
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  padding: 0.25rem 0.5rem;
+}
