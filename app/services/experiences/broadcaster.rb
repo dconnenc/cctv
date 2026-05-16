@@ -161,6 +161,11 @@ class Experiences::Broadcaster
     end
   end
 
+  # `representative` is one participant from the profile group. Only its role
+  # and segments are used to compute the payload — it is not personal to that
+  # participant. When user_id is removed from the fingerprint, a group will
+  # contain multiple participants sharing an identical visibility profile and
+  # any one of them can serve as the representative here.
   def broadcast_to_profile(stream_key, representative)
     begin
       payload = Experiences::Visibility.for_participant(experience, representative)
