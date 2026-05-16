@@ -156,6 +156,7 @@ export function CreateBlockProvider({
   const initialVisibleSegments = defaultSegmentName ? [defaultSegmentName] : [];
 
   const [visibleSegments, setVisibleSegments] = useState<string[]>(initialVisibleSegments);
+  const [viewAdditionalDetails, setViewAdditionalDetails] = useState<boolean>(false);
 
   const {
     createExperienceBlock,
@@ -474,6 +475,7 @@ export function CreateBlockProvider({
       // Reset all form state
       setBlockData(getDefaultFormData(blockData.kind));
       setVisibleSegments(initialVisibleSegments);
+      setViewAdditionalDetails(false);
     },
     [
       blockData,
@@ -500,6 +502,8 @@ export function CreateBlockProvider({
     visibleSegments,
     setVisibleSegments,
     defaultSegmentName,
+    viewAdditionalDetails,
+    setViewAdditionalDetails,
   };
 
   return <CreateBlockContext.Provider value={contextValue}>{children}</CreateBlockContext.Provider>;

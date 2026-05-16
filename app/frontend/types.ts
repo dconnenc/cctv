@@ -1099,6 +1099,8 @@ export interface CreateBlockContextValue {
   visibleSegments: string[];
   setVisibleSegments: (segments: string[]) => void;
   defaultSegmentName: string | null;
+  viewAdditionalDetails: boolean;
+  setViewAdditionalDetails: (view: boolean) => void;
 }
 
 // Props interface for block components
