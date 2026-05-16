@@ -56,7 +56,7 @@ RSpec.describe "Mad Lib Block", type: :system do
 
     # Alice submits her word
     using_session(:alice) do
-      find("input[aria-label='adjective']").fill_in with: "fluffy"
+      find("input[aria-label='Enter an adjective']").fill_in with: "fluffy"
       click_button "Submit"
     end
 
@@ -104,7 +104,7 @@ RSpec.describe "Mad Lib Block", type: :system do
       expect(page).to have_css("li[aria-label='block 1']")
 
       using_session(:alice) do
-        find("input[aria-label='word']").fill_in with: "world"
+        find("input[aria-label='Enter a word']").fill_in with: "world"
         click_button "Submit"
       end
 

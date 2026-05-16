@@ -200,14 +200,12 @@ class Api::ExperienceBlocksController < Api::BaseController
   # POST /api/experiences/:experience_id/blocks/:id/submit_poll_response
   def submit_poll_response
     with_experience_orchestration do
-      submission = Experiences::Orchestrator.new(
-        experience: @experience, actor: @user
-      ).submit_poll_response!(
-        block_id: params[:id],
-        answer: params[:answer]
-      )
+      orchestrator = Experiences::Orchestrator.new(experience: @experience, actor: @user)
+      submission = orchestrator.submit_poll_response!(block_id: params[:id], answer: params[:answer])
 
-      Experiences::Broadcaster.new(@experience).broadcast_experience_update
+      Experiences::Broadcaster.new(@experience).broadcast_experience_update(
+        profile_changes: orchestrator.profile_changes
+      )
 
       render json: { success: true, submission: { id: submission.id, answer: submission.answer } }, status: 200
     end

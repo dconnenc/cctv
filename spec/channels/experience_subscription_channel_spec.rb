@@ -111,13 +111,14 @@ RSpec.describe ExperienceSubscriptionChannel, type: :channel do
       expect(subscription).to be_confirmed
     end
 
-    # NOTE: This will be a generic stream in the future where client side data
-    # is kept on the client. For now, we have a stream p/ participant
-    it "streams from the participant's individual stream" do
+    it "streams from the participant's profile stream" do
       subscribe(code: experience.code_slug, token: token)
 
+      fingerprint = Experiences::Broadcaster.visibility_fingerprint(
+        experience, participant
+      )
       expect(subscription).to have_stream_from(
-        "experience_#{experience.id}_participant_#{participant.id}"
+        Experiences::Broadcaster.profile_stream_key(experience, fingerprint)
       )
     end
 

@@ -571,6 +571,31 @@ RSpec.describe Experiences::Orchestrator do
       "poll",
       ExperiencePollSubmission,
       :experience_poll_submission
+
+    context "when the poll has segment assignments" do
+      let(:segment) { experience.experience_segments.create!(name: "Team A", color: "#FF0000", position: 0) }
+      let!(:block) do
+        create(:experience_block, experience: experience, kind: "poll", status: :open, payload: {
+          "question" => "Pick a team",
+          "options" => ["option_a"],
+          "pollType" => "single",
+          "segmentAssignments" => { "option_a" => segment.id }
+        })
+      end
+
+      it "records a profile change with the old fingerprint" do
+        participant = experience.experience_participants.find_by(user: user)
+        old_fingerprint = Experiences::Broadcaster.visibility_fingerprint(experience, participant)
+
+        orchestrator = described_class.new(actor: user, experience: experience)
+        orchestrator.submit_poll_response!(block_id: block.id, answer: answer)
+
+        expect(orchestrator.profile_changes).to eq([
+          { participant: participant, old_fingerprint: old_fingerprint }
+        ])
+      end
+    end
+
   end
 
   describe "#submit_mad_lib_response!" do

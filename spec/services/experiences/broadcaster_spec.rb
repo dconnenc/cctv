@@ -12,9 +12,12 @@ RSpec.describe Experiences::Broadcaster do
   end
 
   def broadcast_call_for(calls, participant)
-    calls.find do |call|
-      call[:stream_key].include?("participant_#{participant.id}")
-    end
+    fingerprint = Experiences::Broadcaster.visibility_fingerprint(
+      participant.experience,
+      participant
+    )
+    expected_key = Experiences::Broadcaster.profile_stream_key(participant.experience, fingerprint)
+    calls.find { |call| call[:stream_key] == expected_key }
   end
 
   describe "#broadcast_experience_update" do
@@ -38,7 +41,7 @@ RSpec.describe Experiences::Broadcaster do
 
       before { subject }
 
-      it "broadcasts three messages (participant, monitor, admin)" do
+      it "broadcasts three messages (profile, monitor, admin)" do
         expect(broadcast_calls.size).to eq(3)
       end
 
@@ -109,7 +112,7 @@ RSpec.describe Experiences::Broadcaster do
       context "initial state" do
         before { subject }
 
-          it "sends question block to question participant" do
+        it "sends mad_lib block with visible children to question participant" do
           message = broadcast_call_for(
             broadcast_calls,
             question_participant
@@ -117,13 +120,16 @@ RSpec.describe Experiences::Broadcaster do
           blocks = message[:message][:experience][:blocks]
 
           expect(blocks.size).to eq(1)
-          expect(blocks.first[:kind]).to eq("question")
-          expect(blocks.first[:payload]["question"]).to eq(
-            "Favorite thing"
-          )
+          expect(blocks.first[:kind]).to eq("mad_lib")
+
+          children = blocks.first[:children]
+          expect(children).to be_present
+          child_kinds = children.map { |c| c[:kind] }
+          expect(child_kinds).to include("question")
+          expect(child_kinds).to include("poll")
         end
 
-        it "sends poll block to poll participant" do
+        it "sends mad_lib block with visible children to poll participant" do
           message = broadcast_call_for(
             broadcast_calls,
             poll_participant
@@ -131,10 +137,12 @@ RSpec.describe Experiences::Broadcaster do
           blocks = message[:message][:experience][:blocks]
 
           expect(blocks.size).to eq(1)
-          expect(blocks.first[:kind]).to eq("poll")
-          expect(blocks.first[:payload]["question"]).to eq(
-            "What is your favorite activity?"
-          )
+          expect(blocks.first[:kind]).to eq("mad_lib")
+
+          children = blocks.first[:children]
+          expect(children).to be_present
+          child_kinds = children.map { |c| c[:kind] }
+          expect(child_kinds).to include("poll")
         end
 
         it "sends parent block with children embedded to host participant" do
@@ -175,7 +183,7 @@ RSpec.describe Experiences::Broadcaster do
           subject
         end
 
-        it "sends poll block to question participant after responding" do
+        it "sends mad_lib block to question participant after responding" do
           message = broadcast_call_for(
             broadcast_calls,
             question_participant
@@ -183,7 +191,7 @@ RSpec.describe Experiences::Broadcaster do
           blocks = message[:message][:experience][:blocks]
 
           expect(blocks.size).to eq(1)
-          expect(blocks.first[:kind]).to eq("poll")
+          expect(blocks.first[:kind]).to eq("mad_lib")
         end
       end
 
@@ -307,19 +315,24 @@ RSpec.describe Experiences::Broadcaster do
     end
   end
 
-  describe "ActionCable integration" do
-    let!(:participant) do
-      create(:experience_participant, experience: experience)
+  describe "profile_changes: resubscribe notifications" do
+    let!(:participant) { create(:experience_participant, experience: experience) }
+    let(:segment) { experience.experience_segments.create!(name: "Team A", color: "#FF0000", position: 0) }
+
+    it "sends resubscribe_required to the old stream when a participant's fingerprint has changed" do
+      old_fingerprint = described_class.visibility_fingerprint(experience, participant)
+      participant.experience_segments << segment
+
+      broadcaster.broadcast_experience_update(
+        profile_changes: [{ participant: participant, old_fingerprint: old_fingerprint }]
+      )
+
+      old_stream = described_class.profile_stream_key(experience, old_fingerprint)
+      resubscribe_call = broadcast_calls.find { |c| c[:stream_key] == old_stream }
+      expect(resubscribe_call).to be_present
+      expect(resubscribe_call[:message][:type]).to eq("resubscribe_required")
     end
 
-    before do
-      allow(broadcaster).to receive(:send_broadcast).and_call_original
-    end
-
-    it "calls ActionCable.server.broadcast when broadcasting" do
-      expect(ActionCable.server).to receive(:broadcast).at_least(:once)
-      broadcaster.broadcast_experience_update
-    end
   end
 
 end

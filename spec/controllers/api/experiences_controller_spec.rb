@@ -36,9 +36,6 @@ RSpec.describe Api::ExperiencesController, type: :controller do
       end
 
       it "does not return 403" do
-        broadcaster = instance_double(Experiences::Broadcaster, broadcast_experience_update: true)
-        allow(Experiences::Broadcaster).to receive(:new).and_return(broadcaster)
-
         public_send(http_method, action_name, params: { id: experience.code_slug }.merge(extra_params || {}), format: :json)
         expect(response.status).not_to eql(403)
       end
