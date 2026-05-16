@@ -1,11 +1,12 @@
 /* ─────────────────────────────────────────────────────────────
- * Button — four variants, one type treatment, three sizes.
+ * Button — five variants, one type treatment, three sizes.
  *
  * Variants:
- *   primary    phosphor fill           — the CTA. One per surface.
- *   secondary  1px foreground outline  — the default form button.
- *   outline    1px border outline      — utility / low-emphasis.
- *   ghost      no chrome               — icon buttons, list-row actions.
+ *   primary      phosphor fill           — the CTA. One per surface.
+ *   secondary    1px foreground outline  — the default form button.
+ *   destructive  red fill                — destructive primary actions.
+ *   outline      1px border outline      — utility / low-emphasis.
+ *   ghost        no chrome               — icon buttons, list-row actions.
  *
  * Emphasis comes from fill weight, not from typography. All variants
  * are uppercase + tracked + 700 weight in font-ui (Barlow Condensed),
@@ -100,6 +101,21 @@
     background: hsl(var(--foreground));
     color: hsl(var(--background));
     border-color: hsl(var(--foreground));
+  }
+}
+
+.destructive {
+  background: hsl(var(--destructive));
+  color: hsl(var(--destructive-foreground));
+  border-color: transparent;
+
+  &:hover:not(:disabled) {
+    filter: brightness(1.1);
+    box-shadow: 0 0 8px hsl(var(--destructive) / 0.4);
+  }
+
+  &[aria-pressed='true'] {
+    box-shadow: inset 0 0 0 1px hsl(0 0% 0% / 0.2);
   }
 }
 

@@ -4,7 +4,7 @@ import { Link, LinkProps } from 'react-router-dom';
 
 import styles from './Button.module.scss';
 
-type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost';
+type ButtonVariant = 'primary' | 'secondary' | 'destructive' | 'outline' | 'ghost';
 type ButtonSize = 'default' | 'sm' | 'lg';
 
 interface SharedProps {

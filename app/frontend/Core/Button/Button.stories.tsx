@@ -32,7 +32,7 @@ export const Submit: Story = {
   args: { children: 'Submit', type: 'submit' },
 };
 
-const VARIANTS = ['primary', 'secondary', 'outline', 'ghost'] as const;
+const VARIANTS = ['primary', 'secondary', 'destructive', 'outline', 'ghost'] as const;
 const SIZES = ['sm', 'default', 'lg'] as const;
 
 const sectionStyle: React.CSSProperties = {
