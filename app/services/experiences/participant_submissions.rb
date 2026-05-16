@@ -14,7 +14,6 @@ module Experiences
       entries = []
       entries.concat(poll_entries(user_id, block_ids, blocks_by_id))
       entries.concat(question_entries(user_id, block_ids, blocks_by_id))
-      entries.concat(mad_lib_entries(user_id, block_ids, blocks_by_id))
       entries.concat(photo_upload_entries(user_id, block_ids, blocks_by_id))
       entries.concat(buzzer_entries(user_id, block_ids, blocks_by_id))
 
@@ -52,21 +51,6 @@ module Experiences
           kind: ExperienceBlock::QUESTION,
           prompt: block.payload&.dig("question").to_s,
           answer: { text: text, raw: s.answer },
-          submitted_at: s.created_at
-        )
-      end
-    end
-
-    def mad_lib_entries(user_id, block_ids, blocks_by_id)
-      ExperienceMadLibSubmission.where(experience_block_id: block_ids, user_id: user_id).map do |s|
-        block = blocks_by_id[s.experience_block_id]
-
-        build_entry(
-          block: block,
-          blocks_by_id: blocks_by_id,
-          kind: ExperienceBlock::MAD_LIB,
-          prompt: block.payload&.dig("title").to_s.presence || "Mad Lib",
-          answer: { text: format_mad_lib(s.answer), raw: s.answer },
           submitted_at: s.created_at
         )
       end
@@ -145,11 +129,5 @@ module Experiences
       answer.to_s
     end
 
-    def format_mad_lib(answer)
-      return answer if answer.is_a?(String)
-      return nil unless answer.is_a?(Hash)
-
-      answer.map { |k, v| "#{k}: #{v}" }.join(" / ")
-    end
   end
 end

@@ -8,7 +8,6 @@ import CreateAnnouncement from '../CreateBlock/CreateAnnouncement/CreateAnnounce
 import CreateBuzzer from '../CreateBlock/CreateBuzzer/CreateBuzzer';
 import CreateFamilyFeud from '../CreateBlock/CreateFamilyFeud/CreateFamilyFeud';
 import CreateGuessWho from '../CreateBlock/CreateGuessWho/CreateGuessWho';
-import CreateMadLib from '../CreateBlock/CreateMadLib/CreateMadLib';
 import CreateMinigameArithmetic from '../CreateBlock/CreateMinigameArithmetic/CreateMinigameArithmetic';
 import CreateMinigameBalloonPump from '../CreateBlock/CreateMinigameBalloonPump/CreateMinigameBalloonPump';
 import CreatePhotoUpload from '../CreateBlock/CreatePhotoUpload/CreatePhotoUpload';
@@ -46,7 +45,6 @@ const KIND_LABELS: Record<BlockKind, string> = {
   [BlockKind.POLL]: 'Poll',
   [BlockKind.QUESTION]: 'Question',
   [BlockKind.ANNOUNCEMENT]: 'Announcement',
-  [BlockKind.MAD_LIB]: 'Mad Lib',
   [BlockKind.FAMILY_FEUD]: 'Family Feud',
   [BlockKind.PHOTO_UPLOAD]: 'Photo Upload',
   [BlockKind.BUZZER]: 'Buzzer',
@@ -112,7 +110,7 @@ function EditBlockForm({ onClose, block }: EditBlockFormProps) {
 }
 
 function BlockEditor() {
-  const { blockData, setBlockData, participants } = useEditBlockContext();
+  const { blockData, setBlockData } = useEditBlockContext();
 
   const onChange = (updates: Record<string, unknown>) => {
     setBlockData(
@@ -131,8 +129,6 @@ function BlockEditor() {
       return <CreateQuestion data={blockData.data} onChange={onChange} />;
     case BlockKind.ANNOUNCEMENT:
       return <CreateAnnouncement data={blockData.data} onChange={onChange} />;
-    case BlockKind.MAD_LIB:
-      return <CreateMadLib data={blockData.data} onChange={onChange} participants={participants} />;
     case BlockKind.FAMILY_FEUD:
       return <CreateFamilyFeud data={blockData.data} onChange={onChange} />;
     case BlockKind.PHOTO_UPLOAD:

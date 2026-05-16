@@ -1,5 +1,6 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 
+import { useExperienceState } from '@cctv/contexts/ExperienceStateContext';
 import { Button } from '@cctv/core/Button/Button';
 import { useTheScene } from '@cctv/hooks/useTheScene';
 import { TheSceneBlock, TheSceneSuggestion } from '@cctv/types';
@@ -26,7 +27,18 @@ export default function TheScene({ block, viewContext = 'participant' }: Props) 
 
 function ParticipantView({ block }: { block: TheSceneBlock }) {
   const { submitSuggestion, submitVote, isSubmitting } = useTheScene();
-  const { phase, own_suggestion, votable_suggestions, own_vote_suggestion_id } = block.payload;
+  const { submissionState } = useExperienceState();
+  const { phase } = block.payload;
+  const blockState = submissionState[block.id];
+  const own_suggestion = blockState?.own_suggestion ?? null;
+  const own_vote_suggestion_id = blockState?.own_vote_suggestion_id ?? null;
+  const votable_suggestions = useMemo(
+    () =>
+      phase === 'voting' && own_suggestion
+        ? block.payload.leaderboard.filter((s) => s.id !== own_suggestion.id)
+        : [],
+    [phase, own_suggestion, block.payload.leaderboard],
+  );
   const [text, setText] = useState('');
 
   // Reset local input whenever the user has no active own suggestion (i.e. between scenes / after clear).

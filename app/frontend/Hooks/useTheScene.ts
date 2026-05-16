@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react';
 
 import { useAdminAuth } from '@cctv/contexts/AdminAuthContext';
 import { useExperience } from '@cctv/contexts/ExperienceContext';
+import { useExperienceState } from '@cctv/contexts/ExperienceStateContext';
 import { TheScenePhase } from '@cctv/types';
 
 interface ActionResult {
@@ -12,6 +13,7 @@ interface ActionResult {
 export function useTheScene() {
   const { code, experienceFetch } = useExperience();
   const { adminFetch } = useAdminAuth();
+  const { setSubmissionState } = useExperienceState();
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -85,6 +87,15 @@ export function useTheScene() {
           setError(msg);
           return { success: false, error: msg };
         }
+        if (data.suggestion) {
+          setSubmissionState((prev) => ({
+            ...prev,
+            [blockId]: {
+              ...prev[blockId],
+              own_suggestion: { id: data.suggestion.id, text: data.suggestion.text },
+            },
+          }));
+        }
         return { success: true };
       } catch (e: unknown) {
         const msg =
@@ -97,7 +108,7 @@ export function useTheScene() {
         setIsSubmitting(false);
       }
     },
-    [code, experienceFetch, buildParticipantUrl],
+    [code, experienceFetch, buildParticipantUrl, setSubmissionState],
   );
 
   const submitVote = useCallback(
@@ -115,6 +126,12 @@ export function useTheScene() {
           setError(msg);
           return { success: false, error: msg };
         }
+        if (data.vote) {
+          setSubmissionState((prev) => ({
+            ...prev,
+            [blockId]: { ...prev[blockId], own_vote_suggestion_id: data.vote.improv_suggestion_id },
+          }));
+        }
         return { success: true };
       } catch (e: unknown) {
         const msg =
@@ -125,7 +142,7 @@ export function useTheScene() {
         return { success: false, error: msg };
       }
     },
-    [code, experienceFetch, buildParticipantUrl],
+    [code, experienceFetch, buildParticipantUrl, setSubmissionState],
   );
 
   return {

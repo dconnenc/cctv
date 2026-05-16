@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react';
 
 import { useAdminAuth } from '@cctv/contexts/AdminAuthContext';
 import { useExperience } from '@cctv/contexts/ExperienceContext';
+import { useExperienceState } from '@cctv/contexts/ExperienceStateContext';
 
 interface ActionResult {
   success: boolean;
@@ -11,6 +12,7 @@ interface ActionResult {
 export function useMinigameArithmetic() {
   const { code, experienceFetch } = useExperience();
   const { adminFetch } = useAdminAuth();
+  const { setSubmissionState } = useExperienceState();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -74,6 +76,14 @@ export function useMinigameArithmetic() {
           setError(msg);
           return { success: false, error: msg };
         }
+        setSubmissionState((prev) => ({
+          ...prev,
+          [blockId]: {
+            ...prev[blockId],
+            current_question: data.current_question ?? null,
+            score: data.score,
+          },
+        }));
         return { success: true };
       } catch (e: unknown) {
         const msg =
@@ -86,7 +96,7 @@ export function useMinigameArithmetic() {
         setIsSubmitting(false);
       }
     },
-    [code, experienceFetch, buildResponseUrl],
+    [code, experienceFetch, buildResponseUrl, setSubmissionState],
   );
 
   return { start, end, submitAnswer, isSubmitting, error };

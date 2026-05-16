@@ -14,6 +14,10 @@ module Experiences
       new(experience).for_participant(participant)
     end
 
+    def self.for_profile(experience, role:, segments:, user_id: nil)
+      new(experience).for_profile(role: role, segments: segments, user_id: user_id)
+    end
+
     def self.block_visible_to_user?(block:, user:)
       new(block.experience).block_visible_to_user?(block, user)
     end
@@ -50,6 +54,19 @@ module Experiences
       else
         current = resolve_participant_block(visible)
         blocks  = current ? [serialize_block(current, participant_role: role, user: participant.user, view_context: :participant)] : []
+      end
+
+      experience_payload(blocks: blocks)
+    end
+
+    def for_profile(role:, segments:, user_id: nil)
+      visible = profile_visible_blocks(role: role, segments: segments, user_id: user_id)
+
+      if host_or_moderator?(role)
+        blocks = visible.map { |b| serialize_block(b, participant_role: role, user: nil, view_context: :participant) }
+      else
+        current = resolve_participant_block(visible)
+        blocks  = current ? [serialize_block(current, participant_role: role, user: nil, view_context: :participant)] : []
       end
 
       experience_payload(blocks: blocks)
@@ -111,6 +128,17 @@ module Experiences
         .select { |b| b.visible_to?(role: participant.role, segments: participant.segment_names, user_id: participant.user_id) }
     end
 
+    def profile_visible_blocks(role:, segments:, user_id: nil)
+      all     = @experience.experience_blocks.includes(:experience_segments).order(position: :asc).to_a
+      parents = all.select(&:parent_block?)
+
+      return parents if host_or_moderator?(role)
+
+      parents
+        .select { |b| b.visible_by_status?(@experience) }
+        .select { |b| b.visible_to?(role: role, segments: segments, user_id: user_id) }
+    end
+
     def resolve_participant_block(blocks)
       blocks.first
     end
@@ -146,8 +174,7 @@ module Experiences
 
       responded_user_ids = [
         ExperiencePollSubmission,
-        ExperienceQuestionSubmission,
-        ExperienceMadLibSubmission
+        ExperienceQuestionSubmission
       ].flat_map { |klass| klass.where(experience_block_id: all_block_ids).distinct.pluck(:user_id) }.uniq
 
       @experience.experience_participants.where(user_id: responded_user_ids).pluck(:id)
@@ -183,6 +210,7 @@ module Experiences
       end
     end
 
+
     def shape_the_scene_payload(block, participant_role, user, view_context)
       payload          = block.payload.deep_dup || {}
       phase            = payload["phase"] || "idle"
@@ -201,26 +229,6 @@ module Experiences
         "leaderboard_size" => leaderboard_size,
         "leaderboard"      => tally.first(leaderboard_size).map { |entry| serialize_tally_entry(entry) }
       }
-
-      if view_context == :participant && !privileged && user
-        own = block.improv_suggestions.active.find_by(user_id: user.id)
-        shaped["own_suggestion"] = own && { "id" => own.id, "text" => own.text }
-
-        own_vote = nil
-        if scene_started_at.present?
-          own_vote = block.improv_votes.find_by(
-            user_id: user.id,
-            scene_started_at: scene_started_at
-          )
-        end
-        shaped["own_vote_suggestion_id"] = own_vote&.improv_suggestion_id
-
-        if phase == "voting" && own.present?
-          shaped["votable_suggestions"] = tally
-            .reject { |entry| entry.suggestion.user_id == user.id }
-            .map { |entry| serialize_tally_entry(entry) }
-        end
-      end
 
       if privileged
         shaped["all_suggestions"] = tally.map { |entry| serialize_tally_entry(entry) }
@@ -390,43 +398,11 @@ module Experiences
         shaped["leaderboard"] = leaderboard_top_n(full, size)
       end
 
-      if view_context == :participant && !privileged
-        shaped.merge!(participant_minigame_view(block, user, started, ended, payload))
-      end
-
       if view_context == :monitor
         shaped["submission_count"] = ExperienceMinigameSubmission.where(experience_block_id: block.id).count
       end
 
       shaped
-    end
-
-    def participant_minigame_view(block, user, started, ended, payload)
-      return { "current_question" => nil, "score" => { "correct" => 0, "completed" => 0 } } unless user
-
-      submissions = ExperienceMinigameSubmission
-        .where(experience_block_id: block.id, user_id: user.id)
-        .order(question_index: :asc)
-        .to_a
-
-      answered_indexes = submissions.map(&:question_index).to_set
-      questions = Array(payload["questions"])
-
-      next_question = nil
-      if started && !ended
-        next_q = questions.find { |q| !answered_indexes.include?(q["index"]) }
-        if next_q
-          next_question = { "index" => next_q["index"], "prompt" => next_q["prompt"] }
-        end
-      end
-
-      {
-        "current_question" => next_question,
-        "score" => {
-          "correct"   => submissions.count(&:correct),
-          "completed" => submissions.size
-        }
-      }
     end
 
     def leaderboard_top_n(entries, size)
@@ -452,16 +428,7 @@ module Experiences
     end
 
     def serialize_monitor_block(block)
-      serialized = serialize_block(block, participant_role: "host", view_context: :monitor)
-
-      if block.kind == ExperienceBlock::MAD_LIB
-        all_resolved = @experience.experience_participants.each_with_object({}) do |participant, vars|
-          vars.merge!(BlockResolver.resolve_variables(block: block, participant: participant))
-        end
-        serialized[:responses][:resolved_variables] = all_resolved
-      end
-
-      serialized
+      serialize_block(block, participant_role: "host", view_context: :monitor)
     end
 
     def serialize_response_data(block, participant_role, user)
@@ -497,18 +464,6 @@ module Experiences
 
       when ExperienceBlock::ANNOUNCEMENT
         {}
-
-      when ExperienceBlock::MAD_LIB
-        total    = block.has_dependencies? ? block.children.sum { |c| c.experience_question_submissions.count + c.experience_poll_submissions.count } : 0
-        response = { total: total, user_response: nil, user_responded: false }
-
-        if mod_or_host?(participant_role) || admin_user?(user)
-          participant   = user && @experience.experience_participants.find_by(user_id: user.id)
-          resolved_vars = participant ? BlockResolver.resolve_variables(block: block, participant: participant) : {}
-          response[:resolved_variables] = resolved_vars
-        end
-
-        response
 
       when ExperienceBlock::PHOTO_UPLOAD
         submissions = block.experience_photo_upload_submissions.includes(photo_attachment: :blob).to_a
@@ -597,27 +552,7 @@ module Experiences
           end
         end
 
-        if block.kind == ExperienceBlock::MAD_LIB
-          metadata[:variables]         = block.variables.map { |v| { id: v.id, key: v.key, label: v.label, datatype: v.datatype, required: v.required } }
-          metadata[:variable_bindings] = block.variables.flat_map { |v| v.bindings.map { |b| { id: b.id, variable_id: b.variable_id, source_block_id: b.source_block_id } } }
-        end
-
         metadata
-      elsif depth == 0 && block.kind == ExperienceBlock::MAD_LIB && block.has_dependencies?
-        participant = user && @experience.experience_participants.find_by(user_id: user.id)
-        segments    = participant&.segment_names || []
-        user_id     = participant&.user_id
-
-        visible_children = block.children.select do |child|
-          child.visible_by_status?(@experience) &&
-            child.visible_to?(role: participant_role, segments: segments, user_id: user_id)
-        end
-
-        {
-          children:          visible_children.map { |child| serialize_block(child, participant_role: participant_role, user: user, depth: depth + 1) },
-          variables:         block.variables.map { |v| { id: v.id, key: v.key, label: v.label, datatype: v.datatype, required: v.required } },
-          variable_bindings: block.variables.flat_map { |v| v.bindings.map { |b| { id: b.id, variable_id: b.variable_id, source_block_id: b.source_block_id } } }
-        }
       else
         {}
       end
