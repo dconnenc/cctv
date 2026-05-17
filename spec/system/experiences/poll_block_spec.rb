@@ -10,12 +10,12 @@ RSpec.describe "Poll Block", type: :system do
     )
 
     within_participants_panel do
-      click_button "Add", exact: true
+      click_button "Add"
       fill_in placeholder: "Segment name", with: "Team A"
       click_button "Add"
       expect(page).to have_text(/Team A/i)
 
-      click_button "Add", exact: true
+      click_button "Add"
       fill_in placeholder: "Segment name", with: "Team B"
       click_button "Add"
       expect(page).to have_text(/Team B/i)

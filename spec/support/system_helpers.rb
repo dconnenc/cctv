@@ -12,18 +12,18 @@ module SystemHelpers
   # click_button, click_link, and visit are overridden to call wait_for_animation
   # after each invocation. This ensures every navigation or action that could
   # trigger the boot animation is automatically guarded before proceeding.
-  def click_button(*args, &block)
-    super(*args, &block)
+  def click_button(*args, **kwargs, &block)
+    super(*args, **kwargs, &block)
     wait_for_animation
   end
 
-  def click_link(*args, &block)
-    super(*args, &block)
+  def click_link(*args, **kwargs, &block)
+    super(*args, **kwargs, &block)
     wait_for_animation
   end
 
-  def visit(*args, &block)
-    super(*args, &block)
+  def visit(*args, **kwargs, &block)
+    super(*args, **kwargs, &block)
     wait_for_animation
   end
 
