@@ -8,7 +8,6 @@ import {
   BlockStatus,
   CreateBlockContextValue,
   FormBlockData,
-  MadLibData,
   ParticipantSummary,
 } from '@cctv/types';
 
@@ -41,7 +40,6 @@ import {
   processGuessWhoBeforeSubmit,
   validateGuessWho,
 } from './CreateGuessWho/CreateGuessWho';
-import { getDefaultMadLibState, validateMadLib } from './CreateMadLib/CreateMadLib';
 import {
   buildMinigameArithmeticPayload,
   canMinigameArithmeticOpenImmediately,
@@ -119,8 +117,6 @@ export function CreateBlockProvider({
         return { kind: BlockKind.QUESTION, data: getDefaultQuestionState() };
       case BlockKind.ANNOUNCEMENT:
         return { kind: BlockKind.ANNOUNCEMENT, data: getDefaultAnnouncementState() };
-      case BlockKind.MAD_LIB:
-        return { kind: BlockKind.MAD_LIB, data: getDefaultMadLibState() };
       case BlockKind.FAMILY_FEUD:
         return { kind: BlockKind.FAMILY_FEUD, data: getDefaultFamilyFeudState() };
       case BlockKind.PHOTO_UPLOAD:
@@ -149,10 +145,14 @@ export function CreateBlockProvider({
     getDefaultFormData(BlockKind.POLL),
   );
 
-  const [visibleSegments, setVisibleSegments] = useState<string[]>([]);
-  const [viewAdditionalDetails, setViewAdditionalDetails] = useState<boolean>(false);
-
   const { experience } = useExperience();
+
+  const defaultSegmentName =
+    experience?.segments?.find((s) => s.id === experience.default_segment_id)?.name ?? null;
+  const initialVisibleSegments = defaultSegmentName ? [defaultSegmentName] : [];
+
+  const [visibleSegments, setVisibleSegments] = useState<string[]>(initialVisibleSegments);
+  const [viewAdditionalDetails, setViewAdditionalDetails] = useState<boolean>(false);
 
   const {
     createExperienceBlock,
@@ -183,9 +183,6 @@ export function CreateBlockProvider({
           break;
         case BlockKind.ANNOUNCEMENT:
           validationError = validateAnnouncement(blockData.data);
-          break;
-        case BlockKind.MAD_LIB:
-          validationError = validateMadLib(blockData.data);
           break;
         case BlockKind.FAMILY_FEUD:
           validationError = validateFamilyFeud(blockData.data);
@@ -238,9 +235,6 @@ export function CreateBlockProvider({
           break;
         case BlockKind.ANNOUNCEMENT:
           canOpenImmediately = canAnnouncementOpenImmediately(blockData.data, participants);
-          break;
-        case BlockKind.MAD_LIB:
-          canOpenImmediately = true;
           break;
         case BlockKind.FAMILY_FEUD:
           canOpenImmediately = canFamilyFeudOpenImmediately();
@@ -297,12 +291,6 @@ export function CreateBlockProvider({
           processedFormData = {
             kind: BlockKind.ANNOUNCEMENT,
             data: processAnnouncementBeforeSubmit(blockData.data, status, participants),
-          };
-          break;
-        case BlockKind.MAD_LIB:
-          processedFormData = {
-            kind: BlockKind.MAD_LIB,
-            data: blockData.data,
           };
           break;
         case BlockKind.FAMILY_FEUD:
@@ -365,12 +353,6 @@ export function CreateBlockProvider({
         case BlockKind.ANNOUNCEMENT:
           payload = buildAnnouncementPayload(processedFormData.data);
           break;
-        case BlockKind.MAD_LIB:
-          payload = {
-            type: BlockKind.MAD_LIB,
-            parts: processedFormData.data.parts,
-          };
-          break;
         case BlockKind.FAMILY_FEUD:
           payload = buildFamilyFeudPayload(processedFormData.data);
           break;
@@ -410,16 +392,6 @@ export function CreateBlockProvider({
         target_user_ids: string[];
         status: BlockStatus;
         open_immediately: boolean;
-        variables?: Array<{
-          key: string;
-          label: string;
-          datatype: string;
-          required: boolean;
-          source?:
-            | { type: string; participant_id: string }
-            | { kind: string; question: string; input_type: string };
-        }>;
-        variable_bindings?: Array<{ variable_id: string; source_block_id: string }>;
         questions?: Array<{ payload: Record<string, string> }>;
       } = {
         kind: blockData.kind,
@@ -429,29 +401,6 @@ export function CreateBlockProvider({
         status: status,
         open_immediately: status === 'open',
       };
-
-      if (blockData.kind === BlockKind.MAD_LIB) {
-        const internalData = processedFormData.data as MadLibData;
-        const variables = (internalData.variables ?? []).map((v) => ({
-          key: v.id,
-          label: v.name,
-          datatype: v.dataType === 'number' ? 'number' : 'string',
-          required: true,
-          source: v.assigned_participant_id
-            ? {
-                type: 'participant',
-                participant_id: v.assigned_participant_id,
-                question: v.question,
-              }
-            : {
-                kind: 'question',
-                question: v.question,
-                input_type: 'text',
-              },
-        }));
-
-        submitPayload.variables = variables;
-      }
 
       if (
         blockData.kind === BlockKind.FAMILY_FEUD &&
@@ -470,7 +419,7 @@ export function CreateBlockProvider({
 
       // Reset all form state
       setBlockData(getDefaultFormData(blockData.kind));
-      setVisibleSegments([]);
+      setVisibleSegments(initialVisibleSegments);
       setViewAdditionalDetails(false);
     },
     [
@@ -482,6 +431,8 @@ export function CreateBlockProvider({
       onEndCurrentBlock,
       setCreateError,
       getDefaultFormData,
+      experience,
+      initialVisibleSegments,
     ],
   );
 
@@ -495,6 +446,7 @@ export function CreateBlockProvider({
     error: createError,
     visibleSegments,
     setVisibleSegments,
+    defaultSegmentName,
     viewAdditionalDetails,
     setViewAdditionalDetails,
   };

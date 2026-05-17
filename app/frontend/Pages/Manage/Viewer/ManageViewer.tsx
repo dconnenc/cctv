@@ -305,6 +305,7 @@ export default function ManageViewer() {
               <ParticipantsTab
                 participants={participantsCombined}
                 segments={experience?.segments || []}
+                defaultSegmentId={experience?.default_segment_id ?? null}
               />
             </div>
           </aside>

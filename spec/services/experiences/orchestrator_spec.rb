@@ -371,145 +371,6 @@ RSpec.describe Experiences::Orchestrator do
     end
   end
 
-  describe "#add_block_with_dependencies!" do
-    let(:participant_role) { ExperienceParticipant.roles[:host] }
-    let(:kind) { "mad_lib" }
-    let(:payload) { { template: "Hello {name}!" } }
-    let(:visible_to_roles) { [] }
-    let(:target_user_ids) { [] }
-    let(:status) { :hidden }
-    let(:variables) { [] }
-
-    subject do
-      described_class.new(actor: user, experience: experience).add_block_with_dependencies!(
-        kind: kind,
-        payload: payload,
-        visible_to_roles: visible_to_roles,
-        target_user_ids: target_user_ids,
-        status: status,
-        variables: variables
-      )
-    end
-
-    context "with no variables" do
-      it "returns a persisted parent block" do
-        block = subject
-        expect(block).to be_persisted
-        expect(block.kind).to eq(kind)
-        expect(block.payload).to eq(payload.stringify_keys)
-        expect(block.variables).to be_empty
-      end
-    end
-
-    context "with a participant source variable" do
-      let(:other_user) { create(:user, :user) }
-      let(:other_participant) do
-        create(:experience_participant, user: other_user, experience: experience, role: :audience)
-      end
-      let(:variables) do
-        [
-          {
-            "key" => "name",
-            "label" => "What is your name?",
-            "datatype" => "string",
-            "required" => true,
-            "source" => {
-              "type" => "participant",
-              "participant_id" => other_participant.id
-            }
-          }
-        ]
-      end
-
-      it "creates a variable bound to a question block for that participant" do
-        parent_block = subject
-
-        variable = parent_block.variables.find_by(key: "name")
-        expect(variable).to be_present
-        expect(variable.label).to eq("What is your name?")
-        expect(variable.datatype).to eq("string")
-        expect(variable.required).to be true
-
-        source_block = variable.bindings.first&.source_block
-        expect(source_block).to be_present
-        expect(source_block.kind).to eq("question")
-        expect(source_block.target_user_ids).to contain_exactly(other_user.id)
-        expect(source_block.payload["question"]).to eq("What is your name?")
-      end
-    end
-
-    context "with a block source variable" do
-      let(:variables) do
-        [
-          {
-            "key" => "answer",
-            "label" => "Your answer",
-            "datatype" => "string",
-            "required" => true,
-            "source" => {
-              "kind" => "poll",
-              "payload" => { "question" => "Choose one" },
-              "target_user_ids" => [user.id]
-            }
-          }
-        ]
-      end
-
-      it "creates a variable bound to the specified block type" do
-        parent_block = subject
-
-        variable = parent_block.variables.find_by(key: "answer")
-        expect(variable).to be_present
-
-        source_block = variable.bindings.first&.source_block
-        expect(source_block).to be_present
-        expect(source_block.kind).to eq("poll")
-        expect(source_block.payload).to eq({ "question" => "Choose one" })
-        expect(source_block.target_user_ids).to contain_exactly(user.id)
-      end
-    end
-
-    context "with multiple variables" do
-      let(:variables) do
-        [
-          {
-            "key" => "var1",
-            "label" => "Variable 1",
-            "datatype" => "string",
-            "required" => true,
-            "source" => {
-              "kind" => "poll",
-              "payload" => {}
-            }
-          },
-          {
-            "key" => "var2",
-            "label" => "Variable 2",
-            "datatype" => "number",
-            "required" => false,
-            "source" => {
-              "kind" => "question",
-              "payload" => {}
-            }
-          }
-        ]
-      end
-
-      it "creates all variables with their corresponding source blocks" do
-        parent_block = subject
-
-        expect(parent_block.variables.count).to eq(2)
-        expect(parent_block.child_blocks.count).to eq(2)
-
-        var1 = parent_block.variables.find_by(key: "var1")
-        expect(var1.bindings.first.source_block.kind).to eq("poll")
-
-        var2 = parent_block.variables.find_by(key: "var2")
-        expect(var2.bindings.first.source_block.kind).to eq("question")
-      end
-    end
-  end
-
   shared_examples "a submission method" do |method_name, block_kind, submission_class, submission_factory|
     let(:experience_status) { Experience.statuses[:live] }
     let(:block_status) { "open" }
@@ -598,16 +459,6 @@ RSpec.describe Experiences::Orchestrator do
 
   end
 
-  describe "#submit_mad_lib_response!" do
-    let(:answer) { { "name" => "John", "place" => "Park" } }
-
-    it_behaves_like "a submission method",
-      :submit_mad_lib_response!,
-      "mad_lib",
-      ExperienceMadLibSubmission,
-      :experience_mad_lib_submission
-  end
-
   describe "#submit_question_response!" do
     let(:answer) { "answer text" }
 
@@ -626,12 +477,10 @@ RSpec.describe Experiences::Orchestrator do
         block_id: block.id,
         payload: new_payload,
         visible_to_segment_ids: [],
-        variables: variables,
         questions: questions
       )
     end
 
-    let(:variables) { nil }
     let(:questions) { nil }
 
     context "updating a simple block" do
@@ -695,28 +544,6 @@ RSpec.describe Experiences::Orchestrator do
       end
     end
 
-    context "mad lib with submissions while active" do
-      let(:block) { create(:experience_block, :mad_lib, experience: experience, status: :open) }
-      let(:new_payload) { { "parts" => [{ "id" => "1", "type" => "text", "content" => "hi" }] } }
-
-      before { create(:experience_mad_lib_submission, experience_block: block, user: user) }
-
-      it "raises UnsafeEditError" do
-        expect { subject }.to raise_error(Experiences::UnsafeEditError, /Cannot edit a Mad Lib while it is active/)
-      end
-    end
-
-    context "mad lib with submissions while inactive" do
-      let(:block) { create(:experience_block, :mad_lib, experience: experience, status: :hidden) }
-      let(:new_payload) { { "parts" => [{ "id" => "1", "type" => "text", "content" => "hi" }] } }
-
-      before { create(:experience_mad_lib_submission, experience_block: block, user: user) }
-
-      it "clears mad lib and child question submissions and saves" do
-        expect { subject }.to change { ExperienceMadLibSubmission.count }.by(-1)
-      end
-    end
-
     context "family feud with child submissions" do
       let(:block) { create(:experience_block, :family_feud, experience: experience) }
       let(:new_payload) { { "title" => "Updated" } }
@@ -729,25 +556,6 @@ RSpec.describe Experiences::Orchestrator do
       it "allows the edit" do
         expect { subject }.not_to raise_error
         expect(block.reload.payload["title"]).to eql("Updated")
-      end
-    end
-
-    context "re-syncing mad lib variables when no submissions" do
-      let(:block) { create(:experience_block, :mad_lib, experience: experience) }
-      let(:new_payload) { { "parts" => [] } }
-      let(:variables) do
-        [{ key: "newvar", label: "New Label", datatype: "string", required: true }]
-      end
-
-      before do
-        block.variables.create!(key: "oldvar", label: "Old Label", datatype: "string", required: true)
-      end
-
-      it "destroys old variables and creates new ones" do
-        subject
-        block.reload
-        expect(block.variables.pluck(:key)).to contain_exactly("newvar")
-        expect(block.variables.first.label).to eql("New Label")
       end
     end
 

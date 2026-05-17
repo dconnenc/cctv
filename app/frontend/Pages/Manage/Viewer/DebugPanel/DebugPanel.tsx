@@ -23,7 +23,6 @@ function canSimulateResponses(block?: Block): boolean {
     case BlockKind.POLL:
     case BlockKind.QUESTION:
       return true;
-    case BlockKind.MAD_LIB:
     case BlockKind.FAMILY_FEUD:
       // Allow simulation if block has children (we'll auto-open first child)
       return Boolean(block.children && block.children.length > 0);
@@ -218,7 +217,7 @@ export default function DebugPanel({ selectedBlock }: DebugPanelProps) {
     // Give websocket time to update experience state
     await new Promise((resolve) => setTimeout(resolve, 300));
 
-    if (selectedBlock.kind === BlockKind.MAD_LIB || selectedBlock.kind === BlockKind.FAMILY_FEUD) {
+    if (selectedBlock.kind === BlockKind.FAMILY_FEUD) {
       // For parent blocks with children, simulate on the first open child
       const openChild = selectedBlock.children?.find((child) => child.status === 'open');
       const targetChild = openChild || selectedBlock.children?.[0];

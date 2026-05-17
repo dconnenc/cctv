@@ -9,8 +9,6 @@ import {
   EditBlockContextValue,
   FamilyFeudPayload,
   FormBlockData,
-  MadLibBlock,
-  MadLibPayload,
   ParticipantSummary,
 } from '@cctv/types';
 
@@ -34,7 +32,6 @@ import {
   guessWhoPayloadToFormData,
   validateGuessWho,
 } from '../CreateBlock/CreateGuessWho/CreateGuessWho';
-import { madLibPayloadToFormData, validateMadLib } from '../CreateBlock/CreateMadLib/CreateMadLib';
 import {
   buildMinigameArithmeticPayload,
   minigameArithmeticPayloadToFormData,
@@ -83,7 +80,7 @@ interface EditBlockProviderProps {
   onClose: () => void;
 }
 
-function blockToFormData(block: Block, participants: ParticipantSummary[]): FormBlockData {
+function blockToFormData(block: Block): FormBlockData {
   switch (block.kind) {
     case BlockKind.POLL:
       return { kind: BlockKind.POLL, data: pollPayloadToFormData(block.payload) };
@@ -91,18 +88,6 @@ function blockToFormData(block: Block, participants: ParticipantSummary[]): Form
       return { kind: BlockKind.QUESTION, data: questionPayloadToFormData(block.payload) };
     case BlockKind.ANNOUNCEMENT:
       return { kind: BlockKind.ANNOUNCEMENT, data: announcementPayloadToFormData(block.payload) };
-    case BlockKind.MAD_LIB: {
-      const madLibBlock = block as MadLibBlock;
-      return {
-        kind: BlockKind.MAD_LIB,
-        data: madLibPayloadToFormData(
-          block.payload as MadLibPayload,
-          madLibBlock.variables,
-          block.children,
-          participants,
-        ),
-      };
-    }
     case BlockKind.FAMILY_FEUD:
       return {
         kind: BlockKind.FAMILY_FEUD,
@@ -138,7 +123,6 @@ function blockToFormData(block: Block, participants: ParticipantSummary[]): Form
 
 function buildUpdatePayload(blockData: FormBlockData): {
   payload: ApiPayload;
-  variables?: Array<{ key: string; label: string; datatype: string; required: boolean }>;
   questions?: Array<{ id: string; question: string }>;
 } {
   switch (blockData.kind) {
@@ -148,18 +132,6 @@ function buildUpdatePayload(blockData: FormBlockData): {
       return { payload: buildQuestionPayload(blockData.data) };
     case BlockKind.ANNOUNCEMENT:
       return { payload: buildAnnouncementPayload(blockData.data) };
-    case BlockKind.MAD_LIB: {
-      const variables = (blockData.data.variables || []).map((v) => ({
-        key: v.id,
-        label: v.name,
-        datatype: v.dataType === 'number' ? 'number' : 'string',
-        required: true,
-      }));
-      return {
-        payload: { type: BlockKind.MAD_LIB, parts: blockData.data.parts },
-        variables,
-      };
-    }
     case BlockKind.FAMILY_FEUD:
       return {
         payload: buildFamilyFeudPayload(blockData.data),
@@ -190,9 +162,7 @@ export function EditBlockProvider({
   participants,
   onClose,
 }: EditBlockProviderProps) {
-  const [blockData, setBlockData] = useState<FormBlockData>(() =>
-    blockToFormData(block, participants),
-  );
+  const [blockData, setBlockData] = useState<FormBlockData>(() => blockToFormData(block));
 
   const initialVisibleSegments = block.visible_to_segments ?? [];
   const [visibleSegments, setVisibleSegments] = useState<string[]>(initialVisibleSegments);
@@ -214,7 +184,7 @@ export function EditBlockProvider({
 
   const performUpdate = useCallback(
     async (visible_to_segment_ids: string[]) => {
-      const { payload, variables, questions } = buildUpdatePayload(blockData);
+      const { payload, questions } = buildUpdatePayload(blockData);
 
       const payloadWithShowOnMonitor: Record<string, unknown> = {
         ...(payload as unknown as Record<string, unknown>),
@@ -224,7 +194,6 @@ export function EditBlockProvider({
       const result = await updateExperienceBlock(block.id, {
         payload: payloadWithShowOnMonitor,
         visible_to_segment_ids,
-        ...(variables && { variables }),
         ...(questions && { questions }),
       });
 
@@ -238,17 +207,6 @@ export function EditBlockProvider({
   const submit = useCallback(async () => {
     setUpdateError(null);
 
-    if (
-      blockData.kind === BlockKind.MAD_LIB &&
-      block.status === 'open' &&
-      (block.responses?.total ?? 0) > 0
-    ) {
-      setUpdateError(
-        'Cannot edit a Mad Lib while it is active. Stop presenting this block first — you will be asked to confirm before saving.',
-      );
-      return;
-    }
-
     let validationError: string | null = null;
     switch (blockData.kind) {
       case BlockKind.POLL:
@@ -259,9 +217,6 @@ export function EditBlockProvider({
         break;
       case BlockKind.ANNOUNCEMENT:
         validationError = validateAnnouncement(blockData.data);
-        break;
-      case BlockKind.MAD_LIB:
-        validationError = validateMadLib(blockData.data);
         break;
       case BlockKind.FAMILY_FEUD:
         validationError = validateFamilyFeud(blockData.data);
@@ -307,7 +262,6 @@ export function EditBlockProvider({
       BlockKind.PHOTO_UPLOAD,
       BlockKind.ANNOUNCEMENT,
       BlockKind.POLL,
-      BlockKind.MAD_LIB,
     ];
     const hasSubmissions = submissionCount > 0 && submissionWarnKinds.includes(blockData.kind);
 

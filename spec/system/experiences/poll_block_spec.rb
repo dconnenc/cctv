@@ -89,8 +89,8 @@ RSpec.describe "Poll Block", type: :system do
     queue_block(n: 2) do
       select "Announcement", from: "Kind"
       fill_in "Announcement Message", with: "Hello Team A!"
-      click_button "View Additional Details"
-      find("select[aria-label='Visible to segments']").select("Team A")
+      clear_default_segment
+      find("select[aria-label='Add segment']").select("Team A")
     end
 
     select_and_present(2, kind: "announcement")
@@ -108,8 +108,8 @@ RSpec.describe "Poll Block", type: :system do
     queue_block(n: 3) do
       select "Announcement", from: "Kind"
       fill_in "Announcement Message", with: "Hello Team B!"
-      click_button "View Additional Details"
-      find("select[aria-label='Visible to segments']").select("Team B")
+      clear_default_segment
+      find("select[aria-label='Add segment']").select("Team B")
     end
 
     select_and_present(3, kind: "announcement")
@@ -133,6 +133,7 @@ RSpec.describe "Poll Block", type: :system do
         fill_in "Poll Question", with: "Original question?"
         fill_in "Option 1", with: "yes"
         fill_in "Option 2", with: "no"
+        clear_default_segment
       end
 
       select_block(1, kind: "poll")

@@ -47,7 +47,7 @@ const flatBlocks: Block[] = [
 ];
 
 const blocksWithChildren: Block[] = [
-  block('b1', BlockKind.MAD_LIB, 'open', {
+  block('b1', BlockKind.FAMILY_FEUD, 'open', {
     children: [block('c1', BlockKind.POLL, 'closed'), block('c2', BlockKind.QUESTION, 'hidden')],
   }),
   block('b2', BlockKind.ANNOUNCEMENT, 'hidden'),

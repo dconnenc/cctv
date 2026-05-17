@@ -45,6 +45,16 @@
   }
 }
 
+.defaultTag {
+  font-size: 0.65rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 0.1rem 0.35rem;
+  border-radius: 0.25rem;
+  border: 1px solid var(--phosphor);
+  color: var(--phosphor);
+}
+
 .addForm {
   display: flex;
   gap: 0.35rem;

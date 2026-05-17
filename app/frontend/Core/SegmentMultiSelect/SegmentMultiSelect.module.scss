@@ -1,0 +1,29 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  width: 100%;
+}
+
+.label {
+  font-size: 0.85rem;
+  color: var(--hot-white);
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  align-items: center;
+}
+
+.placeholder {
+  font-size: 0.8rem;
+  color: var(--phosphor);
+  font-style: italic;
+}
+
+.select {
+  font-size: 0.75rem;
+  padding: 0.15rem 0.3rem;
+}

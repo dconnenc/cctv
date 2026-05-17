@@ -11,9 +11,10 @@ import styles from './SegmentManager.module.scss';
 
 interface SegmentManagerProps {
   segments: ExperienceSegment[];
+  defaultSegmentId?: string | null;
 }
 
-export default function SegmentManager({ segments }: SegmentManagerProps) {
+export default function SegmentManager({ segments, defaultSegmentId }: SegmentManagerProps) {
   const [isAdding, setIsAdding] = useState(false);
   const [newName, setNewName] = useState('');
   const [newColor, setNewColor] = useState('#6B7280');
@@ -106,6 +107,11 @@ export default function SegmentManager({ segments }: SegmentManagerProps) {
                 >
                   <SegmentBadge name={seg.name} color={seg.color} />
                 </button>
+                {seg.id === defaultSegmentId && (
+                  <span className={styles.defaultTag} title="Auto-assigned to new audience members">
+                    Default
+                  </span>
+                )}
                 <Button
                   variant="ghost"
                   size="sm"

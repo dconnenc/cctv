@@ -1,8 +1,7 @@
 import { useExperience } from '@cctv/contexts/ExperienceContext';
-import { DialogDescription, DialogTitle } from '@cctv/core';
+import { DialogDescription, DialogTitle, SegmentMultiSelect } from '@cctv/core';
 import { Button } from '@cctv/core/Button/Button';
 import { Dropdown } from '@cctv/core/Dropdown/Dropdown';
-import { SegmentBadge } from '@cctv/core/SegmentBadge/SegmentBadge';
 import { BlockKind, ParticipantSummary } from '@cctv/types';
 
 import CreateAnnouncement from './CreateAnnouncement/CreateAnnouncement';
@@ -10,7 +9,6 @@ import { CreateBlockProvider, useCreateBlockContext } from './CreateBlockContext
 import CreateBuzzer from './CreateBuzzer/CreateBuzzer';
 import CreateFamilyFeud from './CreateFamilyFeud/CreateFamilyFeud';
 import CreateGuessWho from './CreateGuessWho/CreateGuessWho';
-import CreateMadLib from './CreateMadLib/CreateMadLib';
 import CreateMinigameArithmetic from './CreateMinigameArithmetic/CreateMinigameArithmetic';
 import CreateMinigameBalloonPump from './CreateMinigameBalloonPump/CreateMinigameBalloonPump';
 import CreatePhotoUpload from './CreatePhotoUpload/CreatePhotoUpload';
@@ -56,7 +54,6 @@ function CreateBlockForm({ onClose }: CreateBlockFormProps) {
           { label: 'Poll', value: BlockKind.POLL },
           { label: 'Question', value: BlockKind.QUESTION },
           { label: 'Announcement', value: BlockKind.ANNOUNCEMENT },
-          { label: 'Mad Lib', value: BlockKind.MAD_LIB },
           { label: 'Family Feud', value: BlockKind.FAMILY_FEUD },
           { label: 'Photo Upload', value: BlockKind.PHOTO_UPLOAD },
           { label: 'Buzzer', value: BlockKind.BUZZER },
@@ -71,7 +68,7 @@ function CreateBlockForm({ onClose }: CreateBlockFormProps) {
       />
 
       <BlockEditor />
-      {viewAdditionalDetails && <AdditionalDetails />}
+      <SegmentSelector />
 
       <div className={styles.actions}>
         <Button variant="secondary" onClick={onClose}>
@@ -93,7 +90,7 @@ function CreateBlockForm({ onClose }: CreateBlockFormProps) {
 }
 
 function BlockEditor() {
-  const { blockData, setBlockData, participants } = useCreateBlockContext();
+  const { blockData, setBlockData } = useCreateBlockContext();
 
   const onChange = (updates: any) => {
     setBlockData((prev) => ({
@@ -109,8 +106,6 @@ function BlockEditor() {
       return <CreateQuestion data={blockData.data} onChange={onChange} />;
     case BlockKind.ANNOUNCEMENT:
       return <CreateAnnouncement data={blockData.data} onChange={onChange} />;
-    case BlockKind.MAD_LIB:
-      return <CreateMadLib data={blockData.data} onChange={onChange} participants={participants} />;
     case BlockKind.FAMILY_FEUD:
       return <CreateFamilyFeud data={blockData.data} onChange={onChange} />;
     case BlockKind.PHOTO_UPLOAD:
@@ -131,50 +126,16 @@ function BlockEditor() {
   }
 }
 
-function AdditionalDetails() {
+function SegmentSelector() {
   const { visibleSegments, setVisibleSegments } = useCreateBlockContext();
   const { experience } = useExperience();
   const definedSegments = experience?.segments || [];
 
   return (
-    <div className={styles.additionalDetails}>
-      <div>
-        <label style={{ fontSize: '0.85rem' }}>Visible to segments</label>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.25rem', marginTop: '0.25rem' }}>
-          {visibleSegments.map((name) => {
-            const seg = definedSegments.find((s) => s.name === name);
-            return (
-              <SegmentBadge
-                key={name}
-                name={name}
-                color={seg?.color || '#6B7280'}
-                onRemove={() => setVisibleSegments(visibleSegments.filter((n) => n !== name))}
-              />
-            );
-          })}
-          {definedSegments.filter((s) => !visibleSegments.includes(s.name)).length > 0 && (
-            <select
-              aria-label="Visible to segments"
-              style={{ fontSize: '0.75rem', padding: '0.15rem 0.3rem' }}
-              value=""
-              onChange={(e) => {
-                if (e.target.value) {
-                  setVisibleSegments([...visibleSegments, e.target.value]);
-                }
-              }}
-            >
-              <option value="">+ Add segment...</option>
-              {definedSegments
-                .filter((s) => !visibleSegments.includes(s.name))
-                .map((s) => (
-                  <option key={s.id} value={s.name}>
-                    {s.name}
-                  </option>
-                ))}
-            </select>
-          )}
-        </div>
-      </div>
-    </div>
+    <SegmentMultiSelect
+      segments={definedSegments}
+      value={visibleSegments}
+      onChange={setVisibleSegments}
+    />
   );
 }

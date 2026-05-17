@@ -95,7 +95,6 @@ function getSubmitEndpoint(block: Block): string | null {
     case BlockKind.QUESTION:
       return 'submit_question_response';
     case BlockKind.ANNOUNCEMENT:
-    case BlockKind.MAD_LIB:
     case BlockKind.FAMILY_FEUD:
       return null;
     default:
@@ -110,7 +109,6 @@ function generateResponse(block: Block): Record<string, any> | null {
     case BlockKind.QUESTION:
       return generateQuestionResponse(block);
     case BlockKind.ANNOUNCEMENT:
-    case BlockKind.MAD_LIB:
     case BlockKind.FAMILY_FEUD:
       return null;
     default:
