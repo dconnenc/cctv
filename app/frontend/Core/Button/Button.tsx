@@ -23,23 +23,37 @@ type NativeLinkProps = Omit<
   LinkProps & AnchorHTMLAttributes<HTMLAnchorElement>,
   keyof SharedProps | 'href'
 >;
+type NativeAnchorProps = Omit<AnchorHTMLAttributes<HTMLAnchorElement>, keyof SharedProps>;
 
 type ButtonAsButton = SharedProps &
   NativeButtonProps & {
     to?: undefined;
+    href?: undefined;
     ref?: Ref<HTMLButtonElement>;
   };
 
 type ButtonAsLink = SharedProps &
   NativeLinkProps & {
     to: LinkProps['to'];
+    href?: undefined;
     ref?: Ref<HTMLAnchorElement>;
   };
 
-export type ButtonProps = ButtonAsButton | ButtonAsLink;
+type ButtonAsAnchor = SharedProps &
+  NativeAnchorProps & {
+    to?: undefined;
+    href: string;
+    ref?: Ref<HTMLAnchorElement>;
+  };
+
+export type ButtonProps = ButtonAsButton | ButtonAsLink | ButtonAsAnchor;
 
 function isLinkProps(props: ButtonProps): props is ButtonAsLink {
-  return props.to !== undefined;
+  return 'to' in props && props.to !== undefined;
+}
+
+function isAnchorProps(props: ButtonProps): props is ButtonAsAnchor {
+  return 'href' in props && props.href !== undefined;
 }
 
 function buildClassName({
@@ -121,6 +135,27 @@ export function Button(props: ButtonProps) {
           {children}
         </ButtonContent>
       </Link>
+    );
+  }
+
+  if (isAnchorProps(props)) {
+    const {
+      href,
+      ref,
+      loading: _l,
+      loadingText: _lt,
+      variant: _v,
+      size: _s,
+      icon: _i,
+      hideLabel: _h,
+      ...rest
+    } = props;
+    return (
+      <a {...rest} href={href} ref={ref} className={classes}>
+        <ButtonContent icon={icon} hideLabel={hideLabel}>
+          {children}
+        </ButtonContent>
+      </a>
     );
   }
 

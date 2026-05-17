@@ -119,11 +119,28 @@ export const Gallery: Story = {
       </section>
 
       <section style={sectionStyle}>
-        <span style={labelStyle}>As Link (to=…)</span>
+        <span style={labelStyle}>As Link (to=…) — internal navigation via react-router</span>
         <div style={rowStyle}>
           {VARIANTS.map((variant) => (
             <Button key={`${variant}-link`} to="/example" variant={variant}>
               {variant} link
+            </Button>
+          ))}
+        </div>
+      </section>
+
+      <section style={sectionStyle}>
+        <span style={labelStyle}>As Anchor (href=…) — external links, downloads</span>
+        <div style={rowStyle}>
+          {VARIANTS.map((variant) => (
+            <Button
+              key={`${variant}-anchor`}
+              href="https://example.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              variant={variant}
+            >
+              {variant} anchor
             </Button>
           ))}
         </div>
