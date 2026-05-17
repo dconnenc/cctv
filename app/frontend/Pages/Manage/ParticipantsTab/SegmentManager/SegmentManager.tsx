@@ -1,5 +1,8 @@
 import { useState } from 'react';
 
+import { Plus, X } from 'lucide-react';
+
+import { Button } from '@cctv/core';
 import { SegmentBadge } from '@cctv/core/SegmentBadge/SegmentBadge';
 import { useCreateSegment, useDeleteSegment, useUpdateSegment } from '@cctv/hooks';
 import { ExperienceSegment } from '@cctv/types';
@@ -54,9 +57,14 @@ export default function SegmentManager({ segments, defaultSegmentId }: SegmentMa
       <div className={styles.header}>
         <span className={styles.title}>Segments</span>
         {!isAdding && (
-          <button className={styles.smallBtn} onClick={() => setIsAdding(true)}>
-            + Add
-          </button>
+          <Button
+            variant="outline"
+            size="sm"
+            icon={<Plus size={12} />}
+            onClick={() => setIsAdding(true)}
+          >
+            Add
+          </Button>
         )}
       </div>
 
@@ -77,49 +85,42 @@ export default function SegmentManager({ segments, defaultSegmentId }: SegmentMa
                   value={editColor}
                   onChange={(e) => setEditColor(e.target.value)}
                 />
-                <button
-                  className={styles.smallBtn}
+                <Button
+                  variant="outline"
+                  size="sm"
                   onClick={() => handleUpdate(seg.id)}
                   disabled={isUpdating}
                 >
                   Save
-                </button>
-                <button className={styles.smallBtn} onClick={() => setEditingId(null)}>
+                </Button>
+                <Button variant="ghost" size="sm" onClick={() => setEditingId(null)}>
                   Cancel
-                </button>
+                </Button>
               </div>
             ) : (
-              <span
-                key={seg.id}
-                onClick={() => startEditing(seg)}
-                style={{
-                  cursor: 'pointer',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '0.35rem',
-                }}
-              >
-                <SegmentBadge
-                  name={seg.name}
-                  color={seg.color}
-                  onRemove={() => handleDelete(seg.id)}
-                />
+              <span key={seg.id} className={styles.segmentItem}>
+                <button
+                  type="button"
+                  className={styles.segmentEditButton}
+                  onClick={() => startEditing(seg)}
+                  aria-label={`Edit segment ${seg.name}`}
+                >
+                  <SegmentBadge name={seg.name} color={seg.color} />
+                </button>
                 {seg.id === defaultSegmentId && (
-                  <span
-                    title="Auto-assigned to new audience members"
-                    style={{
-                      fontSize: '0.65rem',
-                      letterSpacing: '0.08em',
-                      textTransform: 'uppercase',
-                      padding: '0.1rem 0.35rem',
-                      borderRadius: '0.25rem',
-                      border: '1px solid var(--phosphor)',
-                      color: 'var(--phosphor)',
-                    }}
-                  >
+                  <span className={styles.defaultTag} title="Auto-assigned to new audience members">
                     Default
                   </span>
                 )}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  icon={<X size={12} />}
+                  hideLabel
+                  onClick={() => handleDelete(seg.id)}
+                >
+                  Delete segment {seg.name}
+                </Button>
               </span>
             ),
           )}
@@ -142,16 +143,18 @@ export default function SegmentManager({ segments, defaultSegmentId }: SegmentMa
             value={newColor}
             onChange={(e) => setNewColor(e.target.value)}
           />
-          <button
-            className={styles.addBtn}
+          <Button
+            size="sm"
             onClick={handleCreate}
             disabled={isCreating || isDeleting}
+            loading={isCreating}
+            loadingText="…"
           >
-            {isCreating ? '...' : 'Add'}
-          </button>
-          <button className={styles.smallBtn} onClick={() => setIsAdding(false)}>
+            Add
+          </Button>
+          <Button variant="ghost" size="sm" onClick={() => setIsAdding(false)}>
             Cancel
-          </button>
+          </Button>
         </div>
       )}
 

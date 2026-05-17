@@ -599,9 +599,16 @@ const BucketItem = ({
           className={`${styles.bucket} ${snapshot.isDraggingOver ? styles.isDraggingOver : ''}`}
         >
           <div className={styles.bucketHeader}>
-            <button className={styles.collapseButton} onClick={onToggleBucket}>
-              {isCollapsed ? <ChevronRight size={16} /> : <ChevronDown size={16} />}
-            </button>
+            <Button
+              variant="ghost"
+              size="sm"
+              icon={isCollapsed ? <ChevronRight size={16} /> : <ChevronDown size={16} />}
+              hideLabel
+              onClick={onToggleBucket}
+              aria-expanded={!isCollapsed}
+            >
+              {isCollapsed ? `Expand ${bucket.name}` : `Collapse ${bucket.name}`}
+            </Button>
             <input
               type="text"
               value={editingBucketNames[bucket.id] ?? bucket.name}
@@ -609,17 +616,17 @@ const BucketItem = ({
               className={styles.bucketNameInput}
             />
             <span className={styles.bucketCount}>({bucket.answers.length})</span>
-            <button
-              className={styles.deleteButton}
+            <Button
+              variant="ghost"
+              size="sm"
+              icon={<Trash2 size={14} />}
+              hideLabel
+              loading={deletingBucketId === bucket.id}
               onClick={() => onDeleteBucket(questionId, bucket.id)}
               disabled={deletingBucketId === bucket.id}
             >
-              {deletingBucketId === bucket.id ? (
-                <Loader2 size={14} className={styles.spinner} />
-              ) : (
-                <Trash2 size={14} />
-              )}
-            </button>
+              Delete {bucket.name}
+            </Button>
           </div>
 
           {!isCollapsed && <BucketDropZone bucket={bucket} snapshot={snapshot} />}

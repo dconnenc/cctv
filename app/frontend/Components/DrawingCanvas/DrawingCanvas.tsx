@@ -257,13 +257,15 @@ export default function DrawingCanvas({
       <div className={styles.toolbar}>
         <div className={styles.sizeGroup}>
           {brushSizes.map((sz) => (
-            <button
+            <Button
               key={sz}
-              className={`${styles.sizeBtn} ${penWidth === sz ? styles.sizeActive : ''}`}
+              variant="outline"
+              size="sm"
+              aria-pressed={penWidth === sz}
               onClick={() => setPenWidth(sz)}
             >
               {sz === 2 ? 'Thin' : sz === 4 ? 'Medium' : sz === 8 ? 'Thick' : 'Huge'}
-            </button>
+            </Button>
           ))}
         </div>
         <div className={styles.palette}>
@@ -317,12 +319,12 @@ export default function DrawingCanvas({
       </div>
 
       <div className={styles.controls}>
-        <Button variant="secondary" className={styles.btn} onClick={onUndo} disabled={!canUndo}>
+        <Button variant="secondary" size="sm" onClick={onUndo} disabled={!canUndo}>
           Undo
         </Button>
         <Button
           variant="secondary"
-          className={styles.btn}
+          size="sm"
           onClick={() => {
             if (lines.length > 0) setClearedLines(lines);
             setLines([]);
@@ -334,7 +336,7 @@ export default function DrawingCanvas({
         {onBack ? (
           <Button
             variant="secondary"
-            className={styles.btn}
+            size="sm"
             onClick={async () => {
               const committedLines = lines.map((s) => ({ ...s, committed: true }));
               await onSubmit(committedLines);
@@ -345,7 +347,7 @@ export default function DrawingCanvas({
             Save
           </Button>
         ) : (
-          <Button className={styles.btn} onClick={handleSubmit} disabled={lines.length === 0}>
+          <Button size="sm" onClick={handleSubmit} disabled={lines.length === 0}>
             Submit
           </Button>
         )}

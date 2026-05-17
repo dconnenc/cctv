@@ -261,6 +261,8 @@
   text-transform: uppercase;
   transition: color 0.15s ease;
   min-width: 3.5rem;
+  min-height: 44px;
+  align-self: stretch;
 }
 
 .bottomTab:hover {

@@ -1,13 +1,11 @@
 import { CSSProperties, useCallback, useMemo, useState } from 'react';
 
-import { Link } from 'react-router-dom';
-
 import { DragDropContext, Draggable, type DropResult, Droppable } from '@hello-pangea/dnd';
 import classNames from 'classnames';
 import { Layers, LayoutList, Monitor as MonitorIcon, Plus, Users } from 'lucide-react';
 
 import { useExperience } from '@cctv/contexts/ExperienceContext';
-import { Dialog, DialogContent } from '@cctv/core';
+import { Button, Dialog, DialogContent } from '@cctv/core';
 import { useBlockPresentation } from '@cctv/hooks/useBlockPresentation';
 import { useReorderBlock } from '@cctv/hooks/useReorderBlock';
 import { Block, BlockStatus, ExperienceSegment, ParticipantSummary } from '@cctv/types';
@@ -93,6 +91,7 @@ interface BlockCardProps {
 }
 
 function BlockCard({ block, ghost, dragging }: BlockCardProps) {
+  const label = blockLabel(block);
   return (
     <div
       className={classNames(styles.blockCard, {
@@ -105,7 +104,9 @@ function BlockCard({ block, ghost, dragging }: BlockCardProps) {
         <span className={classNames(styles.blockStatusDot, statusDotClass(block.status))} />
         <span className={styles.blockKind}>{block.kind.replace(/_/g, ' ')}</span>
       </div>
-      <div className={styles.blockLabel}>{blockLabel(block)}</div>
+      <div className={styles.blockLabel} title={label}>
+        {label}
+      </div>
       {block.children && block.children.length > 0 && (
         <div className={styles.blockChildren}>
           {block.children.map((child) => (
@@ -195,26 +196,18 @@ export default function Timeline() {
           </div>
         </div>
         <div className={styles.headerRight}>
-          <button
-            type="button"
-            onClick={() => setIsCreateBlockOpen(true)}
-            className={styles.navToggle}
-          >
+          <Button variant="outline" size="sm" onClick={() => setIsCreateBlockOpen(true)}>
             <Plus size={14} />
             <span>Add block</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setIsSegmentsOpen(true)}
-            className={styles.navToggle}
-          >
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => setIsSegmentsOpen(true)}>
             <Layers size={14} />
             <span>Segments</span>
-          </button>
-          <Link to={`/experiences/${code}/manage`} className={styles.navToggle}>
+          </Button>
+          <Button to={`/experiences/${code}/manage`} variant="outline" size="sm">
             <LayoutList size={14} />
             <span>Manage view</span>
-          </Link>
+          </Button>
         </div>
       </div>
 
@@ -259,7 +252,7 @@ export default function Timeline() {
             className={styles.scroll}
             style={
               {
-                '--col-template': `repeat(${columns.length}, 12rem)`,
+                '--col-template': `repeat(${columns.length}, var(--col-w))`,
               } as CSSProperties
             }
           >
@@ -351,9 +344,9 @@ export default function Timeline() {
             {topLevelBlocks.length === 0 && (
               <div className={styles.emptyState}>
                 <div>No blocks yet.</div>
-                <Link to={`/experiences/${code}/manage`} className={styles.navToggle}>
+                <Button to={`/experiences/${code}/manage`} variant="outline" size="sm">
                   Create blocks in Manage view
-                </Link>
+                </Button>
               </div>
             )}
           </div>
@@ -379,6 +372,7 @@ export default function Timeline() {
                   const monitorBlock = monitorTrack
                     ? blocksAtCol.filter((b) => blockIsVisibleOnTrack(b, monitorTrack))[0]
                     : undefined;
+                  const monitorLabel = monitorBlock ? blockLabel(monitorBlock) : '';
                   return (
                     <div className={styles.previewMonitor}>
                       <div className={styles.previewSectionLabel}>
@@ -395,8 +389,8 @@ export default function Timeline() {
                             <div className={styles.previewKind}>
                               {monitorBlock.kind.replace(/_/g, ' ')}
                             </div>
-                            <div className={styles.previewFrameLabel}>
-                              {blockLabel(monitorBlock)}
+                            <div className={styles.previewFrameLabel} title={monitorLabel}>
+                              {monitorLabel}
                             </div>
                           </div>
                         ) : (
@@ -417,6 +411,7 @@ export default function Timeline() {
                     .map((track) => {
                       const blocksAtCol = blocksByColumn.get(selectedColumn) || [];
                       const block = blocksAtCol.filter((b) => blockIsVisibleOnTrack(b, track))[0];
+                      const itemLabel = block ? blockLabel(block) : '';
                       return (
                         <li key={track.id} className={styles.previewItem}>
                           <div className={styles.previewItemTrack}>
@@ -433,7 +428,9 @@ export default function Timeline() {
                               <span className={styles.previewItemKind}>
                                 {block.kind.replace(/_/g, ' ')}
                               </span>
-                              <span className={styles.previewItemBody}>{blockLabel(block)}</span>
+                              <span className={styles.previewItemBody} title={itemLabel}>
+                                {itemLabel}
+                              </span>
                             </div>
                           ) : (
                             <span className={styles.previewItemEmpty}>—</span>

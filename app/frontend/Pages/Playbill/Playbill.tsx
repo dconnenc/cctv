@@ -31,11 +31,9 @@ export default function Playbill() {
   if (experience?.playbill_enabled === false) {
     return (
       <section className={styles.root}>
-        <Link to={`/experiences/${code}`} className={styles.backLink}>
-          <Button variant="secondary" className={styles.backButton}>
-            Back to Experience
-          </Button>
-        </Link>
+        <Button to={`/experiences/${code}`} variant="secondary">
+          Back to Experience
+        </Button>
         <h1 className={styles.title}>{experience?.name || code}</h1>
         <p className={styles.subtitle}>The playbill is not available for this experience.</p>
       </section>
@@ -73,6 +71,8 @@ export default function Playbill() {
                     alt={section.title || `Playbill section ${index + 1}`}
                     loading="lazy"
                     decoding="async"
+                    width={section.image_width}
+                    height={section.image_height}
                   />
                 </div>
               )}

@@ -1,3 +1,18 @@
+/* ─────────────────────────────────────────────────────────────
+ * Button — five variants, one type treatment, three sizes.
+ *
+ * Variants:
+ *   primary      phosphor fill           — the CTA. One per surface.
+ *   secondary    1px foreground outline  — the default form button.
+ *   destructive  red fill                — destructive primary actions.
+ *   outline      1px border outline      — utility / low-emphasis.
+ *   ghost        no chrome               — icon buttons, list-row actions.
+ *
+ * Emphasis comes from fill weight, not from typography. All variants
+ * are uppercase + tracked + 700 weight in font-ui (Barlow Condensed),
+ * reading as broadcast-cue panel chrome.
+ * ──────────────────────────────────────────────────────────── */
+
 .button {
   position: relative;
   z-index: 3;
@@ -5,146 +20,193 @@
   align-items: center;
   justify-content: center;
   gap: var(--space-xs);
-  font-family: var(--font-ui);
-  font-size: 1rem;
-  font-weight: 600;
-  border-radius: var(--radius);
-  cursor: pointer;
-  transition:
-    filter 0.15s ease,
-    transform 0.04s ease,
-    opacity 0.2s ease,
-    box-shadow 0.15s ease,
-    background-color 0.15s ease,
-    border-color 0.15s ease;
 
-  &:active {
+  /* One type treatment for every button. */
+  font-family: var(--font-ui);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-decoration: none;
+  line-height: 1;
+  white-space: nowrap;
+
+  /* Default size — explicit, so "no size" is a real medium, not shrink-wrap.
+     Asymmetric block padding compensates for the descender space inside the
+     line-box that uppercase glyphs don't fill, so text optically centers
+     vertically instead of sitting top-biased. */
+  height: 2.25rem;
+  padding: 0 1rem 0;
+
+  border-radius: var(--radius);
+  border: 1px solid transparent;
+  background: transparent;
+  color: hsl(var(--foreground));
+  cursor: pointer;
+
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease,
+    box-shadow 0.15s ease,
+    opacity 0.2s ease,
+    transform 0.04s ease;
+
+  &:active:not(:disabled) {
     transform: scale(0.97);
-    filter: brightness(0.95);
   }
 
   &:focus-visible {
     outline: 2px solid var(--phosphor);
     outline-offset: 2px;
   }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
 }
 
-.button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  filter: grayscale(0.5);
-}
+/* ─── Variants ────────────────────────────────────────────── */
 
 .primary {
-  font-family: var(--font-ui);
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
   background: var(--phosphor);
   color: var(--black);
-  border: none;
+  border-color: transparent;
 
-  &:hover {
-    filter: brightness(1.1);
+  &:hover:not(:disabled) {
     background: var(--phosphor);
-    border-color: transparent;
     box-shadow:
       0 0 8px var(--phosphor-glow-medium),
       0 0 20px var(--phosphor-glow);
   }
-}
 
-.secondary {
-  font-family: var(--font-ui);
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  background: transparent;
-  color: hsl(var(--foreground));
-  border: 1px solid hsl(var(--foreground));
-  transition:
-    border-color 0.15s ease,
-    box-shadow 0.2s ease,
-    color 0.15s ease,
-    transform 0.04s ease;
-
-  &:hover {
-    color: var(--phosphor);
-    border-color: var(--phosphor);
-    box-shadow: var(--tv-glow);
-    background: transparent;
-    filter: none;
+  &[aria-pressed='true'] {
+    box-shadow: inset 0 0 0 1px hsl(0 0% 0% / 0.2);
   }
 }
 
-.ghost {
+.secondary {
   background: transparent;
   color: hsl(var(--foreground));
-  border: none;
+  border-color: hsl(var(--foreground));
 
-  &:hover {
-    background: hsl(var(--muted));
-    filter: none;
-    box-shadow: none;
+  &:hover:not(:disabled) {
+    color: var(--phosphor);
+    border-color: var(--phosphor);
+    box-shadow: 0 0 6px var(--phosphor-glow-light);
+  }
+
+  &[aria-pressed='true'] {
+    background: hsl(var(--foreground));
+    color: hsl(var(--background));
+    border-color: hsl(var(--foreground));
+  }
+}
+
+.destructive {
+  background: hsl(var(--destructive));
+  color: hsl(var(--destructive-foreground));
+  border-color: transparent;
+
+  &:hover:not(:disabled) {
+    filter: brightness(1.1);
+    box-shadow: 0 0 8px hsl(var(--destructive) / 0.4);
+  }
+
+  &[aria-pressed='true'] {
+    box-shadow: inset 0 0 0 1px hsl(0 0% 0% / 0.2);
   }
 }
 
 .outline {
   background: transparent;
   color: hsl(var(--foreground));
-  border: 1px solid hsl(var(--border));
-  transition:
-    border-color 0.15s ease,
-    box-shadow 0.2s ease,
-    color 0.15s ease,
-    transform 0.04s ease;
+  border-color: hsl(var(--border));
 
-  &:hover {
+  &:hover:not(:disabled) {
     color: var(--phosphor);
     border-color: var(--phosphor);
-    box-shadow: 0 0 6px var(--phosphor-glow-light);
-    background: transparent;
-    filter: none;
+  }
+
+  &[aria-pressed='true'] {
+    background: hsl(var(--muted));
+    border-color: hsl(var(--foreground));
+    color: hsl(var(--foreground));
   }
 }
 
-.bare {
+.ghost {
   background: transparent;
   color: hsl(var(--foreground));
-  border: none;
+  border-color: transparent;
 
-  &:hover {
-    background: var(--phosphor-glow);
-    border-color: transparent;
-    filter: none;
-    box-shadow: none;
+  &:hover:not(:disabled) {
+    background: hsl(var(--muted));
+  }
+
+  /* Pressed lifts the button out of a darker (e.g. muted) wrapper,
+     making it readable as the "selected" option in a segmented control. */
+  &[aria-pressed='true'] {
+    background: hsl(var(--background));
+    color: hsl(var(--foreground));
   }
 }
 
-.subtle {
-  background: transparent;
-  color: hsl(var(--foreground));
-  border: 1px solid hsl(var(--border));
+/* ─── Icon + label ────────────────────────────────────────── */
 
-  &:hover {
-    border-color: var(--phosphor);
-    background: var(--phosphor-glow);
-    filter: none;
-    box-shadow: none;
+.icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  line-height: 0;
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* hideLabel → icon-only square. Width follows height so the button is a
+   true square regardless of size variant. */
+.hideLabel {
+  width: 2.25rem;
+  padding-inline: 0;
+  gap: 0;
+
+  &.sm {
+    width: 1.75rem;
+  }
+
+  &.lg {
+    width: 2.75rem;
   }
 }
+
+/* ─── Sizes ───────────────────────────────────────────────── */
 
 .sm {
-  padding: 0.25rem 0.75rem;
-  font-size: 0.75rem;
-  height: 2rem;
+  height: 1.75rem;
+  padding: 0.15em 0.625rem 0;
+  font-size: 0.6875rem;
+  letter-spacing: 0.12em;
 }
 
 .lg {
-  padding: 0.75rem 2rem;
-  font-size: 1rem;
-  height: 2.5rem;
+  height: 2.75rem;
+  padding: 0.15em 1.5rem 0;
+  font-size: 0.875rem;
 }
+
+/* ─── Loading state ───────────────────────────────────────── */
 
 .loading {
   pointer-events: none;
@@ -152,19 +214,16 @@
 
 .spinner {
   display: inline-block;
-  width: 1rem;
-  height: 1rem;
-  border: 2px solid transparent;
-  border-top: 2px solid currentColor;
+  width: 0.875em;
+  height: 0.875em;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
   border-radius: 50%;
-  animation: spin 1s linear infinite;
+  animation: spin 0.7s linear infinite;
 }
 
 @keyframes spin {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
+  to {
     transform: rotate(360deg);
   }
 }
@@ -172,7 +231,10 @@
 @media (prefers-reduced-motion: reduce) {
   .spinner {
     animation: none;
-    border-color: currentColor;
-    opacity: 0.5;
+    opacity: 0.6;
+  }
+
+  .button:active:not(:disabled) {
+    transform: none;
   }
 }

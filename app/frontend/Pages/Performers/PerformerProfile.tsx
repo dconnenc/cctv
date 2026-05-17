@@ -3,7 +3,7 @@ import { Link, useParams } from 'react-router-dom';
 import { Edit2 } from 'lucide-react';
 
 import { useUser } from '@cctv/contexts';
-import { Panel } from '@cctv/core';
+import { Button, Panel } from '@cctv/core';
 import { useFollowPerformer, usePerformer } from '@cctv/hooks';
 import { formatEventTime } from '@cctv/utils/calendar';
 
@@ -83,19 +83,20 @@ export default function PerformerProfile() {
               </span>
               <div className={styles.heroActions}>
                 {user && !isOwner && (
-                  <button
-                    className={`${styles.followBtnLarge} ${performer.followed_by_current_user ? styles.following : ''}`}
+                  <Button
+                    variant={performer.followed_by_current_user ? 'outline' : 'primary'}
+                    aria-pressed={performer.followed_by_current_user}
                     onClick={handleFollowToggle}
                     disabled={followLoading}
                   >
                     {performer.followed_by_current_user ? 'Following' : 'Follow'}
-                  </button>
+                  </Button>
                 )}
                 {isOwner && (
-                  <Link to={`/performers/${performer.slug}/edit`} className={styles.editBtn}>
+                  <Button to={`/performers/${performer.slug}/edit`} variant="outline" size="sm">
                     <Edit2 size={14} />
                     Edit Profile
-                  </Link>
+                  </Button>
                 )}
               </div>
             </div>

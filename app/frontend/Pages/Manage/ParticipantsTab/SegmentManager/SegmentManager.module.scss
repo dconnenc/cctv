@@ -26,6 +26,35 @@
   gap: 0.35rem;
 }
 
+.segmentItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.125rem;
+}
+
+.segmentEditButton {
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  border-radius: 9999px;
+
+  &:focus-visible {
+    outline: 2px solid var(--phosphor);
+    outline-offset: 2px;
+  }
+}
+
+.defaultTag {
+  font-size: 0.65rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 0.1rem 0.35rem;
+  border-radius: 0.25rem;
+  border: 1px solid var(--phosphor);
+  color: var(--phosphor);
+}
+
 .addForm {
   display: flex;
   gap: 0.35rem;
@@ -50,22 +79,6 @@
   border-radius: 4px;
   cursor: pointer;
   background: transparent;
-}
-
-.addBtn,
-.smallBtn {
-  padding: 0.2rem 0.5rem;
-  font-size: 0.7rem;
-  border: 1px solid hsl(var(--border));
-  border-radius: 4px;
-  background: hsl(var(--muted));
-  color: hsl(var(--foreground));
-  cursor: pointer;
-
-  &:hover {
-    background: hsl(var(--accent));
-    color: hsl(var(--accent-foreground));
-  }
 }
 
 .error {

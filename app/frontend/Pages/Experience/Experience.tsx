@@ -243,16 +243,12 @@ export default function Experience() {
 
           <div className={styles.bottomActions}>
             {isAdmin && (
-              <Link to={`/experiences/${code}/manage`} className={styles.actionLink}>
-                <Button variant="secondary" className={styles.actionButton}>
-                  Manage
-                </Button>
-              </Link>
+              <Button to={`/experiences/${code}/manage`} variant="secondary">
+                Manage
+              </Button>
             )}
             {!needsAvatar && experience?.playbill_enabled !== false && (
-              <Link to={`/experiences/${code}/playbill`} className={styles.actionLink}>
-                <Button className={styles.actionButton}>Open Playbill</Button>
-              </Link>
+              <Button to={`/experiences/${code}/playbill`}>Open Playbill</Button>
             )}
           </div>
         </div>

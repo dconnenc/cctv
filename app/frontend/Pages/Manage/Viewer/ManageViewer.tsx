@@ -1,12 +1,9 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
-
-import { Link } from 'react-router-dom';
+import { ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
 
 import { BookOpen, Bug, Columns3, Pause, Play, X } from 'lucide-react';
 
 import { useExperience } from '@cctv/contexts/ExperienceContext';
-import { Dialog, DialogContent } from '@cctv/core';
-import { Button } from '@cctv/core/Button/Button';
+import { Button, Drawer, DrawerBody, DrawerContent } from '@cctv/core';
 import { Pill } from '@cctv/core/Pill/Pill';
 import { useBlockPresentation } from '@cctv/hooks/useBlockPresentation';
 import { useExperiencePause } from '@cctv/hooks/useExperiencePause';
@@ -31,12 +28,12 @@ function ExperienceActionButton() {
 
   if (!experience) return null;
 
-  const config = ((): {
+  const config = useMemo<{
     onClick: () => void;
-    icon: React.ReactNode;
+    icon: ReactNode;
     label: string;
     variant?: 'primary' | 'secondary' | 'ghost';
-  } | null => {
+  } | null>(() => {
     switch (experience.status) {
       case 'draft':
       case 'lobby':
@@ -44,6 +41,7 @@ function ExperienceActionButton() {
           onClick: startExperience,
           icon: <Play size={16} />,
           label: 'Start',
+          variant: 'primary',
         };
       case 'live':
         return {
@@ -57,16 +55,17 @@ function ExperienceActionButton() {
           onClick: resumeExperience,
           icon: <Play size={16} />,
           label: 'Resume',
+          variant: 'primary',
         };
       default:
         return null;
     }
-  })();
+  }, [startExperience, pauseExperience, resumeExperience, experience?.status]);
 
   if (!config) return null;
 
   return (
-    <Button variant={config.variant} onClick={config.onClick}>
+    <Button title={config.label} variant={config.variant} onClick={config.onClick}>
       {config.icon}
       <span>{config.label}</span>
     </Button>
@@ -214,50 +213,51 @@ export default function ManageViewer() {
             </div>
             <div className="flex items-center gap-2">
               <ExperienceActionButton />
-              <Link
+              <Button
                 to={`/experiences/${experience?.code}/timeline`}
-                className="px-3 py-1.5 text-sm rounded-md border border-[hsl(var(--border))] hover:bg-[hsl(var(--muted))] transition-colors inline-flex items-center gap-1.5"
+                variant="secondary"
                 title="Timeline view"
+                type="link"
               >
                 <Columns3 size={16} />
                 <span>Timeline</span>
-              </Link>
-              <button
+              </Button>
+              <Button
                 onClick={() => setShowDebugPanel((prev) => !prev)}
-                className={`px-3 py-1.5 text-sm rounded-md border transition-colors ${
-                  showDebugPanel
-                    ? 'border-yellow-500 bg-yellow-500/10 text-yellow-500'
-                    : 'border-[hsl(var(--border))] hover:bg-[hsl(var(--muted))]'
-                }`}
+                variant={showDebugPanel ? 'primary' : 'secondary'}
                 title="Debug Panel"
               >
                 <Bug size={16} />
-              </button>
-              <button
+              </Button>
+              <Button
                 onClick={() => setIsPlaybillDialogOpen(true)}
-                className="px-3 py-1.5 text-sm rounded-md border border-[hsl(var(--border))] hover:bg-[hsl(var(--muted))] transition-colors"
+                variant="secondary"
                 title="Edit Playbill"
               >
                 <BookOpen size={16} />
-              </button>
-              <button
+              </Button>
+              <Button
                 onClick={() => setShowParticipantDetails((prev) => !prev)}
-                className="px-3 py-1.5 text-sm rounded-md border border-[hsl(var(--border))] hover:bg-[hsl(var(--muted))] transition-colors"
+                variant="secondary"
+                title={showParticipantDetails ? 'Hide Participants' : 'Participants'}
               >
                 {showParticipantDetails ? 'Hide Participants' : 'Participants'}
-              </button>
+              </Button>
             </div>
           </div>
 
           {errorMessage && (
             <div className="mx-4 mt-4 px-4 py-3 bg-red-500/10 border border-red-500 text-red-400 rounded-md flex items-center justify-between">
               <span>{errorMessage}</span>
-              <button
+              <Button
+                variant="ghost"
+                size="sm"
+                icon={<X size={16} />}
+                hideLabel
                 onClick={() => setDismissedError(true)}
-                className="p-1 hover:bg-red-500/20 rounded"
               >
-                <X size={16} />
-              </button>
+                Dismiss error
+              </Button>
             </div>
           )}
 
@@ -291,13 +291,15 @@ export default function ManageViewer() {
           <aside className="z-10 absolute h-full top-0 right-0 w-[420px] shrink-0 border-l border-[hsl(var(--border))] bg-[hsl(var(--card))] flex flex-col">
             <div className="p-4 h-20 border-b border-[hsl(var(--border))] flex items-center justify-between">
               <div className="text-sm font-semibold text-white">Participants</div>
-              <button
+              <Button
+                variant="ghost"
+                size="sm"
+                icon={<X size={16} />}
+                hideLabel
                 onClick={() => setShowParticipantDetails(false)}
-                className="p-1 rounded hover:bg-[hsl(var(--muted))] transition-colors text-[hsl(var(--muted-foreground))]"
-                aria-label="Close participants panel"
               >
-                <X size={16} />
-              </button>
+                Close participants panel
+              </Button>
             </div>
             <div className="flex-1 overflow-y-auto">
               <ParticipantsTab
@@ -310,50 +312,58 @@ export default function ManageViewer() {
         )}
       </section>
 
-      <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-        <DialogContent style={{ maxWidth: '48rem', width: '100%' }}>
-          <CreateBlock
-            onClose={() => setIsCreateDialogOpen(false)}
-            participants={participantsCombined}
-            onEndCurrentBlock={async () => {
-              if (!currentOpenBlock) return;
-              await closeBlock(currentOpenBlock);
-            }}
-          />
-        </DialogContent>
-      </Dialog>
+      <Drawer open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+        <DrawerContent style={{ maxWidth: '40rem' }}>
+          <DrawerBody>
+            <CreateBlock
+              onClose={() => setIsCreateDialogOpen(false)}
+              participants={participantsCombined}
+              onEndCurrentBlock={async () => {
+                if (!currentOpenBlock) return;
+                await closeBlock(currentOpenBlock);
+              }}
+            />
+          </DrawerBody>
+        </DrawerContent>
+      </Drawer>
 
-      <Dialog
+      <Drawer
         open={editingBlock !== null}
         onOpenChange={(open) => {
           if (!open) setEditingBlock(null);
         }}
       >
-        <DialogContent style={{ maxWidth: '48rem', width: '100%' }}>
-          {editingBlock && (
-            <EditBlock
-              block={editingBlock}
-              onClose={() => setEditingBlock(null)}
-              participants={participantsCombined}
+        <DrawerContent style={{ maxWidth: '40rem' }}>
+          <DrawerBody>
+            {editingBlock && (
+              <EditBlock
+                block={editingBlock}
+                onClose={() => setEditingBlock(null)}
+                participants={participantsCombined}
+              />
+            )}
+          </DrawerBody>
+        </DrawerContent>
+      </Drawer>
+
+      <Drawer open={showDebugPanel} onOpenChange={setShowDebugPanel}>
+        <DrawerContent style={{ maxWidth: '36rem' }}>
+          <DrawerBody>
+            <DebugPanel selectedBlock={selectedBlock} />
+          </DrawerBody>
+        </DrawerContent>
+      </Drawer>
+
+      <Drawer open={isPlaybillDialogOpen} onOpenChange={setIsPlaybillDialogOpen}>
+        <DrawerContent style={{ maxWidth: '36rem' }}>
+          <DrawerBody>
+            <PlaybillTab
+              playbill={experience?.playbill || []}
+              playbillEnabled={experience?.playbill_enabled !== false}
             />
-          )}
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={showDebugPanel} onOpenChange={setShowDebugPanel}>
-        <DialogContent style={{ maxWidth: '42rem', width: '100%' }}>
-          <DebugPanel selectedBlock={selectedBlock} />
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={isPlaybillDialogOpen} onOpenChange={setIsPlaybillDialogOpen}>
-        <DialogContent style={{ maxWidth: '42rem', width: '100%' }}>
-          <PlaybillTab
-            playbill={experience?.playbill || []}
-            playbillEnabled={experience?.playbill_enabled !== false}
-          />
-        </DialogContent>
-      </Dialog>
+          </DrawerBody>
+        </DrawerContent>
+      </Drawer>
     </>
   );
 }

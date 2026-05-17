@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Plus, Users } from 'lucide-react';
 
 import { useUser } from '@cctv/contexts';
+import { Button } from '@cctv/core';
 import { usePerformers } from '@cctv/hooks';
 import { Performer } from '@cctv/types';
 
@@ -22,10 +23,10 @@ export default function PerformersList() {
             Performers
           </h1>
           {user && !hasPerformerProfile && (
-            <Link to="/performers/new" className={styles.createBtn}>
+            <Button to="/performers/new" variant="outline">
               <Plus size={16} />
               Become a Performer
-            </Link>
+            </Button>
           )}
         </div>
 

@@ -43,28 +43,6 @@
   gap: var(--space-sm);
 }
 
-.navBtn {
-  background: none;
-  border: 1px solid hsl(var(--border));
-  color: hsl(var(--foreground));
-  padding: var(--space-xs);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 2px;
-  min-width: 2.75rem;
-  min-height: 2.75rem;
-  transition:
-    border-color 0.15s,
-    color 0.15s;
-
-  &:hover {
-    border-color: hsl(var(--primary));
-    color: hsl(var(--primary));
-  }
-}
-
 .monthLabel {
   font-family: var(--font-display);
   text-transform: uppercase;

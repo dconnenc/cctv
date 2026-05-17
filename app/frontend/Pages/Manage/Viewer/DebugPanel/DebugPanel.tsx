@@ -254,15 +254,18 @@ export default function DebugPanel({ selectedBlock }: DebugPanelProps) {
 
           {participants.length > 0 && (
             <div className={styles.participantsSection}>
-              <button
+              <Button
+                variant="outline"
+                size="sm"
+                aria-expanded={showParticipants}
                 onClick={() => setShowParticipants(!showParticipants)}
-                className={styles.participantsToggle}
+                style={{ width: '100%', justifyContent: 'space-between' }}
               >
                 <span>
                   {simulatableParticipants.length} simulatable / {participants.length} total
                 </span>
                 {showParticipants ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-              </button>
+              </Button>
 
               {showParticipants && (
                 <ul className={styles.participantsList}>
@@ -276,18 +279,19 @@ export default function DebugPanel({ selectedBlock }: DebugPanelProps) {
 
               <div className={styles.participantActions}>
                 {existingWithoutJwts > 0 && (
-                  <button
+                  <Button
+                    variant="outline"
+                    size="sm"
                     onClick={handleEnableExisting}
-                    className={styles.clearButton}
                     disabled={isCreating}
                   >
                     Enable {existingWithoutJwts} existing
-                  </button>
+                  </Button>
                 )}
                 {simulatableParticipants.length > 0 && (
-                  <button onClick={clearParticipants} className={styles.clearButton}>
+                  <Button variant="outline" size="sm" onClick={clearParticipants}>
                     Clear all
-                  </button>
+                  </Button>
                 )}
               </div>
             </div>

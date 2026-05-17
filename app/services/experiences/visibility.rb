@@ -619,7 +619,16 @@ module Experiences
         resolved = section.dup
         if section["image_signed_id"].present?
           blob = ActiveStorage::Blob.find_signed(section["image_signed_id"])
-          resolved["image_url"] = blob ? ActiveStorageUrlService.blob_url(blob) : nil
+          if blob
+            resolved["image_url"] = ActiveStorageUrlService.blob_url(blob)
+            blob.analyze unless blob.analyzed?
+            width = blob.metadata["width"]
+            height = blob.metadata["height"]
+            resolved["image_width"] = width if width.is_a?(Integer) && width.positive?
+            resolved["image_height"] = height if height.is_a?(Integer) && height.positive?
+          else
+            resolved["image_url"] = nil
+          end
         end
         resolved
       end

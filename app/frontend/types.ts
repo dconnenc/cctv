@@ -296,6 +296,8 @@ export interface PlaybillSection {
   body: string;
   image_signed_id?: string;
   image_url?: string;
+  image_width?: number;
+  image_height?: number;
 }
 
 // ===== ENTITY TYPES =====

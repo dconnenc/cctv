@@ -107,30 +107,6 @@
   flex-wrap: wrap;
 }
 
-.calBtn {
-  padding: 0.625rem var(--space-sm);
-  border: 1px solid hsl(var(--border));
-  border-radius: 2px;
-  color: inherit;
-  text-decoration: none;
-  font-family: var(--font-ui);
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  font-weight: 600;
-  min-height: 2.75rem;
-  display: inline-flex;
-  align-items: center;
-  transition:
-    border-color 0.15s,
-    color 0.15s;
-
-  &:hover {
-    border-color: hsl(var(--primary));
-    color: hsl(var(--primary));
-  }
-}
-
 .joinSection {
   position: relative;
   padding: var(--space-md);
@@ -214,34 +190,6 @@
   line-height: 0;
 }
 
-.joinBtn {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-xs);
-  padding: var(--space-sm) var(--space-lg);
-  background: var(--phosphor);
-  color: var(--black);
-  text-decoration: none;
-  font-family: var(--font-ui);
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  font-weight: 700;
-  font-size: 1rem;
-  border-radius: 2px;
-  min-height: 2.75rem;
-  transition:
-    filter 0.15s,
-    transform 0.08s;
-
-  &:hover {
-    filter: brightness(1.05);
-  }
-
-  &:active {
-    transform: scale(0.99);
-  }
-}
-
 .performersSection {
   display: flex;
   flex-direction: column;
@@ -301,35 +249,5 @@
 
   &:hover {
     color: hsl(var(--primary));
-  }
-}
-
-.followBtn {
-  padding: 0.625rem 1rem;
-  border: 1px solid hsl(var(--border));
-  background: none;
-  color: hsl(var(--foreground));
-  border-radius: 2px;
-  font-family: var(--font-ui);
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  font-weight: 700;
-  cursor: pointer;
-  min-height: 2.75rem;
-  transition:
-    border-color 0.15s,
-    color 0.15s,
-    background 0.15s;
-
-  &:hover {
-    border-color: hsl(var(--primary));
-    color: hsl(var(--primary));
-  }
-
-  &.following {
-    background: hsl(var(--muted));
-    border-color: hsl(var(--border));
-    color: hsl(var(--muted-foreground));
   }
 }

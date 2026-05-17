@@ -6,7 +6,7 @@ import { Calendar, Clock, ExternalLink, MapPin, QrCode, Ticket } from 'lucide-re
 import { QRCodeSVG } from 'qrcode.react';
 
 import { useUser } from '@cctv/contexts';
-import { Panel } from '@cctv/core';
+import { Button, Panel } from '@cctv/core';
 import { useEvent, useFollowPerformer } from '@cctv/hooks';
 import { buildGoogleCalendarUrl, formatEventDateFull, formatEventTime } from '@cctv/utils/calendar';
 
@@ -94,12 +94,18 @@ export default function EventDetail() {
             )}
 
             <div className={styles.calendarActions}>
-              <a href={icalUrl} className={styles.calBtn}>
+              <Button href={icalUrl} variant="outline" size="sm">
                 Apple Calendar
-              </a>
-              <a href={gcalUrl} target="_blank" rel="noopener noreferrer" className={styles.calBtn}>
+              </Button>
+              <Button
+                href={gcalUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                variant="outline"
+                size="sm"
+              >
                 Google Calendar
-              </a>
+              </Button>
             </div>
           </div>
 
@@ -117,10 +123,10 @@ export default function EventDetail() {
                     <QRCodeSVG value={joinUrl} size={180} marginSize={2} />
                   </div>
                 )}
-                <Link to={`/experiences/${event.experience.code_slug}`} className={styles.joinBtn}>
+                <Button to={`/experiences/${event.experience.code_slug}`} size="lg">
                   <QrCode size={16} />
                   Join Now
-                </Link>
+                </Button>
               </div>
             </div>
           )}
@@ -150,15 +156,17 @@ export default function EventDetail() {
                       {performer.name}
                     </Link>
                     {user && (
-                      <button
-                        className={`${styles.followBtn} ${performer.followed_by_current_user ? styles.following : ''}`}
+                      <Button
+                        variant={performer.followed_by_current_user ? 'outline' : 'primary'}
+                        size="sm"
+                        aria-pressed={performer.followed_by_current_user}
                         onClick={() =>
                           handleFollowToggle(performer.slug, performer.followed_by_current_user)
                         }
                         disabled={followLoading}
                       >
                         {performer.followed_by_current_user ? 'Following' : 'Follow'}
-                      </button>
+                      </Button>
                     )}
                   </div>
                 ))}

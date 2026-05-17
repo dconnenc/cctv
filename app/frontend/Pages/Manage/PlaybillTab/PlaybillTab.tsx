@@ -127,32 +127,38 @@ export default function PlaybillTab({ playbill, playbillEnabled }: PlaybillTabPr
         <div key={section.id} className={styles.card}>
           <div className={styles.cardHeader}>
             <div className={styles.cardActions}>
-              <button
-                className={styles.iconBtn}
+              <Button
+                variant="ghost"
+                size="lg"
+                icon={<ArrowUp size={14} />}
+                hideLabel
                 onClick={() => handleMoveUp(index)}
                 disabled={index === 0}
                 title="Move section up"
-                aria-label={`Move section ${index + 1} up`}
               >
-                <ArrowUp size={14} />
-              </button>
-              <button
-                className={styles.iconBtn}
+                Move section {index + 1} up
+              </Button>
+              <Button
+                variant="ghost"
+                size="lg"
+                icon={<ArrowDown size={14} />}
+                hideLabel
                 onClick={() => handleMoveDown(index)}
                 disabled={index === sections.length - 1}
                 title="Move section down"
-                aria-label={`Move section ${index + 1} down`}
               >
-                <ArrowDown size={14} />
-              </button>
-              <button
-                className={styles.iconBtnDanger}
+                Move section {index + 1} down
+              </Button>
+              <Button
+                variant="ghost"
+                size="lg"
+                icon={<Trash2 size={14} />}
+                hideLabel
                 onClick={() => handleRemove(section.id)}
                 title="Remove section"
-                aria-label={`Remove section ${index + 1}`}
               >
-                <Trash2 size={14} />
-              </button>
+                Remove section {index + 1}
+              </Button>
             </div>
           </div>
 
@@ -185,18 +191,17 @@ export default function PlaybillTab({ playbill, playbillEnabled }: PlaybillTabPr
                   </button>
                 </div>
               ) : (
-                <button
-                  className={styles.imageUploadBtn}
+                <Button
+                  variant="outline"
+                  icon={<ImagePlus size={16} />}
                   onClick={() => fileInputRefs.current[section.id]?.click()}
                   disabled={isUploading && uploadingSectionId === section.id}
+                  style={{ borderStyle: 'dashed', color: 'hsl(var(--muted-foreground))' }}
                 >
-                  <ImagePlus size={16} />
-                  <span>
-                    {isUploading && uploadingSectionId === section.id
-                      ? `Uploading... ${progress}%`
-                      : 'Upload image'}
-                  </span>
-                </button>
+                  {isUploading && uploadingSectionId === section.id
+                    ? `Uploading... ${progress}%`
+                    : 'Upload image'}
+                </Button>
               )}
               <input
                 ref={(el) => {

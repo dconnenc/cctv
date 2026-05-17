@@ -1,5 +1,8 @@
 import { useCallback, useMemo, useState } from 'react';
 
+import { Plus, X } from 'lucide-react';
+
+import { Button } from '@cctv/core';
 import { SegmentBadge } from '@cctv/core/SegmentBadge/SegmentBadge';
 import { Column, Table } from '@cctv/core/Table/Table';
 import { useAssignSegment, useKickParticipant } from '@cctv/hooks';
@@ -96,9 +99,15 @@ export default function ParticipantsTab({
                       ))}
                   </select>
                 ) : (
-                  <button className={styles.assignBtn} onClick={() => setAssigningFor(p.id)}>
-                    +
-                  </button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    icon={<Plus size={14} />}
+                    hideLabel
+                    onClick={() => setAssigningFor(p.id)}
+                  >
+                    Assign segment to {p.name || p.email}
+                  </Button>
                 )}
               </div>
             )}
@@ -110,22 +119,25 @@ export default function ParticipantsTab({
         label: '',
         Cell: (p) => (
           <div className={styles.actionsCell}>
-            <button
-              className={styles.viewBtn}
+            <Button
+              variant="outline"
+              size="sm"
               onClick={() => setSubmissionsFor(p)}
               title="View submissions"
               aria-label={`View submissions for ${p.name || p.email}`}
             >
               View
-            </button>
-            <button
-              className={styles.kickBtn}
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              icon={<X size={14} />}
+              hideLabel
               onClick={() => kickParticipant(p.id)}
               title="Remove participant"
-              aria-label={`Remove ${p.name || p.email}`}
             >
-              ✕
-            </button>
+              Remove {p.name || p.email}
+            </Button>
           </div>
         ),
       },

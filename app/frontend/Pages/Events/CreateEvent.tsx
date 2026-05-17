@@ -141,16 +141,20 @@ export default function CreateEvent() {
               <div className={styles.field}>
                 <label className={styles.label}>Performers</label>
                 <div className={styles.performerPicker}>
-                  {performers.map((p) => (
-                    <button
-                      key={p.id}
-                      type="button"
-                      className={`${styles.performerChip} ${selectedPerformers.includes(p.id) ? styles.selected : ''}`}
-                      onClick={() => togglePerformer(p.id)}
-                    >
-                      {p.name}
-                    </button>
-                  ))}
+                  {performers.map((p) => {
+                    const isSelected = selectedPerformers.includes(p.id);
+                    return (
+                      <Button
+                        key={p.id}
+                        variant={isSelected ? 'primary' : 'outline'}
+                        size="sm"
+                        aria-pressed={isSelected}
+                        onClick={() => togglePerformer(p.id)}
+                      >
+                        {p.name}
+                      </Button>
+                    );
+                  })}
                 </div>
               </div>
             )}

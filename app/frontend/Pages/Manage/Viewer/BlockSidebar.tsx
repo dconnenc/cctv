@@ -80,18 +80,28 @@ export default function BlockSidebar({
           })}
         >
           {!sidebarCollapsed && (
-            <button onClick={onCreateBlock} title="Create Block" aria-label="Create Block">
-              <Plus size={16} />
-            </button>
+            <Button
+              variant="ghost"
+              size="sm"
+              icon={<Plus size={16} />}
+              hideLabel
+              onClick={onCreateBlock}
+              title="Create Block"
+            >
+              Create Block
+            </Button>
           )}
-          <button
+          <Button
+            variant="ghost"
+            size="sm"
+            icon={sidebarCollapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
+            hideLabel
             onClick={onToggleSidebar}
             title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-            aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
             aria-expanded={!sidebarCollapsed}
           >
-            {sidebarCollapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
-          </button>
+            {sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          </Button>
         </div>
       </div>
 
@@ -103,7 +113,7 @@ export default function BlockSidebar({
               return hasChildren ? (
                 <li key={block.id} className={styles.groupedContainer}>
                   <Button
-                    variant="bare"
+                    variant="ghost"
                     className={classNames(styles.groupedButton, {
                       [styles.selected]: selectedBlockId === block.id,
                       [styles.hiddenBlock]: block.status === 'hidden',
@@ -122,7 +132,7 @@ export default function BlockSidebar({
                     {block.children!.map((child, childIndex) => (
                       <li key={child.id}>
                         <Button
-                          variant="bare"
+                          variant="ghost"
                           className={classNames(styles.groupedButton, {
                             [styles.selected]: selectedBlockId === child.id,
                             [styles.hiddenBlock]: child.status === 'hidden',
@@ -144,7 +154,7 @@ export default function BlockSidebar({
               ) : (
                 <li key={block.id}>
                   <Button
-                    variant="subtle"
+                    variant="outline"
                     className={classNames(styles.iconButton, {
                       [styles.selected]: selectedBlockId === block.id,
                       [styles.hiddenBlock]: block.status === 'hidden',
@@ -163,9 +173,16 @@ export default function BlockSidebar({
               );
             })}
             <li>
-              <button onClick={onCreateBlock} title="Create Block" aria-label="Create Block">
-                <Plus size={32} />
-              </button>
+              <Button
+                variant="outline"
+                size="lg"
+                icon={<Plus size={20} />}
+                hideLabel
+                onClick={onCreateBlock}
+                title="Create Block"
+              >
+                Create Block
+              </Button>
             </li>
           </ul>
         ) : (
@@ -188,7 +205,7 @@ export default function BlockSidebar({
                           data-block-id={block.id}
                         >
                           <Button
-                            variant="subtle"
+                            variant="outline"
                             className={classNames(styles.blockButton, {
                               [styles.selected]: selectedBlockId === block.id,
                               [styles.hiddenBlock]: block.status === 'hidden',
@@ -244,7 +261,7 @@ export default function BlockSidebar({
                                           className={styles.childItem}
                                         >
                                           <Button
-                                            variant="subtle"
+                                            variant="outline"
                                             className={classNames(styles.blockButton, {
                                               [styles.selected]: selectedBlockId === child.id,
                                               [styles.hiddenBlock]: child.status === 'hidden',
