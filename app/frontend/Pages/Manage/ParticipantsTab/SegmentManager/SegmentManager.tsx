@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-import { Plus } from 'lucide-react';
+import { Plus, X } from 'lucide-react';
 
 import { Button } from '@cctv/core';
 import { SegmentBadge } from '@cctv/core/SegmentBadge/SegmentBadge';
@@ -97,12 +97,24 @@ export default function SegmentManager({ segments }: SegmentManagerProps) {
                 </Button>
               </div>
             ) : (
-              <span key={seg.id} onClick={() => startEditing(seg)} style={{ cursor: 'pointer' }}>
-                <SegmentBadge
-                  name={seg.name}
-                  color={seg.color}
-                  onRemove={() => handleDelete(seg.id)}
-                />
+              <span key={seg.id} className={styles.segmentItem}>
+                <button
+                  type="button"
+                  className={styles.segmentEditButton}
+                  onClick={() => startEditing(seg)}
+                  aria-label={`Edit segment ${seg.name}`}
+                >
+                  <SegmentBadge name={seg.name} color={seg.color} />
+                </button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  icon={<X size={12} />}
+                  hideLabel
+                  onClick={() => handleDelete(seg.id)}
+                >
+                  Delete segment {seg.name}
+                </Button>
               </span>
             ),
           )}

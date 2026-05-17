@@ -26,6 +26,25 @@
   gap: 0.35rem;
 }
 
+.segmentItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.125rem;
+}
+
+.segmentEditButton {
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  border-radius: 9999px;
+
+  &:focus-visible {
+    outline: 2px solid var(--phosphor);
+    outline-offset: 2px;
+  }
+}
+
 .addForm {
   display: flex;
   gap: 0.35rem;
