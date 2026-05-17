@@ -94,12 +94,18 @@ export default function EventDetail() {
             )}
 
             <div className={styles.calendarActions}>
-              <a href={icalUrl} className={styles.calBtn}>
+              <Button href={icalUrl} variant="outline" size="sm">
                 Apple Calendar
-              </a>
-              <a href={gcalUrl} target="_blank" rel="noopener noreferrer" className={styles.calBtn}>
+              </Button>
+              <Button
+                href={gcalUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                variant="outline"
+                size="sm"
+              >
                 Google Calendar
-              </a>
+              </Button>
             </div>
           </div>
 
