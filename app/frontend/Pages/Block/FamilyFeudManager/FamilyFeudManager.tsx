@@ -107,7 +107,7 @@ export default function FamilyFeudManager({ block }: FamilyFeudManagerProps) {
         return {
           id: response.id,
           text: answerText,
-          userId: response.user_id,
+          participantId: response.experience_participant_id,
           userName: 'User',
           questionId: childBlock.id,
         };

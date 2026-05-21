@@ -584,9 +584,10 @@ class Api::ExperienceBlocksController < Api::BaseController
 
       Experiences::Broadcaster.new(@experience).broadcast_experience_update
 
+      participant = @experience.experience_participants.find_by!(user: @user)
       progress = Minigames::ArithmeticProgress.for_participant(
         block: @block.reload,
-        user:  @user
+        participant: participant
       )
 
       render json: {

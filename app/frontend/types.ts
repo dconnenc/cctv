@@ -179,7 +179,7 @@ export type TheScenePhase = 'idle' | 'collecting' | 'voting' | 'ended';
 export interface TheSceneSuggestion {
   id: string;
   text: string;
-  user_id: string;
+  participant_id: string;
   vote_count: number;
   rank: number;
 }
@@ -341,7 +341,7 @@ export interface ExperienceParticipant {
 
 export interface BlockResponse {
   id: string;
-  user_id: string;
+  experience_participant_id: string;
   answer: any;
   created_at: string;
 }
@@ -406,7 +406,7 @@ export interface PhotoUploadBlock extends BaseBlock {
     } | null;
     all_responses?: Array<{
       id: string;
-      user_id: string;
+      experience_participant_id: string;
       answer: Record<string, unknown>;
       photo_url?: string;
       created_at: string;
@@ -423,7 +423,7 @@ export interface BuzzerBlock extends BaseBlock {
     user_response?: { id: string; answer: { buzzed_at: string } } | null;
     all_responses?: Array<{
       id: string;
-      user_id: string;
+      experience_participant_id: string;
       answer: { buzzed_at: string };
       created_at: string;
       avatar?: { strokes?: AvatarStroke[] } | null;

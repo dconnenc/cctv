@@ -20,7 +20,7 @@ export default function BlockResponsesList({ block, participants }: BlockRespons
   return (
     <div className="space-y-2 max-h-96 overflow-y-auto">
       {allResponses.map((response, index) => {
-        const participant = participants.find((p) => p.user_id === response.user_id);
+        const participant = participants.find((p) => p.id === response.experience_participant_id);
         const hasAnswer =
           response.answer != null &&
           !(

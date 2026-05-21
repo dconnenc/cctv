@@ -57,7 +57,7 @@ RSpec.describe Minigames::ArithmeticLeaderboard do
   def submit(participant, index, correct, at)
     ExperienceMinigameSubmission.create!(
       experience_block_id: block.id,
-      user_id: participant.user_id,
+      experience_participant: participant,
       question_index: index,
       submitted_answer: correct ? "1" : "x",
       correct: correct,
