@@ -3,7 +3,14 @@ import { MessageSquare, Monitor, Pause, Play, SkipForward, User } from 'lucide-r
 import { useExperience } from '@cctv/contexts/ExperienceContext';
 import { Button } from '@cctv/core/Button/Button';
 import { SegmentBadge } from '@cctv/core/SegmentBadge/SegmentBadge';
-import { AnnouncementPayload, Block, BlockKind, Experience, ParticipantSummary } from '@cctv/types';
+import {
+  AnnouncementPayload,
+  BLOCK_KIND_LABELS,
+  Block,
+  BlockKind,
+  Experience,
+  ParticipantSummary,
+} from '@cctv/types';
 
 import FamilyFeudManager from '../../Block/FamilyFeudManager/FamilyFeudManager';
 import BlockPreview from '../BlockPreview/BlockPreview';
@@ -60,7 +67,9 @@ export default function BlockDetailPanel({
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-semibold text-white">{selectedBlock.kind}</h2>
+          <h2 className="text-xl font-semibold text-white">
+            {BLOCK_KIND_LABELS[selectedBlock.kind]}
+          </h2>
           <div className="flex items-center gap-2 mt-1">
             <span className={`w-2 h-2 rounded-full ${getStatusColor(selectedBlock.status)}`} />
             <span className="text-sm text-[hsl(var(--muted-foreground))] capitalize">

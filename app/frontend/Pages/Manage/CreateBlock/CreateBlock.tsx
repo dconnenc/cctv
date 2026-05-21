@@ -2,7 +2,7 @@ import { useExperience } from '@cctv/contexts/ExperienceContext';
 import { DialogDescription, DialogTitle, SegmentMultiSelect } from '@cctv/core';
 import { Button } from '@cctv/core/Button/Button';
 import { Dropdown } from '@cctv/core/Dropdown/Dropdown';
-import { BlockKind, ParticipantSummary } from '@cctv/types';
+import { BLOCK_KIND_LABELS, BlockKind, ParticipantSummary } from '@cctv/types';
 
 import CreateAnnouncement from './CreateAnnouncement/CreateAnnouncement';
 import { CreateBlockProvider, useCreateBlockContext } from './CreateBlockContext';
@@ -50,18 +50,10 @@ function CreateBlockForm({ onClose }: CreateBlockFormProps) {
 
       <Dropdown
         label="Kind"
-        options={[
-          { label: 'Poll', value: BlockKind.POLL },
-          { label: 'Question', value: BlockKind.QUESTION },
-          { label: 'Announcement', value: BlockKind.ANNOUNCEMENT },
-          { label: 'Family Feud', value: BlockKind.FAMILY_FEUD },
-          { label: 'Photo Upload', value: BlockKind.PHOTO_UPLOAD },
-          { label: 'Buzzer', value: BlockKind.BUZZER },
-          { label: 'Guess Who', value: BlockKind.GUESS_WHO },
-          { label: 'Minigame: Arithmetic', value: BlockKind.MINIGAME_ARITHMETIC },
-          { label: 'Minigame: Balloon Pump', value: BlockKind.MINIGAME_BALLOON_PUMP },
-          { label: 'The Scene', value: BlockKind.THE_SCENE },
-        ]}
+        options={Object.values(BlockKind).map((kind) => ({
+          label: BLOCK_KIND_LABELS[kind],
+          value: kind,
+        }))}
         value={blockData.kind}
         onChange={setKind}
         required

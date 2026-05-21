@@ -24,6 +24,19 @@ export enum BlockKind {
   THE_SCENE = 'the_scene',
 }
 
+export const BLOCK_KIND_LABELS: Record<BlockKind, string> = {
+  [BlockKind.POLL]: 'Poll',
+  [BlockKind.QUESTION]: 'Question',
+  [BlockKind.ANNOUNCEMENT]: 'Announcement',
+  [BlockKind.FAMILY_FEUD]: 'Family Feud',
+  [BlockKind.PHOTO_UPLOAD]: 'Photo Upload',
+  [BlockKind.BUZZER]: 'Buzzer',
+  [BlockKind.GUESS_WHO]: 'Guess Who',
+  [BlockKind.MINIGAME_ARITHMETIC]: 'Minigame: Arithmetic',
+  [BlockKind.MINIGAME_BALLOON_PUMP]: 'Minigame: Balloon Pump',
+  [BlockKind.THE_SCENE]: 'The Scene',
+};
+
 export interface ExperienceSegment {
   id: string;
   name: string;
