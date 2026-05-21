@@ -68,6 +68,7 @@ export default function ExperienceBlockContainer({
           prompt={block.payload.prompt}
           responses={block.responses}
           disabled={disabled}
+          viewContext={viewContext}
         />
       );
     case BlockKind.BUZZER:
