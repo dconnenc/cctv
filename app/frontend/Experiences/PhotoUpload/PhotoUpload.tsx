@@ -14,6 +14,7 @@ interface PhotoUploadProps {
   prompt: string;
   responses?: PhotoUploadBlock['responses'];
   disabled?: boolean;
+  viewContext?: 'participant' | 'monitor' | 'manage';
 }
 
 export default function PhotoUpload({
@@ -21,6 +22,7 @@ export default function PhotoUpload({
   prompt,
   responses,
   disabled = false,
+  viewContext = 'participant',
 }: PhotoUploadProps) {
   const { upload, isUploading, progress } = useDirectUpload();
   const { submitPhotoUploadResponse, isLoading: isSubmitting } = useSubmitPhotoUploadResponse();
@@ -64,6 +66,14 @@ export default function PhotoUpload({
       setError(result.error || 'Submission failed');
     }
   }, [blockId, signedId, submitPhotoUploadResponse]);
+
+  if (viewContext === 'monitor') {
+    return (
+      <div className={styles.container}>
+        <p className={styles.prompt}>{prompt}</p>
+      </div>
+    );
+  }
 
   if (hasResponded) {
     return (
