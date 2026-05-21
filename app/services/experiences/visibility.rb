@@ -188,6 +188,7 @@ module Experiences
         kind:     block.kind,
         status:   block.status,
         payload:  shape_payload(block, participant_role, user, view_context),
+        sounds:   block.sounds,
         position: block.position
       }
         .merge(responses: serialize_response_data(block, participant_role, user))

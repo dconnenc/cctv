@@ -69,3 +69,11 @@ export const ShowingX: Story = {
     },
   },
 };
+
+export const ShowingXWithSound: Story = {
+  args: {
+    ...ShowingX.args,
+    viewContext: 'monitor',
+    sounds: { on_show_x: 'buzzer_error' },
+  },
+};

@@ -58,6 +58,10 @@ export default defineConfig({
         fileURLToPath(new URL('.', import.meta.url)),
         'app/frontend/RouteRules',
       ),
+      '@cctv/sounds': path.resolve(
+        fileURLToPath(new URL('.', import.meta.url)),
+        'app/frontend/sounds',
+      ),
     },
   },
 });
