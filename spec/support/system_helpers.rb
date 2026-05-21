@@ -142,10 +142,14 @@ module SystemHelpers
   end
 
   # Selects block N in the sidebar by clicking its kind button.
-  # kind is matched case-insensitively as a regex pattern against the button text.
+  # kind is a regex fragment matched against button text (e.g. "photo_upload"
+  # or "family.feud"). Underscores are translated to "[ _]" so callers can
+  # pass the snake_case ExperienceBlock kind even though buttons now render
+  # the human label ("Photo Upload").
   def select_block(n, kind:)
+    pattern = kind.gsub('_', '[ _]')
     within("li[aria-label='block #{n}']") do
-      find("button", text: /#{kind}/i).click
+      find("button", text: /#{pattern}/i).click
     end
   end
 

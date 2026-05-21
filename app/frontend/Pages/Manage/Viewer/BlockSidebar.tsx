@@ -5,7 +5,7 @@ import classNames from 'classnames';
 import { ChevronLeft, ChevronRight, GripVertical, Plus } from 'lucide-react';
 
 import { Button } from '@cctv/core/Button/Button';
-import { Block } from '@cctv/types';
+import { BLOCK_KIND_LABELS, Block } from '@cctv/types';
 
 import styles from './BlockSidebar.module.scss';
 
@@ -119,11 +119,11 @@ export default function BlockSidebar({
                       [styles.hiddenBlock]: block.status === 'hidden',
                     })}
                     onClick={() => onSelectBlock(block.id)}
-                    title={`${block.kind} - ${block.status}`}
+                    title={`${BLOCK_KIND_LABELS[block.kind]} - ${block.status}`}
                   >
                     <span className={styles.statusBadge} data-status={block.status}>
                       <span className="sr-only">
-                        {block.kind} - {block.status}
+                        {BLOCK_KIND_LABELS[block.kind]} - {block.status}
                       </span>
                       <span className={styles.statusBadgeIndex}>{parentIndex + 1}</span>
                     </span>
@@ -138,11 +138,11 @@ export default function BlockSidebar({
                             [styles.hiddenBlock]: child.status === 'hidden',
                           })}
                           onClick={() => onSelectBlock(child.id)}
-                          title={`↳ ${child.kind} - ${child.status}`}
+                          title={`↳ ${BLOCK_KIND_LABELS[child.kind]} - ${child.status}`}
                         >
                           <span className={styles.statusBadge} data-status={child.status}>
                             <span className="sr-only">
-                              {child.kind} - {child.status}
+                              {BLOCK_KIND_LABELS[child.kind]} - {child.status}
                             </span>
                             <span className={styles.statusBadgeIndex}>{childIndex + 1}</span>
                           </span>
@@ -160,11 +160,11 @@ export default function BlockSidebar({
                       [styles.hiddenBlock]: block.status === 'hidden',
                     })}
                     onClick={() => onSelectBlock(block.id)}
-                    title={`${block.kind} - ${block.status}`}
+                    title={`${BLOCK_KIND_LABELS[block.kind]} - ${block.status}`}
                   >
                     <span className={styles.statusBadge} data-status={block.status}>
                       <span className="sr-only">
-                        {block.kind} - {block.status}
+                        {BLOCK_KIND_LABELS[block.kind]} - {block.status}
                       </span>
                       <span className={styles.statusBadgeIndex}>{parentIndex + 1}</span>
                     </span>
@@ -224,7 +224,9 @@ export default function BlockSidebar({
                               </span>
                               <span className={styles.blockIndex}>{parentIndex + 1}</span>
                               <span className={styles.statusDot} data-status={block.status} />
-                              <span className={styles.blockKind}>{block.kind}</span>
+                              <span className={styles.blockKind}>
+                                {BLOCK_KIND_LABELS[block.kind]}
+                              </span>
                               {block.status === 'open' && (
                                 <span className={styles.liveBadge}>Live</span>
                               )}
@@ -285,7 +287,9 @@ export default function BlockSidebar({
                                                 className={styles.statusDot}
                                                 data-status={child.status}
                                               />
-                                              <span className={styles.blockKind}>{child.kind}</span>
+                                              <span className={styles.blockKind}>
+                                                {BLOCK_KIND_LABELS[child.kind]}
+                                              </span>
                                               {child.status === 'open' && (
                                                 <span className={styles.liveBadge}>Live</span>
                                               )}
