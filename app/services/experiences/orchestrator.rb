@@ -919,6 +919,7 @@ module Experiences
           kind: kind,
           status: status,
           payload: payload.except(:questions),
+          sounds: default_sounds_for(kind),
           visible_to_roles: visible_to_roles,
           target_user_ids: target_user_ids,
           position: max_position + 1
@@ -939,6 +940,15 @@ module Experiences
     end
 
     private
+
+    def default_sounds_for(kind)
+      case kind.to_s
+      when ExperienceBlock::FAMILY_FEUD
+        { "on_show_x" => "buzzer_error" }
+      else
+        {}
+      end
+    end
 
     def close_balloon_pump_with_winners!(block, target_units)
       transaction do

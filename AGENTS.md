@@ -149,6 +149,57 @@ The context automatically:
 - Updates state when websocket messages arrive
 - Never manually refetches data
 
+## Sound effects
+
+Blocks can attach sound effects that play on the Monitor view in response to
+block state transitions.
+
+### Data model
+
+- `experience_blocks.sounds` is a jsonb column **sibling to `payload`** — not
+  nested inside it. Use this column for any uniform-shape per-block metadata
+  where every kind shares the same structure.
+- Shape: `Record<TriggerName, SoundKey>`. Trigger names are kind-specific
+  conventions (e.g. `on_show_x` for FamilyFeud). Sound keys are members of the
+  `SoundKey` TS union.
+- Server-side defaults live in `Experiences::Orchestrator#default_sounds_for`
+  and are applied at block creation in `add_block_with_dependencies!`.
+- `Experiences::Visibility#serialize_block` emits `sounds` on every block.
+
+### Frontend (`@cctv/sounds`)
+
+- `SoundKey` — string union of valid sound keys
+- `play(key)` — fire-and-forget playback; the single entry point to audio
+- `useMonitorSound(key, when, viewContext)` — fires `play(key)` on the rising
+  edge of `when`; no-op unless `viewContext === 'monitor'`. Pass
+  `block.sounds?.<trigger_name>` as the key
+
+MP3 assets live alongside the module in `app/frontend/sounds/` and are imported
+directly (bundled, fingerprinted by Vite).
+
+### Adding a sound
+
+1. Drop the mp3 in `app/frontend/sounds/`.
+2. Add it to `SoundKey` and `SOUND_URLS` in `registry.ts`.
+3. To default it on a block kind, extend `default_sounds_for`.
+4. In the block's component, call `useMonitorSound(block.sounds?.<trigger>,
+<state>, viewContext)`.
+
+### Wiring a new block kind
+
+Sound-using block components need `sounds` and `viewContext` props. Most kinds
+in `ExperienceBlockContainer` receive only `{...block.payload}` — explicitly
+pass `sounds={block.sounds} viewContext={viewContext}` for any kind that
+consumes audio.
+
+### Constraints
+
+- Monitor only. Participant and manage views never play audio.
+- Bundled mp3s only — no host-uploaded sounds yet.
+- Never construct `new Audio()` in components; always go through `play(key)`.
+  That entry point is the stable seam for future features (e.g. participant
+  soundboard).
+
 ## Code style
 
 Follow existing patterns
@@ -171,6 +222,10 @@ outside of the test suite
 - Don't cast `as any`. Use the type system correctly
 - Trust backend visibility logic - never filter blocks on frontend
 - All state updates come from websockets, not API calls
+- New components and visible UI states get a Storybook story alongside the
+  component (`<Component>.stories.tsx`). Cover the meaningful variants — empty
+  state, loading, error, and any state-driven effects (e.g. monitor-only sound
+  triggers). Run with `yarn storybook`.
 
 ### Back-end
 

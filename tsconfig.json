@@ -31,7 +31,8 @@
       "@cctv/pages/*": ["./app/frontend/Pages/*"],
       "@cctv/utils": ["./app/frontend/utils"],
       "@cctv/utils/*": ["./app/frontend/utils/*"],
-      "@cctv/types": ["./app/frontend/types"]
+      "@cctv/types": ["./app/frontend/types"],
+      "@cctv/sounds": ["./app/frontend/sounds"]
     }
   },
   "include": ["app/frontend/**/*"],

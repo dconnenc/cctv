@@ -60,7 +60,14 @@ export default function ExperienceBlockContainer({
     case BlockKind.ANNOUNCEMENT:
       return <Announcement participant={participant} {...block.payload} />;
     case BlockKind.FAMILY_FEUD:
-      return <FamilyFeud {...block.payload} contained={viewContext !== 'participant'} />;
+      return (
+        <FamilyFeud
+          {...block.payload}
+          contained={viewContext !== 'participant'}
+          sounds={block.sounds}
+          viewContext={viewContext}
+        />
+      );
     case BlockKind.PHOTO_UPLOAD:
       return (
         <PhotoUpload

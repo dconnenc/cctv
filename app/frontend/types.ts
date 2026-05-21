@@ -1,4 +1,5 @@
 import type { FamilyFeudAction } from '@cctv/pages/Block/FamilyFeudManager/familyFeudReducer';
+import type { SoundKey } from '@cctv/sounds';
 
 // ===== CORE DOMAIN TYPES =====
 
@@ -356,6 +357,7 @@ interface BaseBlock {
   visible_to_segments?: string[];
   target_user_ids?: string[];
   show_in_lobby?: boolean;
+  sounds?: Partial<Record<string, SoundKey>>;
   created_at?: string;
   updated_at?: string;
   child_block_ids?: string[];
