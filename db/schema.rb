@@ -10,14 +10,14 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_05_20_000001) do
+ActiveRecord::Schema[7.2].define(version: 2026_05_26_000002) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "citext"
   enable_extension "plpgsql"
 
   # Custom types defined in this database.
   # Note that some types may not work with other database engines. Be careful if changing database.
-  create_enum "block_link_relationship", ["depends_on"]
+  create_enum "block_link_relationship", ["depends_on", "source"]
   create_enum "block_variable_datatype", ["string", "number", "text"]
   create_enum "experience_block_statuses", ["hidden", "open", "closed"]
   create_enum "experience_participant_roles", ["audience", "player", "moderator", "host"]
@@ -92,9 +92,10 @@ ActiveRecord::Schema[7.2].define(version: 2026_05_20_000001) do
     t.jsonb "meta", default: {}, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["child_block_id"], name: "idx_eb_links_unique_child", unique: true
+    t.integer "position", default: 0, null: false
     t.index ["child_block_id"], name: "index_experience_block_links_on_child_block_id"
     t.index ["parent_block_id", "child_block_id"], name: "idx_eb_links_parent_child", unique: true
+    t.index ["parent_block_id", "relationship", "position"], name: "idx_eb_links_parent_rel_pos"
     t.index ["parent_block_id"], name: "index_experience_block_links_on_parent_block_id"
   end
 

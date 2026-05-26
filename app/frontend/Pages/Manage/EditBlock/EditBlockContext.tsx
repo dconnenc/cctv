@@ -91,7 +91,7 @@ function blockToFormData(block: Block): FormBlockData {
     case BlockKind.FAMILY_FEUD:
       return {
         kind: BlockKind.FAMILY_FEUD,
-        data: familyFeudPayloadToFormData(block.payload as FamilyFeudPayload, block.children),
+        data: familyFeudPayloadToFormData(block.payload as FamilyFeudPayload, block.sources),
       };
     case BlockKind.PHOTO_UPLOAD:
       return { kind: BlockKind.PHOTO_UPLOAD, data: photoUploadPayloadToFormData(block.payload) };

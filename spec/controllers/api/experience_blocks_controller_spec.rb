@@ -246,7 +246,7 @@ RSpec.describe Api::ExperienceBlocksController, type: :controller do
       end
 
       before do
-        child = block.child_blocks.first
+        child = block.sources.first
         create(:experience_question_submission, experience_block: child, user: player.user)
       end
 
@@ -259,7 +259,7 @@ RSpec.describe Api::ExperienceBlocksController, type: :controller do
 
     context "propagating question edits to family feud child blocks" do
       let(:block) { create(:experience_block, :family_feud, experience: experience) }
-      let(:child) { block.child_blocks.first }
+      let(:child) { block.sources.first }
       let(:update_params) do
         {
           payload: { "title" => "New Title" },

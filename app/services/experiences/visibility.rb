@@ -170,7 +170,10 @@ module Experiences
       return [] if active_block_ids.empty?
 
       child_block_ids  = ExperienceBlock.where(parent_block_id: active_block_ids).pluck(:id)
-      all_block_ids    = active_block_ids + child_block_ids
+      source_block_ids = ExperienceBlockLink.sources
+        .where(parent_block_id: active_block_ids)
+        .pluck(:child_block_id)
+      all_block_ids    = active_block_ids + child_block_ids + source_block_ids
 
       responded_user_ids = [
         ExperiencePollSubmission,
@@ -544,12 +547,20 @@ module Experiences
       if mod_or_host?(participant_role) || admin_user?(user)
         metadata = {
           child_block_ids:  block.children.map(&:id),
-          parent_block_ids: block.parents.map(&:id)
+          parent_block_ids: block.parents.map(&:id),
+          source_block_ids: block.sources.map(&:id),
+          consumer_block_ids: block.consumers.map(&:id)
         }
 
         if depth == 0 && block.children.any?
           metadata[:children] = block.children.map do |child|
             serialize_block(child, participant_role: participant_role, user: user, depth: depth + 1, view_context: :admin)
+          end
+        end
+
+        if depth == 0 && block.sources.any?
+          metadata[:sources] = block.sources.map do |source|
+            serialize_block(source, participant_role: participant_role, user: user, depth: depth + 1, view_context: :admin)
           end
         end
 

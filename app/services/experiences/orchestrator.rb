@@ -385,10 +385,10 @@ module Experiences
       transaction do
         current_payload = block.payload || {}
 
-        questions = block.child_blocks.map do |child_block|
-          buckets = child_block.payload["buckets"] || []
+        questions = block.family_feud_question_blocks.map do |source_block|
+          buckets = source_block.payload["buckets"] || []
 
-          submissions = ExperienceQuestionSubmission.where(experience_block_id: child_block.id)
+          submissions = ExperienceQuestionSubmission.where(experience_block_id: source_block.id)
           total_answers = submissions.count
           submission_ids = submissions.pluck(:id).map(&:to_s)
 
@@ -408,8 +408,8 @@ module Experiences
           question_buckets.sort_by! { |b| -b["percentage"] }
 
           {
-            "question_id" => child_block.id,
-            "question_text" => child_block.payload["question"] || "Question",
+            "question_id" => source_block.id,
+            "question_text" => source_block.payload["question"] || "Question",
             "buckets" => question_buckets
           }
         end
@@ -524,8 +524,8 @@ module Experiences
       block = experience.experience_blocks.find(block_id)
 
       transaction do
-        child_block_ids = block.child_blocks.pluck(:id)
-        ExperienceQuestionSubmission.where(experience_block_id: child_block_ids).delete_all
+        source_ids = block.family_feud_question_blocks.pluck(:id)
+        ExperienceQuestionSubmission.where(experience_block_id: source_ids).delete_all
 
         block.clear_all_family_feud_buckets!
 
@@ -894,9 +894,9 @@ module Experiences
 
         if block.kind == ExperienceBlock::FAMILY_FEUD && questions.present?
           questions.each do |q|
-            child = block.child_blocks.find_by(id: q[:id])
-            next unless child
-            child.update!(payload: child.payload.merge("question" => q[:question]))
+            source = block.sources.find_by(id: q[:id])
+            next unless source
+            source.update!(payload: source.payload.merge("question" => q[:question]))
           end
         end
 
@@ -910,12 +910,13 @@ module Experiences
       visible_to_roles: [],
       target_user_ids: [],
       status: :hidden,
-      questions: []
+      questions: [],
+      source_block_ids: []
     )
       transaction do
         max_position = experience.experience_blocks.parent_blocks.maximum(:position) || -1
 
-        parent_block = experience.experience_blocks.create!(
+        consumer_block = experience.experience_blocks.create!(
           kind: kind,
           status: status,
           payload: payload.except(:questions),
@@ -927,16 +928,71 @@ module Experiences
 
         if kind == ExperienceBlock::FAMILY_FEUD && questions.present?
           questions.each_with_index do |question_spec, index|
-            create_family_feud_question(
-              parent_block: parent_block,
+            create_family_feud_source_question(
+              consumer_block: consumer_block,
               question_spec: question_spec,
-              position: index
+              position: max_position + 2 + index
             )
           end
         end
 
-        parent_block
+        attach_sources!(consumer_block, source_block_ids) if source_block_ids.present?
+
+        consumer_block
       end
+    end
+
+    def attach_sources!(consumer_block, source_block_ids)
+      base_position = consumer_block.source_links.maximum(:position) || -1
+
+      Array(source_block_ids).each_with_index do |source_id, index|
+        source = experience.experience_blocks.find(source_id)
+        ExperienceBlockLink.create!(
+          parent_block: consumer_block,
+          child_block: source,
+          relationship: :source,
+          position: base_position + 1 + index
+        )
+      end
+
+      consumer_block.reload
+    end
+
+    def attach_source!(consumer_block_id:, source_block_id:)
+      consumer = experience.experience_blocks.find(consumer_block_id)
+      attach_sources!(consumer, [source_block_id])
+    end
+
+    def detach_source!(consumer_block_id:, source_block_id:)
+      consumer = experience.experience_blocks.find(consumer_block_id)
+      link = consumer.source_links.find_by(child_block_id: source_block_id)
+      raise ActiveRecord::RecordNotFound, "Source not attached" unless link
+
+      transaction do
+        link.destroy!
+        consumer.source_links.ordered.each_with_index do |l, idx|
+          l.update_column(:position, idx) if l.position != idx
+        end
+      end
+
+      consumer.reload
+    end
+
+    def reorder_sources!(consumer_block_id:, source_block_ids:)
+      consumer = experience.experience_blocks.find(consumer_block_id)
+
+      transaction do
+        ordered_ids = Array(source_block_ids).map(&:to_s)
+        links = consumer.source_links.to_a.index_by { |l| l.child_block_id.to_s }
+
+        ordered_ids.each_with_index do |source_id, idx|
+          link = links[source_id]
+          next unless link
+          link.update_column(:position, idx) if link.position != idx
+        end
+      end
+
+      consumer.reload
     end
 
     private
@@ -1024,27 +1080,32 @@ module Experiences
       slides
     end
 
-    def create_family_feud_question(parent_block:, question_spec:, position:)
-      child_block = experience.experience_blocks.create!(
+    def create_family_feud_source_question(consumer_block:, question_spec:, position:)
+      source_payload = question_spec[:payload] || question_spec["payload"] || {}
+      source_payload = source_payload.to_unsafe_h if source_payload.respond_to?(:to_unsafe_h)
+
+      source_block = experience.experience_blocks.create!(
         kind: ExperienceBlock::QUESTION,
-        status: parent_block.status,
-        payload: question_spec["payload"] || {},
-        visible_to_roles: parent_block.visible_to_roles,
+        status: :hidden,
+        payload: source_payload,
+        visible_to_roles: consumer_block.visible_to_roles,
         target_user_ids: [],
-        parent_block_id: parent_block.id,
         position: position,
         show_in_lobby: true
       )
 
-      copy_block_segments(from: parent_block, to: child_block)
+      copy_block_segments(from: consumer_block, to: source_block)
+
+      link_position = consumer_block.source_links.maximum(:position) || -1
 
       ExperienceBlockLink.create!(
-        parent_block: parent_block,
-        child_block: child_block,
-        relationship: :depends_on
+        parent_block: consumer_block,
+        child_block: source_block,
+        relationship: :source,
+        position: link_position + 1
       )
 
-      child_block
+      source_block
     end
 
     def apply_poll_segment_assignments(block, old_selected, new_selected)

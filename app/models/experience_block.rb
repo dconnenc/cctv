@@ -35,19 +35,38 @@ class ExperienceBlock < ApplicationRecord
   has_many :improv_votes, dependent: :destroy
 
   has_many :parent_links,
+    -> { where(relationship: "depends_on") },
     class_name: "ExperienceBlockLink",
     foreign_key: :child_block_id,
     dependent: :destroy
   has_many :parents, through: :parent_links, source: :parent_block
 
   has_many :child_links,
+    -> { where(relationship: "depends_on").order(position: :asc) },
     class_name: "ExperienceBlockLink",
     foreign_key: :parent_block_id,
     dependent: :destroy
   has_many :children,
-    -> { order(position: :asc) },
+    -> { order("experience_block_links.position ASC") },
     through: :child_links,
     source: :child_block
+
+  has_many :source_links,
+    -> { where(relationship: "source").order(position: :asc) },
+    class_name: "ExperienceBlockLink",
+    foreign_key: :parent_block_id,
+    dependent: :destroy
+  has_many :sources,
+    -> { order("experience_block_links.position ASC") },
+    through: :source_links,
+    source: :child_block
+
+  has_many :consumer_links,
+    -> { where(relationship: "source") },
+    class_name: "ExperienceBlockLink",
+    foreign_key: :child_block_id,
+    dependent: :destroy
+  has_many :consumers, through: :consumer_links, source: :parent_block
 
   has_many :experience_block_segments, dependent: :destroy
   has_many :experience_segments, through: :experience_block_segments
@@ -105,16 +124,20 @@ class ExperienceBlock < ApplicationRecord
   end
 
   # Family Feud specific methods
+  def family_feud_question_blocks
+    sources.where(kind: QUESTION)
+  end
+
   def clear_family_feud_bucket_assignments!
     return unless kind == FAMILY_FEUD
 
-    child_blocks.each do |child_block|
-      child_payload = child_block.payload || {}
-      if child_payload["buckets"]
-        child_payload["buckets"].each do |bucket|
+    family_feud_question_blocks.each do |source_block|
+      source_payload = source_block.payload || {}
+      if source_payload["buckets"]
+        source_payload["buckets"].each do |bucket|
           bucket["answer_ids"] = []
         end
-        child_block.update!(payload: child_payload)
+        source_block.update!(payload: source_payload)
       end
     end
   end
@@ -122,10 +145,10 @@ class ExperienceBlock < ApplicationRecord
   def clear_all_family_feud_buckets!
     return unless kind == FAMILY_FEUD
 
-    child_blocks.each do |child_block|
-      child_payload = child_block.payload || {}
-      child_payload["buckets"] = []
-      child_block.update!(payload: child_payload)
+    family_feud_question_blocks.each do |source_block|
+      source_payload = source_block.payload || {}
+      source_payload["buckets"] = []
+      source_block.update!(payload: source_payload)
     end
   end
 
@@ -207,10 +230,11 @@ class ExperienceBlock < ApplicationRecord
   private
 
   def sync_parent_from_links
-    if parent_links.any? && parent_block_id.nil?
-      link = parent_links.first
-      update_column(:parent_block_id, link.parent_block_id)
-    end
+    link = ExperienceBlockLink.depends_on.find_by(child_block_id: id)
+    return unless link
+    return unless parent_block_id.nil?
+
+    update_column(:parent_block_id, link.parent_block_id)
   end
 
   def visibility_roles

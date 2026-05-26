@@ -41,27 +41,27 @@ FactoryBot.define do
           evaluator.question_count.times.map { |i| { question: "Question #{i + 1}" } }
 
         questions_to_create.each_with_index do |question_spec, index|
-          child_block = create(
+          source_block = create(
             :experience_block,
             experience: block.experience,
             kind: ExperienceBlock::QUESTION,
             status: block.status,
-            payload: { 
+            payload: {
               question: question_spec[:question] || question_spec["question"],
               formKey: "answer_#{index}",
               inputType: "text"
             },
             visible_to_roles: block.visible_to_roles,
             target_user_ids: [],
-            parent_block_id: block.id,
-            position: index,
+            position: block.position + 1 + index,
             show_in_lobby: true
           )
 
           ExperienceBlockLink.create!(
             parent_block: block,
-            child_block: child_block,
-            relationship: :depends_on
+            child_block: source_block,
+            relationship: :source,
+            position: index
           )
         end
       end

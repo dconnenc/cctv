@@ -236,7 +236,7 @@ RSpec.describe Experiences::Orchestrator do
       described_class.new(actor: user, experience: experience).open_block!(block.id)
     end
 
-    context "when opening a family feud block with child question blocks" do
+    context "when opening a family feud block" do
       let!(:block) do
         create(
           :experience_block,
@@ -247,12 +247,13 @@ RSpec.describe Experiences::Orchestrator do
         )
       end
 
-      it "opens the parent block and all child question blocks" do
+      it "opens the consumer block without touching source question blocks" do
+        sources_before = block.sources.map(&:status)
         subject
 
         expect(block.reload.status).to eq("open")
-        expect(block.child_blocks.count).to eq(2)
-        expect(block.child_blocks.map(&:status)).to all(eq("open"))
+        expect(block.sources.count).to eq(2)
+        expect(block.sources.map(&:status)).to eq(sources_before)
       end
     end
   end
@@ -264,7 +265,7 @@ RSpec.describe Experiences::Orchestrator do
       described_class.new(actor: user, experience: experience).close_block!(block.id)
     end
 
-    context "when closing a parent block with children" do
+    context "when closing a family feud block" do
       let!(:block) do
         create(
           :experience_block,
@@ -275,12 +276,13 @@ RSpec.describe Experiences::Orchestrator do
         )
       end
 
-      it "closes the parent block and all child blocks" do
+      it "closes the consumer block without touching source question blocks" do
+        sources_before = block.sources.map(&:status)
         subject
 
         expect(block.reload.status).to eq("closed")
-        expect(block.child_blocks.count).to eq(2)
-        expect(block.child_blocks.map(&:status)).to all(eq("closed"))
+        expect(block.sources.count).to eq(2)
+        expect(block.sources.map(&:status)).to eq(sources_before)
       end
     end
   end
@@ -292,7 +294,7 @@ RSpec.describe Experiences::Orchestrator do
       described_class.new(actor: user, experience: experience).hide_block!(block.id)
     end
 
-    context "when hiding a parent block with children" do
+    context "when hiding a family feud block" do
       let!(:block) do
         create(
           :experience_block,
@@ -303,12 +305,13 @@ RSpec.describe Experiences::Orchestrator do
         )
       end
 
-      it "hides the parent block and all child blocks" do
+      it "hides the consumer block without touching source question blocks" do
+        sources_before = block.sources.map(&:status)
         subject
 
         expect(block.reload.status).to eq("hidden")
-        expect(block.child_blocks.count).to eq(2)
-        expect(block.child_blocks.map(&:status)).to all(eq("hidden"))
+        expect(block.sources.count).to eq(2)
+        expect(block.sources.map(&:status)).to eq(sources_before)
       end
     end
   end
@@ -549,7 +552,7 @@ RSpec.describe Experiences::Orchestrator do
       let(:new_payload) { { "title" => "Updated" } }
 
       before do
-        child = block.child_blocks.first
+        child = block.sources.first
         create(:experience_question_submission, experience_block: child, user: user)
       end
 
@@ -563,7 +566,7 @@ RSpec.describe Experiences::Orchestrator do
       let(:block) do
         create(:experience_block, :family_feud, experience: experience, status: ExperienceBlock::HIDDEN)
       end
-      let(:child) { block.child_blocks.first }
+      let(:child) { block.sources.first }
       let(:new_payload) { { "title" => "New Title" } }
       let(:questions) { [{ id: child.id, question: "Updated question" }] }
 

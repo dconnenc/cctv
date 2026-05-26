@@ -3,16 +3,47 @@ class ExperienceBlockLink < ApplicationRecord
   belongs_to :child_block, class_name: "ExperienceBlock"
 
   enum :relationship, {
-    depends_on: "depends_on"
+    depends_on: "depends_on",
+    source: "source"
   }
 
-  validates :parent_block_id, :child_block_id, presence: true
-  validates :child_block_id, uniqueness: true
-  validate :no_self_loops
-  validate :no_cycles
-  validate :depth_limit
+  scope :sources, -> { where(relationship: "source") }
+  scope :depends_on, -> { where(relationship: "depends_on") }
+  scope :ordered, -> { order(position: :asc) }
 
-  after_commit :sync_child_parent_id, on: [:create, :update]
+  validates :parent_block_id, :child_block_id, presence: true
+  validates :child_block_id,
+    uniqueness: { scope: [:parent_block_id, :relationship] }
+  validate :no_self_loops
+  validate :no_cycles, if: :depends_on?
+  validate :depth_limit, if: :depends_on?
+  validate :child_has_single_parent_link, if: :depends_on?
+
+  after_commit :sync_child_parent_id, on: [:create, :update], if: :depends_on?
+
+  def self.would_create_cycle?(parent_id, child_id)
+    sql = <<~SQL
+      WITH RECURSIVE ancestors(ancestor_id) AS (
+        SELECT parent_block_id
+        FROM experience_block_links
+        WHERE child_block_id = :child_id AND relationship = 'depends_on'
+
+        UNION
+
+        SELECT ebl.parent_block_id
+        FROM experience_block_links ebl
+        JOIN ancestors a ON ebl.child_block_id = a.ancestor_id
+        WHERE ebl.relationship = 'depends_on'
+      )
+      SELECT 1 FROM ancestors WHERE ancestor_id = :parent_id LIMIT 1
+    SQL
+
+    result = connection.execute(
+      sanitize_sql([sql, { parent_id: parent_id, child_id: child_id }])
+    )
+
+    result.any?
+  end
 
   private
 
@@ -42,27 +73,15 @@ class ExperienceBlockLink < ApplicationRecord
     end
   end
 
-  def self.would_create_cycle?(parent_id, child_id)
-    sql = <<~SQL
-      WITH RECURSIVE ancestors(ancestor_id) AS (
-        SELECT parent_block_id
-        FROM experience_block_links
-        WHERE child_block_id = :child_id
+  def child_has_single_parent_link
+    return unless child_block_id
 
-        UNION
+    conflict = self.class.depends_on
+      .where(child_block_id: child_block_id)
+      .where.not(id: id)
+      .exists?
 
-        SELECT ebl.parent_block_id
-        FROM experience_block_links ebl
-        JOIN ancestors a ON ebl.child_block_id = a.ancestor_id
-      )
-      SELECT 1 FROM ancestors WHERE ancestor_id = :parent_id LIMIT 1
-    SQL
-
-    result = connection.execute(
-      sanitize_sql([sql, { parent_id: parent_id, child_id: child_id }])
-    )
-
-    result.any?
+    errors.add(:base, "Block already has a parent dependency") if conflict
   end
 
   def sync_child_parent_id

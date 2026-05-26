@@ -223,7 +223,7 @@ export interface BlockLink {
   id: string;
   parent_block_id: string;
   child_block_id: string;
-  relationship: 'depends_on';
+  relationship: 'depends_on' | 'source';
   position: number;
 }
 
@@ -376,6 +376,9 @@ interface BaseBlock {
   child_block_ids?: string[];
   parent_block_ids?: string[];
   children?: Block[];
+  source_block_ids?: string[];
+  consumer_block_ids?: string[];
+  sources?: Block[];
   responses?: {
     total: number;
     user_responded?: boolean;
@@ -559,6 +562,7 @@ export interface CreateBlockPayload {
   questions?: Array<{
     payload: Record<string, string>;
   }>;
+  source_block_ids?: string[];
 }
 
 export interface CreateExperienceBlockRequest {

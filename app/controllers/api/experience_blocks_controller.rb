@@ -1,6 +1,7 @@
 class Api::ExperienceBlocksController < Api::BaseController
   MANAGEMENT_ACTIONS = %i[
     create update reorder set_column open close hide clear_buzzer_responses
+    attach_source detach_source reorder_sources
     add_bucket rename_bucket delete_bucket assign_answer auto_categorize
     start_playing reveal_bucket show_x next_question restart_playing
     restart_categorizing restart_everything
@@ -34,14 +35,15 @@ class Api::ExperienceBlocksController < Api::BaseController
 
       segment_ids = create_params[:visible_to_segment_ids] || []
 
-      block = if create_params[:questions].present?
+      block = if create_params[:questions].present? || create_params[:source_block_ids].present?
         orchestrator.add_block_with_dependencies!(
           kind: create_params[:kind],
           payload: create_params[:payload] || {},
           visible_to_roles: create_params[:visible_to_roles] || [],
           target_user_ids: create_params[:target_user_ids] || [],
           status: create_params[:status] || :hidden,
-          questions: create_params[:questions] || []
+          questions: create_params[:questions] || [],
+          source_block_ids: create_params[:source_block_ids] || []
         )
       else
         orchestrator.add_block!(
@@ -59,24 +61,6 @@ class Api::ExperienceBlocksController < Api::BaseController
         ExperienceBlockSegment.insert_all(
           segment_ids.map { |sid| { experience_block_id: block.id, experience_segment_id: sid } }
         )
-      end
-
-      if create_params[:parent_block_id].present?
-        parent_block = @experience.experience_blocks.find_by(id: create_params[:parent_block_id])
-        if parent_block&.kind == 'family_feud'
-          Experiences::Broadcaster.new(@experience).broadcast_family_feud_update(
-            block_id: parent_block.id,
-            operation: 'question_added',
-            data: {
-              question: {
-                questionId: block.id,
-                questionText: block.payload['question'] || 'Question',
-                buckets: [],
-                unassignedAnswers: []
-              }
-            }
-          )
-        end
       end
 
       @experience.reload
@@ -219,10 +203,10 @@ class Api::ExperienceBlocksController < Api::BaseController
         answer: params[:answer]
       )
 
-      parent_block = @block.parent_block
-      if parent_block&.kind == 'family_feud'
+      family_feud_consumers = @block.consumers.where(kind: ExperienceBlock::FAMILY_FEUD)
+      family_feud_consumers.each do |consumer|
         Experiences::Broadcaster.new(@experience).broadcast_family_feud_update(
-          block_id: parent_block.id,
+          block_id: consumer.id,
           operation: 'answer_received',
           data: {
             questionId: @block.id,
@@ -268,6 +252,57 @@ class Api::ExperienceBlocksController < Api::BaseController
       Experiences::Broadcaster.new(@experience).broadcast_experience_update
 
       render json: { success: true }, status: 200
+    end
+  end
+
+  # POST /api/experiences/:experience_id/blocks/:id/sources
+  def attach_source
+    with_experience_orchestration do
+      block = Experiences::Orchestrator.new(
+        experience: @experience, actor: @user
+      ).attach_source!(
+        consumer_block_id: params[:id],
+        source_block_id: params[:source_block_id]
+      )
+
+      @experience.reload
+      Experiences::Broadcaster.new(@experience).broadcast_experience_update
+
+      render json: { success: true, data: block }, status: 200
+    end
+  end
+
+  # DELETE /api/experiences/:experience_id/blocks/:id/sources/:source_block_id
+  def detach_source
+    with_experience_orchestration do
+      block = Experiences::Orchestrator.new(
+        experience: @experience, actor: @user
+      ).detach_source!(
+        consumer_block_id: params[:id],
+        source_block_id: params[:source_block_id]
+      )
+
+      @experience.reload
+      Experiences::Broadcaster.new(@experience).broadcast_experience_update
+
+      render json: { success: true, data: block }, status: 200
+    end
+  end
+
+  # PATCH /api/experiences/:experience_id/blocks/:id/sources
+  def reorder_sources
+    with_experience_orchestration do
+      block = Experiences::Orchestrator.new(
+        experience: @experience, actor: @user
+      ).reorder_sources!(
+        consumer_block_id: params[:id],
+        source_block_ids: params[:source_block_ids] || []
+      )
+
+      @experience.reload
+      Experiences::Broadcaster.new(@experience).broadcast_experience_update
+
+      render json: { success: true, data: block }, status: 200
     end
   end
 
@@ -790,6 +825,7 @@ class Api::ExperienceBlocksController < Api::BaseController
 
     permitted[:payload] = params[:block][:payload] if params[:block][:payload]
     permitted[:questions] = params[:block][:questions] if params[:block][:questions]
+    permitted[:source_block_ids] = params[:block][:source_block_ids] if params[:block][:source_block_ids]
 
     permitted
   end

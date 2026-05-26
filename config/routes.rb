@@ -78,6 +78,10 @@ Rails.application.routes.draw do
           post :submit_buzzer_response
           delete :clear_buzzer_responses
 
+          post 'sources', action: :attach_source
+          delete 'sources/:source_block_id', action: :detach_source
+          patch 'sources', action: :reorder_sources
+
           post 'family_feud/auto_categorize', action: :auto_categorize
           post 'family_feud/add_bucket', action: :add_bucket
           patch 'family_feud/buckets/:bucket_id', action: :rename_bucket

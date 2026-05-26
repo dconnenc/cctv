@@ -73,7 +73,7 @@ export default function FamilyFeudManager({ block }: FamilyFeudManagerProps) {
   const [questionsState, dispatch] = useReducer(familyFeudReducer, []);
   const { addBucket, renameBucket, deleteBucket, assignAnswer, autoCategorize } =
     useFamilyFeudBuckets(block.id, dispatch);
-  const childQuestions = block.children ?? [];
+  const childQuestions = block.sources ?? [];
   const [editingBucketNames, setEditingBucketNames] = useState<Record<string, string>>({});
   const renameTimeoutRef = useRef<Record<string, NodeJS.Timeout>>({});
   const [addingBucketForQuestion, setAddingBucketForQuestion] = useState<string | null>(null);

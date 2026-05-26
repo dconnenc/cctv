@@ -49,4 +49,6 @@ export {
 } from './Drawer/Drawer';
 export { Switch } from './Switch/Switch';
 export { SegmentMultiSelect } from './SegmentMultiSelect/SegmentMultiSelect';
+export { SourcesPanel } from './SourcesPanel/SourcesPanel';
+export type { SourcesPanelProps } from './SourcesPanel/SourcesPanel';
 export { DEFAULT_SEGMENT_COLOR } from './SegmentBadge/SegmentBadge';

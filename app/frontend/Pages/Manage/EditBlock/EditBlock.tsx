@@ -1,7 +1,8 @@
 import { useExperience } from '@cctv/contexts/ExperienceContext';
-import { DialogDescription, DialogTitle } from '@cctv/core';
+import { DialogDescription, DialogTitle, SourcesPanel } from '@cctv/core';
 import { Button } from '@cctv/core/Button/Button';
 import { SegmentBadge } from '@cctv/core/SegmentBadge/SegmentBadge';
+import { useBlockSources } from '@cctv/hooks/useBlockSources';
 import {
   BLOCK_KIND_LABELS,
   Block,
@@ -84,6 +85,7 @@ function EditBlockForm({ onClose, block }: EditBlockFormProps) {
       )}
 
       <BlockEditor />
+      {block.kind === BlockKind.FAMILY_FEUD && <BlockSourcesPanel block={block} />}
       {viewAdditionalDetails && <AdditionalDetails />}
 
       <div className={styles.actions}>
@@ -143,6 +145,32 @@ function BlockEditor() {
       return <div>Unknown block type: {(_exhaust as { kind: string }).kind}</div>;
     }
   }
+}
+
+const SOURCE_COMPATIBLE_KINDS: BlockKind[] = [BlockKind.QUESTION, BlockKind.POLL];
+
+function BlockSourcesPanel({ block }: { block: Block }) {
+  const { experience } = useExperience();
+  const { attach, detach, reorder, isLoading } = useBlockSources(block.id);
+
+  const sources = block.sources ?? [];
+  const attachedIds = new Set(sources.map((s) => s.id));
+
+  const candidates = (experience?.blocks ?? []).filter(
+    (b) => b.id !== block.id && !attachedIds.has(b.id) && SOURCE_COMPATIBLE_KINDS.includes(b.kind),
+  );
+
+  return (
+    <SourcesPanel
+      sources={sources}
+      candidates={candidates}
+      onAttach={attach}
+      onDetach={detach}
+      onReorder={reorder}
+      busy={isLoading}
+      emptyMessage="No sources attached. Attach Question or Poll blocks below."
+    />
+  );
 }
 
 function AdditionalDetails() {
