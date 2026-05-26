@@ -122,6 +122,19 @@ RSpec.describe Experiences::Visibility do
           expect(ids).not_to include(child.id)
         end
       end
+
+      context "when only the child is open and the parent is hidden" do
+        before do
+          parent.update!(status: :hidden)
+          child.update!(status: :open)
+        end
+
+        it "surfaces the open child" do
+          ids = result[:blocks].map { |b| b[:id] }
+          expect(ids).to include(child.id)
+          expect(ids).not_to include(parent.id)
+        end
+      end
     end
   end
 
@@ -200,6 +213,37 @@ RSpec.describe Experiences::Visibility do
       it "returns empty blocks" do
         result = described_class.for_participant(experience, participant)
         expect(result[:blocks]).to be_empty
+      end
+    end
+
+    context "when a child block is open and its parent is hidden" do
+      let!(:participant) { create(:experience_participant, user: user, experience: experience, role: :player) }
+      let!(:parent) do
+        create(
+          :experience_block,
+          experience: experience,
+          status: :hidden,
+          kind: ExperienceBlock::FAMILY_FEUD,
+          position: 0
+        )
+      end
+      let!(:child) do
+        create(
+          :experience_block,
+          experience: experience,
+          parent_block: parent,
+          status: :open,
+          kind: ExperienceBlock::QUESTION,
+          position: 0
+        )
+      end
+
+      before { create(:experience_block_link, parent_block: parent, child_block: child) }
+
+      it "surfaces the child block to the participant" do
+        result = described_class.for_participant(experience, participant)
+        ids = result[:blocks].map { |b| b[:id] }
+        expect(ids).to include(child.id)
       end
     end
   end
