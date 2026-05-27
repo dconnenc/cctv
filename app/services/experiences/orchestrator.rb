@@ -955,15 +955,14 @@ module Experiences
         payload = block.payload || {}
         return [] if payload["ended_at"].present?
 
-        winning_results = ExperienceMinigameBalloonResult
+        winning_participant_ids = ExperienceMinigameBalloonResult
           .where(experience_block_id: block.id)
           .where("fill_amount >= ?", target_units)
-          .to_a
+          .pluck(:experience_participant_id)
 
-        winning_user_ids = winning_results.map(&:user_id)
         winners = experience.experience_participants
           .includes(:user)
-          .where(user_id: winning_user_ids)
+          .where(id: winning_participant_ids)
           .to_a
 
         payload["ended_at"]               = Time.current.iso8601
