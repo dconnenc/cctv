@@ -516,7 +516,7 @@ RSpec.describe Experiences::Orchestrator do
       end
       let(:new_payload) { { "question" => "Q?", "options" => ["a", "c"], "pollType" => "single" } }
 
-      before { create(:experience_poll_submission, experience_block: block, user: user) }
+      before { create(:experience_poll_submission, experience_block: block, experience_participant: experience.experience_participants.find_by!(user: user)) }
 
       it "clears submissions and saves" do
         expect { subject }.to change { ExperiencePollSubmission.count }.by(-1)
@@ -535,7 +535,7 @@ RSpec.describe Experiences::Orchestrator do
       end
       let(:new_payload) { { "question" => "New Q?", "options" => ["a", "b"], "pollType" => "single" } }
 
-      before { create(:experience_poll_submission, experience_block: block, user: user) }
+      before { create(:experience_poll_submission, experience_block: block, experience_participant: experience.experience_participants.find_by!(user: user)) }
 
       it "updates the question text" do
         subject
@@ -550,7 +550,7 @@ RSpec.describe Experiences::Orchestrator do
 
       before do
         child = block.child_blocks.first
-        create(:experience_question_submission, experience_block: child, user: user)
+        create(:experience_question_submission, experience_block: child, experience_participant: experience.experience_participants.find_by!(user: user))
       end
 
       it "allows the edit" do

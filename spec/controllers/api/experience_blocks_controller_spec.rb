@@ -227,7 +227,7 @@ RSpec.describe Api::ExperienceBlocksController, type: :controller do
       end
 
       before do
-        create(:experience_poll_submission, experience_block: block, user: player.user)
+        create(:experience_poll_submission, experience_block: block, experience_participant: player)
       end
 
       it "clears submissions and returns 200" do
@@ -247,7 +247,7 @@ RSpec.describe Api::ExperienceBlocksController, type: :controller do
 
       before do
         child = block.child_blocks.first
-        create(:experience_question_submission, experience_block: child, user: player.user)
+        create(:experience_question_submission, experience_block: child, experience_participant: player)
       end
 
       it "allows the edit and returns 200" do
