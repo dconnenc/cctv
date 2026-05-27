@@ -10,15 +10,15 @@ RSpec.describe Experiences::Visibility do
 
     subject(:result) { described_class.for_admin(experience) }
 
-    it "includes all parent blocks regardless of status" do
+    it "includes all blocks regardless of status" do
       ids = result[:blocks].map { |b| b[:id] }
       expect(ids).to contain_exactly(block1.id, block2.id, block3.id)
     end
 
-    it "excludes child blocks" do
-      child = create(:experience_block, experience: experience, parent_block: block1, status: :open)
+    it "includes child blocks in the flat list" do
+      child = create(:experience_block, experience: experience, parent_block: block1, status: :open, position: 4)
       ids = result[:blocks].map { |b| b[:id] }
-      expect(ids).not_to include(child.id)
+      expect(ids).to include(child.id)
     end
 
     it "includes visibility metadata on each block" do

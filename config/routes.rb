@@ -69,6 +69,7 @@ Rails.application.routes.draw do
           post :open
           post :close
           post :hide
+          post :detach_from_parent
           post :reorder
           post :set_column
           post :submit_poll_response

@@ -89,7 +89,7 @@ module Experiences
     private
 
     def admin_visible_blocks
-      @experience.experience_blocks.order(position: :asc).select(&:parent_block?)
+      @experience.experience_blocks.order(position: :asc).to_a
     end
 
     def monitor_visible_blocks

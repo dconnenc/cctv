@@ -230,6 +230,20 @@
   list-style: none;
 }
 
+.childMarker {
+  display: inline-block;
+  vertical-align: middle;
+  margin-right: 0.25rem;
+  color: hsl(var(--muted-foreground));
+}
+
+.childContext {
+  margin-left: 1.5rem;
+  margin-top: 0.15rem;
+  font-size: 0.7rem;
+  color: hsl(var(--muted-foreground));
+}
+
 .emptyState {
   padding: 0.5rem 0.75rem;
   font-size: 0.875rem;

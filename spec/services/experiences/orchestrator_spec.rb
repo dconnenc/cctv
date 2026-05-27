@@ -67,21 +67,23 @@ RSpec.describe Experiences::Orchestrator do
       end
     end
 
-    context "re-ordering child blocks" do
+    context "re-ordering a child block among top-level blocks" do
       let(:parent_block) do
-        create(:experience_block, experience: experience, position: 0)
+        create(:experience_block, experience: experience, position: 3)
       end
 
       let(:parent_block_id) { parent_block.id }
 
       let(:block_to_move) { block_a }
-      let(:new_position) { 2 }
+      let(:new_position) { 3 }
 
-      it "reorders children within their sibling group without affecting the parent" do
-        expect(block_a.reload.position).to eq(2)
+      it "moves the child anywhere in the experience-wide flat order" do
+        # Setup before reorder: [a(0,child), b(1,child), c(2,child), parent(3,top-level)]
+        # Move a to position 3: [b, c, parent, a]
         expect(block_b.reload.position).to eq(0)
         expect(block_c.reload.position).to eq(1)
-        expect(parent_block.reload.position).to eq(0)
+        expect(parent_block.reload.position).to eq(2)
+        expect(block_a.reload.position).to eq(3)
       end
     end
 
@@ -225,6 +227,34 @@ RSpec.describe Experiences::Orchestrator do
 
       it "raises an invalid transition error" do
         expect { subject }.to raise_error(Experiences::InvalidTransitionError)
+      end
+    end
+  end
+
+  describe "#detach_block_from_parent!" do
+    let(:participant_role) { ExperienceParticipant.roles[:host] }
+    let!(:parent_block) { create(:experience_block, :family_feud, experience: experience, question_count: 2) }
+
+    subject do
+      described_class.new(actor: user, experience: experience).detach_block_from_parent!(child.id)
+    end
+
+    let(:child) { parent_block.child_blocks.first }
+
+    it "nulls parent_block_id and removes the depends_on link" do
+      expect(child.parent_block_id).to eq(parent_block.id)
+      subject
+
+      expect(child.reload.parent_block_id).to be_nil
+      expect(ExperienceBlockLink.where(child_block_id: child.id)).to be_empty
+    end
+
+    context "when the block already has no parent" do
+      let(:child) { create(:experience_block, experience: experience) }
+
+      it "is a no-op" do
+        expect { subject }.not_to raise_error
+        expect(child.reload.parent_block_id).to be_nil
       end
     end
   end
