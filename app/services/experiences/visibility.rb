@@ -223,10 +223,11 @@ module Experiences
 
     def serialize_block(block, participant_role:, user: nil, depth: 0, view_context: :admin)
       {
-        id:       block.id,
-        kind:     block.kind,
-        status:   block.status,
-        payload:  shape_payload(block, participant_role, user, view_context),
+        id:              block.id,
+        kind:            block.kind,
+        status:          block.status,
+        parent_block_id: block.parent_block_id,
+        payload:         shape_payload(block, participant_role, user, view_context),
         sounds:   block.sounds,
         position: block.position
       }
