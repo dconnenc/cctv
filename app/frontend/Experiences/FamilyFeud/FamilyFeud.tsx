@@ -1,3 +1,4 @@
+import { SoundKey, useMonitorSound } from '@cctv/sounds';
 import { FamilyFeudPayload } from '@cctv/types';
 
 import BucketCard from './BucketCard';
@@ -7,9 +8,19 @@ import styles from './FamilyFeud.module.scss';
 
 interface FamilyFeudProps extends FamilyFeudPayload {
   contained?: boolean;
+  sounds?: Partial<Record<string, SoundKey>>;
+  viewContext?: 'participant' | 'monitor' | 'manage';
 }
 
-export default function FamilyFeud({ title, game_state, contained }: FamilyFeudProps) {
+export default function FamilyFeud({
+  title,
+  game_state,
+  contained,
+  sounds,
+  viewContext,
+}: FamilyFeudProps) {
+  useMonitorSound(sounds?.on_show_x, game_state?.show_x ?? false, viewContext);
+
   if (!game_state || game_state.phase === 'gathering') {
     return (
       <div className={styles.root}>

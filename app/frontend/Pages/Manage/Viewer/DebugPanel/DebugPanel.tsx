@@ -8,7 +8,7 @@ import { DialogDescription, DialogTitle } from '@cctv/core';
 import { Button } from '@cctv/core/Button/Button';
 import { useDebugParticipants } from '@cctv/hooks/useDebugParticipants';
 import { useSimulateResponses } from '@cctv/hooks/useSimulateResponses';
-import { Block, BlockKind } from '@cctv/types';
+import { BLOCK_KIND_LABELS, Block, BlockKind } from '@cctv/types';
 
 import styles from './DebugPanel.module.scss';
 
@@ -395,7 +395,7 @@ export default function DebugPanel({ selectedBlock }: DebugPanelProps) {
 
           {selectedBlock && (
             <div className={styles.blockInfo}>
-              <span className={styles.blockKind}>{selectedBlock.kind}</span>
+              <span className={styles.blockKind}>{BLOCK_KIND_LABELS[selectedBlock.kind]}</span>
               <span className={styles.blockStatus}>{selectedBlock.status}</span>
             </div>
           )}

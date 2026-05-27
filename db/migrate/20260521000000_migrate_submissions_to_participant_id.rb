@@ -17,11 +17,11 @@ class MigrateSubmissionsToParticipantId < ActiveRecord::Migration[7.2]
 
     tables.each do |table|
       execute <<~SQL
-        UPDATE #{table} s
+        UPDATE #{table}
         SET experience_participant_id = ep.id
         FROM experience_participants ep
-        JOIN experience_blocks eb ON eb.id = s.experience_block_id
-        WHERE ep.user_id = s.user_id
+        JOIN experience_blocks eb ON eb.id = #{table}.experience_block_id
+        WHERE ep.user_id = #{table}.user_id
           AND ep.experience_id = eb.experience_id
       SQL
     end

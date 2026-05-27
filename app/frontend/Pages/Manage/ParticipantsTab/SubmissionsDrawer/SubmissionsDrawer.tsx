@@ -3,7 +3,7 @@ import {
   ParticipantSubmissionEntry,
   useParticipantSubmissions,
 } from '@cctv/hooks/useParticipantSubmissions';
-import { ParticipantSummary } from '@cctv/types';
+import { BLOCK_KIND_LABELS, ParticipantSummary } from '@cctv/types';
 
 import styles from './SubmissionsDrawer.module.scss';
 
@@ -48,7 +48,7 @@ export default function SubmissionsDrawer({ participant, onClose }: SubmissionsD
             {entries.map((entry, index) => (
               <li key={`${entry.block_id}-${entry.submitted_at}-${index}`} className={styles.item}>
                 <div className={styles.itemHeader}>
-                  <span className={styles.kind}>{entry.block_kind.replace(/_/g, ' ')}</span>
+                  <span className={styles.kind}>{BLOCK_KIND_LABELS[entry.block_kind]}</span>
                   <span className={styles.position}>Block #{entry.position + 1}</span>
                 </div>
                 <div className={styles.prompt}>{entry.prompt || '(no prompt)'}</div>
