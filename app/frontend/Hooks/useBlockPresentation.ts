@@ -21,7 +21,7 @@ export function useBlockPresentation() {
       setBusyBlockId(block.id);
       setStatusError(null);
 
-      const openBlocks = experience?.blocks?.flatMap((b) => [b, ...(b.children ?? [])]) ?? [];
+      const openBlocks = experience?.blocks ?? [];
       for (const openBlock of openBlocks) {
         if (openBlock.id !== block.id && openBlock.status === 'open') {
           await changeStatus(openBlock, 'closed');
