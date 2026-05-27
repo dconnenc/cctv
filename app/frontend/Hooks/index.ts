@@ -9,6 +9,7 @@ export { useDeleteExperienceBlock } from './useDeleteExperienceBlock';
 export { useSubmitPollResponse } from './useSubmitPollResponse';
 export { useSubmitQuestionResponse } from './useSubmitQuestionResponse';
 export { useChangeBlockStatus } from './useChangeBlockStatus';
+export { useDetachBlockFromParent } from './useDetachBlockFromParent';
 export { useExperienceStart } from './useExperienceStart';
 export { useExperiencePause } from './useExperiencePause';
 export { useExperienceResume } from './useExperienceResume';

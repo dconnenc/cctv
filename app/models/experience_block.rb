@@ -130,55 +130,15 @@ class ExperienceBlock < ApplicationRecord
   end
 
   def open!
-    transaction do
-      descendant_ids = all_descendant_ids
-
-      ExperienceBlock.where(id: descendant_ids).update_all(status: :open)
-      self.update!(status: :open)
-    end
+    update!(status: :open)
   end
 
   def close!
-    transaction do
-      descendant_ids = all_descendant_ids
-
-      ExperienceBlock.where(id: descendant_ids).update_all(status: :closed) if descendant_ids.any?
-      self.update!(status: :closed)
-    end
+    update!(status: :closed)
   end
 
   def hide!
-    transaction do
-      descendant_ids = all_descendant_ids
-
-      ExperienceBlock.where(id: descendant_ids).update_all(status: :hidden) if descendant_ids.any?
-      self.update!(status: :hidden)
-    end
-  end
-
-  def all_descendant_ids
-    return [] unless child_blocks.exists?
-
-    sql = <<~SQL
-      WITH RECURSIVE descendants(id) AS (
-        SELECT id
-        FROM experience_blocks
-        WHERE parent_block_id = :block_id
-
-        UNION
-
-        SELECT eb.id
-        FROM experience_blocks eb
-        JOIN descendants d ON eb.parent_block_id = d.id
-      )
-      SELECT id FROM descendants
-    SQL
-
-    result = self.class.connection.execute(
-      self.class.sanitize_sql([sql, { block_id: id }])
-    )
-
-    result.map { |row| row['id'] }
+    update!(status: :hidden)
   end
 
   def visible_to_segment_names

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_05_21_000000) do
+ActiveRecord::Schema[7.2].define(version: 2026_05_27_000001) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "citext"
   enable_extension "plpgsql"
@@ -120,13 +120,12 @@ ActiveRecord::Schema[7.2].define(version: 2026_05_21_000000) do
     t.uuid "parent_block_id"
     t.integer "position", default: 0, null: false
     t.boolean "show_in_lobby", default: false, null: false
-    t.virtual "position_scope", type: :uuid, as: "COALESCE(parent_block_id, experience_id)", stored: true
     t.jsonb "sounds", default: {}, null: false
+    t.index ["experience_id", "position"], name: "index_experience_blocks_on_experience_id_and_position"
     t.index ["experience_id", "status"], name: "index_experience_blocks_on_experience_id_and_status"
     t.index ["experience_id"], name: "index_experience_blocks_on_experience_id"
     t.index ["kind"], name: "index_experience_blocks_on_kind"
     t.index ["parent_block_id"], name: "index_experience_blocks_on_parent_block_id"
-    t.index ["position_scope", "position"], name: "index_experience_blocks_on_position_scope_and_position"
     t.index ["target_user_ids"], name: "index_experience_blocks_on_target_user_ids", using: :gin
     t.index ["visible_to_roles"], name: "index_experience_blocks_on_visible_to_roles", using: :gin
   end

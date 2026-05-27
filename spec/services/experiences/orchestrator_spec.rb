@@ -59,21 +59,23 @@ RSpec.describe Experiences::Orchestrator do
       end
     end
 
-    context "re-ordering child blocks" do
+    context "re-ordering a child block among top-level blocks" do
       let(:parent_block) do
-        create(:experience_block, experience: experience, position: 0)
+        create(:experience_block, experience: experience, position: 3)
       end
 
       let(:parent_block_id) { parent_block.id }
 
       let(:block_to_move) { block_a }
-      let(:new_position) { 2 }
+      let(:new_position) { 3 }
 
-      it "reorders children within their sibling group without affecting the parent" do
-        expect(block_a.reload.position).to eq(2)
+      it "moves the child anywhere in the experience-wide flat order" do
+        # Setup before reorder: [a(0,child), b(1,child), c(2,child), parent(3,top-level)]
+        # Move a to position 3: [b, c, parent, a]
         expect(block_b.reload.position).to eq(0)
         expect(block_c.reload.position).to eq(1)
-        expect(parent_block.reload.position).to eq(0)
+        expect(parent_block.reload.position).to eq(2)
+        expect(block_a.reload.position).to eq(3)
       end
     end
 
@@ -221,6 +223,79 @@ RSpec.describe Experiences::Orchestrator do
     end
   end
 
+  describe "#detach_block_from_parent!" do
+    let(:participant_role) { ExperienceParticipant.roles[:host] }
+    let!(:parent_block) { create(:experience_block, :family_feud, experience: experience, question_count: 2) }
+
+    subject do
+      described_class.new(actor: user, experience: experience).detach_block_from_parent!(child.id)
+    end
+
+    let(:child) { parent_block.child_blocks.first }
+
+    it "nulls parent_block_id and removes the depends_on link" do
+      expect(child.parent_block_id).to eq(parent_block.id)
+      subject
+
+      expect(child.reload.parent_block_id).to be_nil
+      expect(ExperienceBlockLink.where(child_block_id: child.id)).to be_empty
+    end
+
+    context "when the block already has no parent" do
+      let(:child) { create(:experience_block, experience: experience) }
+
+      it "is a no-op" do
+        expect { subject }.not_to raise_error
+        expect(child.reload.parent_block_id).to be_nil
+      end
+    end
+  end
+
+  describe "#start_family_feud_playing!" do
+    let(:participant_role) { ExperienceParticipant.roles[:host] }
+    let!(:block) do
+      create(
+        :experience_block,
+        :family_feud,
+        experience: experience,
+        status: :open,
+        question_count: 2
+      )
+    end
+
+    subject do
+      described_class.new(actor: user, experience: experience).start_family_feud_playing!(
+        block_id: block.id
+      )
+    end
+
+    context "when child questions were broadcast and closed before FamilyFeud plays" do
+      let(:participant) do
+        ExperienceParticipant.find_by(experience_id: experience.id, user_id: user.id) ||
+          create(:experience_participant, user: user, experience: experience)
+      end
+
+      before do
+        block.child_blocks.each_with_index do |child, idx|
+          child.update!(payload: child.payload.merge("buckets" => [
+            { "id" => "b#{idx}", "name" => "Bucket #{idx}", "answer_ids" => [] }
+          ]))
+          create(:experience_question_submission, experience_block: child, experience_participant: participant)
+          child.close!
+        end
+      end
+
+      it "still snapshots child responses into the parent payload regardless of child status" do
+        subject
+
+        game_state = block.reload.payload["game_state"]
+        expect(game_state["phase"]).to eq("playing")
+        expect(game_state["questions"].length).to eq(2)
+        expect(block.child_blocks.map(&:status)).to all(eq("closed"))
+      end
+    end
+  end
+
   describe "#open_block!" do
     let(:participant_role) { ExperienceParticipant.roles[:host] }
 
@@ -228,7 +303,7 @@ RSpec.describe Experiences::Orchestrator do
       described_class.new(actor: user, experience: experience).open_block!(block.id)
     end
 
-    context "when opening a family feud block with child question blocks" do
+    context "when opening a family feud block" do
       let!(:block) do
         create(
           :experience_block,
@@ -239,12 +314,13 @@ RSpec.describe Experiences::Orchestrator do
         )
       end
 
-      it "opens the parent block and all child question blocks" do
+      it "opens only the parent; child question blocks retain their status" do
+        children_status_before = block.child_blocks.map(&:status)
         subject
 
         expect(block.reload.status).to eq("open")
         expect(block.child_blocks.count).to eq(2)
-        expect(block.child_blocks.map(&:status)).to all(eq("open"))
+        expect(block.child_blocks.map(&:status)).to eq(children_status_before)
       end
     end
   end
@@ -256,7 +332,7 @@ RSpec.describe Experiences::Orchestrator do
       described_class.new(actor: user, experience: experience).close_block!(block.id)
     end
 
-    context "when closing a parent block with children" do
+    context "when closing a family feud block" do
       let!(:block) do
         create(
           :experience_block,
@@ -267,12 +343,13 @@ RSpec.describe Experiences::Orchestrator do
         )
       end
 
-      it "closes the parent block and all child blocks" do
+      it "closes only the parent; child question blocks retain their status" do
+        children_status_before = block.child_blocks.map(&:status)
         subject
 
         expect(block.reload.status).to eq("closed")
         expect(block.child_blocks.count).to eq(2)
-        expect(block.child_blocks.map(&:status)).to all(eq("closed"))
+        expect(block.child_blocks.map(&:status)).to eq(children_status_before)
       end
     end
   end
@@ -284,7 +361,7 @@ RSpec.describe Experiences::Orchestrator do
       described_class.new(actor: user, experience: experience).hide_block!(block.id)
     end
 
-    context "when hiding a parent block with children" do
+    context "when hiding a family feud block" do
       let!(:block) do
         create(
           :experience_block,
@@ -295,12 +372,13 @@ RSpec.describe Experiences::Orchestrator do
         )
       end
 
-      it "hides the parent block and all child blocks" do
+      it "hides only the parent; child question blocks retain their status" do
+        children_status_before = block.child_blocks.map(&:status)
         subject
 
         expect(block.reload.status).to eq("hidden")
         expect(block.child_blocks.count).to eq(2)
-        expect(block.child_blocks.map(&:status)).to all(eq("hidden"))
+        expect(block.child_blocks.map(&:status)).to eq(children_status_before)
       end
     end
   end

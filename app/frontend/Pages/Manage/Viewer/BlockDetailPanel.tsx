@@ -1,6 +1,15 @@
 import { useState } from 'react';
 
-import { MessageSquare, Monitor, Pause, Play, SkipForward, Trash2, User } from 'lucide-react';
+import {
+  CornerLeftUp,
+  MessageSquare,
+  Monitor,
+  Pause,
+  Play,
+  SkipForward,
+  Trash2,
+  User,
+} from 'lucide-react';
 
 import { useExperience } from '@cctv/contexts/ExperienceContext';
 import { Button } from '@cctv/core/Button/Button';
@@ -47,6 +56,8 @@ interface BlockDetailPanelProps {
   onViewModeChange: (mode: 'monitor' | 'participant' | 'responses') => void;
   onImpersonatedParticipantChange: (id: string) => void;
   onEdit: (block: Block) => void;
+  onDetach?: (block: Block) => void;
+  detachingBlockId?: string;
   onDelete: (block: Block) => void;
   deletingBlockId?: string;
 }
@@ -66,10 +77,13 @@ export default function BlockDetailPanel({
   onViewModeChange,
   onImpersonatedParticipantChange,
   onEdit,
+  onDetach,
+  detachingBlockId,
   onDelete,
   deletingBlockId,
 }: BlockDetailPanelProps) {
   const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const isDetaching = detachingBlockId === selectedBlock.id;
   const isDeleting = deletingBlockId === selectedBlock.id;
   const canDelete = selectedBlock.status !== 'open';
 
@@ -88,6 +102,18 @@ export default function BlockDetailPanel({
           </div>
         </div>
         <div className="flex items-center gap-2">
+          {selectedBlock.parent_block_id && onDetach && (
+            <Button
+              variant="secondary"
+              onClick={() => onDetach(selectedBlock)}
+              loading={isDetaching}
+              loadingText="Detaching..."
+              icon={<CornerLeftUp size={16} />}
+              title="Detach from parent (promote to top-level)"
+            >
+              Detach
+            </Button>
+          )}
           {!selectedBlock.parent_block_id && (
             <Button variant="secondary" onClick={() => onEdit(selectedBlock)}>
               Edit

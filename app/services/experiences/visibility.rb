@@ -89,24 +89,40 @@ module Experiences
     private
 
     def admin_visible_blocks
-      @experience.experience_blocks.order(position: :asc).select(&:parent_block?)
+      @experience.experience_blocks.order(position: :asc).to_a
     end
 
     def monitor_visible_blocks
-      all     = @experience.experience_blocks.includes(:experience_segments).order(position: :asc).to_a
-      parents = all.select(&:parent_block?)
-      children_by_parent = all.reject { |b| b.parent_block_id.nil? }.group_by(&:parent_block_id)
+      all      = @experience.experience_blocks.includes(:experience_segments).order(position: :asc).to_a
+      parents  = all.select(&:parent_block?)
+      children = all.reject(&:parent_block?)
+      children_by_parent = children.group_by(&:parent_block_id)
 
-      candidates = if @experience.status == "lobby"
-        parents.select { |b| b.show_in_lobby? && monitor_visibility_ok?(b) }
+      open_parent_ids = parents.select(&:open?).map(&:id).to_set
+
+      if @experience.status == "lobby"
+        parent_candidates = parents.select { |b| b.show_in_lobby? && monitor_visibility_ok?(b) }
+        child_candidates  = children.select { |c| c.show_in_lobby? && monitor_visibility_ok?(c) && !open_parent_ids.include?(c.parent_block_id) }
       else
-        parents.select { |b| b.open? && monitor_visibility_ok?(b) }
+        parent_candidates = parents.select { |b| b.open? && monitor_visibility_ok?(b) }
+        child_candidates  = children.select { |c| c.open? && monitor_visibility_ok?(c) && !open_parent_ids.include?(c.parent_block_id) }
       end
 
-      candidates
+      parent_entries = parent_candidates
         .reject { |b| b.payload["show_on_monitor"] == false }
         .sort_by(&:position)
         .flat_map { |parent| resolve_monitor_entry(parent, children_by_parent[parent.id] || []) }
+
+      orphan_entries = child_candidates
+        .reject { |b| b.payload["show_on_monitor"] == false }
+        .sort_by { |c| [parent_position_for(c, parents), c.position] }
+
+      parent_entries + orphan_entries
+    end
+
+    def parent_position_for(child, parents)
+      parent = parents.find { |p| p.id == child.parent_block_id }
+      parent&.position || Float::INFINITY
     end
 
     def monitor_visibility_ok?(block)
@@ -122,9 +138,13 @@ module Experiences
 
       return parents if host_or_moderator?(participant.role)
 
-      parents
-        .select { |b| b.visible_by_status?(@experience) }
-        .select { |b| b.visible_to?(role: participant.role, segments: participant.segment_names, user_id: participant.user_id) }
+      participant_facing_blocks(
+        parents: parents,
+        children: all.reject(&:parent_block?),
+        role: participant.role,
+        segments: participant.segment_names,
+        user_id: participant.user_id
+      )
     end
 
     def profile_visible_blocks(role:, segments:, user_id: nil)
@@ -133,9 +153,28 @@ module Experiences
 
       return parents if host_or_moderator?(role)
 
-      parents
+      participant_facing_blocks(
+        parents: parents,
+        children: all.reject(&:parent_block?),
+        role: role,
+        segments: segments,
+        user_id: user_id
+      )
+    end
+
+    def participant_facing_blocks(parents:, children:, role:, segments:, user_id:)
+      visible_parents = parents
         .select { |b| b.visible_by_status?(@experience) }
         .select { |b| b.visible_to?(role: role, segments: segments, user_id: user_id) }
+
+      open_parent_ids = parents.select(&:open?).map(&:id).to_set
+
+      visible_orphan_children = children
+        .reject { |c| open_parent_ids.include?(c.parent_block_id) }
+        .select { |c| c.visible_by_status?(@experience) }
+        .select { |c| c.visible_to?(role: role, segments: segments, user_id: user_id) }
+
+      visible_parents + visible_orphan_children
     end
 
     def resolve_participant_block(blocks)
@@ -152,7 +191,7 @@ module Experiences
     end
 
     def participant_block_active?
-      @experience.parent_blocks
+      @experience.experience_blocks
         .where(status: "open")
         .where(visible_to_roles: [], target_user_ids: [])
         .where.missing(:experience_block_segments)
@@ -160,7 +199,7 @@ module Experiences
     end
 
     def responded_participant_ids
-      active_block_ids = @experience.parent_blocks
+      active_block_ids = @experience.experience_blocks
         .where(status: "open")
         .where(visible_to_roles: [], target_user_ids: [])
         .where.missing(:experience_block_segments)
@@ -169,7 +208,7 @@ module Experiences
       return [] if active_block_ids.empty?
 
       child_block_ids  = ExperienceBlock.where(parent_block_id: active_block_ids).pluck(:id)
-      all_block_ids    = active_block_ids + child_block_ids
+      all_block_ids    = (active_block_ids + child_block_ids).uniq
 
       [
         ExperiencePollSubmission,
@@ -181,12 +220,13 @@ module Experiences
 
     def serialize_block(block, participant_role:, participant: nil, depth: 0, view_context: :admin)
       {
-        id:       block.id,
-        kind:     block.kind,
-        status:   block.status,
-        payload:  shape_payload(block, participant_role, participant, view_context),
-        sounds:   block.sounds,
-        position: block.position
+        id:              block.id,
+        kind:            block.kind,
+        status:          block.status,
+        parent_block_id: block.parent_block_id,
+        payload:         shape_payload(block, participant_role, participant, view_context),
+        sounds:          block.sounds,
+        position:        block.position
       }
         .merge(responses: serialize_response_data(block, participant_role, participant))
         .merge(visibility_metadata(block, participant_role, participant))
