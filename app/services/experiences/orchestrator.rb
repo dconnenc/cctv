@@ -188,7 +188,7 @@ module Experiences
 
       submission = ExperiencePollSubmission.find_or_initialize_by(
         experience_block_id: block.id,
-        user_id: actor.id
+        experience_participant: current_participant
       )
 
       old_selected = submission.persisted? ? Array(submission.answer&.dig("selectedOptions")) : []
@@ -206,7 +206,7 @@ module Experiences
 
       submission = ExperienceQuestionSubmission.find_or_initialize_by(
         experience_block_id: block.id,
-        user_id: actor.id
+        experience_participant: current_participant
       )
 
       submission.answer = answer
@@ -222,7 +222,7 @@ module Experiences
 
       submission = ExperiencePhotoUploadSubmission.find_or_initialize_by(
         experience_block_id: block.id,
-        user_id: actor.id
+        experience_participant: current_participant
       )
 
       submission.answer = answer
@@ -243,7 +243,7 @@ module Experiences
 
       submission = ExperienceBuzzerSubmission.find_or_initialize_by(
         experience_block_id: block.id,
-        user_id: actor.id
+        experience_participant: current_participant
       )
 
       return submission unless submission.new_record?
@@ -561,8 +561,8 @@ module Experiences
         end
 
         user_a, user_b = sampled
-        slides_a = ParticipantSubmissions.new(experience).for_user(user_a.user_id)
-        slides_b = ParticipantSubmissions.new(experience).for_user(user_b.user_id)
+        slides_a = ParticipantSubmissions.new(experience).for_participant(user_a.id)
+        slides_b = ParticipantSubmissions.new(experience).for_participant(user_b.id)
 
         slides = interleave_slides(slides_a, user_a.user_id, slides_b, user_b.user_id)
 
@@ -657,9 +657,9 @@ module Experiences
       correct        = parsed.present? && parsed == question["answer"].to_i
 
       submission = ExperienceMinigameSubmission.find_or_initialize_by(
-        experience_block_id: block.id,
-        user_id:             actor.id,
-        question_index:      index
+        experience_block_id:     block.id,
+        experience_participant:  current_participant,
+        question_index:          index
       )
 
       return submission if submission.persisted?
@@ -725,11 +725,10 @@ module Experiences
       return { result: :ignored } if payload["started_at"].blank?
       return { result: :ignored } if payload["ended_at"].present?
 
-      participant = experience.experience_participants.find_by(user_id: actor.id)
-      raise ActiveRecord::RecordNotFound, "Participant not found" unless participant
+      participant = current_participant
 
       result = ExperienceMinigameBalloonResult
-        .where(experience_block_id: block.id, user_id: actor.id)
+        .where(experience_block_id: block.id, experience_participant: participant)
         .first_or_initialize
 
       return { result: :ignored } if result.persisted? && result.fill_amount >= requested
@@ -817,10 +816,10 @@ module Experiences
       raise ArgumentError, "Suggestion is too long (#{ImprovSuggestion::MAX_LENGTH} max)" if trimmed.length > ImprovSuggestion::MAX_LENGTH
 
       transaction do
-        existing = block.improv_suggestions.active.find_by(user_id: actor.id)
+        existing = block.improv_suggestions.active.find_by(experience_participant: current_participant)
         raise Experiences::InvalidTransitionError, "You already submitted this scene" if existing
 
-        block.improv_suggestions.create!(user_id: actor.id, text: trimmed)
+        block.improv_suggestions.create!(experience_participant: current_participant, text: trimmed)
       end
     end
 
@@ -835,11 +834,11 @@ module Experiences
       raise Experiences::InvalidTransitionError, "Scene has not started" if scene_started_at.blank?
 
       suggestion = block.improv_suggestions.active.find(suggestion_id)
-      raise ArgumentError, "Cannot vote for your own suggestion" if suggestion.user_id == actor.id
+      raise ArgumentError, "Cannot vote for your own suggestion" if suggestion.experience_participant_id == current_participant.id
 
       transaction do
         vote = ImprovVote
-          .where(experience_block_id: block.id, user_id: actor.id, scene_started_at: scene_started_at)
+          .where(experience_block_id: block.id, experience_participant: current_participant, scene_started_at: scene_started_at)
           .first_or_initialize
 
         vote.improv_suggestion_id = suggestion.id
@@ -956,15 +955,14 @@ module Experiences
         payload = block.payload || {}
         return [] if payload["ended_at"].present?
 
-        winning_results = ExperienceMinigameBalloonResult
+        winning_participant_ids = ExperienceMinigameBalloonResult
           .where(experience_block_id: block.id)
           .where("fill_amount >= ?", target_units)
-          .to_a
+          .pluck(:experience_participant_id)
 
-        winning_user_ids = winning_results.map(&:user_id)
         winners = experience.experience_participants
           .includes(:user)
-          .where(user_id: winning_user_ids)
+          .where(id: winning_participant_ids)
           .to_a
 
         payload["ended_at"]               = Time.current.iso8601
@@ -1053,7 +1051,7 @@ module Experiences
 
       participant = experience.experience_participants
         .includes(:experience_segments)
-        .find_by(user_id: actor.id)
+        .find_by(user: actor)
       return unless participant
 
       old_fingerprint = Experiences::Broadcaster.visibility_fingerprint(experience, participant)

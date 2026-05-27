@@ -123,7 +123,7 @@ RSpec.describe Experiences::Orchestrator, "the scene" do
       player_orchestrator(player_c).submit_the_scene_vote!(block_id: block.id, suggestion_id: suggestion_a.id)
       player_orchestrator(player_c).submit_the_scene_vote!(block_id: block.id, suggestion_id: suggestion_b.id)
 
-      votes = ImprovVote.where(experience_block_id: block.id, user_id: player_c.user_id).to_a
+      votes = ImprovVote.where(experience_block_id: block.id, experience_participant: player_c).to_a
       expect(votes.size).to eq(1)
       expect(votes.first.improv_suggestion_id).to eq(suggestion_b.id)
     end

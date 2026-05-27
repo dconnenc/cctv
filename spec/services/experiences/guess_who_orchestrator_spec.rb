@@ -34,7 +34,7 @@ RSpec.describe Experiences::Orchestrator do
     [audience_a, audience_b, audience_c].each do |p|
       create(:experience_question_submission,
         experience_block: question_block,
-        user: p.user,
+        experience_participant: p,
         answer: { "value" => "blue-#{p.id[0..3]}" }
       )
     end

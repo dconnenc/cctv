@@ -1,7 +1,7 @@
 module Minigames
   class ArithmeticProgress
-    def self.for_participant(block:, user:)
-      return { "current_question" => nil, "score" => { "correct" => 0, "completed" => 0 } } unless user
+    def self.for_participant(block:, participant:)
+      return { "current_question" => nil, "score" => { "correct" => 0, "completed" => 0 } } unless participant
 
       payload   = block.payload || {}
       started   = payload["started_at"].present?
@@ -9,7 +9,7 @@ module Minigames
       questions = Array(payload["questions"])
 
       submissions = ExperienceMinigameSubmission
-        .where(experience_block_id: block.id, user_id: user.id)
+        .where(experience_block_id: block.id, experience_participant_id: participant.id)
         .order(question_index: :asc)
         .to_a
 

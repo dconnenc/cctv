@@ -120,7 +120,7 @@ RSpec.describe Experiences::Orchestrator, "minigame arithmetic" do
         player_orchestrator.submit_minigame_arithmetic_response!(
           block_id: block.id, question_index: 0, answer: "999"
         )
-      }.not_to change { ExperienceMinigameSubmission.where(experience_block_id: block.id, user_id: player.user_id).count }
+      }.not_to change { ExperienceMinigameSubmission.where(experience_block_id: block.id, experience_participant: player).count }
     end
 
     it "rejects submissions before start" do

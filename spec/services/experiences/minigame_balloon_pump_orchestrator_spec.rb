@@ -39,7 +39,7 @@ RSpec.describe Experiences::Orchestrator, "minigame balloon pump" do
 
     it "stamps started_at, opens block, and clears any prior results" do
       ExperienceMinigameBalloonResult.create!(
-        experience_block_id: block.id, user_id: player_a.user_id, fill_amount: 30
+        experience_block_id: block.id, experience_participant: player_a, fill_amount: 30
       )
 
       orchestrator.start_minigame_balloon_pump!(block_id: block.id)
@@ -66,7 +66,7 @@ RSpec.describe Experiences::Orchestrator, "minigame balloon pump" do
 
     it "records the cumulative fill amount" do
       player_a_orchestrator.submit_balloon_pump_update!(block_id: block.id, fill_amount: 20)
-      result = ExperienceMinigameBalloonResult.find_by(experience_block_id: block.id, user_id: player_a.user_id)
+      result = ExperienceMinigameBalloonResult.find_by(experience_block_id: block.id, experience_participant: player_a)
       expect(result.fill_amount).to eq(20)
     end
 
@@ -74,13 +74,13 @@ RSpec.describe Experiences::Orchestrator, "minigame balloon pump" do
       player_a_orchestrator.submit_balloon_pump_update!(block_id: block.id, fill_amount: 30)
       player_a_orchestrator.submit_balloon_pump_update!(block_id: block.id, fill_amount: 15)
 
-      result = ExperienceMinigameBalloonResult.find_by(experience_block_id: block.id, user_id: player_a.user_id)
+      result = ExperienceMinigameBalloonResult.find_by(experience_block_id: block.id, experience_participant: player_a)
       expect(result.fill_amount).to eq(30)
     end
 
     it "clamps fill at target_units" do
       player_a_orchestrator.submit_balloon_pump_update!(block_id: block.id, fill_amount: 9999)
-      result = ExperienceMinigameBalloonResult.find_by(experience_block_id: block.id, user_id: player_a.user_id)
+      result = ExperienceMinigameBalloonResult.find_by(experience_block_id: block.id, experience_participant: player_a)
       expect(result.fill_amount).to eq(50)
     end
 
@@ -99,7 +99,7 @@ RSpec.describe Experiences::Orchestrator, "minigame balloon pump" do
       player_b_orchestrator.submit_balloon_pump_update!(block_id: block.id, fill_amount: 49)
 
       ExperienceMinigameBalloonResult
-        .where(experience_block_id: block.id, user_id: player_b.user_id)
+        .where(experience_block_id: block.id, experience_participant: player_b)
         .update_all(fill_amount: 50)
 
       outcome = player_a_orchestrator.submit_balloon_pump_update!(block_id: block.id, fill_amount: 50)

@@ -65,19 +65,19 @@ export const MonitorWithWinner: Story = {
         all_responses: [
           {
             id: 'r1',
-            user_id: 'u1',
+            experience_participant_id: 'u1',
             answer: { buzzed_at: new Date().toISOString() },
             created_at: new Date().toISOString(),
           },
           {
             id: 'r2',
-            user_id: 'u2',
+            experience_participant_id: 'u2',
             answer: { buzzed_at: new Date(Date.now() + 500).toISOString() },
             created_at: new Date(Date.now() + 500).toISOString(),
           },
           {
             id: 'r3',
-            user_id: 'u3',
+            experience_participant_id: 'u3',
             answer: { buzzed_at: new Date(Date.now() + 1200).toISOString() },
             created_at: new Date(Date.now() + 1200).toISOString(),
           },

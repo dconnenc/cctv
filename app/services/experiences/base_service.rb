@@ -13,6 +13,10 @@ module Experiences
 
     private
 
+    def current_participant
+      @current_participant ||= experience.experience_participants.find_by!(user: actor)
+    end
+
     def transaction
       ActiveRecord::Base.transaction do
         yield

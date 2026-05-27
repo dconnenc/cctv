@@ -16,8 +16,8 @@ export default function BuzzerManager({ block, participants }: BuzzerManagerProp
   const allResponses = block.responses?.all_responses ?? [];
   const allParticipants = participants;
 
-  const nameForUserId = (userId: string): string => {
-    return allParticipants.find((p) => p.user_id === userId)?.name ?? 'Unknown';
+  const nameForParticipantId = (participantId: string): string => {
+    return allParticipants.find((p) => p.id === participantId)?.name ?? 'Unknown';
   };
 
   return (
@@ -35,7 +35,9 @@ export default function BuzzerManager({ block, participants }: BuzzerManagerProp
           {allResponses.map((response, index) => (
             <li key={response.id} className={styles.listItem}>
               <span className={styles.position}>{index + 1}</span>
-              <span className={styles.name}>{nameForUserId(response.user_id)}</span>
+              <span className={styles.name}>
+                {nameForParticipantId(response.experience_participant_id)}
+              </span>
               <span className={styles.time}>
                 {new Date(response.answer.buzzed_at).toLocaleTimeString()}
               </span>

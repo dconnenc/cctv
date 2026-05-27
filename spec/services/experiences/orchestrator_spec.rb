@@ -5,15 +5,7 @@ RSpec.describe Experiences::Orchestrator do
   let(:user) { create(:user, :user) }
   let(:participant_role) { ExperienceParticipant.roles[:audience] }
   let(:experience_status) { Experience.statuses[:draft] }
-
-  before do
-    create(
-      :experience_participant,
-      user: user,
-      experience: experience,
-      role: participant_role
-    )
-  end
+  let!(:participant) { create(:experience_participant, user: user, experience: experience, role: participant_role) }
 
   describe "#reorder_block!" do
     let(:participant_role) { ExperienceParticipant.roles[:host] }
@@ -399,7 +391,7 @@ RSpec.describe Experiences::Orchestrator do
         expect(submission).to be_persisted
         expect(submission).to be_a(submission_class)
         expect(submission.answer).to eq(answer)
-        expect(submission.user).to eq(user)
+        expect(submission.experience_participant).to eq(participant)
         expect(submission.experience_block).to eq(block)
       end
     end
@@ -408,18 +400,13 @@ RSpec.describe Experiences::Orchestrator do
       let(:old_answer) { { "name" => "old_name" } }
 
       before do
-        create(
-          submission_factory,
-          experience_block: block,
-          user: user,
-          answer: old_answer
-        )
+        create(submission_factory, experience_block: block, experience_participant: participant, answer: old_answer)
       end
 
       it "updates the existing submission with the new answer" do
         submission = subject
         expect(submission.answer).to eq(answer)
-        expect(submission_class.where(user: user, experience_block: block).count).to eq(1)
+        expect(submission_class.where(experience_participant: participant, experience_block: block).count).to eq(1)
       end
     end
   end
@@ -445,7 +432,6 @@ RSpec.describe Experiences::Orchestrator do
       end
 
       it "records a profile change with the old fingerprint" do
-        participant = experience.experience_participants.find_by(user: user)
         old_fingerprint = Experiences::Broadcaster.visibility_fingerprint(experience, participant)
 
         orchestrator = described_class.new(actor: user, experience: experience)
@@ -516,7 +502,7 @@ RSpec.describe Experiences::Orchestrator do
       end
       let(:new_payload) { { "question" => "Q?", "options" => ["a", "c"], "pollType" => "single" } }
 
-      before { create(:experience_poll_submission, experience_block: block, user: user) }
+      before { create(:experience_poll_submission, experience_block: block, experience_participant: participant) }
 
       it "clears submissions and saves" do
         expect { subject }.to change { ExperiencePollSubmission.count }.by(-1)
@@ -535,7 +521,7 @@ RSpec.describe Experiences::Orchestrator do
       end
       let(:new_payload) { { "question" => "New Q?", "options" => ["a", "b"], "pollType" => "single" } }
 
-      before { create(:experience_poll_submission, experience_block: block, user: user) }
+      before { create(:experience_poll_submission, experience_block: block, experience_participant: participant) }
 
       it "updates the question text" do
         subject
@@ -550,7 +536,7 @@ RSpec.describe Experiences::Orchestrator do
 
       before do
         child = block.child_blocks.first
-        create(:experience_question_submission, experience_block: child, user: user)
+        create(:experience_question_submission, experience_block: child, experience_participant: participant)
       end
 
       it "allows the edit" do
