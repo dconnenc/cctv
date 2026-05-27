@@ -102,6 +102,12 @@ module Experiences
       block
     end
 
+    def delete_block!(block_id)
+      block = experience.experience_blocks.find(block_id)
+      block.destroy!
+      block
+    end
+
     def reorder_block!(block_id:, position:)
       transaction do
         block = experience.experience_blocks.find(block_id)

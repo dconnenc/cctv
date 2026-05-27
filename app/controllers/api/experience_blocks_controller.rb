@@ -1,6 +1,6 @@
 class Api::ExperienceBlocksController < Api::BaseController
   MANAGEMENT_ACTIONS = %i[
-    create update reorder set_column open close hide clear_buzzer_responses
+    create update destroy reorder set_column open close hide clear_buzzer_responses
     add_bucket rename_bucket delete_bucket assign_answer auto_categorize
     start_playing reveal_bucket show_x next_question restart_playing
     restart_categorizing restart_everything
@@ -104,6 +104,19 @@ class Api::ExperienceBlocksController < Api::BaseController
       Experiences::Broadcaster.new(@experience).broadcast_experience_update
 
       render json: { success: true, data: block }, status: 200
+    end
+  end
+
+  # DELETE /api/experiences/:experience_id/blocks/:id
+  def destroy
+    with_experience_orchestration do
+      Experiences::Orchestrator.new(experience: @experience, actor: @user)
+        .delete_block!(params[:id])
+
+      @experience.reload
+      Experiences::Broadcaster.new(@experience).broadcast_experience_update
+
+      render json: { success: true }, status: 200
     end
   end
 

@@ -6,6 +6,7 @@ import { useExperience } from '@cctv/contexts/ExperienceContext';
 import { Button, Drawer, DrawerBody, DrawerContent } from '@cctv/core';
 import { Pill } from '@cctv/core/Pill/Pill';
 import { useBlockPresentation } from '@cctv/hooks/useBlockPresentation';
+import { useDeleteExperienceBlock } from '@cctv/hooks/useDeleteExperienceBlock';
 import { useExperiencePause } from '@cctv/hooks/useExperiencePause';
 import { useExperienceResume } from '@cctv/hooks/useExperienceResume';
 import { useExperienceStart } from '@cctv/hooks/useExperienceStart';
@@ -125,6 +126,21 @@ export default function ManageViewer() {
 
   const { reorder: reorderBlock } = useReorderBlock();
 
+  const { deleteBlock, error: deleteError } = useDeleteExperienceBlock();
+  const [deletingBlockId, setDeletingBlockId] = useState<string | undefined>();
+
+  const handleDeleteBlock = useCallback(
+    async (block: Block) => {
+      setDeletingBlockId(block.id);
+      const result = await deleteBlock(block.id);
+      setDeletingBlockId(undefined);
+      if (result.success && selectedBlockId === block.id) {
+        setSelectedBlockId(null);
+      }
+    },
+    [deleteBlock, selectedBlockId],
+  );
+
   const handleReorderBlock = useCallback(
     (blockId: string, newIndex: number, _parentBlockId?: string) => {
       reorderBlock(blockId, newIndex);
@@ -184,7 +200,8 @@ export default function ManageViewer() {
   }
 
   const errorMessage =
-    !dismissedError && (experienceError || startError || pauseError || resumeError || statusError);
+    !dismissedError &&
+    (experienceError || startError || pauseError || resumeError || statusError || deleteError);
   const statusLabel = experience?.status
     ? experience.status.charAt(0).toUpperCase() + experience.status.slice(1)
     : '';
@@ -278,6 +295,8 @@ export default function ManageViewer() {
                 onViewModeChange={setViewMode}
                 onImpersonatedParticipantChange={setImpersonatedParticipantId}
                 onEdit={setEditingBlock}
+                onDelete={handleDeleteBlock}
+                deletingBlockId={deletingBlockId}
               />
             ) : (
               <div className="flex items-center justify-center h-full text-[hsl(var(--muted-foreground))]">

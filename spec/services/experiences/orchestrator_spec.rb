@@ -313,6 +313,49 @@ RSpec.describe Experiences::Orchestrator do
     end
   end
 
+  describe "#delete_block!" do
+    let(:participant_role) { ExperienceParticipant.roles[:host] }
+
+    subject do
+      described_class.new(actor: user, experience: experience).delete_block!(block.id)
+    end
+
+    context "when deleting a top-level block" do
+      let!(:block) do
+        create(:experience_block, experience: experience, status: :hidden)
+      end
+
+      it "removes the block from the experience" do
+        block_id = block.id
+        subject
+
+        expect(ExperienceBlock.find_by(id: block_id)).to be_nil
+      end
+    end
+
+    context "when deleting a FamilyFeud block with child questions" do
+      let!(:block) do
+        create(
+          :experience_block,
+          :family_feud,
+          experience: experience,
+          status: :hidden,
+          question_count: 2
+        )
+      end
+
+      it "removes the parent and its child question blocks" do
+        block_id = block.id
+        child_ids = block.child_blocks.pluck(:id)
+
+        subject
+
+        expect(ExperienceBlock.find_by(id: block_id)).to be_nil
+        expect(ExperienceBlock.where(id: child_ids)).to be_empty
+      end
+    end
+  end
+
   describe "#add_block!" do
     let(:participant_role) { ExperienceParticipant.roles[:host] }
     let(:kind) { "poll" }
