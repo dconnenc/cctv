@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 
 import { DragDropContext, Draggable, type DropResult, Droppable } from '@hello-pangea/dnd';
 import classNames from 'classnames';
-import { ChevronLeft, ChevronRight, CornerDownRight, GripVertical, Plus } from 'lucide-react';
+import { ChevronLeft, ChevronRight, GripVertical, Link2, Plus } from 'lucide-react';
 
 import { Button } from '@cctv/core/Button/Button';
 import { BLOCK_KIND_LABELS, Block } from '@cctv/types';
@@ -182,13 +182,6 @@ export default function BlockSidebar({
                                 <span className={styles.blockIndex}>{index + 1}</span>
                                 <span className={styles.statusDot} data-status={block.status} />
                                 <span className={styles.blockKind}>
-                                  {parentKindLabel && (
-                                    <CornerDownRight
-                                      size={12}
-                                      className={styles.childMarker}
-                                      aria-hidden="true"
-                                    />
-                                  )}
                                   {BLOCK_KIND_LABELS[block.kind]}
                                 </span>
                                 {block.status === 'open' && (
@@ -196,7 +189,10 @@ export default function BlockSidebar({
                                 )}
                               </div>
                               {parentKindLabel && (
-                                <div className={styles.childContext}>↳ from {parentKindLabel}</div>
+                                <div className={styles.childContext}>
+                                  <Link2 size={11} aria-hidden="true" />
+                                  <span>{parentKindLabel}</span>
+                                </div>
                               )}
                               {block.responses && block.responses.total > 0 && (
                                 <div className={styles.responseCount}>

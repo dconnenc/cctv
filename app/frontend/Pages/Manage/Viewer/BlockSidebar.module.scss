@@ -128,13 +128,14 @@
 
 .blockButton {
   width: 100%;
-  height: 4rem;
+  min-height: 4rem;
   padding: 0.5rem 0.75rem;
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: stretch;
   text-align: left;
+  gap: 0.15rem;
 
   &.selected {
     background: hsl(var(--muted));
@@ -226,7 +227,6 @@
 }
 
 .childItem {
-  margin-left: 1rem;
   list-style: none;
 }
 
@@ -238,10 +238,15 @@
 }
 
 .childContext {
-  margin-left: 1.5rem;
-  margin-top: 0.15rem;
-  font-size: 0.7rem;
+  margin-left: calc(1.5rem + 14px);
+  font-size: 0.75rem;
+  font-weight: 500;
   color: hsl(var(--muted-foreground));
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
 }
 
 .emptyState {
