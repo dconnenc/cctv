@@ -156,7 +156,7 @@ export default function Buzzer({ block, viewContext = 'participant' }: BuzzerPro
 
     const sourceView = monitorView ?? experience;
     const allParticipants = [...(sourceView?.participants ?? []), ...(sourceView?.hosts ?? [])];
-    const winner = allParticipants.find((p) => p.user_id === firstResponse.user_id);
+    const winner = allParticipants.find((p) => p.id === firstResponse.experience_participant_id);
     const strokes = firstResponse.avatar?.strokes ?? [];
 
     return (

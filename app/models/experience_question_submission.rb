@@ -1,21 +1,11 @@
 class ExperienceQuestionSubmission < ApplicationRecord
   belongs_to :experience_block
-  belongs_to :user
+  belongs_to :experience_participant
 
   validates :answer, presence: true
-  validate :user_can_submit_to_block
-  validate :block_is_question_type
+  validate :block_is_question_type, on: :create
 
   private
-
-  def user_can_submit_to_block
-    return unless user && experience_block
-
-    policy = ExperienceBlockPolicy.new(experience_block, user: user)
-    unless policy.submit_question_response?
-      errors.add(:base, "You are not authorized to submit to this question")
-    end
-  end
 
   def block_is_question_type
     return unless experience_block

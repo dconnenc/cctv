@@ -1,4 +1,15 @@
-import { CornerLeftUp, MessageSquare, Monitor, Pause, Play, SkipForward, User } from 'lucide-react';
+import { useState } from 'react';
+
+import {
+  CornerLeftUp,
+  MessageSquare,
+  Monitor,
+  Pause,
+  Play,
+  SkipForward,
+  Trash2,
+  User,
+} from 'lucide-react';
 
 import { useExperience } from '@cctv/contexts/ExperienceContext';
 import { Button } from '@cctv/core/Button/Button';
@@ -47,6 +58,8 @@ interface BlockDetailPanelProps {
   onEdit: (block: Block) => void;
   onDetach?: (block: Block) => void;
   detachingBlockId?: string;
+  onDelete: (block: Block) => void;
+  deletingBlockId?: string;
 }
 
 export default function BlockDetailPanel({
@@ -66,8 +79,14 @@ export default function BlockDetailPanel({
   onEdit,
   onDetach,
   detachingBlockId,
+  onDelete,
+  deletingBlockId,
 }: BlockDetailPanelProps) {
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
   const isDetaching = detachingBlockId === selectedBlock.id;
+  const isDeleting = deletingBlockId === selectedBlock.id;
+  const canDelete = selectedBlock.status !== 'open';
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -132,6 +151,39 @@ export default function BlockDetailPanel({
                 <Play size={16} />
                 <span>Present</span>
               </span>
+            </Button>
+          )}
+          {confirmingDelete ? (
+            <>
+              <Button
+                variant="destructive"
+                onClick={() => {
+                  onDelete(selectedBlock);
+                  setConfirmingDelete(false);
+                }}
+                loading={isDeleting}
+                loadingText="Deleting..."
+              >
+                Confirm Delete
+              </Button>
+              <Button
+                variant="ghost"
+                onClick={() => setConfirmingDelete(false)}
+                disabled={isDeleting}
+              >
+                Cancel
+              </Button>
+            </>
+          ) : (
+            <Button
+              variant="destructive"
+              onClick={() => setConfirmingDelete(true)}
+              disabled={!canDelete || isDeleting}
+              title={canDelete ? 'Delete block' : 'Stop presenting before deleting'}
+              icon={<Trash2 size={16} />}
+              hideLabel
+            >
+              Delete
             </Button>
           )}
         </div>

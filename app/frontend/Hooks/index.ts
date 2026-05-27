@@ -5,6 +5,7 @@ export { useGet } from './useGet';
 export { useJoinExperience } from './useJoinExperience';
 export { useRegisterExperience } from './useRegisterExperience';
 export { useCreateExperienceBlock } from './useCreateExperienceBlock';
+export { useDeleteExperienceBlock } from './useDeleteExperienceBlock';
 export { useSubmitPollResponse } from './useSubmitPollResponse';
 export { useSubmitQuestionResponse } from './useSubmitQuestionResponse';
 export { useChangeBlockStatus } from './useChangeBlockStatus';

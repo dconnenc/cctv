@@ -258,7 +258,7 @@ RSpec.describe Experiences::Visibility do
       let!(:block) { create(:experience_block, experience: experience, kind: ExperienceBlock::POLL, status: :open) }
 
       before do
-        create(:experience_poll_submission, experience_block: block, user: user,
+        create(:experience_poll_submission, experience_block: block, experience_participant: participant,
                answer: { "selectedOptions" => ["option_a"] })
       end
 
@@ -277,7 +277,7 @@ RSpec.describe Experiences::Visibility do
       end
 
       it "includes user_response, user_responded, aggregate, and all_responses for hosts" do
-        create(:experience_poll_submission, experience_block: block, user: other_user,
+        create(:experience_poll_submission, experience_block: block, experience_participant: host_participant,
                answer: { "selectedOptions" => ["option_a"] })
 
         result = described_class.for_participant(experience, host_participant)
@@ -295,7 +295,7 @@ RSpec.describe Experiences::Visibility do
       let!(:block) { create(:experience_block, experience: experience, kind: ExperienceBlock::BUZZER, status: :open) }
 
       before do
-        create(:experience_buzzer_submission, experience_block: block, user: user)
+        create(:experience_buzzer_submission, experience_block: block, experience_participant: participant)
       end
 
       it "omits user_response and user_responded for regular participants" do

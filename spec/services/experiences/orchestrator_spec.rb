@@ -5,15 +5,7 @@ RSpec.describe Experiences::Orchestrator do
   let(:user) { create(:user, :user) }
   let(:participant_role) { ExperienceParticipant.roles[:audience] }
   let(:experience_status) { Experience.statuses[:draft] }
-
-  before do
-    create(
-      :experience_participant,
-      user: user,
-      experience: experience,
-      role: participant_role
-    )
-  end
+  let!(:participant) { create(:experience_participant, user: user, experience: experience, role: participant_role) }
 
   describe "#reorder_block!" do
     let(:participant_role) { ExperienceParticipant.roles[:host] }
@@ -278,12 +270,17 @@ RSpec.describe Experiences::Orchestrator do
     end
 
     context "when child questions were broadcast and closed before FamilyFeud plays" do
+      let(:participant) do
+        ExperienceParticipant.find_by(experience_id: experience.id, user_id: user.id) ||
+          create(:experience_participant, user: user, experience: experience)
+      end
+
       before do
         block.child_blocks.each_with_index do |child, idx|
           child.update!(payload: child.payload.merge("buckets" => [
             { "id" => "b#{idx}", "name" => "Bucket #{idx}", "answer_ids" => [] }
           ]))
-          create(:experience_question_submission, experience_block: child, user: user)
+          create(:experience_question_submission, experience_block: child, experience_participant: participant)
           child.close!
         end
       end
@@ -386,6 +383,49 @@ RSpec.describe Experiences::Orchestrator do
     end
   end
 
+  describe "#delete_block!" do
+    let(:participant_role) { ExperienceParticipant.roles[:host] }
+
+    subject do
+      described_class.new(actor: user, experience: experience).delete_block!(block.id)
+    end
+
+    context "when deleting a top-level block" do
+      let!(:block) do
+        create(:experience_block, experience: experience, status: :hidden)
+      end
+
+      it "removes the block from the experience" do
+        block_id = block.id
+        subject
+
+        expect(ExperienceBlock.find_by(id: block_id)).to be_nil
+      end
+    end
+
+    context "when deleting a FamilyFeud block with child questions" do
+      let!(:block) do
+        create(
+          :experience_block,
+          :family_feud,
+          experience: experience,
+          status: :hidden,
+          question_count: 2
+        )
+      end
+
+      it "removes the parent and its child question blocks" do
+        block_id = block.id
+        child_ids = block.child_blocks.pluck(:id)
+
+        subject
+
+        expect(ExperienceBlock.find_by(id: block_id)).to be_nil
+        expect(ExperienceBlock.where(id: child_ids)).to be_empty
+      end
+    end
+  end
+
   describe "#add_block!" do
     let(:participant_role) { ExperienceParticipant.roles[:host] }
     let(:kind) { "poll" }
@@ -472,7 +512,7 @@ RSpec.describe Experiences::Orchestrator do
         expect(submission).to be_persisted
         expect(submission).to be_a(submission_class)
         expect(submission.answer).to eq(answer)
-        expect(submission.user).to eq(user)
+        expect(submission.experience_participant).to eq(participant)
         expect(submission.experience_block).to eq(block)
       end
     end
@@ -481,18 +521,13 @@ RSpec.describe Experiences::Orchestrator do
       let(:old_answer) { { "name" => "old_name" } }
 
       before do
-        create(
-          submission_factory,
-          experience_block: block,
-          user: user,
-          answer: old_answer
-        )
+        create(submission_factory, experience_block: block, experience_participant: participant, answer: old_answer)
       end
 
       it "updates the existing submission with the new answer" do
         submission = subject
         expect(submission.answer).to eq(answer)
-        expect(submission_class.where(user: user, experience_block: block).count).to eq(1)
+        expect(submission_class.where(experience_participant: participant, experience_block: block).count).to eq(1)
       end
     end
   end
@@ -518,7 +553,6 @@ RSpec.describe Experiences::Orchestrator do
       end
 
       it "records a profile change with the old fingerprint" do
-        participant = experience.experience_participants.find_by(user: user)
         old_fingerprint = Experiences::Broadcaster.visibility_fingerprint(experience, participant)
 
         orchestrator = described_class.new(actor: user, experience: experience)
@@ -589,7 +623,7 @@ RSpec.describe Experiences::Orchestrator do
       end
       let(:new_payload) { { "question" => "Q?", "options" => ["a", "c"], "pollType" => "single" } }
 
-      before { create(:experience_poll_submission, experience_block: block, user: user) }
+      before { create(:experience_poll_submission, experience_block: block, experience_participant: participant) }
 
       it "clears submissions and saves" do
         expect { subject }.to change { ExperiencePollSubmission.count }.by(-1)
@@ -608,7 +642,7 @@ RSpec.describe Experiences::Orchestrator do
       end
       let(:new_payload) { { "question" => "New Q?", "options" => ["a", "b"], "pollType" => "single" } }
 
-      before { create(:experience_poll_submission, experience_block: block, user: user) }
+      before { create(:experience_poll_submission, experience_block: block, experience_participant: participant) }
 
       it "updates the question text" do
         subject
@@ -623,7 +657,7 @@ RSpec.describe Experiences::Orchestrator do
 
       before do
         child = block.child_blocks.first
-        create(:experience_question_submission, experience_block: child, user: user)
+        create(:experience_question_submission, experience_block: child, experience_participant: participant)
       end
 
       it "allows the edit" do
