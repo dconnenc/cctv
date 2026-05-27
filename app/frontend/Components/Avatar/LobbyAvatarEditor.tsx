@@ -28,8 +28,7 @@ export default function LobbyAvatarEditor({
       initialStrokes={initialStrokes}
       onStrokeEvent={(evt) => experiencePerform?.('drawing_event', evt as Record<string, unknown>)}
       onSubmit={async (strokes: AvatarStroke[]) => {
-        if (!participant?.id) return;
-        await saveAvatar({ participantId: participant.id, strokes });
+        await saveAvatar({ strokes });
         if (!onBack) onFinalize?.();
       }}
       onBack={onBack}

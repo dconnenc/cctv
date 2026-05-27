@@ -1,13 +1,11 @@
 module Experiences
   class Orchestrator < BaseService
     attr_reader :profile_changes
-    def kick_participant!(participant_id)
-      participant = experience.experience_participants.find(participant_id)
+    def kick_participant!(participant)
       participant.destroy!
     end
 
-    def update_participant_avatar!(participant_id:, strokes:)
-      participant = experience.experience_participants.find(participant_id)
+    def update_participant_avatar!(participant:, strokes:)
       avatar = participant.avatar || {}
       avatar[:strokes] = strokes unless strokes.nil?
       participant.update!(avatar: avatar)
@@ -183,8 +181,7 @@ module Experiences
       end
     end
 
-    def submit_poll_response!(block_id:, answer:)
-      block = experience.experience_blocks.find(block_id)
+    def submit_poll_response!(block:, answer:)
 
       submission = ExperiencePollSubmission.find_or_initialize_by(
         experience_block_id: block.id,
@@ -201,8 +198,7 @@ module Experiences
       submission
     end
 
-    def submit_question_response!(block_id:, answer:)
-      block = experience.experience_blocks.find(block_id)
+    def submit_question_response!(block:, answer:)
 
       submission = ExperienceQuestionSubmission.find_or_initialize_by(
         experience_block_id: block.id,
@@ -215,8 +211,7 @@ module Experiences
       submission
     end
 
-    def submit_photo_upload_response!(block_id:, photo_signed_id:, answer: {})
-      block = experience.experience_blocks.find(block_id)
+    def submit_photo_upload_response!(block:, photo_signed_id:, answer: {})
 
       blob = ActiveStorage::Blob.find_signed!(photo_signed_id)
 
@@ -238,8 +233,7 @@ module Experiences
       submission
     end
 
-    def submit_buzzer_response!(block_id:, answer:)
-      block = experience.experience_blocks.find(block_id)
+    def submit_buzzer_response!(block:, answer:)
 
       submission = ExperienceBuzzerSubmission.find_or_initialize_by(
         experience_block_id: block.id,
@@ -639,8 +633,7 @@ module Experiences
       block
     end
 
-    def submit_minigame_arithmetic_response!(block_id:, question_index:, answer:)
-      block = experience.experience_blocks.find(block_id)
+    def submit_minigame_arithmetic_response!(block:, question_index:, answer:)
       raise ArgumentError, "Block is not an arithmetic minigame" unless block.kind == ExperienceBlock::MINIGAME_ARITHMETIC
 
       payload = block.payload || {}
@@ -714,8 +707,7 @@ module Experiences
     # @return [Hash] :result — :accepted, :ignored
     #                :winners — array of ExperienceParticipant when game just ended
     #                :leader_changed — true if the leader for monitor display moved
-    def submit_balloon_pump_update!(block_id:, fill_amount:)
-      block = experience.experience_blocks.find(block_id)
+    def submit_balloon_pump_update!(block:, fill_amount:)
       raise ArgumentError, "Block is not a balloon pump minigame" unless block.kind == ExperienceBlock::MINIGAME_BALLOON_PUMP
 
       payload      = block.payload || {}
@@ -804,8 +796,7 @@ module Experiences
       block
     end
 
-    def submit_the_scene_suggestion!(block_id:, text:)
-      block = experience.experience_blocks.find(block_id)
+    def submit_the_scene_suggestion!(block:, text:)
       raise ArgumentError, "Block is not a Scene" unless block.kind == ExperienceBlock::THE_SCENE
 
       payload = block.payload || {}
@@ -823,8 +814,7 @@ module Experiences
       end
     end
 
-    def submit_the_scene_vote!(block_id:, suggestion_id:)
-      block = experience.experience_blocks.find(block_id)
+    def submit_the_scene_vote!(block:, suggestion_id:)
       raise ArgumentError, "Block is not a Scene" unless block.kind == ExperienceBlock::THE_SCENE
 
       payload = block.payload || {}

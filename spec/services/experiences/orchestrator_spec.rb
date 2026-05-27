@@ -380,7 +380,7 @@ RSpec.describe Experiences::Orchestrator do
     subject do
       described_class.new(actor: user, experience: experience).public_send(
         method_name,
-        block_id: block.id,
+        block: block,
         answer: answer
       )
     end
@@ -435,7 +435,7 @@ RSpec.describe Experiences::Orchestrator do
         old_fingerprint = Experiences::Broadcaster.visibility_fingerprint(experience, participant)
 
         orchestrator = described_class.new(actor: user, experience: experience)
-        orchestrator.submit_poll_response!(block_id: block.id, answer: answer)
+        orchestrator.submit_poll_response!(block: block, answer: answer)
 
         expect(orchestrator.profile_changes).to eq([
           { participant: participant, old_fingerprint: old_fingerprint }

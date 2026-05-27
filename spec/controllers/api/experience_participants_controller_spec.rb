@@ -11,7 +11,9 @@ RSpec.describe Api::ExperienceParticipantsController, type: :controller do
   end
 
   describe "DELETE #kick" do
-    let!(:participant) { create(:experience_participant, experience: experience, role: :audience) }
+    let!(:participant) do
+      create(:experience_participant, experience: experience, role: :audience)
+    end
 
     subject do
       delete(
@@ -23,10 +25,8 @@ RSpec.describe Api::ExperienceParticipantsController, type: :controller do
 
     it "removes the participant" do
       expect { subject }.to change { experience.experience_participants.count }.by(-1)
-
       expect(response).to have_http_status(:ok)
-      json = JSON.parse(response.body)
-      expect(json["success"]).to be(true)
+      expect(JSON.parse(response.body)["success"]).to be(true)
     end
 
     context "when the participant does not exist" do
@@ -41,16 +41,20 @@ RSpec.describe Api::ExperienceParticipantsController, type: :controller do
       it "returns not found" do
         subject
         expect(response).to have_http_status(:not_found)
-        json = JSON.parse(response.body)
-        expect(json["success"]).to be(false)
+        expect(JSON.parse(response.body)["success"]).to be(false)
       end
     end
 
     context "when the user is an audience participant" do
-      let(:audience_participant) { create(:experience_participant, experience: experience, role: :audience) }
+      let!(:audience_participant) do
+        create(:experience_participant, experience: experience, role: :audience)
+      end
 
       before do
-        jwt = Experiences::AuthService.jwt_for_participant(experience: experience, user: audience_participant.user)
+        jwt = Experiences::AuthService.jwt_for_participant(
+          experience: experience,
+          user: audience_participant.user
+        )
         request.headers["Authorization"] = "Bearer #{jwt}"
       end
 
@@ -61,10 +65,15 @@ RSpec.describe Api::ExperienceParticipantsController, type: :controller do
     end
 
     context "when the user is a host" do
-      let(:host_participant) { create(:experience_participant, experience: experience, role: :host) }
+      let!(:host_participant) do
+        create(:experience_participant, experience: experience, role: :host)
+      end
 
       before do
-        jwt = Experiences::AuthService.jwt_for_participant(experience: experience, user: host_participant.user)
+        jwt = Experiences::AuthService.jwt_for_participant(
+          experience: experience,
+          user: host_participant.user
+        )
         request.headers["Authorization"] = "Bearer #{jwt}"
       end
 
@@ -75,10 +84,15 @@ RSpec.describe Api::ExperienceParticipantsController, type: :controller do
     end
 
     context "when the user is a moderator" do
-      let(:moderator_participant) { create(:experience_participant, experience: experience, role: :moderator) }
+      let!(:moderator_participant) do
+        create(:experience_participant, experience: experience, role: :moderator)
+      end
 
       before do
-        jwt = Experiences::AuthService.jwt_for_participant(experience: experience, user: moderator_participant.user)
+        jwt = Experiences::AuthService.jwt_for_participant(
+          experience: experience,
+          user: moderator_participant.user
+        )
         request.headers["Authorization"] = "Bearer #{jwt}"
       end
 
@@ -89,49 +103,66 @@ RSpec.describe Api::ExperienceParticipantsController, type: :controller do
     end
   end
 
-  describe "POST #avatar" do
-    let!(:participant) { create(:experience_participant, experience: experience, role: :audience) }
-    let(:strokes) { [{ "points" => ["1", "2", "3", "4"], "color" => "#ff0000", "width" => "4" }] }
+  describe "GET #submissions" do
+    let!(:participant) do
+      create(:experience_participant, experience: experience, role: :audience)
+    end
+    let!(:block) { create(:experience_block, experience: experience) }
 
     subject do
-      post(
-        :avatar,
-        params: {
-          experience_id: experience.code_slug,
-          id: participant.id,
-          avatar: { strokes: strokes }
-        },
+      get(
+        :submissions,
+        params: { experience_id: experience.code_slug, id: participant.id },
         format: :json
       )
     end
 
-    it "updates the participant avatar" do
+    it "returns submissions for the participant" do
+      create(:experience_poll_submission, experience_block: block, experience_participant: participant)
+
       subject
 
       expect(response).to have_http_status(:ok)
       json = JSON.parse(response.body)
       expect(json["success"]).to be(true)
-      expect(participant.reload.avatar["strokes"]).to eq(strokes)
+      expect(json["data"]["submissions"].length).to eq(1)
     end
 
-    context "when the participant updates their own avatar" do
-      before do
-        jwt = Experiences::AuthService.jwt_for_participant(experience: experience, user: participant.user)
-        request.headers["Authorization"] = "Bearer #{jwt}"
+    it "does not return submissions belonging to other participants" do
+      other_participant = create(:experience_participant, experience: experience, role: :audience)
+      create(:experience_poll_submission, experience_block: block, experience_participant: other_participant)
+
+      subject
+
+      expect(JSON.parse(response.body)["data"]["submissions"]).to be_empty
+    end
+
+    context "when the participant does not exist" do
+      subject do
+        get(
+          :submissions,
+          params: { experience_id: experience.code_slug, id: 0 },
+          format: :json
+        )
       end
 
-      it "allows the update" do
+      it "returns not found" do
         subject
-        expect(response).to have_http_status(:ok)
-        expect(participant.reload.avatar["strokes"]).to eq(strokes)
+        expect(response).to have_http_status(:not_found)
+        expect(JSON.parse(response.body)["success"]).to be(false)
       end
     end
 
-    context "when a different audience participant tries to update the avatar" do
-      let(:other_participant) { create(:experience_participant, experience: experience, role: :audience) }
+    context "when the user is an audience participant" do
+      let!(:audience_participant) do
+        create(:experience_participant, experience: experience, role: :audience)
+      end
 
       before do
-        jwt = Experiences::AuthService.jwt_for_participant(experience: experience, user: other_participant.user)
+        jwt = Experiences::AuthService.jwt_for_participant(
+          experience: experience,
+          user: audience_participant.user
+        )
         request.headers["Authorization"] = "Bearer #{jwt}"
       end
 
@@ -142,38 +173,21 @@ RSpec.describe Api::ExperienceParticipantsController, type: :controller do
     end
 
     context "when the user is a host" do
-      let(:host_participant) { create(:experience_participant, experience: experience, role: :host) }
+      let!(:host_participant) do
+        create(:experience_participant, experience: experience, role: :host)
+      end
 
       before do
-        jwt = Experiences::AuthService.jwt_for_participant(experience: experience, user: host_participant.user)
+        jwt = Experiences::AuthService.jwt_for_participant(
+          experience: experience,
+          user: host_participant.user
+        )
         request.headers["Authorization"] = "Bearer #{jwt}"
       end
 
-      it "allows the update" do
+      it "returns submissions" do
         subject
         expect(response).to have_http_status(:ok)
-        expect(participant.reload.avatar["strokes"]).to eq(strokes)
-      end
-    end
-
-    context "when the participant does not exist" do
-      subject do
-        post(
-          :avatar,
-          params: {
-            experience_id: experience.code_slug,
-            id: 0,
-            avatar: { strokes: strokes }
-          },
-          format: :json
-        )
-      end
-
-      it "returns not found" do
-        subject
-        expect(response).to have_http_status(:not_found)
-        json = JSON.parse(response.body)
-        expect(json["success"]).to be(false)
       end
     end
   end

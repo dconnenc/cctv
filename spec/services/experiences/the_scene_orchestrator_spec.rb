@@ -72,23 +72,23 @@ RSpec.describe Experiences::Orchestrator, "the scene" do
 
     it "rejects blank suggestions" do
       expect {
-        player_orchestrator(player_a).submit_the_scene_suggestion!(block_id: block.id, text: "   ")
+        player_orchestrator(player_a).submit_the_scene_suggestion!(block: block, text: "   ")
       }.to raise_error(ArgumentError)
     end
 
     it "rejects a second suggestion in the same scene" do
-      player_orchestrator(player_a).submit_the_scene_suggestion!(block_id: block.id, text: "first")
+      player_orchestrator(player_a).submit_the_scene_suggestion!(block: block, text: "first")
 
       expect {
-        player_orchestrator(player_a).submit_the_scene_suggestion!(block_id: block.id, text: "second")
+        player_orchestrator(player_a).submit_the_scene_suggestion!(block: block, text: "second")
       }.to raise_error(Experiences::InvalidTransitionError)
     end
 
     it "allows resubmission after admin clears the prior one" do
-      first = player_orchestrator(player_a).submit_the_scene_suggestion!(block_id: block.id, text: "first")
+      first = player_orchestrator(player_a).submit_the_scene_suggestion!(block: block, text: "first")
       orchestrator.clear_the_scene_suggestion!(block_id: block.id, suggestion_id: first.id)
 
-      second = player_orchestrator(player_a).submit_the_scene_suggestion!(block_id: block.id, text: "second")
+      second = player_orchestrator(player_a).submit_the_scene_suggestion!(block: block, text: "second")
       expect(second.text).to eq("second")
       expect(second.id).not_to eq(first.id)
     end
@@ -96,14 +96,14 @@ RSpec.describe Experiences::Orchestrator, "the scene" do
     it "rejects when phase is idle or ended" do
       orchestrator.advance_the_scene_phase!(block_id: block.id, phase: "ended")
       expect {
-        player_orchestrator(player_a).submit_the_scene_suggestion!(block_id: block.id, text: "no")
+        player_orchestrator(player_a).submit_the_scene_suggestion!(block: block, text: "no")
       }.to raise_error(Experiences::InvalidTransitionError)
     end
   end
 
   describe "#submit_the_scene_vote!" do
-    let(:suggestion_a) { player_orchestrator(player_a).submit_the_scene_suggestion!(block_id: block.id, text: "a wedding") }
-    let(:suggestion_b) { player_orchestrator(player_b).submit_the_scene_suggestion!(block_id: block.id, text: "a circus") }
+    let(:suggestion_a) { player_orchestrator(player_a).submit_the_scene_suggestion!(block: block, text: "a wedding") }
+    let(:suggestion_b) { player_orchestrator(player_b).submit_the_scene_suggestion!(block: block, text: "a circus") }
 
     before do
       orchestrator.advance_the_scene_phase!(block_id: block.id, phase: "collecting")
@@ -120,8 +120,8 @@ RSpec.describe Experiences::Orchestrator, "the scene" do
     end
 
     it "allows changing a vote" do
-      player_orchestrator(player_c).submit_the_scene_vote!(block_id: block.id, suggestion_id: suggestion_a.id)
-      player_orchestrator(player_c).submit_the_scene_vote!(block_id: block.id, suggestion_id: suggestion_b.id)
+      player_orchestrator(player_c).submit_the_scene_vote!(block: block, suggestion_id: suggestion_a.id)
+      player_orchestrator(player_c).submit_the_scene_vote!(block: block, suggestion_id: suggestion_b.id)
 
       votes = ImprovVote.where(experience_block_id: block.id, experience_participant: player_c).to_a
       expect(votes.size).to eq(1)
@@ -130,28 +130,28 @@ RSpec.describe Experiences::Orchestrator, "the scene" do
 
     it "rejects voting for own suggestion" do
       expect {
-        player_orchestrator(player_a).submit_the_scene_vote!(block_id: block.id, suggestion_id: suggestion_a.id)
+        player_orchestrator(player_a).submit_the_scene_vote!(block: block, suggestion_id: suggestion_a.id)
       }.to raise_error(ArgumentError)
     end
 
     it "rejects voting outside the voting phase" do
       orchestrator.advance_the_scene_phase!(block_id: block.id, phase: "ended")
       expect {
-        player_orchestrator(player_c).submit_the_scene_vote!(block_id: block.id, suggestion_id: suggestion_a.id)
+        player_orchestrator(player_c).submit_the_scene_vote!(block: block, suggestion_id: suggestion_a.id)
       }.to raise_error(Experiences::InvalidTransitionError)
     end
   end
 
   describe "#start_next_scene!" do
-    let(:suggestion_a) { player_orchestrator(player_a).submit_the_scene_suggestion!(block_id: block.id, text: "a wedding") }
-    let(:suggestion_b) { player_orchestrator(player_b).submit_the_scene_suggestion!(block_id: block.id, text: "a circus") }
+    let(:suggestion_a) { player_orchestrator(player_a).submit_the_scene_suggestion!(block: block, text: "a wedding") }
+    let(:suggestion_b) { player_orchestrator(player_b).submit_the_scene_suggestion!(block: block, text: "a circus") }
 
     before do
       orchestrator.advance_the_scene_phase!(block_id: block.id, phase: "collecting")
       suggestion_a
       suggestion_b
       orchestrator.advance_the_scene_phase!(block_id: block.id, phase: "voting")
-      player_orchestrator(player_c).submit_the_scene_vote!(block_id: block.id, suggestion_id: suggestion_a.id)
+      player_orchestrator(player_c).submit_the_scene_vote!(block: block, suggestion_id: suggestion_a.id)
     end
 
     it "preserves active suggestions across scenes (rolls forward)" do
@@ -175,26 +175,26 @@ RSpec.describe Experiences::Orchestrator, "the scene" do
       orchestrator.start_next_scene!(block_id: block.id)
 
       expect {
-        player_orchestrator(player_a).submit_the_scene_suggestion!(block_id: block.id, text: "another")
+        player_orchestrator(player_a).submit_the_scene_suggestion!(block: block, text: "another")
       }.to raise_error(Experiences::InvalidTransitionError),
         "active suggestion from prior scene should still block resubmission"
 
       orchestrator.clear_the_scene_suggestion!(block_id: block.id, suggestion_id: suggestion_a.id)
-      fresh = player_orchestrator(player_a).submit_the_scene_suggestion!(block_id: block.id, text: "another")
+      fresh = player_orchestrator(player_a).submit_the_scene_suggestion!(block: block, text: "another")
       expect(fresh).to be_persisted
     end
   end
 
   describe "clear actions" do
-    let(:suggestion_a) { player_orchestrator(player_a).submit_the_scene_suggestion!(block_id: block.id, text: "a wedding") }
-    let(:suggestion_b) { player_orchestrator(player_b).submit_the_scene_suggestion!(block_id: block.id, text: "a circus") }
+    let(:suggestion_a) { player_orchestrator(player_a).submit_the_scene_suggestion!(block: block, text: "a wedding") }
+    let(:suggestion_b) { player_orchestrator(player_b).submit_the_scene_suggestion!(block: block, text: "a circus") }
 
     before do
       orchestrator.advance_the_scene_phase!(block_id: block.id, phase: "collecting")
       suggestion_a
       suggestion_b
       orchestrator.advance_the_scene_phase!(block_id: block.id, phase: "voting")
-      player_orchestrator(player_c).submit_the_scene_vote!(block_id: block.id, suggestion_id: suggestion_a.id)
+      player_orchestrator(player_c).submit_the_scene_vote!(block: block, suggestion_id: suggestion_a.id)
     end
 
     it "clear_top removes the highest-voted suggestion" do

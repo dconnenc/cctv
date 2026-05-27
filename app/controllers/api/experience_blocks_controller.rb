@@ -19,7 +19,7 @@ class Api::ExperienceBlocksController < Api::BaseController
   ].freeze
 
   before_action :authenticate_and_set_user_and_experience
-  before_action :authorize_manage_blocks!, only: MANAGEMENT_ACTIONS
+  before_action -> { authorize! @experience, to: :manage_blocks? }, only: MANAGEMENT_ACTIONS
   before_action :set_block, only: SUBMISSION_ACTIONS
   before_action :authorize_block_submission!, only: SUBMISSION_ACTIONS
 
@@ -199,7 +199,7 @@ class Api::ExperienceBlocksController < Api::BaseController
   def submit_poll_response
     with_experience_orchestration do
       orchestrator = Experiences::Orchestrator.new(experience: @experience, actor: @user)
-      submission = orchestrator.submit_poll_response!(block_id: params[:id], answer: params[:answer])
+      submission = orchestrator.submit_poll_response!(block: @block, answer: params[:answer])
 
       Experiences::Broadcaster.new(@experience).broadcast_experience_update(
         profile_changes: orchestrator.profile_changes
@@ -215,7 +215,7 @@ class Api::ExperienceBlocksController < Api::BaseController
       submission = Experiences::Orchestrator.new(
         experience: @experience, actor: @user
       ).submit_question_response!(
-        block_id: params[:id],
+        block: @block,
         answer: params[:answer]
       )
 
@@ -248,7 +248,7 @@ class Api::ExperienceBlocksController < Api::BaseController
       submission = Experiences::Orchestrator.new(
         experience: @experience, actor: @user
       ).submit_buzzer_response!(
-        block_id: params[:id],
+        block: @block,
         answer: params[:answer]
       )
 
@@ -293,7 +293,7 @@ class Api::ExperienceBlocksController < Api::BaseController
       submission = Experiences::Orchestrator.new(
         experience: @experience, actor: @user
       ).submit_photo_upload_response!(
-        block_id: params[:id],
+        block: @block,
         photo_signed_id: params[:photo_signed_id],
         answer: params[:answer] || {}
       )
@@ -577,7 +577,7 @@ class Api::ExperienceBlocksController < Api::BaseController
       submission = Experiences::Orchestrator.new(
         experience: @experience, actor: @user
       ).submit_minigame_arithmetic_response!(
-        block_id:       params[:id],
+        block:          @block,
         question_index: params[:question_index],
         answer:         params[:answer]
       )
@@ -631,7 +631,7 @@ class Api::ExperienceBlocksController < Api::BaseController
       outcome = Experiences::Orchestrator.new(
         experience: @experience, actor: @user
       ).submit_balloon_pump_update!(
-        block_id:    params[:id],
+        block:       @block,
         fill_amount: params[:fill_amount]
       )
 
@@ -732,7 +732,7 @@ class Api::ExperienceBlocksController < Api::BaseController
       suggestion = Experiences::Orchestrator.new(
         experience: @experience, actor: @user
       ).submit_the_scene_suggestion!(
-        block_id: params[:id],
+        block: @block,
         text: params[:text]
       )
 
@@ -751,7 +751,7 @@ class Api::ExperienceBlocksController < Api::BaseController
       vote = Experiences::Orchestrator.new(
         experience: @experience, actor: @user
       ).submit_the_scene_vote!(
-        block_id: params[:id],
+        block: @block,
         suggestion_id: params[:suggestion_id]
       )
 
@@ -765,10 +765,6 @@ class Api::ExperienceBlocksController < Api::BaseController
   end
 
   private
-
-  def authorize_manage_blocks!
-    authorize! @experience, to: :manage_blocks?
-  end
 
   def set_block
     @block = @experience.experience_blocks.find(params[:id])

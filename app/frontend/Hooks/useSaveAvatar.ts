@@ -5,7 +5,6 @@ import { useExperienceState } from '@cctv/contexts/ExperienceStateContext';
 import { AvatarStroke } from '@cctv/types';
 
 export interface SaveAvatarParams {
-  participantId: string;
   strokes?: AvatarStroke[];
 }
 
@@ -16,27 +15,20 @@ export function useSaveAvatar() {
   const [error, setError] = useState<string | null>(null);
 
   const saveAvatar = useCallback(
-    async ({ participantId, strokes }: SaveAvatarParams) => {
+    async ({ strokes }: SaveAvatarParams) => {
       if (!code) {
         setError('Missing experience code');
         return { success: false, error: 'Missing experience code' } as const;
-      }
-      if (!participantId) {
-        setError('Missing participant');
-        return { success: false, error: 'Missing participant' } as const;
       }
 
       setIsLoading(true);
       setError(null);
 
       try {
-        const res = await experienceFetch(
-          `/api/experiences/${encodeURIComponent(code)}/participants/${encodeURIComponent(participantId)}/avatar`,
-          {
-            method: 'POST',
-            body: JSON.stringify({ avatar: { strokes } }),
-          },
-        );
+        const res = await experienceFetch(`/api/experiences/${encodeURIComponent(code)}/avatar`, {
+          method: 'POST',
+          body: JSON.stringify({ avatar: { strokes } }),
+        });
         const data = await res.json();
         if (!res.ok || data?.success === false) {
           const msg = data?.error || 'Failed to save avatar';

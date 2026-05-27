@@ -81,7 +81,7 @@ RSpec.describe Experiences::Orchestrator, "minigame arithmetic" do
       first = block.payload["questions"].first
 
       submission = player_orchestrator.submit_minigame_arithmetic_response!(
-        block_id:       block.id,
+        block:          block,
         question_index: 0,
         answer:         first["answer"].to_s
       )
@@ -92,7 +92,7 @@ RSpec.describe Experiences::Orchestrator, "minigame arithmetic" do
 
     it "records wrong answers without telling the user" do
       submission = player_orchestrator.submit_minigame_arithmetic_response!(
-        block_id:       block.id,
+        block:          block,
         question_index: 0,
         answer:         "-9999"
       )
@@ -102,7 +102,7 @@ RSpec.describe Experiences::Orchestrator, "minigame arithmetic" do
 
     it "treats blank answers as wrong but advances the player" do
       submission = player_orchestrator.submit_minigame_arithmetic_response!(
-        block_id:       block.id,
+        block:          block,
         question_index: 0,
         answer:         ""
       )
@@ -113,12 +113,12 @@ RSpec.describe Experiences::Orchestrator, "minigame arithmetic" do
 
     it "is idempotent per question index for a single player" do
       player_orchestrator.submit_minigame_arithmetic_response!(
-        block_id: block.id, question_index: 0, answer: "1"
+        block: block, question_index: 0, answer: "1"
       )
 
       expect {
         player_orchestrator.submit_minigame_arithmetic_response!(
-          block_id: block.id, question_index: 0, answer: "999"
+          block: block, question_index: 0, answer: "999"
         )
       }.not_to change { ExperienceMinigameSubmission.where(experience_block_id: block.id, experience_participant: player).count }
     end
@@ -129,7 +129,7 @@ RSpec.describe Experiences::Orchestrator, "minigame arithmetic" do
 
       expect {
         player_orchestrator.submit_minigame_arithmetic_response!(
-          block_id: block.id, question_index: 0, answer: "1"
+          block: block, question_index: 0, answer: "1"
         )
       }.to raise_error(Experiences::InvalidTransitionError)
     end
@@ -139,7 +139,7 @@ RSpec.describe Experiences::Orchestrator, "minigame arithmetic" do
 
       expect {
         player_orchestrator.submit_minigame_arithmetic_response!(
-          block_id: block.id, question_index: 0, answer: "1"
+          block: block, question_index: 0, answer: "1"
         )
       }.to raise_error(Experiences::InvalidTransitionError)
     end
