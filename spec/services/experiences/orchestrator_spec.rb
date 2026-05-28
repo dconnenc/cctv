@@ -13,7 +13,7 @@ RSpec.describe Experiences::Orchestrator do
 
     subject do
       described_class.new(actor: user, experience: experience).reorder_block!(
-        block_id: block_to_move.id,
+        block: block_to_move,
         position: new_position
       )
     end
@@ -110,7 +110,7 @@ RSpec.describe Experiences::Orchestrator do
 
     it "moves only the target block's position and leaves siblings unchanged" do
       described_class.new(actor: user, experience: experience).set_block_column!(
-        block_id: block_a.id,
+        block: block_a,
         column: 2
       )
 
@@ -121,7 +121,7 @@ RSpec.describe Experiences::Orchestrator do
 
     it "allows two blocks to share a column (simultaneity)" do
       described_class.new(actor: user, experience: experience).set_block_column!(
-        block_id: block_a.id,
+        block: block_a,
         column: 1
       )
 
@@ -131,7 +131,7 @@ RSpec.describe Experiences::Orchestrator do
 
     it "clamps negative columns to zero" do
       described_class.new(actor: user, experience: experience).set_block_column!(
-        block_id: block_b.id,
+        block: block_b,
         column: -5
       )
 
@@ -265,7 +265,7 @@ RSpec.describe Experiences::Orchestrator do
 
     subject do
       described_class.new(actor: user, experience: experience).start_family_feud_playing!(
-        block_id: block.id
+        block: block
       )
     end
 
@@ -300,7 +300,7 @@ RSpec.describe Experiences::Orchestrator do
     let(:participant_role) { ExperienceParticipant.roles[:host] }
 
     subject do
-      described_class.new(actor: user, experience: experience).open_block!(block.id)
+      described_class.new(actor: user, experience: experience).open_block!(block: block)
     end
 
     context "when opening a family feud block" do
@@ -329,7 +329,7 @@ RSpec.describe Experiences::Orchestrator do
     let(:participant_role) { ExperienceParticipant.roles[:host] }
 
     subject do
-      described_class.new(actor: user, experience: experience).close_block!(block.id)
+      described_class.new(actor: user, experience: experience).close_block!(block: block)
     end
 
     context "when closing a family feud block" do
@@ -358,7 +358,7 @@ RSpec.describe Experiences::Orchestrator do
     let(:participant_role) { ExperienceParticipant.roles[:host] }
 
     subject do
-      described_class.new(actor: user, experience: experience).hide_block!(block.id)
+      described_class.new(actor: user, experience: experience).hide_block!(block: block)
     end
 
     context "when hiding a family feud block" do
@@ -501,7 +501,7 @@ RSpec.describe Experiences::Orchestrator do
     subject do
       described_class.new(actor: user, experience: experience).public_send(
         method_name,
-        block_id: block.id,
+        block: block,
         answer: answer
       )
     end
@@ -556,7 +556,7 @@ RSpec.describe Experiences::Orchestrator do
         old_fingerprint = Experiences::Broadcaster.visibility_fingerprint(experience, participant)
 
         orchestrator = described_class.new(actor: user, experience: experience)
-        orchestrator.submit_poll_response!(block_id: block.id, answer: answer)
+        orchestrator.submit_poll_response!(block: block, answer: answer)
 
         expect(orchestrator.profile_changes).to eq([
           { participant: participant, old_fingerprint: old_fingerprint }
@@ -581,7 +581,7 @@ RSpec.describe Experiences::Orchestrator do
 
     subject do
       described_class.new(actor: user, experience: experience).update_block!(
-        block_id: block.id,
+        block: block,
         payload: new_payload,
         visible_to_segment_ids: [],
         questions: questions
@@ -603,7 +603,7 @@ RSpec.describe Experiences::Orchestrator do
       it "updates segment associations" do
         segment = experience.experience_segments.create!(name: "Test", color: "#000", position: 0)
         described_class.new(actor: user, experience: experience).update_block!(
-          block_id: block.id,
+          block: block,
           payload: new_payload,
           visible_to_segment_ids: [segment.id]
         )

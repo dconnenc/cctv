@@ -46,7 +46,7 @@ RSpec.describe Experiences::Orchestrator, "minigame arithmetic" do
 
     it "sets started_at, opens the block, and schedules the end job" do
       expect {
-        orchestrator.start_minigame_arithmetic!(block_id: block.id)
+        orchestrator.start_minigame_arithmetic!(block: block)
       }.to have_enqueued_job(Minigames::EndArithmeticJob).with(block.id, kind_of(String))
 
       block.reload
@@ -72,16 +72,13 @@ RSpec.describe Experiences::Orchestrator, "minigame arithmetic" do
       described_class.new(actor: player.user, experience: experience)
     end
 
-    before do
-      orchestrator.start_minigame_arithmetic!(block_id: block.id)
-    end
+    before { orchestrator.start_minigame_arithmetic!(block: block) }
 
     it "records correct answers" do
-      block.reload
       first = block.payload["questions"].first
 
       submission = player_orchestrator.submit_minigame_arithmetic_response!(
-        block_id:       block.id,
+        block:          block,
         question_index: 0,
         answer:         first["answer"].to_s
       )
@@ -92,7 +89,7 @@ RSpec.describe Experiences::Orchestrator, "minigame arithmetic" do
 
     it "records wrong answers without telling the user" do
       submission = player_orchestrator.submit_minigame_arithmetic_response!(
-        block_id:       block.id,
+        block:          block,
         question_index: 0,
         answer:         "-9999"
       )
@@ -102,7 +99,7 @@ RSpec.describe Experiences::Orchestrator, "minigame arithmetic" do
 
     it "treats blank answers as wrong but advances the player" do
       submission = player_orchestrator.submit_minigame_arithmetic_response!(
-        block_id:       block.id,
+        block:          block,
         question_index: 0,
         answer:         ""
       )
@@ -113,12 +110,12 @@ RSpec.describe Experiences::Orchestrator, "minigame arithmetic" do
 
     it "is idempotent per question index for a single player" do
       player_orchestrator.submit_minigame_arithmetic_response!(
-        block_id: block.id, question_index: 0, answer: "1"
+        block: block, question_index: 0, answer: "1"
       )
 
       expect {
         player_orchestrator.submit_minigame_arithmetic_response!(
-          block_id: block.id, question_index: 0, answer: "999"
+          block: block, question_index: 0, answer: "999"
         )
       }.not_to change { ExperienceMinigameSubmission.where(experience_block_id: block.id, experience_participant: player).count }
     end
@@ -129,17 +126,17 @@ RSpec.describe Experiences::Orchestrator, "minigame arithmetic" do
 
       expect {
         player_orchestrator.submit_minigame_arithmetic_response!(
-          block_id: block.id, question_index: 0, answer: "1"
+          block: block, question_index: 0, answer: "1"
         )
       }.to raise_error(Experiences::InvalidTransitionError)
     end
 
     it "rejects submissions after end" do
-      orchestrator.end_minigame_arithmetic!(block_id: block.id)
+      orchestrator.end_minigame_arithmetic!(block: block)
 
       expect {
         player_orchestrator.submit_minigame_arithmetic_response!(
-          block_id: block.id, question_index: 0, answer: "1"
+          block: block, question_index: 0, answer: "1"
         )
       }.to raise_error(Experiences::InvalidTransitionError)
     end
@@ -158,21 +155,21 @@ RSpec.describe Experiences::Orchestrator, "minigame arithmetic" do
     end
 
     before do
-      orchestrator.start_minigame_arithmetic!(block_id: block.id)
+      orchestrator.start_minigame_arithmetic!(block: block)
     end
 
     it "stamps ended_at and closes the block" do
-      orchestrator.end_minigame_arithmetic!(block_id: block.id)
+      orchestrator.end_minigame_arithmetic!(block: block)
       block.reload
       expect(block.payload["ended_at"]).to be_present
       expect(block.status).to eq("closed")
     end
 
     it "is idempotent" do
-      orchestrator.end_minigame_arithmetic!(block_id: block.id)
+      orchestrator.end_minigame_arithmetic!(block: block)
       first_ended_at = block.reload.payload["ended_at"]
 
-      orchestrator.end_minigame_arithmetic!(block_id: block.id)
+      orchestrator.end_minigame_arithmetic!(block: block)
       expect(block.reload.payload["ended_at"]).to eq(first_ended_at)
     end
   end

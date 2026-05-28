@@ -116,18 +116,18 @@ RSpec.describe Experiences::Orchestrator do
     end
 
     it "advances the current slide index" do
-      orchestrator.next_guess_who_slide!(block_id: guess_who_block.id)
+      orchestrator.next_guess_who_slide!(block: guess_who_block)
       expect(guess_who_block.reload.payload["current_slide_index"]).to eq(1)
     end
 
     it "clamps at the final slide" do
       guess_who_block.update!(payload: guess_who_block.payload.merge("current_slide_index" => 2))
-      orchestrator.next_guess_who_slide!(block_id: guess_who_block.id)
+      orchestrator.next_guess_who_slide!(block: guess_who_block)
       expect(guess_who_block.reload.payload["current_slide_index"]).to eq(2)
     end
 
     it "clamps at zero when going backward" do
-      orchestrator.previous_guess_who_slide!(block_id: guess_who_block.id)
+      orchestrator.previous_guess_who_slide!(block: guess_who_block)
       expect(guess_who_block.reload.payload["current_slide_index"]).to eq(0)
     end
   end
@@ -143,7 +143,7 @@ RSpec.describe Experiences::Orchestrator do
     end
 
     it "sets revealed to true" do
-      orchestrator.reveal_guess_who!(block_id: guess_who_block.id)
+      orchestrator.reveal_guess_who!(block: guess_who_block)
       expect(guess_who_block.reload.payload["revealed"]).to eq(true)
     end
   end
