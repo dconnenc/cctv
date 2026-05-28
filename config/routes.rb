@@ -64,12 +64,13 @@ Rails.application.routes.draw do
       resources(
         :blocks,
         controller: "experience_blocks",
-        only: [:create, :update]
+        only: [:create, :update, :destroy]
       ) do
         member do
           post :open
           post :close
           post :hide
+          post :detach_from_parent
           post :reorder
           post :set_column
           post :submit_poll_response

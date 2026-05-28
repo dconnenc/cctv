@@ -6,6 +6,8 @@ import { useExperience } from '@cctv/contexts/ExperienceContext';
 import { Button, Drawer, DrawerBody, DrawerContent } from '@cctv/core';
 import { Pill } from '@cctv/core/Pill/Pill';
 import { useBlockPresentation } from '@cctv/hooks/useBlockPresentation';
+import { useDeleteExperienceBlock } from '@cctv/hooks/useDeleteExperienceBlock';
+import { useDetachBlockFromParent } from '@cctv/hooks/useDetachBlockFromParent';
 import { useExperiencePause } from '@cctv/hooks/useExperiencePause';
 import { useExperienceResume } from '@cctv/hooks/useExperienceResume';
 import { useExperienceStart } from '@cctv/hooks/useExperienceStart';
@@ -124,9 +126,35 @@ export default function ManageViewer() {
   } = useBlockPresentation();
 
   const { reorder: reorderBlock } = useReorderBlock();
+  const { detach: detachFromParent, error: detachError } = useDetachBlockFromParent();
+  const [detachingBlockId, setDetachingBlockId] = useState<string | undefined>();
+
+  const handleDetachBlock = useCallback(
+    async (block: Block) => {
+      setDetachingBlockId(block.id);
+      await detachFromParent(block.id);
+      setDetachingBlockId(undefined);
+    },
+    [detachFromParent],
+  );
+
+  const { deleteBlock, error: deleteError } = useDeleteExperienceBlock();
+  const [deletingBlockId, setDeletingBlockId] = useState<string | undefined>();
+
+  const handleDeleteBlock = useCallback(
+    async (block: Block) => {
+      setDeletingBlockId(block.id);
+      const result = await deleteBlock(block.id);
+      setDeletingBlockId(undefined);
+      if (result.success && selectedBlockId === block.id) {
+        setSelectedBlockId(null);
+      }
+    },
+    [deleteBlock, selectedBlockId],
+  );
 
   const handleReorderBlock = useCallback(
-    (blockId: string, newIndex: number, _parentBlockId?: string) => {
+    (blockId: string, newIndex: number) => {
       reorderBlock(blockId, newIndex);
     },
     [reorderBlock],
@@ -144,16 +172,11 @@ export default function ManageViewer() {
   }, [participantsCombined, impersonatedParticipantId, setImpersonatedParticipantId]);
 
   const flattenedBlocks = useMemo(() => {
-    const result: { block: Block; isChild: boolean; parentId?: string }[] = [];
-    for (const block of experience?.blocks || []) {
-      result.push({ block, isChild: false });
-      if (block.children && block.children.length > 0) {
-        for (const child of block.children) {
-          result.push({ block: child, isChild: true, parentId: block.id });
-        }
-      }
-    }
-    return result;
+    return (experience?.blocks || []).map((block) => ({
+      block,
+      isChild: Boolean(block.parent_block_id),
+      parentId: block.parent_block_id ?? undefined,
+    }));
   }, [experience]);
 
   const currentOpenBlock = useMemo(() => {
@@ -184,7 +207,14 @@ export default function ManageViewer() {
   }
 
   const errorMessage =
-    !dismissedError && (experienceError || startError || pauseError || resumeError || statusError);
+    !dismissedError &&
+    (experienceError ||
+      startError ||
+      pauseError ||
+      resumeError ||
+      statusError ||
+      detachError ||
+      deleteError);
   const statusLabel = experience?.status
     ? experience.status.charAt(0).toUpperCase() + experience.status.slice(1)
     : '';
@@ -278,6 +308,10 @@ export default function ManageViewer() {
                 onViewModeChange={setViewMode}
                 onImpersonatedParticipantChange={setImpersonatedParticipantId}
                 onEdit={setEditingBlock}
+                onDetach={handleDetachBlock}
+                detachingBlockId={detachingBlockId}
+                onDelete={handleDeleteBlock}
+                deletingBlockId={deletingBlockId}
               />
             ) : (
               <div className="flex items-center justify-center h-full text-[hsl(var(--muted-foreground))]">

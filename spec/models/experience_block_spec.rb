@@ -174,13 +174,13 @@ RSpec.describe ExperienceBlock do
         )
       end
 
-      it "opens the parent and all descendants recursively" do
+      it "opens only the parent, leaving children independent" do
         parent.open!
 
         expect(parent.reload.status).to eq("open")
-        expect(child1.reload.status).to eq("open")
-        expect(child2.reload.status).to eq("open")
-        expect(grandchild.reload.status).to eq("open")
+        expect(child1.reload.status).to eq("hidden")
+        expect(child2.reload.status).to eq("hidden")
+        expect(grandchild.reload.status).to eq("hidden")
       end
     end
   end
@@ -226,13 +226,13 @@ RSpec.describe ExperienceBlock do
         )
       end
 
-      it "closes the parent and all descendants recursively" do
+      it "closes only the parent, leaving children independent" do
         parent.close!
 
         expect(parent.reload.status).to eq("closed")
-        expect(child1.reload.status).to eq("closed")
-        expect(child2.reload.status).to eq("closed")
-        expect(grandchild.reload.status).to eq("closed")
+        expect(child1.reload.status).to eq("open")
+        expect(child2.reload.status).to eq("open")
+        expect(grandchild.reload.status).to eq("open")
       end
     end
   end
@@ -278,13 +278,13 @@ RSpec.describe ExperienceBlock do
         )
       end
 
-      it "hides the parent and all descendants recursively" do
+      it "hides only the parent, leaving children independent" do
         parent.hide!
 
         expect(parent.reload.status).to eq("hidden")
-        expect(child1.reload.status).to eq("hidden")
-        expect(child2.reload.status).to eq("hidden")
-        expect(grandchild.reload.status).to eq("hidden")
+        expect(child1.reload.status).to eq("open")
+        expect(child2.reload.status).to eq("open")
+        expect(grandchild.reload.status).to eq("open")
       end
     end
   end

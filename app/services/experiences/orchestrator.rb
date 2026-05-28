@@ -22,7 +22,7 @@ module Experiences
       show_in_lobby: false
     )
       transaction do
-        max_position = experience.experience_blocks.parent_blocks.maximum(:position) || -1
+        max_position = experience.experience_blocks.maximum(:position) || -1
 
         prepared_payload = prepare_block_payload(kind: kind, payload: payload)
 
@@ -97,9 +97,26 @@ module Experiences
       block
     end
 
+    def delete_block!(block_id)
+      block = experience.experience_blocks.find(block_id)
+      block.destroy!
+      block
+    end
+
+    def detach_block_from_parent!(block_id)
+      block = experience.experience_blocks.find(block_id)
+      return block if block.parent_block_id.nil?
+
+      transaction do
+        block.parent_links.destroy_all
+        block.update!(parent_block_id: nil)
+        block
+      end
+    end
+
     def reorder_block!(block:, position:)
       transaction do
-        ids = block.siblings(include_self: true).order(:position, :created_at).pluck(:id)
+        ids = experience.experience_blocks.order(:position, :created_at).pluck(:id)
         old_index = ids.index(block.id)
         new_index = position.clamp(0, ids.length - 1)
 
@@ -129,7 +146,6 @@ module Experiences
         bump_from = at_column.to_i
         experience
           .experience_blocks
-          .parent_blocks
           .where("position >= ?", bump_from)
           .order(position: :desc)
           .each { |b| b.update!(position: b.position + 1) }
@@ -868,7 +884,7 @@ module Experiences
       questions: []
     )
       transaction do
-        max_position = experience.experience_blocks.parent_blocks.maximum(:position) || -1
+        max_position = experience.experience_blocks.maximum(:position) || -1
 
         parent_block = experience.experience_blocks.create!(
           kind: kind,
@@ -885,7 +901,7 @@ module Experiences
             create_family_feud_question(
               parent_block: parent_block,
               question_spec: question_spec,
-              position: index
+              position: max_position + 2 + index
             )
           end
         end
