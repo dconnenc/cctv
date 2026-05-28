@@ -134,11 +134,11 @@ RSpec.describe ExperienceSubscriptionChannel, type: :channel do
       let!(:question_block) { create(:experience_block, experience: experience, kind: ExperienceBlock::QUESTION, status: :open) }
       let!(:poll_block) { create(:experience_block, experience: experience, kind: ExperienceBlock::POLL, status: :open) }
       let!(:question_submission) do
-        create(:experience_question_submission, experience_block: question_block, user: regular_user,
+        create(:experience_question_submission, experience_block: question_block, experience_participant: participant,
                answer: { "value" => "my answer" })
       end
       let!(:poll_submission) do
-        create(:experience_poll_submission, experience_block: poll_block, user: regular_user,
+        create(:experience_poll_submission, experience_block: poll_block, experience_participant: participant,
                answer: { "selectedOptions" => ["option_a"] })
       end
 
@@ -155,7 +155,7 @@ RSpec.describe ExperienceSubscriptionChannel, type: :channel do
     context "with a prior buzzer submission" do
       let!(:buzzer_block) { create(:experience_block, experience: experience, kind: ExperienceBlock::BUZZER, status: :open) }
       let!(:buzzer_submission) do
-        create(:experience_buzzer_submission, experience_block: buzzer_block, user: regular_user)
+        create(:experience_buzzer_submission, experience_block: buzzer_block, experience_participant: participant)
       end
 
       it "includes the buzzer submission in submission_state" do

@@ -43,7 +43,7 @@ RSpec.describe Experiences::Orchestrator do
     [contestant_a, contestant_b, audience_c, audience_d, audience_e].each do |p|
       create(:experience_question_submission,
         experience_block: question_block,
-        user: p.user,
+        experience_participant: p,
         answer: { "value" => "blue-#{p.id[0..3]}" }
       )
     end
@@ -72,7 +72,7 @@ RSpec.describe Experiences::Orchestrator do
 
   describe "#start_guess_who!" do
     it "picks two mystery participants and snapshots their clues" do
-      orchestrator.start_guess_who!(block_id: guess_who_block.id)
+      orchestrator.start_guess_who!(block: guess_who_block)
       payload = guess_who_block.reload.payload
 
       expect(payload["started"]).to eq(true)
@@ -97,19 +97,19 @@ RSpec.describe Experiences::Orchestrator do
       ExperienceParticipantSegment.where(experience_segment_id: contestant_segment.id).delete_all
 
       expect {
-        orchestrator.start_guess_who!(block_id: guess_who_block.id)
+        orchestrator.start_guess_who!(block: guess_who_block)
       }.to raise_error(Experiences::InvalidTransitionError)
     end
   end
 
   describe "#reroll_guess_who_mystery!" do
-    before { orchestrator.start_guess_who!(block_id: guess_who_block.id) }
+    before { orchestrator.start_guess_who!(block: guess_who_block) }
 
     it "replaces the mystery for the given contestant index" do
       original = guess_who_block.reload.payload["contestants"][0]["mystery_user_id"]
       attempts = 0
       while attempts < 10
-        orchestrator.reroll_guess_who_mystery!(block_id: guess_who_block.id, contestant_index: 0)
+        orchestrator.reroll_guess_who_mystery!(block: guess_who_block, contestant_index: 0)
         new_value = guess_who_block.reload.payload["contestants"][0]["mystery_user_id"]
         break if new_value != original
         attempts += 1
@@ -120,25 +120,25 @@ RSpec.describe Experiences::Orchestrator do
   end
 
   describe "#set_guess_who_monitor_view!" do
-    before { orchestrator.start_guess_who!(block_id: guess_who_block.id) }
+    before { orchestrator.start_guess_who!(block: guess_who_block) }
 
     it "updates monitor_view when given a valid value" do
-      orchestrator.set_guess_who_monitor_view!(block_id: guess_who_block.id, view: "c1_board")
+      orchestrator.set_guess_who_monitor_view!(block: guess_who_block, view: "c1_board")
       expect(guess_who_block.reload.payload["monitor_view"]).to eq("c1_board")
     end
 
     it "rejects invalid values" do
       expect {
-        orchestrator.set_guess_who_monitor_view!(block_id: guess_who_block.id, view: "bogus")
+        orchestrator.set_guess_who_monitor_view!(block: guess_who_block, view: "bogus")
       }.to raise_error(ArgumentError)
     end
   end
 
   describe "#dispatch_guess_who_poll! and #conclude_guess_who_poll!" do
-    before { orchestrator.start_guess_who!(block_id: guess_who_block.id) }
+    before { orchestrator.start_guess_who!(block: guess_who_block) }
 
     it "creates a child True/False poll block and tracks it as active" do
-      orchestrator.dispatch_guess_who_poll!(block_id: guess_who_block.id, contestant_index: 0)
+      orchestrator.dispatch_guess_who_poll!(block: guess_who_block, contestant_index: 0)
       payload = guess_who_block.reload.payload
 
       expect(payload["active_poll_block_id"]).to be_present
@@ -151,23 +151,27 @@ RSpec.describe Experiences::Orchestrator do
     end
 
     it "refuses to dispatch when one is already active" do
-      orchestrator.dispatch_guess_who_poll!(block_id: guess_who_block.id, contestant_index: 0)
+      orchestrator.dispatch_guess_who_poll!(block: guess_who_block, contestant_index: 0)
 
       expect {
-        orchestrator.dispatch_guess_who_poll!(block_id: guess_who_block.id, contestant_index: 1)
+        orchestrator.dispatch_guess_who_poll!(block: guess_who_block, contestant_index: 1)
       }.to raise_error(Experiences::InvalidTransitionError)
     end
 
     it "eliminates candidates whose answer differs from the mystery participant's" do
-      orchestrator.dispatch_guess_who_poll!(block_id: guess_who_block.id, contestant_index: 0)
+      orchestrator.dispatch_guess_who_poll!(block: guess_who_block, contestant_index: 0)
       payload = guess_who_block.reload.payload
       poll_id = payload["active_poll_block_id"]
       mystery_user_id = payload["contestants"][0]["mystery_user_id"]
       candidates = payload["contestants"][0]["board_candidate_ids"]
 
+      participants_by_user_id = experience.experience_participants
+        .where(user_id: [mystery_user_id] + candidates)
+        .index_by(&:user_id)
+
       ExperiencePollSubmission.create!(
         experience_block_id: poll_id,
-        user_id: mystery_user_id,
+        experience_participant: participants_by_user_id[mystery_user_id],
         answer: { "selectedOptions" => ["True"] }
       )
 
@@ -175,16 +179,16 @@ RSpec.describe Experiences::Orchestrator do
       differed = candidates.last
       ExperiencePollSubmission.create!(
         experience_block_id: poll_id,
-        user_id: matched,
+        experience_participant: participants_by_user_id[matched],
         answer: { "selectedOptions" => ["True"] }
       )
       ExperiencePollSubmission.create!(
         experience_block_id: poll_id,
-        user_id: differed,
+        experience_participant: participants_by_user_id[differed],
         answer: { "selectedOptions" => ["False"] }
       )
 
-      orchestrator.conclude_guess_who_poll!(block_id: guess_who_block.id)
+      orchestrator.conclude_guess_who_poll!(block: guess_who_block)
       contestant = guess_who_block.reload.payload["contestants"][0]
 
       expect(contestant["eliminated_user_ids"]).to include(differed)
@@ -195,10 +199,10 @@ RSpec.describe Experiences::Orchestrator do
   end
 
   describe "#reveal_guess_who!" do
-    before { orchestrator.start_guess_who!(block_id: guess_who_block.id) }
+    before { orchestrator.start_guess_who!(block: guess_who_block) }
 
     it "marks the game as revealed and switches monitor to reveal" do
-      orchestrator.reveal_guess_who!(block_id: guess_who_block.id)
+      orchestrator.reveal_guess_who!(block: guess_who_block)
       payload = guess_who_block.reload.payload
 
       expect(payload["revealed"]).to eq(true)

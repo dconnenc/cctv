@@ -283,19 +283,19 @@ class ExperienceSubscriptionChannel < ApplicationCable::Channel
     block_scope = @experience.experience_blocks.select(:id)
 
     ExperienceQuestionSubmission
-      .where(experience_block_id: block_scope, user_id: participant.user_id)
+      .where(experience_block_id: block_scope, experience_participant_id: participant.id)
       .each { |s| result[s.experience_block_id.to_s] = { id: s.id, answer: s.answer } }
 
     ExperiencePollSubmission
-      .where(experience_block_id: block_scope, user_id: participant.user_id)
+      .where(experience_block_id: block_scope, experience_participant_id: participant.id)
       .each { |s| result[s.experience_block_id.to_s] = { id: s.id, answer: s.answer } }
 
     ExperienceBuzzerSubmission
-      .where(experience_block_id: block_scope, user_id: participant.user_id)
+      .where(experience_block_id: block_scope, experience_participant_id: participant.id)
       .each { |s| result[s.experience_block_id.to_s] = { id: s.id, answer: s.answer } }
 
     ExperiencePhotoUploadSubmission
-      .where(experience_block_id: block_scope, user_id: participant.user_id)
+      .where(experience_block_id: block_scope, experience_participant_id: participant.id)
       .includes(photo_attachment: :blob)
       .each do |s|
         photo_url = s.photo.attached? ? ActiveStorageUrlService.blob_url(s.photo.blob) : nil
@@ -303,7 +303,7 @@ class ExperienceSubscriptionChannel < ApplicationCable::Channel
       end
 
     ImprovSuggestion.active
-      .where(experience_block_id: block_scope, user_id: participant.user_id)
+      .where(experience_block_id: block_scope, experience_participant_id: participant.id)
       .each do |s|
         result[s.experience_block_id.to_s] ||= {}
         result[s.experience_block_id.to_s][:own_suggestion] = { id: s.id, text: s.text }
@@ -315,7 +315,7 @@ class ExperienceSubscriptionChannel < ApplicationCable::Channel
 
       vote = ImprovVote.find_by(
         experience_block_id: block.id,
-        user_id: participant.user_id,
+        experience_participant_id: participant.id,
         scene_started_at: scene_started_at
       )
       next unless vote
@@ -327,7 +327,7 @@ class ExperienceSubscriptionChannel < ApplicationCable::Channel
     @experience.experience_blocks.where(kind: ExperienceBlock::MINIGAME_ARITHMETIC).each do |block|
       result[block.id.to_s] = Minigames::ArithmeticProgress.for_participant(
         block: block,
-        user: participant.user
+        participant: participant
       )
     end
 

@@ -132,39 +132,39 @@ ActiveRecord::Schema[7.2].define(version: 2026_05_27_000001) do
 
   create_table "experience_buzzer_submissions", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.uuid "experience_block_id", null: false
-    t.uuid "user_id", null: false
     t.jsonb "answer", default: {}, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["experience_block_id", "user_id"], name: "index_buzzer_submissions_on_block_and_user", unique: true
+    t.uuid "experience_participant_id", null: false
+    t.index ["experience_block_id", "experience_participant_id"], name: "index_buzzer_submissions_on_block_and_participant", unique: true
     t.index ["experience_block_id"], name: "index_experience_buzzer_submissions_on_experience_block_id"
-    t.index ["user_id"], name: "index_experience_buzzer_submissions_on_user_id"
+    t.index ["experience_participant_id"], name: "index_buzzer_submissions_on_participant_id"
   end
 
   create_table "experience_minigame_balloon_results", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.uuid "experience_block_id", null: false
-    t.uuid "user_id", null: false
     t.integer "fill_amount", default: 0, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.uuid "experience_participant_id", null: false
+    t.index ["experience_block_id", "experience_participant_id"], name: "index_balloon_results_unique", unique: true
     t.index ["experience_block_id", "fill_amount"], name: "index_balloon_results_by_fill", order: { fill_amount: :desc }
-    t.index ["experience_block_id", "user_id"], name: "index_balloon_results_unique", unique: true
     t.index ["experience_block_id"], name: "idx_on_experience_block_id_7a1bd4ca9d"
-    t.index ["user_id"], name: "index_experience_minigame_balloon_results_on_user_id"
+    t.index ["experience_participant_id"], name: "index_balloon_results_on_participant_id"
   end
 
   create_table "experience_minigame_submissions", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.uuid "experience_block_id", null: false
-    t.uuid "user_id", null: false
     t.integer "question_index", null: false
     t.string "submitted_answer"
     t.boolean "correct", default: false, null: false
     t.datetime "submitted_at", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["experience_block_id", "user_id", "question_index"], name: "index_minigame_submissions_unique", unique: true
+    t.uuid "experience_participant_id", null: false
+    t.index ["experience_block_id", "experience_participant_id", "question_index"], name: "index_minigame_submissions_unique", unique: true
     t.index ["experience_block_id"], name: "index_experience_minigame_submissions_on_experience_block_id"
-    t.index ["user_id"], name: "index_experience_minigame_submissions_on_user_id"
+    t.index ["experience_participant_id"], name: "index_minigame_submissions_on_participant_id"
   end
 
   create_table "experience_participant_segments", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -199,32 +199,32 @@ ActiveRecord::Schema[7.2].define(version: 2026_05_27_000001) do
 
   create_table "experience_photo_upload_submissions", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.uuid "experience_block_id", null: false
-    t.uuid "user_id", null: false
     t.jsonb "answer", default: {}, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.uuid "experience_participant_id", null: false
     t.index ["experience_block_id"], name: "index_experience_photo_upload_submissions_on_block_id"
-    t.index ["user_id"], name: "index_experience_photo_upload_submissions_on_user_id"
+    t.index ["experience_participant_id"], name: "index_photo_upload_submissions_on_participant_id"
   end
 
   create_table "experience_poll_submissions", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.uuid "experience_block_id", null: false
-    t.uuid "user_id", null: false
     t.jsonb "answer", default: {}, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.uuid "experience_participant_id", null: false
     t.index ["experience_block_id"], name: "index_experience_poll_submissions_on_experience_block_id"
-    t.index ["user_id"], name: "index_experience_poll_submissions_on_user_id"
+    t.index ["experience_participant_id"], name: "index_poll_submissions_on_participant_id"
   end
 
   create_table "experience_question_submissions", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.uuid "experience_block_id", null: false
-    t.uuid "user_id", null: false
     t.jsonb "answer", default: {}, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.uuid "experience_participant_id", null: false
     t.index ["experience_block_id"], name: "index_experience_question_submissions_on_experience_block_id"
-    t.index ["user_id"], name: "index_experience_question_submissions_on_user_id"
+    t.index ["experience_participant_id"], name: "index_question_submissions_on_participant_id"
   end
 
   create_table "experience_segments", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -270,28 +270,28 @@ ActiveRecord::Schema[7.2].define(version: 2026_05_27_000001) do
 
   create_table "improv_suggestions", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.uuid "experience_block_id", null: false
-    t.uuid "user_id", null: false
     t.text "text", null: false
     t.datetime "cleared_at"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["experience_block_id", "user_id"], name: "index_improv_suggestions_one_active_per_user", unique: true, where: "(cleared_at IS NULL)"
+    t.uuid "experience_participant_id", null: false
+    t.index ["experience_block_id", "experience_participant_id"], name: "index_improv_suggestions_one_active_per_participant", unique: true, where: "(cleared_at IS NULL)"
     t.index ["experience_block_id"], name: "index_improv_suggestions_on_experience_block_id"
-    t.index ["user_id"], name: "index_improv_suggestions_on_user_id"
+    t.index ["experience_participant_id"], name: "index_improv_suggestions_on_participant_id"
   end
 
   create_table "improv_votes", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.uuid "experience_block_id", null: false
-    t.uuid "user_id", null: false
     t.uuid "improv_suggestion_id", null: false
     t.datetime "scene_started_at", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.uuid "experience_participant_id", null: false
+    t.index ["experience_block_id", "experience_participant_id", "scene_started_at"], name: "index_improv_votes_one_per_participant_per_scene", unique: true
     t.index ["experience_block_id", "scene_started_at", "improv_suggestion_id"], name: "index_improv_votes_for_tally"
-    t.index ["experience_block_id", "user_id", "scene_started_at"], name: "index_improv_votes_one_per_user_per_scene", unique: true
     t.index ["experience_block_id"], name: "index_improv_votes_on_experience_block_id"
+    t.index ["experience_participant_id"], name: "index_improv_votes_on_participant_id"
     t.index ["improv_suggestion_id"], name: "index_improv_votes_on_improv_suggestion_id"
-    t.index ["user_id"], name: "index_improv_votes_on_user_id"
   end
 
   create_table "passwordless_sessions", force: :cascade do |t|
@@ -343,30 +343,30 @@ ActiveRecord::Schema[7.2].define(version: 2026_05_27_000001) do
   add_foreign_key "experience_blocks", "experience_blocks", column: "parent_block_id"
   add_foreign_key "experience_blocks", "experiences", on_delete: :cascade
   add_foreign_key "experience_buzzer_submissions", "experience_blocks", on_delete: :cascade
-  add_foreign_key "experience_buzzer_submissions", "users", on_delete: :cascade
+  add_foreign_key "experience_buzzer_submissions", "experience_participants", on_delete: :cascade
   add_foreign_key "experience_minigame_balloon_results", "experience_blocks", on_delete: :cascade
-  add_foreign_key "experience_minigame_balloon_results", "users", on_delete: :cascade
+  add_foreign_key "experience_minigame_balloon_results", "experience_participants", on_delete: :cascade
   add_foreign_key "experience_minigame_submissions", "experience_blocks", on_delete: :cascade
-  add_foreign_key "experience_minigame_submissions", "users", on_delete: :cascade
+  add_foreign_key "experience_minigame_submissions", "experience_participants", on_delete: :cascade
   add_foreign_key "experience_participant_segments", "experience_participants", on_delete: :cascade
   add_foreign_key "experience_participant_segments", "experience_segments", on_delete: :cascade
   add_foreign_key "experience_participants", "experiences", on_delete: :cascade
   add_foreign_key "experience_participants", "users", on_delete: :cascade
   add_foreign_key "experience_photo_upload_submissions", "experience_blocks", on_delete: :cascade
-  add_foreign_key "experience_photo_upload_submissions", "users", on_delete: :cascade
+  add_foreign_key "experience_photo_upload_submissions", "experience_participants", on_delete: :cascade
   add_foreign_key "experience_poll_submissions", "experience_blocks", on_delete: :cascade
-  add_foreign_key "experience_poll_submissions", "users", on_delete: :cascade
+  add_foreign_key "experience_poll_submissions", "experience_participants", on_delete: :cascade
   add_foreign_key "experience_question_submissions", "experience_blocks", on_delete: :cascade
-  add_foreign_key "experience_question_submissions", "users", on_delete: :cascade
+  add_foreign_key "experience_question_submissions", "experience_participants", on_delete: :cascade
   add_foreign_key "experience_segments", "experiences", on_delete: :cascade
   add_foreign_key "experiences", "experience_segments", column: "default_segment_id", on_delete: :nullify
   add_foreign_key "experiences", "users", column: "creator_id", on_delete: :cascade
   add_foreign_key "follows", "performers", on_delete: :cascade
   add_foreign_key "follows", "users", on_delete: :cascade
   add_foreign_key "improv_suggestions", "experience_blocks", on_delete: :cascade
-  add_foreign_key "improv_suggestions", "users", on_delete: :cascade
+  add_foreign_key "improv_suggestions", "experience_participants", on_delete: :cascade
   add_foreign_key "improv_votes", "experience_blocks", on_delete: :cascade
+  add_foreign_key "improv_votes", "experience_participants", on_delete: :cascade
   add_foreign_key "improv_votes", "improv_suggestions", on_delete: :cascade
-  add_foreign_key "improv_votes", "users", on_delete: :cascade
   add_foreign_key "performers", "users", on_delete: :cascade
 end

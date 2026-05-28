@@ -2,7 +2,7 @@ class ImprovSuggestion < ApplicationRecord
   MAX_LENGTH = 100
 
   belongs_to :experience_block
-  belongs_to :user
+  belongs_to :experience_participant
   has_many :improv_votes, dependent: :destroy
 
   validates :text, presence: true, length: { maximum: MAX_LENGTH }

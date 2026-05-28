@@ -1,13 +1,11 @@
 module Experiences
   class Orchestrator < BaseService
     attr_reader :profile_changes
-    def kick_participant!(participant_id)
-      participant = experience.experience_participants.find(participant_id)
+    def kick_participant!(participant)
       participant.destroy!
     end
 
-    def update_participant_avatar!(participant_id:, strokes:)
-      participant = experience.experience_participants.find(participant_id)
+    def update_participant_avatar!(participant:, strokes:)
       avatar = participant.avatar || {}
       avatar[:strokes] = strokes unless strokes.nil?
       participant.update!(avatar: avatar)
@@ -24,7 +22,7 @@ module Experiences
       show_in_lobby: false
     )
       transaction do
-        max_position = experience.experience_blocks.parent_blocks.maximum(:position) || -1
+        max_position = experience.experience_blocks.maximum(:position) || -1
 
         prepared_payload = prepare_block_payload(kind: kind, payload: payload)
 
@@ -98,29 +96,41 @@ module Experiences
       payload
     end
 
-    def close_block!(block_id)
-      block = experience.experience_blocks.find(block_id)
+    def close_block!(block:)
       block.close!
       block
     end
 
-    def open_block!(block_id)
-      block = experience.experience_blocks.find(block_id)
+    def open_block!(block:)
       block.open!
       block
     end
 
-    def hide_block!(block_id)
-      block = experience.experience_blocks.find(block_id)
+    def hide_block!(block:)
       block.hide!
       block
     end
 
-    def reorder_block!(block_id:, position:)
-      transaction do
-        block = experience.experience_blocks.find(block_id)
+    def delete_block!(block_id)
+      block = experience.experience_blocks.find(block_id)
+      block.destroy!
+      block
+    end
 
-        ids = block.siblings(include_self: true).order(:position, :created_at).pluck(:id)
+    def detach_block_from_parent!(block_id)
+      block = experience.experience_blocks.find(block_id)
+      return block if block.parent_block_id.nil?
+
+      transaction do
+        block.parent_links.destroy_all
+        block.update!(parent_block_id: nil)
+        block
+      end
+    end
+
+    def reorder_block!(block:, position:)
+      transaction do
+        ids = experience.experience_blocks.order(:position, :created_at).pluck(:id)
         old_index = ids.index(block.id)
         new_index = position.clamp(0, ids.length - 1)
 
@@ -137,9 +147,8 @@ module Experiences
       end
     end
 
-    def set_block_column!(block_id:, column:)
+    def set_block_column!(block:, column:)
       transaction do
-        block = experience.experience_blocks.find(block_id)
         target = [column.to_i, 0].max
         block.update!(position: target) unless block.position == target
         block.reload
@@ -151,7 +160,6 @@ module Experiences
         bump_from = at_column.to_i
         experience
           .experience_blocks
-          .parent_blocks
           .where("position >= ?", bump_from)
           .order(position: :desc)
           .each { |b| b.update!(position: b.position + 1) }
@@ -197,12 +205,11 @@ module Experiences
       end
     end
 
-    def submit_poll_response!(block_id:, answer:)
-      block = experience.experience_blocks.find(block_id)
+    def submit_poll_response!(block:, answer:)
 
       submission = ExperiencePollSubmission.find_or_initialize_by(
         experience_block_id: block.id,
-        user_id: actor.id
+        experience_participant: current_participant
       )
 
       old_selected = submission.persisted? ? Array(submission.answer&.dig("selectedOptions")) : []
@@ -215,12 +222,11 @@ module Experiences
       submission
     end
 
-    def submit_question_response!(block_id:, answer:)
-      block = experience.experience_blocks.find(block_id)
+    def submit_question_response!(block:, answer:)
 
       submission = ExperienceQuestionSubmission.find_or_initialize_by(
         experience_block_id: block.id,
-        user_id: actor.id
+        experience_participant: current_participant
       )
 
       submission.answer = answer
@@ -229,14 +235,13 @@ module Experiences
       submission
     end
 
-    def submit_photo_upload_response!(block_id:, photo_signed_id:, answer: {})
-      block = experience.experience_blocks.find(block_id)
+    def submit_photo_upload_response!(block:, photo_signed_id:, answer: {})
 
       blob = ActiveStorage::Blob.find_signed!(photo_signed_id)
 
       submission = ExperiencePhotoUploadSubmission.find_or_initialize_by(
         experience_block_id: block.id,
-        user_id: actor.id
+        experience_participant: current_participant
       )
 
       submission.answer = answer
@@ -252,12 +257,11 @@ module Experiences
       submission
     end
 
-    def submit_buzzer_response!(block_id:, answer:)
-      block = experience.experience_blocks.find(block_id)
+    def submit_buzzer_response!(block:, answer:)
 
       submission = ExperienceBuzzerSubmission.find_or_initialize_by(
         experience_block_id: block.id,
-        user_id: actor.id
+        experience_participant: current_participant
       )
 
       return submission unless submission.new_record?
@@ -268,14 +272,12 @@ module Experiences
       submission
     end
 
-    def clear_buzzer_responses!(block_id:)
-      block = experience.experience_blocks.find(block_id)
+    def clear_buzzer_responses!(block:)
       block.experience_buzzer_submissions.delete_all
-
       block
     end
 
-    def add_family_feud_bucket!(block_id:, question_id:, name:)
+    def add_family_feud_bucket!(question_id:, name:)
       question_block = experience.experience_blocks.find(question_id)
 
       transaction do
@@ -295,7 +297,7 @@ module Experiences
       end
     end
 
-    def rename_family_feud_bucket!(block_id:, question_id:, bucket_id:, name:)
+    def rename_family_feud_bucket!(question_id:, bucket_id:, name:)
       question_block = experience.experience_blocks.find(question_id)
 
       transaction do
@@ -312,7 +314,7 @@ module Experiences
       end
     end
 
-    def delete_family_feud_bucket!(block_id:, question_id:, bucket_id:)
+    def delete_family_feud_bucket!(question_id:, bucket_id:)
       question_block = experience.experience_blocks.find(question_id)
 
       transaction do
@@ -326,7 +328,7 @@ module Experiences
       end
     end
 
-    def auto_categorize_family_feud!(block_id:, question_id:)
+    def auto_categorize_family_feud!(question_id:)
       question_block = experience.experience_blocks.find(question_id)
 
       transaction do
@@ -367,7 +369,7 @@ module Experiences
       end
     end
 
-    def assign_family_feud_answer!(block_id:, question_id:, answer_id:, bucket_id:)
+    def assign_family_feud_answer!(question_id:, answer_id:, bucket_id:)
       question_block = experience.experience_blocks.find(question_id)
 
       transaction do
@@ -393,9 +395,7 @@ module Experiences
       end
     end
 
-    def start_family_feud_playing!(block_id:)
-      block = experience.experience_blocks.find(block_id)
-
+    def start_family_feud_playing!(block:)
       transaction do
         current_payload = block.payload || {}
 
@@ -440,9 +440,7 @@ module Experiences
       end
     end
 
-    def reveal_family_feud_bucket!(block_id:, question_index:, bucket_index:)
-      block = experience.experience_blocks.find(block_id)
-
+    def reveal_family_feud_bucket!(block:, question_index:, bucket_index:)
       transaction do
         current_payload = block.payload || {}
         game_state = current_payload["game_state"] || {}
@@ -460,9 +458,7 @@ module Experiences
       end
     end
 
-    def show_family_feud_x!(block_id:)
-      block = experience.experience_blocks.find(block_id)
-
+    def show_family_feud_x!(block:)
       transaction do
         current_payload = block.payload || {}
         game_state = current_payload["game_state"] || {}
@@ -474,9 +470,7 @@ module Experiences
       end
     end
 
-    def next_family_feud_question!(block_id:)
-      block = experience.experience_blocks.find(block_id)
-
+    def next_family_feud_question!(block:)
       transaction do
         current_payload = block.payload || {}
         game_state = current_payload["game_state"] || {}
@@ -495,9 +489,7 @@ module Experiences
       end
     end
 
-    def restart_family_feud_playing!(block_id:)
-      block = experience.experience_blocks.find(block_id)
-
+    def restart_family_feud_playing!(block:)
       transaction do
         current_payload = block.payload || {}
         game_state = current_payload["game_state"] || {}
@@ -518,9 +510,7 @@ module Experiences
       end
     end
 
-    def restart_family_feud_categorizing!(block_id:)
-      block = experience.experience_blocks.find(block_id)
-
+    def restart_family_feud_categorizing!(block:)
       transaction do
         block.clear_family_feud_bucket_assignments!
 
@@ -534,9 +524,7 @@ module Experiences
       end
     end
 
-    def restart_family_feud_everything!(block_id:)
-      block = experience.experience_blocks.find(block_id)
-
+    def restart_family_feud_everything!(block:)
       transaction do
         child_block_ids = block.child_blocks.pluck(:id)
         ExperienceQuestionSubmission.where(experience_block_id: child_block_ids).delete_all
@@ -555,8 +543,8 @@ module Experiences
 
     GUESS_WHO_MONITOR_VIEWS = %w[idle c1_clue c1_board c2_clue c2_board reveal].freeze
 
-    def start_guess_who!(block_id:)
-      block = guess_who_block!(block_id)
+    def start_guess_who!(block:)
+      guard_guess_who!(block)
 
       transaction do
         payload = block.payload.deep_dup
@@ -594,8 +582,8 @@ module Experiences
       block
     end
 
-    def reroll_guess_who_mystery!(block_id:, contestant_index:)
-      block = guess_who_block!(block_id)
+    def reroll_guess_who_mystery!(block:, contestant_index:)
+      guard_guess_who!(block)
       idx = contestant_index.to_i
       raise ArgumentError, "contestant_index must be 0 or 1" unless [0, 1].include?(idx)
 
@@ -627,8 +615,8 @@ module Experiences
       block
     end
 
-    def curate_guess_who_clues!(block_id:, contestant_index:, clue_order:, hidden_clue_ids: [])
-      block = guess_who_block!(block_id)
+    def curate_guess_who_clues!(block:, contestant_index:, clue_order:, hidden_clue_ids: [])
+      guard_guess_who!(block)
       idx = contestant_index.to_i
       raise ArgumentError, "contestant_index must be 0 or 1" unless [0, 1].include?(idx)
 
@@ -656,8 +644,8 @@ module Experiences
       block
     end
 
-    def advance_guess_who_clue!(block_id:, contestant_index:, direction:)
-      block = guess_who_block!(block_id)
+    def advance_guess_who_clue!(block:, contestant_index:, direction:)
+      guard_guess_who!(block)
       idx = contestant_index.to_i
       delta = direction.to_i
       raise ArgumentError, "contestant_index must be 0 or 1" unless [0, 1].include?(idx)
@@ -679,8 +667,8 @@ module Experiences
       block
     end
 
-    def set_guess_who_monitor_view!(block_id:, view:)
-      block = guess_who_block!(block_id)
+    def set_guess_who_monitor_view!(block:, view:)
+      guard_guess_who!(block)
       raise ArgumentError, "Invalid monitor view: #{view}" unless GUESS_WHO_MONITOR_VIEWS.include?(view.to_s)
 
       transaction do
@@ -692,8 +680,8 @@ module Experiences
       block
     end
 
-    def dispatch_guess_who_poll!(block_id:, contestant_index:)
-      block = guess_who_block!(block_id)
+    def dispatch_guess_who_poll!(block:, contestant_index:)
+      guard_guess_who!(block)
       idx = contestant_index.to_i
       raise ArgumentError, "contestant_index must be 0 or 1" unless [0, 1].include?(idx)
 
@@ -702,7 +690,7 @@ module Experiences
         raise Experiences::InvalidTransitionError, "Guess Who has not started" unless payload["started"]
         raise Experiences::InvalidTransitionError, "A poll is already active" if payload["active_poll_block_id"].present?
 
-        child_position = block.child_blocks.maximum(:position).to_i + 1
+        next_position = experience.experience_blocks.maximum(:position).to_i + 1
         poll_block = experience.experience_blocks.create!(
           kind: ExperienceBlock::POLL,
           status: :open,
@@ -716,7 +704,7 @@ module Experiences
           visible_to_roles: [],
           target_user_ids: [],
           parent_block_id: block.id,
-          position: child_position
+          position: next_position
         )
         ExperienceBlockLink.create!(
           parent_block: block,
@@ -732,8 +720,8 @@ module Experiences
       block
     end
 
-    def conclude_guess_who_poll!(block_id:)
-      block = guess_who_block!(block_id)
+    def conclude_guess_who_poll!(block:)
+      guard_guess_who!(block)
 
       transaction do
         payload = block.payload.deep_dup
@@ -746,25 +734,33 @@ module Experiences
         contestant = contestants[idx]
         mystery_user_id = contestant["mystery_user_id"]
 
-        mystery_submission = ExperiencePollSubmission.find_by(
-          experience_block_id: poll_id,
-          user_id: mystery_user_id
-        )
-        mystery_answer = Array(mystery_submission&.answer&.dig("selectedOptions")).first
-
         candidate_ids = Array(contestant["board_candidate_ids"])
         already_eliminated = Array(contestant["eliminated_user_ids"]).to_set
         active_candidates = candidate_ids - already_eliminated.to_a - [mystery_user_id]
 
-        submissions_by_user = ExperiencePollSubmission
-          .where(experience_block_id: poll_id, user_id: active_candidates)
+        relevant_user_ids = ([mystery_user_id] + active_candidates).compact
+        participant_by_user_id = experience.experience_participants
+          .where(user_id: relevant_user_ids)
           .index_by(&:user_id)
+
+        mystery_participant = participant_by_user_id[mystery_user_id]
+        mystery_submission = mystery_participant && ExperiencePollSubmission.find_by(
+          experience_block_id: poll_id,
+          experience_participant_id: mystery_participant.id
+        )
+        mystery_answer = Array(mystery_submission&.answer&.dig("selectedOptions")).first
+
+        active_participant_ids = active_candidates.map { |uid| participant_by_user_id[uid]&.id }.compact
+        submissions_by_participant_id = ExperiencePollSubmission
+          .where(experience_block_id: poll_id, experience_participant_id: active_participant_ids)
+          .index_by(&:experience_participant_id)
 
         new_eliminated = already_eliminated.dup
         new_unanswered = Array(contestant["unanswered_user_ids"]).to_set
 
         active_candidates.each do |uid|
-          submission = submissions_by_user[uid]
+          participant = participant_by_user_id[uid]
+          submission = participant && submissions_by_participant_id[participant.id]
           answer = Array(submission&.answer&.dig("selectedOptions")).first
 
           if answer.nil?
@@ -791,8 +787,8 @@ module Experiences
       block
     end
 
-    def reveal_guess_who!(block_id:)
-      block = guess_who_block!(block_id)
+    def reveal_guess_who!(block:)
+      guard_guess_who!(block)
       transaction do
         payload = block.payload.deep_dup
         payload["revealed"] = true
@@ -804,8 +800,7 @@ module Experiences
 
     # Minigame: arithmetic ----------------------------------------------------
 
-    def start_minigame_arithmetic!(block_id:)
-      block = experience.experience_blocks.find(block_id)
+    def start_minigame_arithmetic!(block:)
       raise ArgumentError, "Block is not an arithmetic minigame" unless block.kind == ExperienceBlock::MINIGAME_ARITHMETIC
 
       transaction do
@@ -830,8 +825,7 @@ module Experiences
       end
     end
 
-    def end_minigame_arithmetic!(block_id:)
-      block = experience.experience_blocks.find(block_id)
+    def end_minigame_arithmetic!(block:)
       raise ArgumentError, "Block is not an arithmetic minigame" unless block.kind == ExperienceBlock::MINIGAME_ARITHMETIC
 
       transaction do
@@ -845,8 +839,7 @@ module Experiences
       block
     end
 
-    def submit_minigame_arithmetic_response!(block_id:, question_index:, answer:)
-      block = experience.experience_blocks.find(block_id)
+    def submit_minigame_arithmetic_response!(block:, question_index:, answer:)
       raise ArgumentError, "Block is not an arithmetic minigame" unless block.kind == ExperienceBlock::MINIGAME_ARITHMETIC
 
       payload = block.payload || {}
@@ -863,9 +856,9 @@ module Experiences
       correct        = parsed.present? && parsed == question["answer"].to_i
 
       submission = ExperienceMinigameSubmission.find_or_initialize_by(
-        experience_block_id: block.id,
-        user_id:             actor.id,
-        question_index:      index
+        experience_block_id:     block.id,
+        experience_participant:  current_participant,
+        question_index:          index
       )
 
       return submission if submission.persisted?
@@ -879,8 +872,7 @@ module Experiences
 
     # Minigame: balloon pump --------------------------------------------------
 
-    def start_minigame_balloon_pump!(block_id:)
-      block = experience.experience_blocks.find(block_id)
+    def start_minigame_balloon_pump!(block:)
       raise ArgumentError, "Block is not a balloon pump minigame" unless block.kind == ExperienceBlock::MINIGAME_BALLOON_PUMP
 
       transaction do
@@ -899,8 +891,7 @@ module Experiences
       block
     end
 
-    def end_minigame_balloon_pump!(block_id:)
-      block = experience.experience_blocks.find(block_id)
+    def end_minigame_balloon_pump!(block:)
       raise ArgumentError, "Block is not a balloon pump minigame" unless block.kind == ExperienceBlock::MINIGAME_BALLOON_PUMP
 
       transaction do
@@ -920,8 +911,7 @@ module Experiences
     # @return [Hash] :result — :accepted, :ignored
     #                :winners — array of ExperienceParticipant when game just ended
     #                :leader_changed — true if the leader for monitor display moved
-    def submit_balloon_pump_update!(block_id:, fill_amount:)
-      block = experience.experience_blocks.find(block_id)
+    def submit_balloon_pump_update!(block:, fill_amount:)
       raise ArgumentError, "Block is not a balloon pump minigame" unless block.kind == ExperienceBlock::MINIGAME_BALLOON_PUMP
 
       payload      = block.payload || {}
@@ -931,11 +921,10 @@ module Experiences
       return { result: :ignored } if payload["started_at"].blank?
       return { result: :ignored } if payload["ended_at"].present?
 
-      participant = experience.experience_participants.find_by(user_id: actor.id)
-      raise ActiveRecord::RecordNotFound, "Participant not found" unless participant
+      participant = current_participant
 
       result = ExperienceMinigameBalloonResult
-        .where(experience_block_id: block.id, user_id: actor.id)
+        .where(experience_block_id: block.id, experience_participant: participant)
         .first_or_initialize
 
       return { result: :ignored } if result.persisted? && result.fill_amount >= requested
@@ -960,10 +949,8 @@ module Experiences
 
     SCENE_PHASES = %w[idle collecting voting ended].freeze
 
-    def advance_the_scene_phase!(block_id:, phase:)
+    def advance_the_scene_phase!(block:, phase:)
       raise ArgumentError, "Unknown phase: #{phase}" unless SCENE_PHASES.include?(phase.to_s)
-
-      block = experience.experience_blocks.find(block_id)
       raise ArgumentError, "Block is not a Scene" unless block.kind == ExperienceBlock::THE_SCENE
 
       transaction do
@@ -988,8 +975,7 @@ module Experiences
       block
     end
 
-    def start_next_scene!(block_id:)
-      block = experience.experience_blocks.find(block_id)
+    def start_next_scene!(block:)
       raise ArgumentError, "Block is not a Scene" unless block.kind == ExperienceBlock::THE_SCENE
 
       transaction do
@@ -1011,8 +997,7 @@ module Experiences
       block
     end
 
-    def submit_the_scene_suggestion!(block_id:, text:)
-      block = experience.experience_blocks.find(block_id)
+    def submit_the_scene_suggestion!(block:, text:)
       raise ArgumentError, "Block is not a Scene" unless block.kind == ExperienceBlock::THE_SCENE
 
       payload = block.payload || {}
@@ -1023,15 +1008,14 @@ module Experiences
       raise ArgumentError, "Suggestion is too long (#{ImprovSuggestion::MAX_LENGTH} max)" if trimmed.length > ImprovSuggestion::MAX_LENGTH
 
       transaction do
-        existing = block.improv_suggestions.active.find_by(user_id: actor.id)
+        existing = block.improv_suggestions.active.find_by(experience_participant: current_participant)
         raise Experiences::InvalidTransitionError, "You already submitted this scene" if existing
 
-        block.improv_suggestions.create!(user_id: actor.id, text: trimmed)
+        block.improv_suggestions.create!(experience_participant: current_participant, text: trimmed)
       end
     end
 
-    def submit_the_scene_vote!(block_id:, suggestion_id:)
-      block = experience.experience_blocks.find(block_id)
+    def submit_the_scene_vote!(block:, suggestion_id:)
       raise ArgumentError, "Block is not a Scene" unless block.kind == ExperienceBlock::THE_SCENE
 
       payload = block.payload || {}
@@ -1041,11 +1025,11 @@ module Experiences
       raise Experiences::InvalidTransitionError, "Scene has not started" if scene_started_at.blank?
 
       suggestion = block.improv_suggestions.active.find(suggestion_id)
-      raise ArgumentError, "Cannot vote for your own suggestion" if suggestion.user_id == actor.id
+      raise ArgumentError, "Cannot vote for your own suggestion" if suggestion.experience_participant_id == current_participant.id
 
       transaction do
         vote = ImprovVote
-          .where(experience_block_id: block.id, user_id: actor.id, scene_started_at: scene_started_at)
+          .where(experience_block_id: block.id, experience_participant: current_participant, scene_started_at: scene_started_at)
           .first_or_initialize
 
         vote.improv_suggestion_id = suggestion.id
@@ -1054,8 +1038,7 @@ module Experiences
       end
     end
 
-    def clear_the_scene_top!(block_id:)
-      block = experience.experience_blocks.find(block_id)
+    def clear_the_scene_top!(block:)
       raise ArgumentError, "Block is not a Scene" unless block.kind == ExperienceBlock::THE_SCENE
 
       top = TheScene::Tally.top(block: block, scene_started_at: block.payload["scene_started_at"])&.first
@@ -1065,8 +1048,7 @@ module Experiences
       block
     end
 
-    def clear_the_scene_suggestion!(block_id:, suggestion_id:)
-      block = experience.experience_blocks.find(block_id)
+    def clear_the_scene_suggestion!(block:, suggestion_id:)
       raise ArgumentError, "Block is not a Scene" unless block.kind == ExperienceBlock::THE_SCENE
 
       suggestion = block.improv_suggestions.active.find(suggestion_id)
@@ -1074,8 +1056,7 @@ module Experiences
       block
     end
 
-    def clear_the_scene_all!(block_id:)
-      block = experience.experience_blocks.find(block_id)
+    def clear_the_scene_all!(block:)
       raise ArgumentError, "Block is not a Scene" unless block.kind == ExperienceBlock::THE_SCENE
 
       block.improv_suggestions.active.update_all(cleared_at: Time.current)
@@ -1084,9 +1065,8 @@ module Experiences
 
     # -----------------------------------------------------------------------
 
-    def update_block!(block_id:, payload:, visible_to_segment_ids:, questions: nil)
+    def update_block!(block:, payload:, visible_to_segment_ids:, questions: nil)
       transaction do
-        block = experience.experience_blocks.find(block_id)
         safety_check_edit!(block, payload)
 
         block.update!(payload: payload)
@@ -1119,7 +1099,7 @@ module Experiences
       questions: []
     )
       transaction do
-        max_position = experience.experience_blocks.parent_blocks.maximum(:position) || -1
+        max_position = experience.experience_blocks.maximum(:position) || -1
 
         parent_block = experience.experience_blocks.create!(
           kind: kind,
@@ -1136,7 +1116,7 @@ module Experiences
             create_family_feud_question(
               parent_block: parent_block,
               question_spec: question_spec,
-              position: index
+              position: max_position + 2 + index
             )
           end
         end
@@ -1162,10 +1142,8 @@ module Experiences
       end
     end
 
-    def guess_who_block!(block_id)
-      block = experience.experience_blocks.find(block_id)
+    def guard_guess_who!(block)
       raise ArgumentError, "Block is not a Guess Who" unless block.kind == ExperienceBlock::GUESS_WHO
-      block
     end
 
     def create_guess_who_contestant_segment!(block)
@@ -1229,15 +1207,22 @@ module Experiences
     def participation_counts_for(user_ids, block_ids)
       counts = Hash.new { |h, k| h[k] = Set.new }
 
+      participant_id_to_user_id = experience.experience_participants
+        .where(user_id: user_ids)
+        .pluck(:id, :user_id)
+        .to_h
+      participant_ids = participant_id_to_user_id.keys
+      return counts.transform_values(&:size) if participant_ids.empty?
+
       [
         ExperiencePollSubmission,
         ExperienceQuestionSubmission,
         ExperiencePhotoUploadSubmission,
         ExperienceBuzzerSubmission
       ].each do |klass|
-        klass.where(user_id: user_ids, experience_block_id: block_ids)
-          .pluck(:user_id, :experience_block_id)
-          .each { |uid, bid| counts[uid].add(bid) }
+        klass.where(experience_participant_id: participant_ids, experience_block_id: block_ids)
+          .pluck(:experience_participant_id, :experience_block_id)
+          .each { |pid, bid| counts[participant_id_to_user_id[pid]].add(bid) }
       end
 
       counts.transform_values(&:size)
@@ -1250,7 +1235,11 @@ module Experiences
     end
 
     def build_guess_who_contestant(contestant_user_id, mystery_user_id, board_candidate_ids)
-      clues = ParticipantSubmissions.new(experience).for_user(mystery_user_id).map.with_index do |entry, i|
+      mystery_participant = experience.experience_participants.find_by(user_id: mystery_user_id)
+      submission_entries = mystery_participant ?
+        ParticipantSubmissions.new(experience).for_participant(mystery_participant.id) : []
+
+      clues = submission_entries.map.with_index do |entry, i|
         {
           "id" => "clue-#{SecureRandom.hex(4)}",
           "prompt" => entry[:prompt],
@@ -1280,15 +1269,14 @@ module Experiences
         payload = block.payload || {}
         return [] if payload["ended_at"].present?
 
-        winning_results = ExperienceMinigameBalloonResult
+        winning_participant_ids = ExperienceMinigameBalloonResult
           .where(experience_block_id: block.id)
           .where("fill_amount >= ?", target_units)
-          .to_a
+          .pluck(:experience_participant_id)
 
-        winning_user_ids = winning_results.map(&:user_id)
         winners = experience.experience_participants
           .includes(:user)
-          .where(user_id: winning_user_ids)
+          .where(id: winning_participant_ids)
           .to_a
 
         payload["ended_at"]               = Time.current.iso8601
@@ -1351,7 +1339,7 @@ module Experiences
 
       participant = experience.experience_participants
         .includes(:experience_segments)
-        .find_by(user_id: actor.id)
+        .find_by(user: actor)
       return unless participant
 
       old_fingerprint = Experiences::Broadcaster.visibility_fingerprint(experience, participant)

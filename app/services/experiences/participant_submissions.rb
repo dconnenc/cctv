@@ -1,5 +1,5 @@
 module Experiences
-  # Returns every submission (across all kinds) made by a single user inside an
+  # Returns every submission (across all kinds) made by a single participant inside an
   # experience. Used by the manage-page submissions drawer and by the
   # GuessWho block to snapshot a player's contributions into slides.
   class ParticipantSubmissions
@@ -7,23 +7,23 @@ module Experiences
       @experience = experience
     end
 
-    def for_user(user_id)
+    def for_participant(participant_id)
       block_ids = @experience.experience_blocks.pluck(:id)
       blocks_by_id = @experience.experience_blocks.includes(:parent_block).index_by(&:id)
 
       entries = []
-      entries.concat(poll_entries(user_id, block_ids, blocks_by_id))
-      entries.concat(question_entries(user_id, block_ids, blocks_by_id))
-      entries.concat(photo_upload_entries(user_id, block_ids, blocks_by_id))
-      entries.concat(buzzer_entries(user_id, block_ids, blocks_by_id))
+      entries.concat(poll_entries(participant_id, block_ids, blocks_by_id))
+      entries.concat(question_entries(participant_id, block_ids, blocks_by_id))
+      entries.concat(photo_upload_entries(participant_id, block_ids, blocks_by_id))
+      entries.concat(buzzer_entries(participant_id, block_ids, blocks_by_id))
 
       entries.sort_by { |e| [e[:position], e[:submitted_at]] }
     end
 
     private
 
-    def poll_entries(user_id, block_ids, blocks_by_id)
-      ExperiencePollSubmission.where(experience_block_id: block_ids, user_id: user_id).map do |s|
+    def poll_entries(participant_id, block_ids, blocks_by_id)
+      ExperiencePollSubmission.where(experience_block_id: block_ids, experience_participant_id: participant_id).map do |s|
         block = blocks_by_id[s.experience_block_id]
         options = Array(block.payload&.dig("options"))
         selected = Array(s.answer&.dig("selectedOptions"))
@@ -40,8 +40,8 @@ module Experiences
       end
     end
 
-    def question_entries(user_id, block_ids, blocks_by_id)
-      ExperienceQuestionSubmission.where(experience_block_id: block_ids, user_id: user_id).map do |s|
+    def question_entries(participant_id, block_ids, blocks_by_id)
+      ExperienceQuestionSubmission.where(experience_block_id: block_ids, experience_participant_id: participant_id).map do |s|
         block = blocks_by_id[s.experience_block_id]
         text  = answer_text(s.answer)
 
@@ -56,9 +56,9 @@ module Experiences
       end
     end
 
-    def photo_upload_entries(user_id, block_ids, blocks_by_id)
+    def photo_upload_entries(participant_id, block_ids, blocks_by_id)
       submissions = ExperiencePhotoUploadSubmission
-        .where(experience_block_id: block_ids, user_id: user_id)
+        .where(experience_block_id: block_ids, experience_participant_id: participant_id)
         .includes(photo_attachment: :blob)
 
       submissions.map do |s|
@@ -77,8 +77,8 @@ module Experiences
       end
     end
 
-    def buzzer_entries(user_id, block_ids, blocks_by_id)
-      ExperienceBuzzerSubmission.where(experience_block_id: block_ids, user_id: user_id).map do |s|
+    def buzzer_entries(participant_id, block_ids, blocks_by_id)
+      ExperienceBuzzerSubmission.where(experience_block_id: block_ids, experience_participant_id: participant_id).map do |s|
         block = blocks_by_id[s.experience_block_id]
         buzzed_at = s.answer.is_a?(Hash) ? s.answer["buzzed_at"] : nil
 

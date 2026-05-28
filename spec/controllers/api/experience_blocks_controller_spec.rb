@@ -227,7 +227,7 @@ RSpec.describe Api::ExperienceBlocksController, type: :controller do
       end
 
       before do
-        create(:experience_poll_submission, experience_block: block, user: player.user)
+        create(:experience_poll_submission, experience_block: block, experience_participant: player)
       end
 
       it "clears submissions and returns 200" do
@@ -247,7 +247,7 @@ RSpec.describe Api::ExperienceBlocksController, type: :controller do
 
       before do
         child = block.child_blocks.first
-        create(:experience_question_submission, experience_block: child, user: player.user)
+        create(:experience_question_submission, experience_block: child, experience_participant: player)
       end
 
       it "allows the edit and returns 200" do
@@ -293,6 +293,45 @@ RSpec.describe Api::ExperienceBlocksController, type: :controller do
       it "returns 403 forbidden" do
         subject
         expect(response.status).to eql(403)
+      end
+    end
+  end
+
+  describe "DELETE #destroy" do
+    let!(:block) { create(:experience_block, experience: experience, status: :hidden) }
+
+    subject do
+      delete(
+        :destroy,
+        params: { experience_id: experience.code_slug, id: block.id },
+        format: :json
+      )
+    end
+
+    it "removes the block and returns 200" do
+      block_id = block.id
+      subject
+
+      expect(response.status).to eql(200)
+      expect(ExperienceBlock.find_by(id: block_id)).to be_nil
+    end
+
+    context "when the actor is not authorized" do
+      let(:regular_user) { create(:user, :user) }
+      let(:participant) { create(:experience_participant, user: regular_user, experience: experience, role: :audience) }
+
+      before do
+        participant
+        jwt = Experiences::AuthService.jwt_for_participant(experience: experience, user: regular_user)
+        request.headers["Authorization"] = "Bearer #{jwt}"
+      end
+
+      it "returns 403 and keeps the block" do
+        block_id = block.id
+        subject
+
+        expect(response.status).to eql(403)
+        expect(ExperienceBlock.find_by(id: block_id)).to be_present
       end
     end
   end

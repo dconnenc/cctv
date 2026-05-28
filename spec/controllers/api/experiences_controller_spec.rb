@@ -10,94 +10,185 @@ RSpec.describe Api::ExperiencesController, type: :controller do
     sign_in(create_passwordless_session(admin))
   end
 
-  shared_examples "requires manage_blocks or host access" do |http_method, action_name, extra_params|
+  shared_examples "requires manage or host access" do
     context "when the user is an audience participant" do
       let(:audience_user) { create(:user, :user) }
-      let!(:audience_participant) { create(:experience_participant, user: audience_user, experience: experience, role: :audience) }
+      let!(:audience_participant) do
+        create(
+          :experience_participant,
+          user: audience_user,
+          experience: experience,
+          role: :audience
+        )
+      end
 
       before do
-        jwt = Experiences::AuthService.jwt_for_participant(experience: experience, user: audience_user)
+        jwt = Experiences::AuthService.jwt_for_participant(
+          experience: experience,
+          user: audience_user
+        )
         request.headers["Authorization"] = "Bearer #{jwt}"
       end
 
       it "returns 403 forbidden" do
-        public_send(http_method, action_name, params: { id: experience.code_slug }.merge(extra_params || {}), format: :json)
+        subject
         expect(response.status).to eql(403)
       end
     end
 
     context "when the user is a host" do
       let(:host_user) { create(:user, :user) }
-      let!(:host_participant) { create(:experience_participant, user: host_user, experience: experience, role: :host) }
+      let!(:host_participant) do
+        create(
+          :experience_participant,
+          user: host_user,
+          experience: experience,
+          role: :host
+        )
+      end
 
       before do
-        jwt = Experiences::AuthService.jwt_for_participant(experience: experience, user: host_user)
+        jwt = Experiences::AuthService.jwt_for_participant(
+          experience: experience,
+          user: host_user
+        )
         request.headers["Authorization"] = "Bearer #{jwt}"
       end
 
       it "does not return 403" do
-        public_send(http_method, action_name, params: { id: experience.code_slug }.merge(extra_params || {}), format: :json)
+        subject
         expect(response.status).not_to eql(403)
       end
     end
   end
 
   describe "POST #open_lobby" do
-    it_behaves_like "requires manage_blocks or host access", :post, :open_lobby, {}
+    subject do
+      post(:open_lobby, params: { id: experience.code_slug }, format: :json)
+    end
+
+    it_behaves_like "requires manage or host access"
+
+    it "transitions the experience to lobby" do
+      subject
+      expect(experience.reload.status).to eq("lobby")
+    end
   end
 
   describe "POST #start" do
-    it_behaves_like "requires manage_blocks or host access", :post, :start, {}
+    subject do
+      post(:start, params: { id: experience.code_slug }, format: :json)
+    end
+
+    it_behaves_like "requires manage or host access"
+
+    it "transitions the experience to live" do
+      subject
+      expect(experience.reload.status).to eq("live")
+    end
   end
 
   describe "POST #pause" do
     before { experience.update!(status: :live) }
 
-    it_behaves_like "requires manage_blocks or host access", :post, :pause, {}
+    subject do
+      post(:pause, params: { id: experience.code_slug }, format: :json)
+    end
+
+    it_behaves_like "requires manage or host access"
+
+    it "transitions the experience to paused" do
+      subject
+      expect(experience.reload.status).to eq("paused")
+    end
   end
 
   describe "POST #resume" do
     before { experience.update!(status: :paused) }
 
-    it_behaves_like "requires manage_blocks or host access", :post, :resume, {}
+    subject do
+      post(:resume, params: { id: experience.code_slug }, format: :json)
+    end
+
+    it_behaves_like "requires manage or host access"
+
+    it "transitions the experience to live" do
+      subject
+      expect(experience.reload.status).to eq("live")
+    end
   end
 
   describe "POST #clear_avatars" do
-    it_behaves_like "requires manage_blocks or host access", :post, :clear_avatars, {}
+    subject do
+      post(:clear_avatars, params: { id: experience.code_slug }, format: :json)
+    end
+
+    it_behaves_like "requires manage or host access"
+
+    let!(:participant) do
+      create(:experience_participant, :with_avatar, experience: experience)
+    end
+
+    it "clears all participant avatars" do
+      subject
+
+      expect(participant.reload.avatar).to eq({})
+    end
   end
 
   describe "PATCH #update_playbill" do
-    it_behaves_like "requires manage_blocks or host access", :patch, :update_playbill, { playbill: [] }
+    let(:playbill) { [{ "title" => "Act 1", "body" => "Content" }] }
+
+    subject do
+      patch(
+        :update_playbill,
+        params: { id: experience.code_slug, playbill: playbill },
+        format: :json
+      )
+    end
+
+    it_behaves_like "requires manage or host access"
+
+    it "updates the experience playbill" do
+      subject
+      expect(experience.reload.playbill).to eq(playbill)
+    end
   end
 
   describe "POST #create" do
-    let(:base_params) do
-      { experience: { name: "Show", code: "SHOW#{rand(100_000)}" } }
+    let(:code) { "SHOW#{rand(100_000)}" }
+    let(:params) { { experience: { name: "Show", code: code } } }
+
+    before do
+      post(:create, params: params, format: :json)
+    end
+
+    let(:created) do
+      Experience.find(JSON.parse(response.body)["experience"]["id"])
     end
 
     it "seeds an Audience default segment when no name is provided" do
-      post :create, params: base_params, format: :json
-      expect(response).to be_successful
-
-      experience = Experience.find(JSON.parse(response.body)["experience"]["id"])
-      expect(experience.default_segment).to be_present
-      expect(experience.default_segment.name).to eq("Audience")
+      expect(created.default_segment.name).to eq("Audience")
     end
 
-    it "honors a custom default_segment_name" do
-      post :create, params: base_params.deep_merge(experience: { default_segment_name: "Crowd" }), format: :json
-      expect(response).to be_successful
+    context "with a custom default_segment_name" do
+      let(:params) do
+        super().deep_merge(experience: { default_segment_name: "Crowd" })
+      end
 
-      experience = Experience.find(JSON.parse(response.body)["experience"]["id"])
-      expect(experience.default_segment.name).to eq("Crowd")
+      it "uses the custom name" do
+        expect(created.default_segment.name).to eq("Crowd")
+      end
     end
 
-    it "falls back to Audience when default_segment_name is blank" do
-      post :create, params: base_params.deep_merge(experience: { default_segment_name: "  " }), format: :json
-      expect(response).to be_successful
+    context "when default_segment_name is blank" do
+      let(:params) do
+        super().deep_merge(experience: { default_segment_name: "  " })
+      end
 
-      experience = Experience.find(JSON.parse(response.body)["experience"]["id"])
-      expect(experience.default_segment.name).to eq("Audience")
+      it "falls back to Audience" do
+        expect(created.default_segment.name).to eq("Audience")
+      end
     end
   end
 end

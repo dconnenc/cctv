@@ -1,6 +1,6 @@
 class Api::ExperienceBlocksController < Api::BaseController
   MANAGEMENT_ACTIONS = %i[
-    create update reorder set_column open close hide clear_buzzer_responses
+    create update destroy reorder set_column open close hide detach_from_parent clear_buzzer_responses
     add_bucket rename_bucket delete_bucket assign_answer auto_categorize
     start_playing reveal_bucket show_x next_question restart_playing
     restart_categorizing restart_everything
@@ -21,8 +21,8 @@ class Api::ExperienceBlocksController < Api::BaseController
   ].freeze
 
   before_action :authenticate_and_set_user_and_experience
-  before_action :authorize_manage_blocks!, only: MANAGEMENT_ACTIONS
-  before_action :set_block, only: SUBMISSION_ACTIONS
+  before_action -> { authorize! @experience, to: :manage_blocks? }, only: MANAGEMENT_ACTIONS
+  before_action :set_block, except: [:create]
   before_action :authorize_block_submission!, only: SUBMISSION_ACTIONS
 
   after_action :verify_authorized
@@ -96,7 +96,7 @@ class Api::ExperienceBlocksController < Api::BaseController
     with_experience_orchestration do
       block = Experiences::Orchestrator.new(experience: @experience, actor: @user)
         .update_block!(
-          block_id: params[:id],
+          block: @block,
           payload: update_params[:payload] || {},
           visible_to_segment_ids: update_params[:visible_to_segment_ids] || [],
           questions: update_params[:questions]
@@ -109,13 +109,26 @@ class Api::ExperienceBlocksController < Api::BaseController
     end
   end
 
+  # DELETE /api/experiences/:experience_id/blocks/:id
+  def destroy
+    with_experience_orchestration do
+      Experiences::Orchestrator.new(experience: @experience, actor: @user)
+        .delete_block!(params[:id])
+
+      @experience.reload
+      Experiences::Broadcaster.new(@experience).broadcast_experience_update
+
+      render json: { success: true }, status: 200
+    end
+  end
+
   # POST /api/experiences/:experience_id/blocks/:id/reorder
   def reorder
     with_experience_orchestration do
       block = Experiences::Orchestrator.new(
         experience: @experience, actor: @user
       ).reorder_block!(
-        block_id: params[:id],
+        block: @block,
         position: params[:position].to_i
       )
 
@@ -135,7 +148,7 @@ class Api::ExperienceBlocksController < Api::BaseController
       block = Experiences::Orchestrator.new(
         experience: @experience, actor: @user
       ).set_block_column!(
-        block_id: params[:id],
+        block: @block,
         column: params[:column].to_i
       )
 
@@ -154,7 +167,7 @@ class Api::ExperienceBlocksController < Api::BaseController
     with_experience_orchestration do
       block = Experiences::Orchestrator.new(
         experience: @experience, actor: @user
-      ).open_block!(params[:id])
+      ).open_block!(block: @block)
 
       Experiences::Broadcaster.new(@experience).broadcast_experience_update
 
@@ -170,7 +183,7 @@ class Api::ExperienceBlocksController < Api::BaseController
     with_experience_orchestration do
       block = Experiences::Orchestrator.new(
         experience: @experience, actor: @user
-      ).close_block!(params[:id])
+      ).close_block!(block: @block)
 
       Experiences::Broadcaster.new(@experience).broadcast_experience_update
 
@@ -186,7 +199,7 @@ class Api::ExperienceBlocksController < Api::BaseController
     with_experience_orchestration do
       block = Experiences::Orchestrator.new(
         experience: @experience, actor: @user
-      ).hide_block!(params[:id])
+      ).hide_block!(block: @block)
 
       Experiences::Broadcaster.new(@experience).broadcast_experience_update
 
@@ -197,11 +210,24 @@ class Api::ExperienceBlocksController < Api::BaseController
     end
   end
 
+  # POST /api/experiences/:experience_id/blocks/:id/detach_from_parent
+  def detach_from_parent
+    with_experience_orchestration do
+      block = Experiences::Orchestrator.new(
+        experience: @experience, actor: @user
+      ).detach_block_from_parent!(params[:id])
+
+      Experiences::Broadcaster.new(@experience).broadcast_experience_update
+
+      render json: { success: true, data: block }, status: 200
+    end
+  end
+
   # POST /api/experiences/:experience_id/blocks/:id/submit_poll_response
   def submit_poll_response
     with_experience_orchestration do
       orchestrator = Experiences::Orchestrator.new(experience: @experience, actor: @user)
-      submission = orchestrator.submit_poll_response!(block_id: params[:id], answer: params[:answer])
+      submission = orchestrator.submit_poll_response!(block: @block, answer: params[:answer])
 
       Experiences::Broadcaster.new(@experience).broadcast_experience_update(
         profile_changes: orchestrator.profile_changes
@@ -217,7 +243,7 @@ class Api::ExperienceBlocksController < Api::BaseController
       submission = Experiences::Orchestrator.new(
         experience: @experience, actor: @user
       ).submit_question_response!(
-        block_id: params[:id],
+        block: @block,
         answer: params[:answer]
       )
 
@@ -250,7 +276,7 @@ class Api::ExperienceBlocksController < Api::BaseController
       submission = Experiences::Orchestrator.new(
         experience: @experience, actor: @user
       ).submit_buzzer_response!(
-        block_id: params[:id],
+        block: @block,
         answer: params[:answer]
       )
 
@@ -265,7 +291,7 @@ class Api::ExperienceBlocksController < Api::BaseController
     with_experience_orchestration do
       Experiences::Orchestrator.new(
         experience: @experience, actor: @user
-      ).clear_buzzer_responses!(block_id: params[:id])
+      ).clear_buzzer_responses!(block: @block)
 
       Experiences::Broadcaster.new(@experience).broadcast_experience_update
 
@@ -279,7 +305,6 @@ class Api::ExperienceBlocksController < Api::BaseController
       buckets = Experiences::Orchestrator.new(
         experience: @experience, actor: @user
       ).auto_categorize_family_feud!(
-        block_id: params[:id],
         question_id: params[:question_id]
       )
 
@@ -295,7 +320,7 @@ class Api::ExperienceBlocksController < Api::BaseController
       submission = Experiences::Orchestrator.new(
         experience: @experience, actor: @user
       ).submit_photo_upload_response!(
-        block_id: params[:id],
+        block: @block,
         photo_signed_id: params[:photo_signed_id],
         answer: params[:answer] || {}
       )
@@ -313,7 +338,6 @@ class Api::ExperienceBlocksController < Api::BaseController
       bucket = Experiences::Orchestrator.new(
         experience: @experience, actor: @user
       ).add_family_feud_bucket!(
-        block_id: params[:id],
         question_id: params[:question_id],
         name: params[:name] || "New Bucket"
       )
@@ -338,7 +362,6 @@ class Api::ExperienceBlocksController < Api::BaseController
       Experiences::Orchestrator.new(
         experience: @experience, actor: @user
       ).rename_family_feud_bucket!(
-        block_id: params[:id],
         question_id: params[:question_id],
         bucket_id: params[:bucket_id],
         name: params[:name]
@@ -364,7 +387,6 @@ class Api::ExperienceBlocksController < Api::BaseController
       Experiences::Orchestrator.new(
         experience: @experience, actor: @user
       ).delete_family_feud_bucket!(
-        block_id: params[:id],
         question_id: params[:question_id],
         bucket_id: params[:bucket_id]
       )
@@ -389,7 +411,6 @@ class Api::ExperienceBlocksController < Api::BaseController
       Experiences::Orchestrator.new(
         experience: @experience, actor: @user
       ).assign_family_feud_answer!(
-        block_id: params[:id],
         question_id: params[:question_id],
         answer_id: params[:answer_id],
         bucket_id: params[:bucket_id]
@@ -418,7 +439,7 @@ class Api::ExperienceBlocksController < Api::BaseController
     with_experience_orchestration do
       block = Experiences::Orchestrator.new(
         experience: @experience, actor: @user
-      ).start_family_feud_playing!(block_id: params[:id])
+      ).start_family_feud_playing!(block: @block)
 
       Experiences::Broadcaster.new(@experience).broadcast_experience_update
 
@@ -432,7 +453,7 @@ class Api::ExperienceBlocksController < Api::BaseController
       Experiences::Orchestrator.new(
         experience: @experience, actor: @user
       ).reveal_family_feud_bucket!(
-        block_id: params[:id],
+        block: @block,
         question_index: params[:question_index].to_i,
         bucket_index: params[:bucket_index].to_i
       )
@@ -448,7 +469,7 @@ class Api::ExperienceBlocksController < Api::BaseController
     with_experience_orchestration do
       block = Experiences::Orchestrator.new(
         experience: @experience, actor: @user
-      ).show_family_feud_x!(block_id: params[:id])
+      ).show_family_feud_x!(block: @block)
 
       Experiences::Broadcaster.new(@experience).broadcast_experience_update
 
@@ -474,7 +495,7 @@ class Api::ExperienceBlocksController < Api::BaseController
     with_experience_orchestration do
       Experiences::Orchestrator.new(
         experience: @experience, actor: @user
-      ).next_family_feud_question!(block_id: params[:id])
+      ).next_family_feud_question!(block: @block)
 
       Experiences::Broadcaster.new(@experience).broadcast_experience_update
 
@@ -487,7 +508,7 @@ class Api::ExperienceBlocksController < Api::BaseController
     with_experience_orchestration do
       Experiences::Orchestrator.new(
         experience: @experience, actor: @user
-      ).restart_family_feud_playing!(block_id: params[:id])
+      ).restart_family_feud_playing!(block: @block)
 
       Experiences::Broadcaster.new(@experience).broadcast_experience_update
 
@@ -500,7 +521,7 @@ class Api::ExperienceBlocksController < Api::BaseController
     with_experience_orchestration do
       Experiences::Orchestrator.new(
         experience: @experience, actor: @user
-      ).restart_family_feud_categorizing!(block_id: params[:id])
+      ).restart_family_feud_categorizing!(block: @block)
 
       Experiences::Broadcaster.new(@experience).broadcast_experience_update
 
@@ -513,7 +534,7 @@ class Api::ExperienceBlocksController < Api::BaseController
     with_experience_orchestration do
       Experiences::Orchestrator.new(
         experience: @experience, actor: @user
-      ).restart_family_feud_everything!(block_id: params[:id])
+      ).restart_family_feud_everything!(block: @block)
 
       Experiences::Broadcaster.new(@experience).broadcast_experience_update
 
@@ -526,7 +547,7 @@ class Api::ExperienceBlocksController < Api::BaseController
     with_experience_orchestration do
       Experiences::Orchestrator.new(
         experience: @experience, actor: @user
-      ).start_guess_who!(block_id: params[:id])
+      ).start_guess_who!(block: @block)
 
       Experiences::Broadcaster.new(@experience).broadcast_experience_update
 
@@ -540,7 +561,7 @@ class Api::ExperienceBlocksController < Api::BaseController
       Experiences::Orchestrator.new(
         experience: @experience, actor: @user
       ).reroll_guess_who_mystery!(
-        block_id: params[:id],
+        block: @block,
         contestant_index: params[:contestant_index]
       )
 
@@ -556,7 +577,7 @@ class Api::ExperienceBlocksController < Api::BaseController
       Experiences::Orchestrator.new(
         experience: @experience, actor: @user
       ).curate_guess_who_clues!(
-        block_id: params[:id],
+        block: @block,
         contestant_index: params[:contestant_index],
         clue_order: params[:clue_order] || [],
         hidden_clue_ids: params[:hidden_clue_ids] || []
@@ -574,7 +595,7 @@ class Api::ExperienceBlocksController < Api::BaseController
       Experiences::Orchestrator.new(
         experience: @experience, actor: @user
       ).advance_guess_who_clue!(
-        block_id: params[:id],
+        block: @block,
         contestant_index: params[:contestant_index],
         direction: params[:direction]
       )
@@ -591,7 +612,7 @@ class Api::ExperienceBlocksController < Api::BaseController
       Experiences::Orchestrator.new(
         experience: @experience, actor: @user
       ).set_guess_who_monitor_view!(
-        block_id: params[:id],
+        block: @block,
         view: params[:view]
       )
 
@@ -607,7 +628,7 @@ class Api::ExperienceBlocksController < Api::BaseController
       Experiences::Orchestrator.new(
         experience: @experience, actor: @user
       ).dispatch_guess_who_poll!(
-        block_id: params[:id],
+        block: @block,
         contestant_index: params[:contestant_index]
       )
 
@@ -622,7 +643,7 @@ class Api::ExperienceBlocksController < Api::BaseController
     with_experience_orchestration do
       Experiences::Orchestrator.new(
         experience: @experience, actor: @user
-      ).conclude_guess_who_poll!(block_id: params[:id])
+      ).conclude_guess_who_poll!(block: @block)
 
       Experiences::Broadcaster.new(@experience).broadcast_experience_update
 
@@ -635,7 +656,7 @@ class Api::ExperienceBlocksController < Api::BaseController
     with_experience_orchestration do
       block = Experiences::Orchestrator.new(
         experience: @experience, actor: @user
-      ).start_minigame_arithmetic!(block_id: params[:id])
+      ).start_minigame_arithmetic!(block: @block)
 
       Experiences::Broadcaster.new(@experience).broadcast_experience_update
 
@@ -648,7 +669,7 @@ class Api::ExperienceBlocksController < Api::BaseController
     with_experience_orchestration do
       block = Experiences::Orchestrator.new(
         experience: @experience, actor: @user
-      ).end_minigame_arithmetic!(block_id: params[:id])
+      ).end_minigame_arithmetic!(block: @block)
 
       Experiences::Broadcaster.new(@experience).broadcast_experience_update
 
@@ -662,16 +683,17 @@ class Api::ExperienceBlocksController < Api::BaseController
       submission = Experiences::Orchestrator.new(
         experience: @experience, actor: @user
       ).submit_minigame_arithmetic_response!(
-        block_id:       params[:id],
+        block:          @block,
         question_index: params[:question_index],
         answer:         params[:answer]
       )
 
       Experiences::Broadcaster.new(@experience).broadcast_experience_update
 
+      participant = @experience.experience_participants.find_by!(user: @user)
       progress = Minigames::ArithmeticProgress.for_participant(
         block: @block.reload,
-        user:  @user
+        participant: participant
       )
 
       render json: {
@@ -688,7 +710,7 @@ class Api::ExperienceBlocksController < Api::BaseController
     with_experience_orchestration do
       block = Experiences::Orchestrator.new(
         experience: @experience, actor: @user
-      ).start_minigame_balloon_pump!(block_id: params[:id])
+      ).start_minigame_balloon_pump!(block: @block)
 
       Experiences::Broadcaster.new(@experience).broadcast_experience_update
 
@@ -701,7 +723,7 @@ class Api::ExperienceBlocksController < Api::BaseController
     with_experience_orchestration do
       block = Experiences::Orchestrator.new(
         experience: @experience, actor: @user
-      ).end_minigame_balloon_pump!(block_id: params[:id])
+      ).end_minigame_balloon_pump!(block: @block)
 
       Experiences::Broadcaster.new(@experience).broadcast_experience_update
 
@@ -715,7 +737,7 @@ class Api::ExperienceBlocksController < Api::BaseController
       outcome = Experiences::Orchestrator.new(
         experience: @experience, actor: @user
       ).submit_balloon_pump_update!(
-        block_id:    params[:id],
+        block:       @block,
         fill_amount: params[:fill_amount]
       )
 
@@ -734,7 +756,7 @@ class Api::ExperienceBlocksController < Api::BaseController
     with_experience_orchestration do
       Experiences::Orchestrator.new(
         experience: @experience, actor: @user
-      ).reveal_guess_who!(block_id: params[:id])
+      ).reveal_guess_who!(block: @block)
 
       Experiences::Broadcaster.new(@experience).broadcast_experience_update
 
@@ -747,7 +769,7 @@ class Api::ExperienceBlocksController < Api::BaseController
     with_experience_orchestration do
       block = Experiences::Orchestrator.new(
         experience: @experience, actor: @user
-      ).advance_the_scene_phase!(block_id: params[:id], phase: params[:phase])
+      ).advance_the_scene_phase!(block: @block, phase: params[:phase])
 
       Experiences::Broadcaster.new(@experience).broadcast_experience_update
 
@@ -760,7 +782,7 @@ class Api::ExperienceBlocksController < Api::BaseController
     with_experience_orchestration do
       block = Experiences::Orchestrator.new(
         experience: @experience, actor: @user
-      ).start_next_scene!(block_id: params[:id])
+      ).start_next_scene!(block: @block)
 
       Experiences::Broadcaster.new(@experience).broadcast_experience_update
 
@@ -773,7 +795,7 @@ class Api::ExperienceBlocksController < Api::BaseController
     with_experience_orchestration do
       Experiences::Orchestrator.new(
         experience: @experience, actor: @user
-      ).clear_the_scene_top!(block_id: params[:id])
+      ).clear_the_scene_top!(block: @block)
 
       Experiences::Broadcaster.new(@experience).broadcast_experience_update
 
@@ -787,7 +809,7 @@ class Api::ExperienceBlocksController < Api::BaseController
       Experiences::Orchestrator.new(
         experience: @experience, actor: @user
       ).clear_the_scene_suggestion!(
-        block_id: params[:id],
+        block: @block,
         suggestion_id: params[:suggestion_id]
       )
 
@@ -802,7 +824,7 @@ class Api::ExperienceBlocksController < Api::BaseController
     with_experience_orchestration do
       Experiences::Orchestrator.new(
         experience: @experience, actor: @user
-      ).clear_the_scene_all!(block_id: params[:id])
+      ).clear_the_scene_all!(block: @block)
 
       Experiences::Broadcaster.new(@experience).broadcast_experience_update
 
@@ -816,7 +838,7 @@ class Api::ExperienceBlocksController < Api::BaseController
       suggestion = Experiences::Orchestrator.new(
         experience: @experience, actor: @user
       ).submit_the_scene_suggestion!(
-        block_id: params[:id],
+        block: @block,
         text: params[:text]
       )
 
@@ -835,7 +857,7 @@ class Api::ExperienceBlocksController < Api::BaseController
       vote = Experiences::Orchestrator.new(
         experience: @experience, actor: @user
       ).submit_the_scene_vote!(
-        block_id: params[:id],
+        block: @block,
         suggestion_id: params[:suggestion_id]
       )
 
@@ -849,10 +871,6 @@ class Api::ExperienceBlocksController < Api::BaseController
   end
 
   private
-
-  def authorize_manage_blocks!
-    authorize! @experience, to: :manage_blocks?
-  end
 
   def set_block
     @block = @experience.experience_blocks.find(params[:id])

@@ -1,7 +1,7 @@
 interface Answer {
   id: string;
   text: string;
-  userId: string;
+  participantId: string;
   userName: string;
   questionId: string;
 }

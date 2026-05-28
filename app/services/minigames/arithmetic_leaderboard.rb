@@ -13,27 +13,27 @@ module Minigames
         .where(experience_block_id: @block.id)
         .order(submitted_at: :asc)
 
-      grouped = submissions.group_by(&:user_id)
+      grouped = submissions.group_by(&:experience_participant_id)
 
-      participants_by_user_id = @block.experience.experience_participants
+      participants_by_id = @block.experience.experience_participants
         .includes(:user)
-        .index_by(&:user_id)
+        .index_by(&:id)
 
-      entries = grouped.map do |user_id, user_submissions|
-        participant = participants_by_user_id[user_id]
+      entries = grouped.map do |participant_id, p_submissions|
+        participant = participants_by_id[participant_id]
         next nil unless participant
 
-        correct = user_submissions.count(&:correct)
-        last_submitted_at = user_submissions.last.submitted_at
+        correct = p_submissions.count(&:correct)
+        last_submitted_at = p_submissions.last.submitted_at
 
         {
-          "participant_id" => participant.id,
-          "user_id"        => user_id,
-          "name"           => participant.name,
-          "avatar"         => participant.avatar.presence,
-          "correct"        => correct,
-          "completed"      => user_submissions.size,
-          "last_submitted_at" => last_submitted_at
+          "participant_id"     => participant.id,
+          "user_id"            => participant.user_id,
+          "name"               => participant.name,
+          "avatar"             => participant.avatar.presence,
+          "correct"            => correct,
+          "completed"          => p_submissions.size,
+          "last_submitted_at"  => last_submitted_at
         }
       end.compact
 

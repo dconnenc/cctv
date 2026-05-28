@@ -58,22 +58,23 @@ Rails.application.routes.draw do
         post :resume
         post :clear_avatars
         patch :update_playbill
+        post :avatar, to: 'experience_avatar#create'
       end
 
       resources(
         :blocks,
         controller: "experience_blocks",
-        only: [:create, :update]
+        only: [:create, :update, :destroy]
       ) do
         member do
           post :open
           post :close
           post :hide
+          post :detach_from_parent
           post :reorder
           post :set_column
           post :submit_poll_response
           post :submit_question_response
-          post :submit_multistep_form_response
           post :submit_photo_upload_response
           post :submit_buzzer_response
           delete :clear_buzzer_responses
@@ -122,7 +123,7 @@ Rails.application.routes.draw do
         # end
       end
 
-      resources :segments, controller: 'experience_segments', only: [:index, :create, :update, :destroy] do
+      resources :segments, controller: 'experience_segments', only: [:create, :update, :destroy] do
         member do
           post :assign
         end
@@ -130,7 +131,6 @@ Rails.application.routes.draw do
 
       resources :participants, controller: 'experience_participants', only: [] do
         member do
-          post :avatar
           delete :kick
           get :submissions
         end

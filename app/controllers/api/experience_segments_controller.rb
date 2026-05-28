@@ -1,18 +1,8 @@
 class Api::ExperienceSegmentsController < Api::BaseController
   before_action :authenticate_and_set_user_and_experience
-  before_action :authorize_manage_blocks!, except: [:index]
+  before_action -> { authorize! @experience, to: :manage_blocks? }
 
-  after_action :verify_authorized, except: [:index]
-
-  # GET /api/experiences/:experience_id/segments
-  def index
-    segments = @experience.experience_segments.order(position: :asc)
-
-    render json: {
-      success: true,
-      data: segments.map { |s| serialize_segment(s) }
-    }
-  end
+  after_action :verify_authorized
 
   # POST /api/experiences/:experience_id/segments
   def create
@@ -74,10 +64,6 @@ class Api::ExperienceSegmentsController < Api::BaseController
   end
 
   private
-
-  def authorize_manage_blocks!
-    authorize! @experience, to: :manage_blocks?
-  end
 
   def orchestrator
     @orchestrator ||= Experiences::SegmentOrchestrator.new(

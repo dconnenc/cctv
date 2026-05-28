@@ -10,15 +10,15 @@ RSpec.describe Experiences::Visibility do
 
     subject(:result) { described_class.for_admin(experience) }
 
-    it "includes all parent blocks regardless of status" do
+    it "includes all blocks regardless of status" do
       ids = result[:blocks].map { |b| b[:id] }
       expect(ids).to contain_exactly(block1.id, block2.id, block3.id)
     end
 
-    it "excludes child blocks" do
-      child = create(:experience_block, experience: experience, parent_block: block1, status: :open)
+    it "includes child blocks in the flat list" do
+      child = create(:experience_block, experience: experience, parent_block: block1, status: :open, position: 4)
       ids = result[:blocks].map { |b| b[:id] }
-      expect(ids).not_to include(child.id)
+      expect(ids).to include(child.id)
     end
 
     it "includes visibility metadata on each block" do
@@ -122,6 +122,19 @@ RSpec.describe Experiences::Visibility do
           expect(ids).not_to include(child.id)
         end
       end
+
+      context "when only the child is open and the parent is hidden" do
+        before do
+          parent.update!(status: :hidden)
+          child.update!(status: :open)
+        end
+
+        it "surfaces the open child" do
+          ids = result[:blocks].map { |b| b[:id] }
+          expect(ids).to include(child.id)
+          expect(ids).not_to include(parent.id)
+        end
+      end
     end
   end
 
@@ -202,6 +215,37 @@ RSpec.describe Experiences::Visibility do
         expect(result[:blocks]).to be_empty
       end
     end
+
+    context "when a child block is open and its parent is hidden" do
+      let!(:participant) { create(:experience_participant, user: user, experience: experience, role: :player) }
+      let!(:parent) do
+        create(
+          :experience_block,
+          experience: experience,
+          status: :hidden,
+          kind: ExperienceBlock::FAMILY_FEUD,
+          position: 0
+        )
+      end
+      let!(:child) do
+        create(
+          :experience_block,
+          experience: experience,
+          parent_block: parent,
+          status: :open,
+          kind: ExperienceBlock::QUESTION,
+          position: 0
+        )
+      end
+
+      before { create(:experience_block_link, parent_block: parent, child_block: child) }
+
+      it "surfaces the child block to the participant" do
+        result = described_class.for_participant(experience, participant)
+        ids = result[:blocks].map { |b| b[:id] }
+        expect(ids).to include(child.id)
+      end
+    end
   end
 
   describe "response data serialization" do
@@ -214,7 +258,7 @@ RSpec.describe Experiences::Visibility do
       let!(:block) { create(:experience_block, experience: experience, kind: ExperienceBlock::POLL, status: :open) }
 
       before do
-        create(:experience_poll_submission, experience_block: block, user: user,
+        create(:experience_poll_submission, experience_block: block, experience_participant: participant,
                answer: { "selectedOptions" => ["option_a"] })
       end
 
@@ -233,7 +277,7 @@ RSpec.describe Experiences::Visibility do
       end
 
       it "includes user_response, user_responded, aggregate, and all_responses for hosts" do
-        create(:experience_poll_submission, experience_block: block, user: other_user,
+        create(:experience_poll_submission, experience_block: block, experience_participant: host_participant,
                answer: { "selectedOptions" => ["option_a"] })
 
         result = described_class.for_participant(experience, host_participant)
@@ -251,7 +295,7 @@ RSpec.describe Experiences::Visibility do
       let!(:block) { create(:experience_block, experience: experience, kind: ExperienceBlock::BUZZER, status: :open) }
 
       before do
-        create(:experience_buzzer_submission, experience_block: block, user: user)
+        create(:experience_buzzer_submission, experience_block: block, experience_participant: participant)
       end
 
       it "omits user_response and user_responded for regular participants" do
