@@ -225,7 +225,7 @@ RSpec.describe Experiences::Orchestrator do
     let(:participant_role) { ExperienceParticipant.roles[:host] }
 
     subject do
-      described_class.new(actor: user, experience: experience).open_block!(block.id)
+      described_class.new(actor: user, experience: experience).open_block!(block: block)
     end
 
     context "when opening a family feud block with child question blocks" do
@@ -253,7 +253,7 @@ RSpec.describe Experiences::Orchestrator do
     let(:participant_role) { ExperienceParticipant.roles[:host] }
 
     subject do
-      described_class.new(actor: user, experience: experience).close_block!(block.id)
+      described_class.new(actor: user, experience: experience).close_block!(block: block)
     end
 
     context "when closing a parent block with children" do
@@ -281,7 +281,7 @@ RSpec.describe Experiences::Orchestrator do
     let(:participant_role) { ExperienceParticipant.roles[:host] }
 
     subject do
-      described_class.new(actor: user, experience: experience).hide_block!(block.id)
+      described_class.new(actor: user, experience: experience).hide_block!(block: block)
     end
 
     context "when hiding a parent block with children" do

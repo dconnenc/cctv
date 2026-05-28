@@ -24,7 +24,7 @@ RSpec.describe Api::ExperienceAvatarController, type: :controller do
         id: experience.code_slug,
         avatar: { strokes: strokes }
       },
-      format: :json
+      as: :json
     )
   end
 
