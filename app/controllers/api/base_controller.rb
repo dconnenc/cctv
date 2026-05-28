@@ -111,6 +111,11 @@ class Api::BaseController < ApplicationController
         message: "Edit not allowed",
         error: e.message,
       }, status: :unprocessable_entity
+    rescue ActiveRecord::RecordInvalid => e
+      render json: {
+        success: false,
+        error: e.record.errors.full_messages.first,
+      }, status: :unprocessable_entity
     end
   end
 end

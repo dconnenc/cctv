@@ -30,6 +30,18 @@ RSpec.describe ExperienceSegment do
       expect(duplicate).not_to be_valid
     end
 
+    it "enforces unique name case-insensitively within experience" do
+      experience.experience_segments.create!(name: "Team A", color: "#FF0000", position: 0)
+      duplicate = experience.experience_segments.build(name: "team a", color: "#0000FF", position: 1)
+      expect(duplicate).not_to be_valid
+    end
+
+    it "enforces unique name case-insensitively for mixed case within experience" do
+      experience.experience_segments.create!(name: "Team A", color: "#FF0000", position: 0)
+      duplicate = experience.experience_segments.build(name: "TEAM A", color: "#0000FF", position: 1)
+      expect(duplicate).not_to be_valid
+    end
+
     it "allows the same name in different experiences" do
       other_experience = create(:experience)
       experience.experience_segments.create!(name: "Team A", color: "#FF0000", position: 0)

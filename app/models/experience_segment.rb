@@ -8,7 +8,7 @@ class ExperienceSegment < ApplicationRecord
   has_many :experience_blocks, through: :experience_block_segments
 
   validates :name, presence: true, length: { maximum: 50 },
-    uniqueness: { scope: :experience_id }
+    uniqueness: { scope: :experience_id, case_sensitive: false }
   validates :color, presence: true
   validates :position, presence: true,
     numericality: { only_integer: true, greater_than_or_equal_to: 0 },

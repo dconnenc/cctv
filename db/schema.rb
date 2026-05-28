@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_05_27_000001) do
+ActiveRecord::Schema[7.2].define(version: 2026_05_28_000001) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "citext"
   enable_extension "plpgsql"
@@ -229,7 +229,7 @@ ActiveRecord::Schema[7.2].define(version: 2026_05_27_000001) do
 
   create_table "experience_segments", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.uuid "experience_id", null: false
-    t.string "name", null: false
+    t.citext "name", null: false
     t.string "color", default: "#6B7280", null: false
     t.integer "position", default: 0, null: false
     t.datetime "created_at", null: false
