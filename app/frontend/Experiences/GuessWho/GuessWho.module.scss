@@ -1,6 +1,6 @@
 .root {
   width: 100%;
-  max-width: 720px;
+  max-width: 960px;
   margin: 0 auto;
   display: flex;
   flex-direction: column;
@@ -14,6 +14,41 @@
   font-weight: 700;
   margin: 0;
   text-align: center;
+  color: hsl(var(--foreground));
+}
+
+.idleRow {
+  display: flex;
+  gap: 2rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.contestantHeader {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background: hsl(var(--card));
+  border: 2px solid hsl(var(--border));
+  border-radius: 0.75rem;
+  padding: 0.75rem 1.25rem;
+}
+
+.contestantTitle {
+  display: flex;
+  flex-direction: column;
+}
+
+.contestantLabel {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: hsl(var(--muted-foreground));
+}
+
+.contestantName {
+  font-size: 1.25rem;
+  font-weight: 600;
   color: hsl(var(--foreground));
 }
 
@@ -39,13 +74,6 @@
   color: hsl(var(--muted-foreground));
 }
 
-.slot {
-  font-weight: 700;
-  color: hsl(var(--foreground));
-  font-size: 1rem;
-  letter-spacing: 0;
-}
-
 .kind {
   opacity: 0.8;
 }
@@ -55,7 +83,7 @@
 }
 
 .prompt {
-  font-size: 1.125rem;
+  font-size: 1.5rem;
   font-weight: 500;
   color: hsl(var(--card-foreground));
   line-height: 1.4;
@@ -72,7 +100,7 @@
 }
 
 .answerText {
-  font-size: 1.5rem;
+  font-size: 2rem;
   font-weight: 600;
   text-align: center;
   margin: 0;
@@ -93,6 +121,143 @@
   font-style: italic;
 }
 
+.legend {
+  font-size: 1rem;
+  color: hsl(var(--muted-foreground));
+}
+
+.error {
+  color: hsl(var(--destructive));
+  font-size: 0.875rem;
+}
+
+.fieldset {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  border: none;
+  padding: 0;
+}
+
+/* Board ------------------------------------------------------------------- */
+
+.boardWithPoll {
+  position: relative;
+  width: 100%;
+}
+
+.board {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(7rem, 1fr));
+  gap: 0.75rem;
+  width: 100%;
+}
+
+.boardCell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
+  border-radius: 0.5rem;
+  transition:
+    opacity 0.4s,
+    filter 0.4s;
+}
+
+.boardCellEliminated {
+  opacity: 0.25;
+  filter: grayscale(1);
+}
+
+.boardAvatarWrap {
+  position: relative;
+}
+
+.shameBadge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: hsl(var(--destructive));
+  color: hsl(var(--destructive-foreground, 0 0% 100%));
+  font-weight: 700;
+  font-size: 1.1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid hsl(var(--card));
+}
+
+.boardLabel {
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-align: center;
+  color: hsl(var(--foreground));
+  max-width: 8rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Donut ------------------------------------------------------------------- */
+
+.donutOverlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.donutWrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: hsl(var(--card) / 0.92);
+  border-radius: 50%;
+  box-shadow: 0 8px 24px hsl(0 0% 0% / 0.4);
+}
+
+.donutLabel {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.donutPct {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: hsl(var(--foreground));
+  font-variant-numeric: tabular-nums;
+}
+
+.donutCount {
+  font-size: 0.875rem;
+  color: hsl(var(--muted-foreground));
+}
+
+/* Reveal ------------------------------------------------------------------ */
+
+.revealRoot {
+  position: relative;
+  width: 100%;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  align-items: center;
+}
+
 .revealRow {
   display: flex;
   flex-direction: row;
@@ -100,6 +265,7 @@
   justify-content: center;
   align-items: stretch;
   flex-wrap: wrap;
+  width: 100%;
 }
 
 .revealCard {
@@ -111,7 +277,9 @@
   background: hsl(var(--card));
   border: 2px solid hsl(var(--border));
   border-radius: 0.75rem;
-  min-width: 12rem;
+  min-width: 16rem;
+  flex: 1;
+  max-width: 28rem;
 }
 
 .revealLabel {
@@ -122,23 +290,83 @@
 }
 
 .revealName {
-  font-size: 1.25rem;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: hsl(var(--foreground));
+}
+
+.revealCrawl {
+  width: 100%;
+  height: 9rem;
+  overflow: hidden;
+  border-top: 1px solid hsl(var(--border));
+  padding-top: 0.75rem;
+  position: relative;
+  mask-image: linear-gradient(to bottom, transparent, black 20%, black 80%, transparent);
+}
+
+.crawlInner {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  animation: crawl 24s linear infinite;
+}
+
+@keyframes crawl {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(-100%);
+  }
+}
+
+.crawlEntry {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.crawlPrompt {
+  font-size: 0.875rem;
+  color: hsl(var(--muted-foreground));
+}
+
+.crawlAnswer {
+  font-size: 1.125rem;
   font-weight: 600;
   color: hsl(var(--foreground));
 }
 
-.avatarWrap {
-  width: 192px;
-  height: 192px;
-  border-radius: 50%;
+.fireworks {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
   overflow: hidden;
-  background: hsl(var(--muted));
 }
 
-.avatarPlaceholder {
-  width: 192px;
-  height: 192px;
+.fireworkBurst {
+  position: absolute;
+  width: 0;
+  height: 0;
   border-radius: 50%;
-  background: hsl(var(--muted));
-  border: 1px dashed hsl(var(--border));
+  box-shadow:
+    0 0 0 2px hsl(50 100% 60%),
+    0 0 24px 4px hsl(50 100% 60% / 0.8);
+  animation: firework 2.2s ease-out infinite;
+}
+
+@keyframes firework {
+  0% {
+    transform: scale(0);
+    opacity: 1;
+  }
+  60% {
+    transform: scale(1);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(1.6);
+    opacity: 0;
+  }
 }

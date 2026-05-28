@@ -81,7 +81,7 @@ export default function ExperienceBlockContainer({
     case BlockKind.BUZZER:
       return <Buzzer block={block} viewContext={viewContext} />;
     case BlockKind.GUESS_WHO:
-      return <GuessWho payload={block.payload} />;
+      return <GuessWho block={block} viewContext={viewContext} />;
     case BlockKind.MINIGAME_ARITHMETIC:
       return <MinigameArithmetic block={block} viewContext={viewContext} />;
     case BlockKind.MINIGAME_BALLOON_PUMP:

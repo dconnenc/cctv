@@ -92,8 +92,13 @@ Rails.application.routes.draw do
           post 'family_feud/restart_categorizing', action: :restart_categorizing
           post 'family_feud/restart_everything', action: :restart_everything
 
-          post 'guess_who/next', action: :next_guess_who_slide
-          post 'guess_who/previous', action: :previous_guess_who_slide
+          post 'guess_who/start', action: :start_guess_who
+          post 'guess_who/reroll_mystery', action: :reroll_guess_who_mystery
+          patch 'guess_who/clues', action: :curate_guess_who_clues
+          post 'guess_who/advance_clue', action: :advance_guess_who_clue
+          post 'guess_who/monitor_view', action: :set_guess_who_monitor_view
+          post 'guess_who/dispatch_poll', action: :dispatch_guess_who_poll
+          post 'guess_who/conclude_poll', action: :conclude_guess_who_poll
           post 'guess_who/reveal', action: :reveal_guess_who
 
           post 'minigame/arithmetic/start', action: :start_minigame_arithmetic
