@@ -36,6 +36,13 @@ module Experiences
           target_user_ids: target_user_ids,
           position: max_position + 1
         )
+
+        if kind == ExperienceBlock::GUESS_WHO
+          contestant_segment = create_guess_who_contestant_segment!(block)
+          updated_payload = block.payload.merge("contestant_segment_id" => contestant_segment.id)
+          block.update!(payload: updated_payload)
+        end
+
         block.update!(status: :open) if open_immediately
 
         block
@@ -78,6 +85,14 @@ module Experiences
         payload["leaderboard_size"] = leaderboard_size
         payload["phase"]            = "idle"
         payload["scene_started_at"] = nil
+      when ExperienceBlock::GUESS_WHO
+        payload["eligibility_threshold"] ||= 0.10
+        payload["monitor_view"]            = "idle"
+        payload["revealed"]                = false
+        payload["started"]                 = false
+        payload["active_poll_block_id"]    = nil
+        payload["active_poll_contestant_index"] = nil
+        payload["contestants"]             = []
       end
 
       payload
@@ -92,7 +107,6 @@ module Experiences
     def open_block!(block_id)
       block = experience.experience_blocks.find(block_id)
       block.open!
-      start_guess_who!(block) if block.kind == ExperienceBlock::GUESS_WHO
       block
     end
 
@@ -539,58 +553,250 @@ module Experiences
 
     # GuessWho ----------------------------------------------------------------
 
-    def start_guess_who!(block)
-      payload = block.payload || {}
-      return block if payload["user_a_id"].present? && payload["user_b_id"].present?
+    GUESS_WHO_MONITOR_VIEWS = %w[idle c1_clue c1_board c2_clue c2_board reveal].freeze
 
-      segment_id = payload["segment_id"]
-      raise ActiveRecord::RecordInvalid, block unless segment_id.present?
+    def start_guess_who!(block_id:)
+      block = guess_who_block!(block_id)
 
       transaction do
-        pool = experience.experience_participants
-          .joins(:experience_segments)
-          .where(experience_segments: { id: segment_id })
-          .where.not(role: %w[host moderator])
+        payload = block.payload.deep_dup
+        contestant_user_ids = guess_who_contestant_user_ids(payload)
 
-        sampled = pool.to_a.sample(2)
-
-        if sampled.length < 2
-          payload["error"] = "Need at least 2 audience members in the selected segment"
-          block.update!(payload: payload)
-          return block
+        if contestant_user_ids.length != 2
+          raise Experiences::InvalidTransitionError,
+            "Guess Who requires exactly 2 contestants in the contestant segment (currently #{contestant_user_ids.length})"
         end
 
-        user_a, user_b = sampled
-        slides_a = ParticipantSubmissions.new(experience).for_user(user_a.user_id)
-        slides_b = ParticipantSubmissions.new(experience).for_user(user_b.user_id)
+        pool_user_ids = guess_who_pool_user_ids(payload, contestant_user_ids)
+        eligible_user_ids = filter_by_eligibility(pool_user_ids, payload["eligibility_threshold"].to_f)
+        eligible_user_ids = pool_user_ids if eligible_user_ids.length < 2
 
-        slides = interleave_slides(slides_a, user_a.user_id, slides_b, user_b.user_id)
+        mystery_a, mystery_b = pick_two_distinct(eligible_user_ids, exclude: contestant_user_ids)
 
-        payload["user_a_id"] = user_a.user_id
-        payload["user_b_id"] = user_b.user_id
-        payload["slides"] = slides
-        payload["current_slide_index"] = 0
+        if mystery_a.nil? || mystery_b.nil?
+          raise Experiences::InvalidTransitionError, "Need at least 2 eligible participants for Guess Who"
+        end
+
+        board_candidate_ids = pool_user_ids
+        payload["contestants"] = [
+          build_guess_who_contestant(contestant_user_ids[0], mystery_a, board_candidate_ids),
+          build_guess_who_contestant(contestant_user_ids[1], mystery_b, board_candidate_ids)
+        ]
+        payload["started"] = true
         payload["revealed"] = false
-        payload.delete("error")
+        payload["monitor_view"] = "idle"
+        payload["active_poll_block_id"] = nil
+        payload["active_poll_contestant_index"] = nil
 
         block.update!(payload: payload)
-        block
       end
+
+      block
     end
 
-    def next_guess_who_slide!(block_id:)
-      adjust_guess_who_slide!(block_id, 1)
+    def reroll_guess_who_mystery!(block_id:, contestant_index:)
+      block = guess_who_block!(block_id)
+      idx = contestant_index.to_i
+      raise ArgumentError, "contestant_index must be 0 or 1" unless [0, 1].include?(idx)
+
+      transaction do
+        payload = block.payload.deep_dup
+        contestants = Array(payload["contestants"])
+        raise Experiences::InvalidTransitionError, "Guess Who has not started" if contestants.length != 2
+
+        contestant_user_ids = guess_who_contestant_user_ids(payload)
+        pool_user_ids = guess_who_pool_user_ids(payload, contestant_user_ids)
+        eligible_user_ids = filter_by_eligibility(pool_user_ids, payload["eligibility_threshold"].to_f)
+        eligible_user_ids = pool_user_ids if eligible_user_ids.length < 2
+
+        other_mystery = contestants[1 - idx]["mystery_user_id"]
+        own_contestant = contestants[idx]["contestant_user_id"]
+        candidates = eligible_user_ids - [own_contestant, other_mystery, contestants[idx]["mystery_user_id"]].compact
+
+        new_mystery = candidates.sample
+        new_mystery ||= (pool_user_ids - [own_contestant, other_mystery, contestants[idx]["mystery_user_id"]].compact).sample
+        raise Experiences::InvalidTransitionError, "No eligible mystery participants available" if new_mystery.nil?
+
+        board_candidate_ids = pool_user_ids
+        contestants[idx] = build_guess_who_contestant(own_contestant, new_mystery, board_candidate_ids)
+        payload["contestants"] = contestants
+
+        block.update!(payload: payload)
+      end
+
+      block
     end
 
-    def previous_guess_who_slide!(block_id:)
-      adjust_guess_who_slide!(block_id, -1)
+    def curate_guess_who_clues!(block_id:, contestant_index:, clue_order:, hidden_clue_ids: [])
+      block = guess_who_block!(block_id)
+      idx = contestant_index.to_i
+      raise ArgumentError, "contestant_index must be 0 or 1" unless [0, 1].include?(idx)
+
+      transaction do
+        payload = block.payload.deep_dup
+        contestants = Array(payload["contestants"])
+        raise Experiences::InvalidTransitionError, "Guess Who has not started" if contestants.length != 2
+
+        clues = Array(contestants[idx]["clues"])
+        clues_by_id = clues.index_by { |c| c["id"] }
+        ordered_ids = Array(clue_order).select { |id| clues_by_id.key?(id) }
+        leftover = clues.reject { |c| ordered_ids.include?(c["id"]) }
+        reordered = ordered_ids.map { |id| clues_by_id[id] } + leftover
+
+        hidden_set = Array(hidden_clue_ids).to_set
+        reordered.each { |c| c["hidden"] = hidden_set.include?(c["id"]) }
+
+        contestants[idx]["clues"] = reordered
+        contestants[idx]["current_clue_index"] = 0
+        payload["contestants"] = contestants
+
+        block.update!(payload: payload)
+      end
+
+      block
+    end
+
+    def advance_guess_who_clue!(block_id:, contestant_index:, direction:)
+      block = guess_who_block!(block_id)
+      idx = contestant_index.to_i
+      delta = direction.to_i
+      raise ArgumentError, "contestant_index must be 0 or 1" unless [0, 1].include?(idx)
+
+      transaction do
+        payload = block.payload.deep_dup
+        contestants = Array(payload["contestants"])
+        raise Experiences::InvalidTransitionError, "Guess Who has not started" if contestants.length != 2
+
+        clues = Array(contestants[idx]["clues"]).reject { |c| c["hidden"] }
+        max_index = [clues.length - 1, 0].max
+        current = contestants[idx]["current_clue_index"].to_i
+        contestants[idx]["current_clue_index"] = (current + delta).clamp(0, max_index)
+
+        payload["contestants"] = contestants
+        block.update!(payload: payload)
+      end
+
+      block
+    end
+
+    def set_guess_who_monitor_view!(block_id:, view:)
+      block = guess_who_block!(block_id)
+      raise ArgumentError, "Invalid monitor view: #{view}" unless GUESS_WHO_MONITOR_VIEWS.include?(view.to_s)
+
+      transaction do
+        payload = block.payload.deep_dup
+        payload["monitor_view"] = view.to_s
+        block.update!(payload: payload)
+      end
+
+      block
+    end
+
+    def dispatch_guess_who_poll!(block_id:, contestant_index:)
+      block = guess_who_block!(block_id)
+      idx = contestant_index.to_i
+      raise ArgumentError, "contestant_index must be 0 or 1" unless [0, 1].include?(idx)
+
+      transaction do
+        payload = block.payload.deep_dup
+        raise Experiences::InvalidTransitionError, "Guess Who has not started" unless payload["started"]
+        raise Experiences::InvalidTransitionError, "A poll is already active" if payload["active_poll_block_id"].present?
+
+        child_position = block.child_blocks.maximum(:position).to_i + 1
+        poll_block = experience.experience_blocks.create!(
+          kind: ExperienceBlock::POLL,
+          status: :open,
+          payload: {
+            "question" => "True or False?",
+            "options" => ["True", "False"],
+            "pollType" => "single",
+            "guess_who_parent_id" => block.id,
+            "target_contestant_index" => idx
+          },
+          visible_to_roles: [],
+          target_user_ids: [],
+          parent_block_id: block.id,
+          position: child_position
+        )
+        ExperienceBlockLink.create!(
+          parent_block: block,
+          child_block: poll_block,
+          relationship: :depends_on
+        )
+
+        payload["active_poll_block_id"] = poll_block.id
+        payload["active_poll_contestant_index"] = idx
+        block.update!(payload: payload)
+      end
+
+      block
+    end
+
+    def conclude_guess_who_poll!(block_id:)
+      block = guess_who_block!(block_id)
+
+      transaction do
+        payload = block.payload.deep_dup
+        poll_id = payload["active_poll_block_id"]
+        idx = payload["active_poll_contestant_index"].to_i
+        raise Experiences::InvalidTransitionError, "No active poll" if poll_id.blank?
+
+        poll_block = experience.experience_blocks.find(poll_id)
+        contestants = Array(payload["contestants"])
+        contestant = contestants[idx]
+        mystery_user_id = contestant["mystery_user_id"]
+
+        mystery_submission = ExperiencePollSubmission.find_by(
+          experience_block_id: poll_id,
+          user_id: mystery_user_id
+        )
+        mystery_answer = Array(mystery_submission&.answer&.dig("selectedOptions")).first
+
+        candidate_ids = Array(contestant["board_candidate_ids"])
+        already_eliminated = Array(contestant["eliminated_user_ids"]).to_set
+        active_candidates = candidate_ids - already_eliminated.to_a - [mystery_user_id]
+
+        submissions_by_user = ExperiencePollSubmission
+          .where(experience_block_id: poll_id, user_id: active_candidates)
+          .index_by(&:user_id)
+
+        new_eliminated = already_eliminated.dup
+        new_unanswered = Array(contestant["unanswered_user_ids"]).to_set
+
+        active_candidates.each do |uid|
+          submission = submissions_by_user[uid]
+          answer = Array(submission&.answer&.dig("selectedOptions")).first
+
+          if answer.nil?
+            new_unanswered.add(uid)
+          else
+            new_unanswered.delete(uid)
+            if mystery_answer && answer != mystery_answer
+              new_eliminated.add(uid)
+            end
+          end
+        end
+
+        contestant["eliminated_user_ids"] = new_eliminated.to_a
+        contestant["unanswered_user_ids"] = new_unanswered.to_a
+        contestants[idx] = contestant
+        payload["contestants"] = contestants
+        payload["active_poll_block_id"] = nil
+        payload["active_poll_contestant_index"] = nil
+
+        block.update!(payload: payload)
+        poll_block.update!(status: :closed)
+      end
+
+      block
     end
 
     def reveal_guess_who!(block_id:)
-      block = experience.experience_blocks.find(block_id)
+      block = guess_who_block!(block_id)
       transaction do
-        payload = block.payload || {}
+        payload = block.payload.deep_dup
         payload["revealed"] = true
+        payload["monitor_view"] = "reveal"
         block.update!(payload: payload)
       end
       block
@@ -945,9 +1151,127 @@ module Experiences
       case kind.to_s
       when ExperienceBlock::FAMILY_FEUD
         { "on_show_x" => "buzzer_error" }
+      when ExperienceBlock::GUESS_WHO
+        {
+          "on_dispatch_poll" => "buzzer_error",
+          "on_conclude_poll" => "buzzer_error",
+          "on_reveal"        => "buzzer_error"
+        }
       else
         {}
       end
+    end
+
+    def guess_who_block!(block_id)
+      block = experience.experience_blocks.find(block_id)
+      raise ArgumentError, "Block is not a Guess Who" unless block.kind == ExperienceBlock::GUESS_WHO
+      block
+    end
+
+    def create_guess_who_contestant_segment!(block)
+      SegmentOrchestrator.new(
+        experience: experience,
+        actor: actor
+      ).create_segment!(
+        name: "Guess Who Contestants — Block #{block.position + 1}",
+        color: "#F59E0B"
+      )
+    end
+
+    def guess_who_contestant_user_ids(payload)
+      contestant_segment_id = payload["contestant_segment_id"]
+      return [] if contestant_segment_id.blank?
+
+      experience.experience_participants
+        .joins(:experience_segments)
+        .where(experience_segments: { id: contestant_segment_id })
+        .pluck(:user_id)
+    end
+
+    def guess_who_pool_user_ids(payload, contestant_user_ids)
+      segment_id = payload["segment_id"]
+      participants = experience.experience_participants
+        .where.not(role: %w[host moderator])
+
+      participants = if segment_id.present?
+        participants.joins(:experience_segments).where(experience_segments: { id: segment_id })
+      else
+        participants
+      end
+
+      participants.pluck(:user_id) - Array(contestant_user_ids)
+    end
+
+    def filter_by_eligibility(user_ids, threshold)
+      return user_ids if user_ids.empty?
+
+      broadcast_block_ids = broadcast_eligible_block_ids
+      return user_ids if broadcast_block_ids.empty?
+
+      total = broadcast_block_ids.length.to_f
+      participation = participation_counts_for(user_ids, broadcast_block_ids)
+
+      user_ids.select { |uid| (participation[uid].to_i / total) >= threshold }
+    end
+
+    def broadcast_eligible_block_ids
+      parent_ids = experience.experience_blocks
+        .parent_blocks
+        .where(visible_to_roles: [], target_user_ids: [])
+        .where.missing(:experience_block_segments)
+        .pluck(:id)
+      return [] if parent_ids.empty?
+
+      child_ids = ExperienceBlock.where(parent_block_id: parent_ids).pluck(:id)
+      parent_ids + child_ids
+    end
+
+    def participation_counts_for(user_ids, block_ids)
+      counts = Hash.new { |h, k| h[k] = Set.new }
+
+      [
+        ExperiencePollSubmission,
+        ExperienceQuestionSubmission,
+        ExperiencePhotoUploadSubmission,
+        ExperienceBuzzerSubmission
+      ].each do |klass|
+        klass.where(user_id: user_ids, experience_block_id: block_ids)
+          .pluck(:user_id, :experience_block_id)
+          .each { |uid, bid| counts[uid].add(bid) }
+      end
+
+      counts.transform_values(&:size)
+    end
+
+    def pick_two_distinct(eligible_user_ids, exclude:)
+      candidates = eligible_user_ids - Array(exclude)
+      shuffled = candidates.shuffle
+      [shuffled[0], shuffled[1]]
+    end
+
+    def build_guess_who_contestant(contestant_user_id, mystery_user_id, board_candidate_ids)
+      clues = ParticipantSubmissions.new(experience).for_user(mystery_user_id).map.with_index do |entry, i|
+        {
+          "id" => "clue-#{SecureRandom.hex(4)}",
+          "prompt" => entry[:prompt],
+          "answer" => entry[:answer],
+          "photo_url" => entry[:photo_url],
+          "source_block_id" => entry[:block_id],
+          "block_kind" => entry[:block_kind],
+          "position" => i,
+          "hidden" => false
+        }
+      end
+
+      {
+        "contestant_user_id" => contestant_user_id,
+        "mystery_user_id" => mystery_user_id,
+        "clues" => clues,
+        "current_clue_index" => 0,
+        "board_candidate_ids" => board_candidate_ids - [mystery_user_id],
+        "eliminated_user_ids" => [],
+        "unanswered_user_ids" => []
+      }
     end
 
     def close_balloon_pump_with_winners!(block, target_units)
@@ -996,32 +1320,6 @@ module Experiences
       )
 
       true
-    end
-
-    def adjust_guess_who_slide!(block_id, delta)
-      block = experience.experience_blocks.find(block_id)
-      transaction do
-        payload = block.payload || {}
-        slides = Array(payload["slides"])
-        current = payload["current_slide_index"].to_i
-        target = (current + delta).clamp(0, [slides.length - 1, 0].max)
-        payload["current_slide_index"] = target
-        block.update!(payload: payload)
-      end
-      block
-    end
-
-    def interleave_slides(list_a, user_a_id, list_b, user_b_id)
-      tagged_a = list_a.map { |e| e.merge(user_id: user_a_id, slot: "a") }
-      tagged_b = list_b.map { |e| e.merge(user_id: user_b_id, slot: "b") }
-
-      slides = []
-      max = [tagged_a.length, tagged_b.length].max
-      max.times do |i|
-        slides << tagged_a[i] if tagged_a[i]
-        slides << tagged_b[i] if tagged_b[i]
-      end
-      slides
     end
 
     def create_family_feud_question(parent_block:, question_spec:, position:)

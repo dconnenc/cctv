@@ -106,16 +106,15 @@ export interface BuzzerPayload {
   prompt?: string;
 }
 
-export interface GuessWhoSlide {
-  slot: 'a' | 'b';
-  block_id: string;
-  block_kind: BlockKind;
+export interface GuessWhoClue {
+  id: string;
   prompt: string;
   answer: { text?: string | null; raw?: unknown; options?: string[]; buzzed_at?: string | null };
   photo_url: string | null;
+  source_block_id: string;
+  block_kind: BlockKind;
   position: number;
-  submitted_at: string;
-  user_id?: string;
+  hidden: boolean;
 }
 
 export interface GuessWhoUserSummary {
@@ -124,15 +123,46 @@ export interface GuessWhoUserSummary {
   avatar?: { strokes?: AvatarStroke[] } | null;
 }
 
+export interface GuessWhoContestant {
+  contestant_user_id: string | null;
+  contestant: GuessWhoUserSummary | null;
+  mystery_user_id: string | null;
+  mystery: GuessWhoUserSummary | null;
+  clues: GuessWhoClue[];
+  current_clue_index: number;
+  board_candidate_ids: string[];
+  eliminated_user_ids: string[];
+  unanswered_user_ids: string[];
+}
+
+export type GuessWhoMonitorView =
+  | 'idle'
+  | 'c1_clue'
+  | 'c1_board'
+  | 'c2_clue'
+  | 'c2_board'
+  | 'reveal';
+
+export interface GuessWhoActivePoll {
+  id: string;
+  options: string[];
+  user_responded: boolean;
+  user_response: { id: string; answer: { selectedOptions?: string[] } } | null;
+}
+
 export interface GuessWhoPayload {
-  segment_id: string;
-  user_a_id?: string;
-  user_b_id?: string;
-  user_a?: GuessWhoUserSummary | null;
-  user_b?: GuessWhoUserSummary | null;
-  slides?: GuessWhoSlide[];
-  current_slide_index?: number;
+  segment_id?: string;
+  contestant_segment_id?: string;
+  eligibility_threshold?: number;
+  contestants: GuessWhoContestant[];
+  monitor_view: GuessWhoMonitorView;
+  started?: boolean;
   revealed?: boolean;
+  active_poll_block_id?: string | null;
+  active_poll_contestant_index?: 0 | 1 | null;
+  active_poll?: GuessWhoActivePoll | null;
+  active_poll_response_count?: number;
+  active_poll_total_participants?: number;
   error?: string;
 }
 

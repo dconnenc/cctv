@@ -8,16 +8,25 @@ RSpec.describe Experiences::Orchestrator do
     create(:experience_participant, :host, user: host_user, experience: experience)
   end
 
-  let!(:audience_a) { create(:experience_participant, :audience, experience: experience) }
-  let!(:audience_b) { create(:experience_participant, :audience, experience: experience) }
+  let!(:contestant_a) { create(:experience_participant, :audience, experience: experience) }
+  let!(:contestant_b) { create(:experience_participant, :audience, experience: experience) }
   let!(:audience_c) { create(:experience_participant, :audience, experience: experience) }
+  let!(:audience_d) { create(:experience_participant, :audience, experience: experience) }
+  let!(:audience_e) { create(:experience_participant, :audience, experience: experience) }
 
-  let(:segment) do
-    seg = create_segment("contestants")
-    [audience_a, audience_b, audience_c].each do |p|
+  let(:pool_segment) do
+    seg = create_segment("audience-pool")
+    [contestant_a, contestant_b, audience_c, audience_d, audience_e].each do |p|
       ExperienceParticipantSegment.create!(experience_participant: p, experience_segment: seg)
     end
-    ExperienceParticipantSegment.create!(experience_participant: host_participant, experience_segment: seg)
+    seg
+  end
+
+  let(:contestant_segment) do
+    seg = create_segment("contestants")
+    [contestant_a, contestant_b].each do |p|
+      ExperienceParticipantSegment.create!(experience_participant: p, experience_segment: seg)
+    end
     seg
   end
 
@@ -31,7 +40,7 @@ RSpec.describe Experiences::Orchestrator do
   end
 
   before do
-    [audience_a, audience_b, audience_c].each do |p|
+    [contestant_a, contestant_b, audience_c, audience_d, audience_e].each do |p|
       create(:experience_question_submission,
         experience_block: question_block,
         user: p.user,
@@ -42,109 +51,158 @@ RSpec.describe Experiences::Orchestrator do
 
   subject(:orchestrator) { described_class.new(actor: host_user, experience: experience) }
 
+  let(:guess_who_block) do
+    create(:experience_block,
+      experience: experience,
+      kind: ExperienceBlock::GUESS_WHO,
+      payload: {
+        "segment_id" => pool_segment.id,
+        "contestant_segment_id" => contestant_segment.id,
+        "eligibility_threshold" => 0.10,
+        "monitor_view" => "idle",
+        "revealed" => false,
+        "started" => false,
+        "contestants" => [],
+        "active_poll_block_id" => nil,
+        "active_poll_contestant_index" => nil
+      },
+      position: 1
+    )
+  end
+
   describe "#start_guess_who!" do
-    let(:guess_who_block) do
-      create(:experience_block,
-        experience: experience,
-        kind: ExperienceBlock::GUESS_WHO,
-        payload: { "segment_id" => segment.id },
-        position: 1
-      )
-    end
-
-    it "selects two random audience members from the segment and snapshots their slides" do
-      orchestrator.start_guess_who!(guess_who_block)
-      guess_who_block.reload
-
-      payload = guess_who_block.payload
-      expect(payload["user_a_id"]).to be_present
-      expect(payload["user_b_id"]).to be_present
-      expect(payload["user_a_id"]).not_to eq(payload["user_b_id"])
-      expect(payload["slides"]).to be_an(Array)
-      expect(payload["slides"]).not_to be_empty
-      expect(payload["current_slide_index"]).to eq(0)
-      expect(payload["revealed"]).to eq(false)
-    end
-
-    it "excludes hosts and moderators from the random pool" do
-      orchestrator.start_guess_who!(guess_who_block)
+    it "picks two mystery participants and snapshots their clues" do
+      orchestrator.start_guess_who!(block_id: guess_who_block.id)
       payload = guess_who_block.reload.payload
 
-      audience_user_ids = [audience_a, audience_b, audience_c].map(&:user_id)
-      expect(audience_user_ids).to include(payload["user_a_id"])
-      expect(audience_user_ids).to include(payload["user_b_id"])
-      expect(payload["user_a_id"]).not_to eq(host_user.id)
-      expect(payload["user_b_id"]).not_to eq(host_user.id)
+      expect(payload["started"]).to eq(true)
+      expect(payload["contestants"].length).to eq(2)
+
+      mystery_ids = payload["contestants"].map { |c| c["mystery_user_id"] }
+      contestant_ids = payload["contestants"].map { |c| c["contestant_user_id"] }
+
+      expect(contestant_ids).to contain_exactly(contestant_a.user_id, contestant_b.user_id)
+      expect(mystery_ids.uniq.length).to eq(2)
+      expect(mystery_ids).not_to include(contestant_a.user_id, contestant_b.user_id)
+
+      payload["contestants"].each do |c|
+        expect(c["clues"]).to be_an(Array)
+        expect(c["clues"]).not_to be_empty
+        expect(c["board_candidate_ids"]).to be_an(Array)
+        expect(c["board_candidate_ids"]).not_to include(c["contestant_user_id"])
+      end
     end
 
-    it "is idempotent — re-opening keeps the same selected users" do
-      orchestrator.start_guess_who!(guess_who_block)
-      first_a = guess_who_block.reload.payload["user_a_id"]
-      first_b = guess_who_block.reload.payload["user_b_id"]
+    it "raises when contestant segment does not have exactly 2 members" do
+      ExperienceParticipantSegment.where(experience_segment_id: contestant_segment.id).delete_all
 
-      orchestrator.start_guess_who!(guess_who_block)
-      expect(guess_who_block.reload.payload["user_a_id"]).to eq(first_a)
-      expect(guess_who_block.reload.payload["user_b_id"]).to eq(first_b)
-    end
-
-    it "alternates slides between the two selected users" do
-      orchestrator.start_guess_who!(guess_who_block)
-      slides = guess_who_block.reload.payload["slides"]
-      slots = slides.map { |s| s["slot"] }
-
-      expect(slots.first(2)).to contain_exactly("a", "b")
+      expect {
+        orchestrator.start_guess_who!(block_id: guess_who_block.id)
+      }.to raise_error(Experiences::InvalidTransitionError)
     end
   end
 
-  describe "#next_guess_who_slide! / #previous_guess_who_slide!" do
-    let(:guess_who_block) do
-      create(:experience_block,
-        experience: experience,
-        kind: ExperienceBlock::GUESS_WHO,
-        payload: {
-          "segment_id" => segment.id,
-          "slides" => [
-            { "slot" => "a", "user_id" => "x" },
-            { "slot" => "b", "user_id" => "y" },
-            { "slot" => "a", "user_id" => "x" }
-          ],
-          "current_slide_index" => 0,
-          "revealed" => false
-        },
-        position: 1
+  describe "#reroll_guess_who_mystery!" do
+    before { orchestrator.start_guess_who!(block_id: guess_who_block.id) }
+
+    it "replaces the mystery for the given contestant index" do
+      original = guess_who_block.reload.payload["contestants"][0]["mystery_user_id"]
+      attempts = 0
+      while attempts < 10
+        orchestrator.reroll_guess_who_mystery!(block_id: guess_who_block.id, contestant_index: 0)
+        new_value = guess_who_block.reload.payload["contestants"][0]["mystery_user_id"]
+        break if new_value != original
+        attempts += 1
+      end
+
+      expect(guess_who_block.reload.payload["contestants"][0]["mystery_user_id"]).not_to eq(contestant_a.user_id)
+    end
+  end
+
+  describe "#set_guess_who_monitor_view!" do
+    before { orchestrator.start_guess_who!(block_id: guess_who_block.id) }
+
+    it "updates monitor_view when given a valid value" do
+      orchestrator.set_guess_who_monitor_view!(block_id: guess_who_block.id, view: "c1_board")
+      expect(guess_who_block.reload.payload["monitor_view"]).to eq("c1_board")
+    end
+
+    it "rejects invalid values" do
+      expect {
+        orchestrator.set_guess_who_monitor_view!(block_id: guess_who_block.id, view: "bogus")
+      }.to raise_error(ArgumentError)
+    end
+  end
+
+  describe "#dispatch_guess_who_poll! and #conclude_guess_who_poll!" do
+    before { orchestrator.start_guess_who!(block_id: guess_who_block.id) }
+
+    it "creates a child True/False poll block and tracks it as active" do
+      orchestrator.dispatch_guess_who_poll!(block_id: guess_who_block.id, contestant_index: 0)
+      payload = guess_who_block.reload.payload
+
+      expect(payload["active_poll_block_id"]).to be_present
+      expect(payload["active_poll_contestant_index"]).to eq(0)
+
+      poll = ExperienceBlock.find(payload["active_poll_block_id"])
+      expect(poll.kind).to eq(ExperienceBlock::POLL)
+      expect(poll.payload["options"]).to eq(["True", "False"])
+      expect(poll.parent_block_id).to eq(guess_who_block.id)
+    end
+
+    it "refuses to dispatch when one is already active" do
+      orchestrator.dispatch_guess_who_poll!(block_id: guess_who_block.id, contestant_index: 0)
+
+      expect {
+        orchestrator.dispatch_guess_who_poll!(block_id: guess_who_block.id, contestant_index: 1)
+      }.to raise_error(Experiences::InvalidTransitionError)
+    end
+
+    it "eliminates candidates whose answer differs from the mystery participant's" do
+      orchestrator.dispatch_guess_who_poll!(block_id: guess_who_block.id, contestant_index: 0)
+      payload = guess_who_block.reload.payload
+      poll_id = payload["active_poll_block_id"]
+      mystery_user_id = payload["contestants"][0]["mystery_user_id"]
+      candidates = payload["contestants"][0]["board_candidate_ids"]
+
+      ExperiencePollSubmission.create!(
+        experience_block_id: poll_id,
+        user_id: mystery_user_id,
+        answer: { "selectedOptions" => ["True"] }
       )
-    end
 
-    it "advances the current slide index" do
-      orchestrator.next_guess_who_slide!(block_id: guess_who_block.id)
-      expect(guess_who_block.reload.payload["current_slide_index"]).to eq(1)
-    end
+      matched = candidates.first
+      differed = candidates.last
+      ExperiencePollSubmission.create!(
+        experience_block_id: poll_id,
+        user_id: matched,
+        answer: { "selectedOptions" => ["True"] }
+      )
+      ExperiencePollSubmission.create!(
+        experience_block_id: poll_id,
+        user_id: differed,
+        answer: { "selectedOptions" => ["False"] }
+      )
 
-    it "clamps at the final slide" do
-      guess_who_block.update!(payload: guess_who_block.payload.merge("current_slide_index" => 2))
-      orchestrator.next_guess_who_slide!(block_id: guess_who_block.id)
-      expect(guess_who_block.reload.payload["current_slide_index"]).to eq(2)
-    end
+      orchestrator.conclude_guess_who_poll!(block_id: guess_who_block.id)
+      contestant = guess_who_block.reload.payload["contestants"][0]
 
-    it "clamps at zero when going backward" do
-      orchestrator.previous_guess_who_slide!(block_id: guess_who_block.id)
-      expect(guess_who_block.reload.payload["current_slide_index"]).to eq(0)
+      expect(contestant["eliminated_user_ids"]).to include(differed)
+      expect(contestant["eliminated_user_ids"]).not_to include(matched)
+      missing_responders = candidates - [matched, differed]
+      expect(contestant["unanswered_user_ids"]).to match_array(missing_responders)
     end
   end
 
   describe "#reveal_guess_who!" do
-    let(:guess_who_block) do
-      create(:experience_block,
-        experience: experience,
-        kind: ExperienceBlock::GUESS_WHO,
-        payload: { "segment_id" => segment.id, "revealed" => false },
-        position: 1
-      )
-    end
+    before { orchestrator.start_guess_who!(block_id: guess_who_block.id) }
 
-    it "sets revealed to true" do
+    it "marks the game as revealed and switches monitor to reveal" do
       orchestrator.reveal_guess_who!(block_id: guess_who_block.id)
-      expect(guess_who_block.reload.payload["revealed"]).to eq(true)
+      payload = guess_who_block.reload.payload
+
+      expect(payload["revealed"]).to eq(true)
+      expect(payload["monitor_view"]).to eq("reveal")
     end
   end
 

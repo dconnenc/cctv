@@ -4,7 +4,9 @@ class Api::ExperienceBlocksController < Api::BaseController
     add_bucket rename_bucket delete_bucket assign_answer auto_categorize
     start_playing reveal_bucket show_x next_question restart_playing
     restart_categorizing restart_everything
-    next_guess_who_slide previous_guess_who_slide reveal_guess_who
+    start_guess_who reroll_guess_who_mystery curate_guess_who_clues
+    advance_guess_who_clue set_guess_who_monitor_view
+    dispatch_guess_who_poll conclude_guess_who_poll reveal_guess_who
     start_minigame_arithmetic end_minigame_arithmetic
     start_minigame_balloon_pump end_minigame_balloon_pump
     advance_the_scene_phase start_next_the_scene
@@ -519,12 +521,12 @@ class Api::ExperienceBlocksController < Api::BaseController
     end
   end
 
-  # POST /api/experiences/:experience_id/blocks/:id/guess_who/next
-  def next_guess_who_slide
+  # POST /api/experiences/:experience_id/blocks/:id/guess_who/start
+  def start_guess_who
     with_experience_orchestration do
       Experiences::Orchestrator.new(
         experience: @experience, actor: @user
-      ).next_guess_who_slide!(block_id: params[:id])
+      ).start_guess_who!(block_id: params[:id])
 
       Experiences::Broadcaster.new(@experience).broadcast_experience_update
 
@@ -532,12 +534,95 @@ class Api::ExperienceBlocksController < Api::BaseController
     end
   end
 
-  # POST /api/experiences/:experience_id/blocks/:id/guess_who/previous
-  def previous_guess_who_slide
+  # POST /api/experiences/:experience_id/blocks/:id/guess_who/reroll_mystery
+  def reroll_guess_who_mystery
     with_experience_orchestration do
       Experiences::Orchestrator.new(
         experience: @experience, actor: @user
-      ).previous_guess_who_slide!(block_id: params[:id])
+      ).reroll_guess_who_mystery!(
+        block_id: params[:id],
+        contestant_index: params[:contestant_index]
+      )
+
+      Experiences::Broadcaster.new(@experience).broadcast_experience_update
+
+      render json: { success: true }, status: 200
+    end
+  end
+
+  # PATCH /api/experiences/:experience_id/blocks/:id/guess_who/clues
+  def curate_guess_who_clues
+    with_experience_orchestration do
+      Experiences::Orchestrator.new(
+        experience: @experience, actor: @user
+      ).curate_guess_who_clues!(
+        block_id: params[:id],
+        contestant_index: params[:contestant_index],
+        clue_order: params[:clue_order] || [],
+        hidden_clue_ids: params[:hidden_clue_ids] || []
+      )
+
+      Experiences::Broadcaster.new(@experience).broadcast_experience_update
+
+      render json: { success: true }, status: 200
+    end
+  end
+
+  # POST /api/experiences/:experience_id/blocks/:id/guess_who/advance_clue
+  def advance_guess_who_clue
+    with_experience_orchestration do
+      Experiences::Orchestrator.new(
+        experience: @experience, actor: @user
+      ).advance_guess_who_clue!(
+        block_id: params[:id],
+        contestant_index: params[:contestant_index],
+        direction: params[:direction]
+      )
+
+      Experiences::Broadcaster.new(@experience).broadcast_experience_update
+
+      render json: { success: true }, status: 200
+    end
+  end
+
+  # POST /api/experiences/:experience_id/blocks/:id/guess_who/monitor_view
+  def set_guess_who_monitor_view
+    with_experience_orchestration do
+      Experiences::Orchestrator.new(
+        experience: @experience, actor: @user
+      ).set_guess_who_monitor_view!(
+        block_id: params[:id],
+        view: params[:view]
+      )
+
+      Experiences::Broadcaster.new(@experience).broadcast_experience_update
+
+      render json: { success: true }, status: 200
+    end
+  end
+
+  # POST /api/experiences/:experience_id/blocks/:id/guess_who/dispatch_poll
+  def dispatch_guess_who_poll
+    with_experience_orchestration do
+      Experiences::Orchestrator.new(
+        experience: @experience, actor: @user
+      ).dispatch_guess_who_poll!(
+        block_id: params[:id],
+        contestant_index: params[:contestant_index]
+      )
+
+      Experiences::Broadcaster.new(@experience).broadcast_experience_update
+
+      render json: { success: true }, status: 200
+    end
+  end
+
+  # POST /api/experiences/:experience_id/blocks/:id/guess_who/conclude_poll
+  def conclude_guess_who_poll
+    with_experience_orchestration do
+      Experiences::Orchestrator.new(
+        experience: @experience, actor: @user
+      ).conclude_guess_who_poll!(block_id: params[:id])
 
       Experiences::Broadcaster.new(@experience).broadcast_experience_update
 

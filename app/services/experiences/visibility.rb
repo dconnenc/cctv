@@ -113,6 +113,7 @@ module Experiences
       return true if block.kind == ExperienceBlock::MINIGAME_ARITHMETIC
       return true if block.kind == ExperienceBlock::MINIGAME_BALLOON_PUMP
       return true if block.kind == ExperienceBlock::THE_SCENE
+      return true if block.kind == ExperienceBlock::GUESS_WHO
       !block.has_visibility_rules?
     end
 
@@ -147,6 +148,7 @@ module Experiences
       sorted = children.sort_by(&:position)
       return [parent] if sorted.empty?
       return [parent] if parent.kind == ExperienceBlock::FAMILY_FEUD
+      return [parent] if parent.kind == ExperienceBlock::GUESS_WHO
 
       first = sorted.first
       first.has_visibility_rules? ? [parent] : [first]
@@ -345,29 +347,75 @@ module Experiences
 
     def shape_guess_who_payload(block, participant_role, user, view_context)
       payload = block.payload.deep_dup || {}
-
-      payload["user_a"] = guess_who_user_summary(payload["user_a_id"])
-      payload["user_b"] = guess_who_user_summary(payload["user_b_id"])
+      contestants = Array(payload["contestants"])
 
       privileged =
         view_context == :admin ||
+        view_context == :monitor ||
         (view_context == :participant && (mod_or_host?(participant_role) || admin_user?(user)))
 
-      unless privileged
-        revealed = payload["revealed"]
-        payload.delete("user_a_id")
-        payload.delete("user_b_id")
-        unless revealed
-          payload["user_a"] = nil
-          payload["user_b"] = nil
+      payload["contestants"] = contestants.map do |c|
+        shaped = {
+          "contestant_user_id" => c["contestant_user_id"],
+          "contestant" => guess_who_user_summary(c["contestant_user_id"]),
+          "board_candidate_ids" => Array(c["board_candidate_ids"]),
+          "eliminated_user_ids" => Array(c["eliminated_user_ids"]),
+          "unanswered_user_ids" => Array(c["unanswered_user_ids"]),
+          "current_clue_index" => c["current_clue_index"].to_i
+        }
+
+        if privileged
+          revealed_or_priv = payload["revealed"] || view_context != :monitor
+          shaped["mystery_user_id"] = revealed_or_priv ? c["mystery_user_id"] : nil
+          shaped["mystery"] = revealed_or_priv ? guess_who_user_summary(c["mystery_user_id"]) : nil
+          shaped["clues"] = Array(c["clues"])
+        else
+          shaped["mystery_user_id"] = payload["revealed"] ? c["mystery_user_id"] : nil
+          shaped["mystery"] = payload["revealed"] ? guess_who_user_summary(c["mystery_user_id"]) : nil
+          shaped["clues"] = []
         end
 
-        payload["slides"] = Array(payload["slides"]).map do |slide|
-          slide.except("user_id")
-        end
+        shaped
       end
 
+      payload["active_poll_response_count"] = guess_who_active_poll_response_count(payload)
+      payload["active_poll_total_participants"] = guess_who_active_poll_total(payload)
+      payload["active_poll"] = guess_who_active_poll_for(payload, user) if payload["active_poll_block_id"].present?
+
       payload
+    end
+
+    def guess_who_active_poll_for(payload, user)
+      poll_block = @experience.experience_blocks.find_by(id: payload["active_poll_block_id"])
+      return nil unless poll_block
+
+      own_submission = user && ExperiencePollSubmission.find_by(
+        experience_block_id: poll_block.id,
+        user_id: user.id
+      )
+
+      {
+        "id" => poll_block.id,
+        "options" => Array(poll_block.payload["options"]),
+        "user_responded" => own_submission.present?,
+        "user_response" => own_submission && { "id" => own_submission.id, "answer" => own_submission.answer }
+      }
+    end
+
+    def guess_who_active_poll_response_count(payload)
+      poll_id = payload["active_poll_block_id"]
+      return 0 if poll_id.blank?
+
+      ExperiencePollSubmission.where(experience_block_id: poll_id).count
+    end
+
+    def guess_who_active_poll_total(payload)
+      poll_id = payload["active_poll_block_id"]
+      return 0 if poll_id.blank?
+
+      @experience.experience_participants
+        .where.not(role: %w[host moderator])
+        .count
     end
 
     def shape_minigame_arithmetic_payload(block, participant_role, user, view_context)

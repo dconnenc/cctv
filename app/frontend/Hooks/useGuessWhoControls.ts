@@ -2,8 +2,12 @@ import { useCallback, useState } from 'react';
 
 import { useAdminAuth } from '@cctv/contexts/AdminAuthContext';
 import { useExperience } from '@cctv/contexts/ExperienceContext';
+import { GuessWhoMonitorView } from '@cctv/types';
 
-type Action = 'next' | 'previous' | 'reveal';
+interface DispatchResult {
+  success: boolean;
+  error?: string;
+}
 
 export function useGuessWhoControls() {
   const { code } = useExperience();
@@ -11,23 +15,24 @@ export function useGuessWhoControls() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const dispatch = useCallback(
+  const send = useCallback(
     async (
       blockId: string,
-      action: Action,
-    ): Promise<{ success: boolean; error?: string } | null> => {
+      path: string,
+      init: RequestInit = {},
+    ): Promise<DispatchResult | null> => {
       if (!code || !blockId) return null;
 
       setIsLoading(true);
       setError(null);
 
-      const url = `/api/experiences/${encodeURIComponent(code)}/blocks/${encodeURIComponent(blockId)}/guess_who/${action}`;
+      const url = `/api/experiences/${encodeURIComponent(code)}/blocks/${encodeURIComponent(blockId)}/guess_who/${path}`;
 
       try {
-        const res = await adminFetch(url, { method: 'POST' });
+        const res = await adminFetch(url, { method: 'POST', ...init });
         const data = await res.json();
         if (!res.ok || data?.success === false) {
-          const msg = data?.error || `Failed to ${action} guess who`;
+          const msg = data?.error || `Failed to ${path}`;
           setError(msg);
           return { success: false, error: msg };
         }
@@ -46,10 +51,37 @@ export function useGuessWhoControls() {
     [code, adminFetch],
   );
 
+  const jsonBody = (body: Record<string, unknown>): RequestInit => ({
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+
   return {
-    nextSlide: (blockId: string) => dispatch(blockId, 'next'),
-    previousSlide: (blockId: string) => dispatch(blockId, 'previous'),
-    reveal: (blockId: string) => dispatch(blockId, 'reveal'),
+    start: (blockId: string) => send(blockId, 'start'),
+    rerollMystery: (blockId: string, contestantIndex: 0 | 1) =>
+      send(blockId, 'reroll_mystery', jsonBody({ contestant_index: contestantIndex })),
+    curateClues: (
+      blockId: string,
+      contestantIndex: 0 | 1,
+      clueOrder: string[],
+      hiddenClueIds: string[],
+    ) =>
+      send(blockId, 'clues', {
+        method: 'PATCH',
+        ...jsonBody({
+          contestant_index: contestantIndex,
+          clue_order: clueOrder,
+          hidden_clue_ids: hiddenClueIds,
+        }),
+      }),
+    advanceClue: (blockId: string, contestantIndex: 0 | 1, direction: 1 | -1) =>
+      send(blockId, 'advance_clue', jsonBody({ contestant_index: contestantIndex, direction })),
+    setMonitorView: (blockId: string, view: GuessWhoMonitorView) =>
+      send(blockId, 'monitor_view', jsonBody({ view })),
+    dispatchPoll: (blockId: string, contestantIndex: 0 | 1) =>
+      send(blockId, 'dispatch_poll', jsonBody({ contestant_index: contestantIndex })),
+    concludePoll: (blockId: string) => send(blockId, 'conclude_poll'),
+    reveal: (blockId: string) => send(blockId, 'reveal'),
     isLoading,
     error,
   };
