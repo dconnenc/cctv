@@ -1,5 +1,5 @@
 import { useExperience } from '@cctv/contexts/ExperienceContext';
-import { DialogDescription, DialogTitle, SegmentMultiSelect } from '@cctv/core';
+import { DialogDescription, DialogTitle, SegmentMultiSelect, Switch } from '@cctv/core';
 import { Button } from '@cctv/core/Button/Button';
 import { Dropdown } from '@cctv/core/Dropdown/Dropdown';
 import { BLOCK_KIND_LABELS, BlockKind, ParticipantSummary } from '@cctv/types';
@@ -61,6 +61,7 @@ function CreateBlockForm({ onClose }: CreateBlockFormProps) {
 
       <BlockEditor />
       <SegmentSelector />
+      <PlaybillToggles />
 
       <div className={styles.actions}>
         <Button variant="secondary" onClick={onClose}>
@@ -116,6 +117,37 @@ function BlockEditor() {
       const exhaustiveCheck: never = blockData;
       return <div className={styles.details}>Unknown block type: {exhaustiveCheck}</div>;
   }
+}
+
+function PlaybillToggles() {
+  const { addToPlaybill, setAddToPlaybill, playbillMysterious, setPlaybillMysterious } =
+    useCreateBlockContext();
+
+  return (
+    <div className={styles.playbillToggles}>
+      <label className={styles.playbillRow}>
+        <span>
+          Add to playbill
+          <div className={styles.playbillHint}>
+            Show this block in the playbill&rsquo;s running order.
+          </div>
+        </span>
+        <Switch checked={addToPlaybill} onCheckedChange={setAddToPlaybill} />
+      </label>
+
+      {addToPlaybill && (
+        <label className={styles.playbillRow}>
+          <span>
+            Display block mysteriously
+            <div className={styles.playbillHint}>
+              Hide the block&rsquo;s identity &mdash; list it as &ldquo;A Surprise Segment&rdquo;.
+            </div>
+          </span>
+          <Switch checked={playbillMysterious} onCheckedChange={setPlaybillMysterious} />
+        </label>
+      )}
+    </div>
+  );
 }
 
 function SegmentSelector() {

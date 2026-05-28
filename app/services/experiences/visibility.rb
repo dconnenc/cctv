@@ -220,13 +220,15 @@ module Experiences
 
     def serialize_block(block, participant_role:, participant: nil, depth: 0, view_context: :admin)
       {
-        id:              block.id,
-        kind:            block.kind,
-        status:          block.status,
-        parent_block_id: block.parent_block_id,
-        payload:         shape_payload(block, participant_role, participant, view_context),
-        sounds:          block.sounds,
-        position:        block.position
+        id:                  block.id,
+        kind:                block.kind,
+        status:              block.status,
+        parent_block_id:     block.parent_block_id,
+        payload:             shape_payload(block, participant_role, participant, view_context),
+        sounds:              block.sounds,
+        position:            block.position,
+        add_to_playbill:     block.add_to_playbill,
+        playbill_mysterious: block.playbill_mysterious
       }
         .merge(responses: serialize_response_data(block, participant_role, participant))
         .merge(visibility_metadata(block, participant_role, participant))

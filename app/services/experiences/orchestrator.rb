@@ -19,7 +19,9 @@ module Experiences
       target_user_ids: [],
       status: :hidden,
       open_immediately: false,
-      show_in_lobby: false
+      show_in_lobby: false,
+      add_to_playbill: false,
+      playbill_mysterious: false
     )
       transaction do
         max_position = experience.experience_blocks.maximum(:position) || -1
@@ -32,7 +34,9 @@ module Experiences
           payload: prepared_payload,
           visible_to_roles: visible_to_roles,
           target_user_ids: target_user_ids,
-          position: max_position + 1
+          position: max_position + 1,
+          add_to_playbill: add_to_playbill,
+          playbill_mysterious: add_to_playbill && playbill_mysterious
         )
         block.update!(status: :open) if open_immediately
 
@@ -881,7 +885,9 @@ module Experiences
       visible_to_roles: [],
       target_user_ids: [],
       status: :hidden,
-      questions: []
+      questions: [],
+      add_to_playbill: false,
+      playbill_mysterious: false
     )
       transaction do
         max_position = experience.experience_blocks.maximum(:position) || -1
@@ -893,7 +899,9 @@ module Experiences
           sounds: default_sounds_for(kind),
           visible_to_roles: visible_to_roles,
           target_user_ids: target_user_ids,
-          position: max_position + 1
+          position: max_position + 1,
+          add_to_playbill: add_to_playbill,
+          playbill_mysterious: add_to_playbill && playbill_mysterious
         )
 
         if kind == ExperienceBlock::FAMILY_FEUD && questions.present?

@@ -370,6 +370,8 @@ interface BaseBlock {
   visible_to_segments?: string[];
   target_user_ids?: string[];
   show_in_lobby?: boolean;
+  add_to_playbill?: boolean;
+  playbill_mysterious?: boolean;
   sounds?: Partial<Record<string, SoundKey>>;
   created_at?: string;
   updated_at?: string;
@@ -556,6 +558,8 @@ export interface CreateBlockPayload {
   visible_to_segment_ids?: string[];
   status?: BlockStatus;
   open_immediately?: boolean;
+  add_to_playbill?: boolean;
+  playbill_mysterious?: boolean;
   questions?: Array<{
     payload: Record<string, string>;
   }>;
@@ -1041,6 +1045,11 @@ export interface CreateBlockContextValue {
   defaultSegmentName: string | null;
   viewAdditionalDetails: boolean;
   setViewAdditionalDetails: (view: boolean) => void;
+
+  addToPlaybill: boolean;
+  setAddToPlaybill: (value: boolean) => void;
+  playbillMysterious: boolean;
+  setPlaybillMysterious: (value: boolean) => void;
 }
 
 // Props interface for block components

@@ -153,6 +153,8 @@ export function CreateBlockProvider({
 
   const [visibleSegments, setVisibleSegments] = useState<string[]>(initialVisibleSegments);
   const [viewAdditionalDetails, setViewAdditionalDetails] = useState<boolean>(false);
+  const [addToPlaybill, setAddToPlaybill] = useState<boolean>(true);
+  const [playbillMysterious, setPlaybillMysterious] = useState<boolean>(false);
 
   const {
     createExperienceBlock,
@@ -392,6 +394,8 @@ export function CreateBlockProvider({
         target_user_ids: string[];
         status: BlockStatus;
         open_immediately: boolean;
+        add_to_playbill: boolean;
+        playbill_mysterious: boolean;
         questions?: Array<{ payload: Record<string, string> }>;
       } = {
         kind: blockData.kind,
@@ -400,6 +404,8 @@ export function CreateBlockProvider({
         target_user_ids: [],
         status: status,
         open_immediately: status === 'open',
+        add_to_playbill: addToPlaybill,
+        playbill_mysterious: addToPlaybill && playbillMysterious,
       };
 
       if (
@@ -421,6 +427,8 @@ export function CreateBlockProvider({
       setBlockData(getDefaultFormData(blockData.kind));
       setVisibleSegments(initialVisibleSegments);
       setViewAdditionalDetails(false);
+      setAddToPlaybill(true);
+      setPlaybillMysterious(false);
     },
     [
       blockData,
@@ -433,6 +441,8 @@ export function CreateBlockProvider({
       getDefaultFormData,
       experience,
       initialVisibleSegments,
+      addToPlaybill,
+      playbillMysterious,
     ],
   );
 
@@ -449,6 +459,15 @@ export function CreateBlockProvider({
     defaultSegmentName,
     viewAdditionalDetails,
     setViewAdditionalDetails,
+    addToPlaybill,
+    setAddToPlaybill: (value: boolean) => {
+      setAddToPlaybill(value);
+      if (!value) {
+        setPlaybillMysterious(false);
+      }
+    },
+    playbillMysterious,
+    setPlaybillMysterious,
   };
 
   return <CreateBlockContext.Provider value={contextValue}>{children}</CreateBlockContext.Provider>;
