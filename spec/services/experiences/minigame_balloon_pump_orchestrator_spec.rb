@@ -42,7 +42,7 @@ RSpec.describe Experiences::Orchestrator, "minigame balloon pump" do
         experience_block_id: block.id, experience_participant: player_a, fill_amount: 30
       )
 
-      orchestrator.start_minigame_balloon_pump!(block_id: block.id)
+      orchestrator.start_minigame_balloon_pump!(block: block)
 
       block.reload
       expect(block.payload["started_at"]).to be_present
@@ -62,7 +62,7 @@ RSpec.describe Experiences::Orchestrator, "minigame balloon pump" do
     let(:player_a_orchestrator) { described_class.new(actor: player_a.user, experience: experience) }
     let(:player_b_orchestrator) { described_class.new(actor: player_b.user, experience: experience) }
 
-    before { orchestrator.start_minigame_balloon_pump!(block_id: block.id) }
+    before { orchestrator.start_minigame_balloon_pump!(block: block) }
 
     it "records the cumulative fill amount" do
       player_a_orchestrator.submit_balloon_pump_update!(block: block, fill_amount: 20)
@@ -116,7 +116,7 @@ RSpec.describe Experiences::Orchestrator, "minigame balloon pump" do
     end
 
     it "ignores submissions after end" do
-      orchestrator.end_minigame_balloon_pump!(block_id: block.id)
+      orchestrator.end_minigame_balloon_pump!(block: block)
       outcome = player_a_orchestrator.submit_balloon_pump_update!(block: block, fill_amount: 30)
       expect(outcome[:result]).to eq(:ignored)
     end
@@ -139,19 +139,19 @@ RSpec.describe Experiences::Orchestrator, "minigame balloon pump" do
       )
     end
 
-    before { orchestrator.start_minigame_balloon_pump!(block_id: block.id) }
+    before { orchestrator.start_minigame_balloon_pump!(block: block) }
 
     it "stamps ended_at and closes" do
-      orchestrator.end_minigame_balloon_pump!(block_id: block.id)
+      orchestrator.end_minigame_balloon_pump!(block: block)
       block.reload
       expect(block.payload["ended_at"]).to be_present
       expect(block.status).to eq("closed")
     end
 
     it "is idempotent" do
-      orchestrator.end_minigame_balloon_pump!(block_id: block.id)
+      orchestrator.end_minigame_balloon_pump!(block: block)
       first = block.reload.payload["ended_at"]
-      orchestrator.end_minigame_balloon_pump!(block_id: block.id)
+      orchestrator.end_minigame_balloon_pump!(block: block)
       expect(block.reload.payload["ended_at"]).to eq(first)
     end
   end

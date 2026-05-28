@@ -46,7 +46,7 @@ RSpec.describe Experiences::Orchestrator, "minigame arithmetic" do
 
     it "sets started_at, opens the block, and schedules the end job" do
       expect {
-        orchestrator.start_minigame_arithmetic!(block_id: block.id)
+        orchestrator.start_minigame_arithmetic!(block: block)
       }.to have_enqueued_job(Minigames::EndArithmeticJob).with(block.id, kind_of(String))
 
       block.reload
@@ -72,12 +72,9 @@ RSpec.describe Experiences::Orchestrator, "minigame arithmetic" do
       described_class.new(actor: player.user, experience: experience)
     end
 
-    before do
-      orchestrator.start_minigame_arithmetic!(block_id: block.id)
-    end
+    before { orchestrator.start_minigame_arithmetic!(block: block) }
 
     it "records correct answers" do
-      block.reload
       first = block.payload["questions"].first
 
       submission = player_orchestrator.submit_minigame_arithmetic_response!(
@@ -135,7 +132,7 @@ RSpec.describe Experiences::Orchestrator, "minigame arithmetic" do
     end
 
     it "rejects submissions after end" do
-      orchestrator.end_minigame_arithmetic!(block_id: block.id)
+      orchestrator.end_minigame_arithmetic!(block: block)
 
       expect {
         player_orchestrator.submit_minigame_arithmetic_response!(
@@ -158,21 +155,21 @@ RSpec.describe Experiences::Orchestrator, "minigame arithmetic" do
     end
 
     before do
-      orchestrator.start_minigame_arithmetic!(block_id: block.id)
+      orchestrator.start_minigame_arithmetic!(block: block)
     end
 
     it "stamps ended_at and closes the block" do
-      orchestrator.end_minigame_arithmetic!(block_id: block.id)
+      orchestrator.end_minigame_arithmetic!(block: block)
       block.reload
       expect(block.payload["ended_at"]).to be_present
       expect(block.status).to eq("closed")
     end
 
     it "is idempotent" do
-      orchestrator.end_minigame_arithmetic!(block_id: block.id)
+      orchestrator.end_minigame_arithmetic!(block: block)
       first_ended_at = block.reload.payload["ended_at"]
 
-      orchestrator.end_minigame_arithmetic!(block_id: block.id)
+      orchestrator.end_minigame_arithmetic!(block: block)
       expect(block.reload.payload["ended_at"]).to eq(first_ended_at)
     end
   end

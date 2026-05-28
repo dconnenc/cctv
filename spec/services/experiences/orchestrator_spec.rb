@@ -13,7 +13,7 @@ RSpec.describe Experiences::Orchestrator do
 
     subject do
       described_class.new(actor: user, experience: experience).reorder_block!(
-        block_id: block_to_move.id,
+        block: block_to_move,
         position: new_position
       )
     end
@@ -108,7 +108,7 @@ RSpec.describe Experiences::Orchestrator do
 
     it "moves only the target block's position and leaves siblings unchanged" do
       described_class.new(actor: user, experience: experience).set_block_column!(
-        block_id: block_a.id,
+        block: block_a,
         column: 2
       )
 
@@ -119,7 +119,7 @@ RSpec.describe Experiences::Orchestrator do
 
     it "allows two blocks to share a column (simultaneity)" do
       described_class.new(actor: user, experience: experience).set_block_column!(
-        block_id: block_a.id,
+        block: block_a,
         column: 1
       )
 
@@ -129,7 +129,7 @@ RSpec.describe Experiences::Orchestrator do
 
     it "clamps negative columns to zero" do
       described_class.new(actor: user, experience: experience).set_block_column!(
-        block_id: block_b.id,
+        block: block_b,
         column: -5
       )
 
@@ -460,7 +460,7 @@ RSpec.describe Experiences::Orchestrator do
 
     subject do
       described_class.new(actor: user, experience: experience).update_block!(
-        block_id: block.id,
+        block: block,
         payload: new_payload,
         visible_to_segment_ids: [],
         questions: questions
@@ -482,7 +482,7 @@ RSpec.describe Experiences::Orchestrator do
       it "updates segment associations" do
         segment = experience.experience_segments.create!(name: "Test", color: "#000", position: 0)
         described_class.new(actor: user, experience: experience).update_block!(
-          block_id: block.id,
+          block: block,
           payload: new_payload,
           visible_to_segment_ids: [segment.id]
         )
