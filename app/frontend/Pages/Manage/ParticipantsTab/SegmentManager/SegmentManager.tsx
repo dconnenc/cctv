@@ -23,7 +23,7 @@ export default function SegmentManager({ segments, defaultSegmentId }: SegmentMa
   const [editColor, setEditColor] = useState('');
 
   const { createSegment, isLoading: isCreating, error: createError } = useCreateSegment();
-  const { updateSegment, isLoading: isUpdating } = useUpdateSegment();
+  const { updateSegment, isLoading: isUpdating, error: updateError } = useUpdateSegment();
   const { deleteSegment, isLoading: isDeleting } = useDeleteSegment();
 
   const handleCreate = async () => {
@@ -159,6 +159,7 @@ export default function SegmentManager({ segments, defaultSegmentId }: SegmentMa
       )}
 
       {createError && <div className={styles.error}>{createError}</div>}
+      {updateError && <div className={styles.error}>{updateError}</div>}
     </div>
   );
 }
