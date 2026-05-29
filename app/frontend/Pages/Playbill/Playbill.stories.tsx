@@ -41,3 +41,26 @@ export const Disabled: Story = {
     ),
   ],
 };
+
+export const RunningOrderPopulated: Story = {
+  decorators: [
+    (Story) => (
+      <ExperienceSeeder experience={lobbyExperience} participant={undefined}>
+        <Story />
+      </ExperienceSeeder>
+    ),
+  ],
+};
+
+export const RunningOrderEmpty: Story = {
+  decorators: [
+    (Story) => (
+      <ExperienceSeeder
+        experience={{ ...lobbyExperience, playbill_running_order: [] }}
+        participant={undefined}
+      >
+        <Story />
+      </ExperienceSeeder>
+    ),
+  ],
+};

@@ -615,9 +615,10 @@ module Experiences
         created_at:       @experience.created_at,
         updated_at:       @experience.updated_at,
         blocks:           blocks,
-        playbill_enabled:   @experience.playbill_enabled,
-        playbill:           serialize_playbill,
-        segments:           serialize_segments,
+        playbill_enabled:        @experience.playbill_enabled,
+        playbill:                serialize_playbill,
+        playbill_running_order:  serialize_playbill_running_order,
+        segments:                serialize_segments,
         default_segment_id: @experience.default_segment_id,
         hosts:            serialize_participants(participants.select { |p| p.role == "host" }),
         participants:     serialize_participants(participants)
@@ -648,6 +649,43 @@ module Experiences
     def serialize_segments
       @experience.experience_segments.order(position: :asc).map do |s|
         { id: s.id, name: s.name, color: s.color, position: s.position }
+      end
+    end
+
+    def serialize_playbill_running_order
+      @experience.experience_blocks
+        .where(parent_block_id: nil, add_to_playbill: true)
+        .order(position: :asc)
+        .map do |block|
+          {
+            id:                  block.id,
+            kind:                block.kind,
+            position:            block.position,
+            playbill_mysterious: block.playbill_mysterious,
+            title:               block.playbill_mysterious ? nil : derive_playbill_title(block)
+          }
+        end
+    end
+
+    def derive_playbill_title(block)
+      payload = block.payload || {}
+
+      case block.kind
+      when ExperienceBlock::POLL, ExperienceBlock::QUESTION
+        payload["question"].to_s.strip.presence
+      when ExperienceBlock::ANNOUNCEMENT
+        msg = payload["message"].to_s.strip
+        if msg.empty?
+          nil
+        else
+          msg.length > 60 ? "#{msg[0, 60]}…" : msg
+        end
+      when ExperienceBlock::FAMILY_FEUD
+        payload["title"].to_s.strip.presence
+      when ExperienceBlock::PHOTO_UPLOAD
+        payload["prompt"].to_s.strip.presence
+      when ExperienceBlock::BUZZER
+        payload["label"].to_s.strip.presence || payload["prompt"].to_s.strip.presence
       end
     end
 

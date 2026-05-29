@@ -492,6 +492,14 @@ export type Block =
   | MinigameBalloonPumpBlock
   | TheSceneBlock;
 
+export interface PlaybillRunningOrderEntry {
+  id: string;
+  kind: BlockKind;
+  position: number;
+  playbill_mysterious: boolean;
+  title: string | null;
+}
+
 export interface Experience {
   id: string;
   name: string;
@@ -506,6 +514,7 @@ export interface Experience {
   blocks: Block[];
   playbill_enabled?: boolean;
   playbill?: PlaybillSection[];
+  playbill_running_order?: PlaybillRunningOrderEntry[];
   segments?: ExperienceSegment[];
   default_segment_id?: string | null;
   created_at: string;

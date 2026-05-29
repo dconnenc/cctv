@@ -6,7 +6,7 @@ import { ChevronLeft } from 'lucide-react';
 
 import { useExperience } from '@cctv/contexts/ExperienceContext';
 import { Button } from '@cctv/core';
-import { Block, BlockKind } from '@cctv/types';
+import { BLOCK_KIND_LABELS, BlockKind, PlaybillRunningOrderEntry } from '@cctv/types';
 
 import styles from './Playbill.module.scss';
 
@@ -24,38 +24,6 @@ const BLOCK_KIND_DESCRIPTIONS: Record<BlockKind, string> = {
   [BlockKind.MINIGAME_BALLOON_PUMP]: 'Balloon-pump minigame',
   [BlockKind.THE_SCENE]: 'Improv suggestion + voting',
 };
-
-function getBlockTitle(block: Block): string {
-  switch (block.kind) {
-    case BlockKind.POLL:
-      return block.payload?.question?.trim() || 'Poll';
-    case BlockKind.QUESTION:
-      return block.payload?.question?.trim() || 'Question';
-    case BlockKind.ANNOUNCEMENT: {
-      const msg = block.payload?.message?.trim();
-      if (!msg) return 'Announcement';
-      return msg.length > 60 ? `${msg.slice(0, 60)}…` : msg;
-    }
-    case BlockKind.FAMILY_FEUD:
-      return block.payload?.title?.trim() || 'Family Feud';
-    case BlockKind.PHOTO_UPLOAD:
-      return block.payload?.prompt?.trim() || 'Photo Upload';
-    case BlockKind.BUZZER:
-      return block.payload?.label?.trim() || block.payload?.prompt?.trim() || 'Buzzer';
-    case BlockKind.GUESS_WHO:
-      return 'Guess Who';
-    case BlockKind.MINIGAME_ARITHMETIC:
-      return 'Arithmetic Minigame';
-    case BlockKind.MINIGAME_BALLOON_PUMP:
-      return 'Balloon Pump Minigame';
-    case BlockKind.THE_SCENE:
-      return 'The Scene';
-    default: {
-      const _exhaust: never = block;
-      return (_exhaust as Block).kind;
-    }
-  }
-}
 
 export default function Playbill() {
   const { experience, code, isLoading, error } = useExperience();
@@ -101,24 +69,22 @@ export default function Playbill() {
       </Link>
 
       <div className={styles.tabs} role="tablist">
-        <button
-          type="button"
+        <Button
           role="tab"
           aria-selected={activeTab === 'performers'}
-          className={`${styles.tab} ${activeTab === 'performers' ? styles.tabActive : ''}`}
+          variant={activeTab === 'performers' ? 'primary' : 'ghost'}
           onClick={() => setActiveTab('performers')}
         >
           Performers
-        </button>
-        <button
-          type="button"
+        </Button>
+        <Button
           role="tab"
           aria-selected={activeTab === 'running_order'}
-          className={`${styles.tab} ${activeTab === 'running_order' ? styles.tabActive : ''}`}
+          variant={activeTab === 'running_order' ? 'primary' : 'ghost'}
           onClick={() => setActiveTab('running_order')}
         >
           Running Order
-        </button>
+        </Button>
       </div>
 
       {activeTab === 'performers' && <PerformersTab />}
@@ -172,13 +138,9 @@ function PerformersTab() {
 
 function RunningOrderTab() {
   const { experience } = useExperience();
+  const entries = experience?.playbill_running_order || [];
 
-  const blocks = (experience?.blocks || [])
-    .filter((block) => block.add_to_playbill && !block.parent_block_id)
-    .slice()
-    .sort((a, b) => a.position - b.position);
-
-  if (blocks.length === 0) {
+  if (entries.length === 0) {
     return (
       <div className={styles.sections}>
         <p className={styles.subtitle}>No blocks have been added to the running order yet.</p>
@@ -188,23 +150,28 @@ function RunningOrderTab() {
 
   return (
     <ol className={styles.runningOrder}>
-      {blocks.map((block, index) => {
-        const mysterious = block.playbill_mysterious;
-        const title = mysterious ? 'A Surprise Segment' : getBlockTitle(block);
-        const description = mysterious
-          ? 'Identity revealed live during the show.'
-          : BLOCK_KIND_DESCRIPTIONS[block.kind];
-
-        return (
-          <li key={block.id} className={styles.runningOrderItem}>
-            <span className={styles.runningOrderIndex}>{index + 1}</span>
-            <div className={styles.runningOrderText}>
-              <h3 className={styles.runningOrderTitle}>{title}</h3>
-              <p className={styles.runningOrderDescription}>{description}</p>
-            </div>
-          </li>
-        );
-      })}
+      {entries.map((entry, index) => (
+        <RunningOrderItem key={entry.id} entry={entry} index={index} />
+      ))}
     </ol>
+  );
+}
+
+function RunningOrderItem({ entry, index }: { entry: PlaybillRunningOrderEntry; index: number }) {
+  const title = entry.playbill_mysterious
+    ? 'A Surprise Segment'
+    : entry.title || BLOCK_KIND_LABELS[entry.kind];
+  const description = entry.playbill_mysterious
+    ? 'Identity revealed live during the show.'
+    : BLOCK_KIND_DESCRIPTIONS[entry.kind];
+
+  return (
+    <li className={styles.runningOrderItem}>
+      <span className={styles.runningOrderIndex}>{index + 1}</span>
+      <div className={styles.runningOrderText}>
+        <h3 className={styles.runningOrderTitle}>{title}</h3>
+        <p className={styles.runningOrderDescription}>{description}</p>
+      </div>
+    </li>
   );
 }
