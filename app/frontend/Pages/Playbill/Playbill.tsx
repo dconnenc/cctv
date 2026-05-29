@@ -158,19 +158,26 @@ function RunningOrderTab() {
 }
 
 function RunningOrderItem({ entry, index }: { entry: PlaybillRunningOrderEntry; index: number }) {
-  const title = entry.playbill_mysterious
-    ? 'A Surprise Segment'
-    : entry.title || BLOCK_KIND_LABELS[entry.kind];
-  const description = entry.playbill_mysterious
-    ? 'Identity revealed live during the show.'
-    : BLOCK_KIND_DESCRIPTIONS[entry.kind];
+  if (entry.playbill_mysterious) {
+    return (
+      <li className={`${styles.runningOrderItem} ${styles.runningOrderItemMysterious}`}>
+        <span className={styles.runningOrderIndex}>{index + 1}</span>
+        <div className={styles.runningOrderText}>
+          <h3 className={styles.runningOrderTitle}>A Surprise Segment</h3>
+        </div>
+        <div className={styles.mysteryMark} aria-hidden="true">
+          ?
+        </div>
+      </li>
+    );
+  }
 
   return (
     <li className={styles.runningOrderItem}>
       <span className={styles.runningOrderIndex}>{index + 1}</span>
       <div className={styles.runningOrderText}>
-        <h3 className={styles.runningOrderTitle}>{title}</h3>
-        <p className={styles.runningOrderDescription}>{description}</p>
+        <h3 className={styles.runningOrderTitle}>{entry.title || BLOCK_KIND_LABELS[entry.kind]}</h3>
+        <p className={styles.runningOrderDescription}>{BLOCK_KIND_DESCRIPTIONS[entry.kind]}</p>
       </div>
     </li>
   );
