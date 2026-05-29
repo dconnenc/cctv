@@ -43,7 +43,9 @@ class Api::ExperienceBlocksController < Api::BaseController
           visible_to_roles: create_params[:visible_to_roles] || [],
           target_user_ids: create_params[:target_user_ids] || [],
           status: create_params[:status] || :hidden,
-          questions: create_params[:questions] || []
+          questions: create_params[:questions] || [],
+          add_to_playbill: create_params[:add_to_playbill] || false,
+          playbill_mysterious: create_params[:playbill_mysterious] || false
         )
       else
         orchestrator.add_block!(
@@ -53,7 +55,9 @@ class Api::ExperienceBlocksController < Api::BaseController
           target_user_ids: create_params[:target_user_ids] || [],
           status: create_params[:status] || :hidden,
           open_immediately: create_params[:open_immediately] || false,
-          show_in_lobby: create_params[:show_in_lobby] || false
+          show_in_lobby: create_params[:show_in_lobby] || false,
+          add_to_playbill: create_params[:add_to_playbill] || false,
+          playbill_mysterious: create_params[:playbill_mysterious] || false
         )
       end
 
@@ -886,6 +890,8 @@ class Api::ExperienceBlocksController < Api::BaseController
       :status,
       :open_immediately,
       :show_in_lobby,
+      :add_to_playbill,
+      :playbill_mysterious,
       visible_to_roles: [],
       visible_to_segment_ids: [],
       target_user_ids: []

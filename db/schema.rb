@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_05_28_000001) do
+ActiveRecord::Schema[7.2].define(version: 2026_05_28_000002) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "citext"
   enable_extension "plpgsql"
@@ -121,6 +121,8 @@ ActiveRecord::Schema[7.2].define(version: 2026_05_28_000001) do
     t.integer "position", default: 0, null: false
     t.boolean "show_in_lobby", default: false, null: false
     t.jsonb "sounds", default: {}, null: false
+    t.boolean "add_to_playbill", default: false, null: false
+    t.boolean "playbill_mysterious", default: false, null: false
     t.index ["experience_id", "position"], name: "index_experience_blocks_on_experience_id_and_position"
     t.index ["experience_id", "status"], name: "index_experience_blocks_on_experience_id_and_status"
     t.index ["experience_id"], name: "index_experience_blocks_on_experience_id"

@@ -17,6 +17,8 @@ export interface CreateExperienceBlockParams {
   visible_to_segment_ids?: string[];
   status?: BlockStatus;
   open_immediately?: boolean;
+  add_to_playbill?: boolean;
+  playbill_mysterious?: boolean;
   variables?: Array<{
     key: string;
     label: string;
@@ -44,6 +46,8 @@ export function useCreateExperienceBlock() {
       visible_to_segment_ids = [],
       status = 'hidden',
       open_immediately = false,
+      add_to_playbill = false,
+      playbill_mysterious = false,
       variables,
       questions,
     }: CreateExperienceBlockParams): Promise<CreateExperienceApiResponse | null> => {
@@ -71,6 +75,8 @@ export function useCreateExperienceBlock() {
         visible_to_segment_ids,
         status,
         open_immediately,
+        add_to_playbill,
+        playbill_mysterious,
         ...(variables && { variables }),
         ...(questions && questions.length > 0 && { questions }),
       };

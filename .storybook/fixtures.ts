@@ -4,6 +4,7 @@ import {
   Experience,
   ExperienceParticipant,
   ParticipantSummary,
+  PlaybillRunningOrderEntry,
   PlaybillSection,
 } from '../app/frontend/types';
 
@@ -165,6 +166,37 @@ export const mockPlaybill: PlaybillSection[] = [
 
 export const mockBlocks: Block[] = [mockPollBlock, mockQuestionBlock, mockAnnouncementBlock];
 
+export const mockPlaybillRunningOrder: PlaybillRunningOrderEntry[] = [
+  {
+    id: 'block1',
+    kind: BlockKind.POLL,
+    position: 0,
+    playbill_mysterious: false,
+    title: "What's your favorite city?",
+  },
+  {
+    id: 'block2',
+    kind: BlockKind.QUESTION,
+    position: 1,
+    playbill_mysterious: false,
+    title: 'What brought you here tonight?',
+  },
+  {
+    id: 'block-mystery',
+    kind: BlockKind.FAMILY_FEUD,
+    position: 2,
+    playbill_mysterious: true,
+    title: null,
+  },
+  {
+    id: 'block3',
+    kind: BlockKind.ANNOUNCEMENT,
+    position: 3,
+    playbill_mysterious: false,
+    title: 'Welcome to the show!',
+  },
+];
+
 function makeExperience(overrides: Partial<Experience> = {}): Experience {
   return {
     id: 'exp1',
@@ -180,6 +212,7 @@ function makeExperience(overrides: Partial<Experience> = {}): Experience {
     blocks: mockBlocks,
     playbill_enabled: true,
     playbill: mockPlaybill,
+    playbill_running_order: mockPlaybillRunningOrder,
     segments: [
       { id: 'seg1', name: 'Red Team', color: '#ff4911', position: 0 },
       { id: 'seg2', name: 'Blue Team', color: '#3300ff', position: 1 },
