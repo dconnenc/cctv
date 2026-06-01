@@ -1250,10 +1250,6 @@ module Experiences
       # Reserve a buzzer first when possible so the scene can always be ended.
       buzzer_id  = eligible.shift if eligible.length > 1
       prompt_ids = eligible.first(prompt_count)
-      # If only one eligible, give them the prompt and leave buzzer empty.
-      if buzzer_id.nil? && eligible.length == 1 && prompt_count.positive?
-        prompt_ids = [eligible.first]
-      end
 
       payload["prompt_participant_ids"] = prompt_ids
       payload["buzzer_participant_id"]  = buzzer_id
