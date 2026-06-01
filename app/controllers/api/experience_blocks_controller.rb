@@ -9,7 +9,7 @@ class Api::ExperienceBlocksController < Api::BaseController
     dispatch_guess_who_poll conclude_guess_who_poll reveal_guess_who
     start_minigame_arithmetic end_minigame_arithmetic
     start_minigame_balloon_pump end_minigame_balloon_pump
-    advance_the_scene_phase start_next_the_scene
+    start_the_scene end_the_scene force_next_the_scene update_the_scene_performers
     clear_the_scene_top clear_the_scene_suggestion clear_the_scene_all
   ].freeze
 
@@ -17,7 +17,7 @@ class Api::ExperienceBlocksController < Api::BaseController
     submit_poll_response submit_question_response
     submit_photo_upload_response submit_buzzer_response
     submit_minigame_arithmetic_response submit_minigame_balloon_pump_update
-    submit_the_scene_suggestion submit_the_scene_vote
+    submit_the_scene_suggestion submit_the_scene_vote press_the_scene_buzzer
   ].freeze
 
   before_action :authenticate_and_set_user_and_experience
@@ -768,12 +768,12 @@ class Api::ExperienceBlocksController < Api::BaseController
     end
   end
 
-  # POST /api/experiences/:experience_id/blocks/:id/the_scene/phase
-  def advance_the_scene_phase
+  # POST /api/experiences/:experience_id/blocks/:id/the_scene/start
+  def start_the_scene
     with_experience_orchestration do
       block = Experiences::Orchestrator.new(
         experience: @experience, actor: @user
-      ).advance_the_scene_phase!(block: @block, phase: params[:phase])
+      ).start_the_scene!(block: @block)
 
       Experiences::Broadcaster.new(@experience).broadcast_experience_update
 
@@ -781,16 +781,58 @@ class Api::ExperienceBlocksController < Api::BaseController
     end
   end
 
-  # POST /api/experiences/:experience_id/blocks/:id/the_scene/next
-  def start_next_the_scene
+  # POST /api/experiences/:experience_id/blocks/:id/the_scene/end
+  def end_the_scene
     with_experience_orchestration do
       block = Experiences::Orchestrator.new(
         experience: @experience, actor: @user
-      ).start_next_scene!(block: @block)
+      ).end_the_scene!(block: @block)
 
       Experiences::Broadcaster.new(@experience).broadcast_experience_update
 
       render json: { success: true, data: block }, status: 200
+    end
+  end
+
+  # POST /api/experiences/:experience_id/blocks/:id/the_scene/force_next_scene
+  def force_next_the_scene
+    with_experience_orchestration do
+      block = Experiences::Orchestrator.new(
+        experience: @experience, actor: @user
+      ).force_next_scene!(block: @block)
+
+      Experiences::Broadcaster.new(@experience).broadcast_experience_update
+
+      render json: { success: true, data: block }, status: 200
+    end
+  end
+
+  # PATCH /api/experiences/:experience_id/blocks/:id/the_scene/performers
+  def update_the_scene_performers
+    with_experience_orchestration do
+      block = Experiences::Orchestrator.new(
+        experience: @experience, actor: @user
+      ).update_the_scene_performers!(
+        block: @block,
+        performer_participant_ids: Array(params[:performer_participant_ids])
+      )
+
+      Experiences::Broadcaster.new(@experience).broadcast_experience_update
+
+      render json: { success: true, data: block }, status: 200
+    end
+  end
+
+  # POST /api/experiences/:experience_id/blocks/:id/the_scene/buzzer
+  def press_the_scene_buzzer
+    with_experience_orchestration do
+      Experiences::Orchestrator.new(
+        experience: @experience, actor: @user
+      ).press_the_scene_buzzer!(block: @block)
+
+      Experiences::Broadcaster.new(@experience).broadcast_experience_update
+
+      render json: { success: true }, status: 200
     end
   end
 

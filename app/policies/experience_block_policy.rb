@@ -31,6 +31,10 @@ class ExperienceBlockPolicy < ApplicationPolicy
     user_allowed_to_interact_with_block?
   end
 
+  def press_the_scene_buzzer?
+    user_allowed_to_interact_with_block?
+  end
+
   private
 
   def user_allowed_to_interact_with_block?

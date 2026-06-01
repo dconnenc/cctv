@@ -84,9 +84,19 @@ module Experiences
         leaderboard_size = payload["leaderboard_size"].to_i
         raise ArgumentError, "leaderboard_size must be positive" unless leaderboard_size.positive?
 
-        payload["leaderboard_size"] = leaderboard_size
-        payload["phase"]            = "idle"
-        payload["scene_started_at"] = nil
+        prompt_input_count = payload["prompt_input_count"].present? ? payload["prompt_input_count"].to_i : 3
+        raise ArgumentError, "prompt_input_count must be positive" unless prompt_input_count.positive?
+
+        performer_ids = Array(payload["performer_participant_ids"]).map(&:to_s).uniq
+
+        payload["leaderboard_size"]          = leaderboard_size
+        payload["prompt_input_count"]        = prompt_input_count
+        payload["performer_participant_ids"] = performer_ids
+        payload["prompt_participant_ids"]    = []
+        payload["buzzer_participant_id"]     = nil
+        payload["phase"]                     = "idle"
+        payload["scene_started_at"]          = nil
+        payload["winner_revealed_at"]        = nil
       when ExperienceBlock::GUESS_WHO
         payload["eligibility_threshold"] ||= 0.10
         payload["monitor_view"]            = "idle"
@@ -951,50 +961,107 @@ module Experiences
 
     # The Scene -------------------------------------------------------------
 
-    SCENE_PHASES = %w[idle collecting voting ended].freeze
+    SCENE_PHASES = %w[idle collecting winner_reveal ended].freeze
+    WINNER_REVEAL_DELAY_SECONDS = 15
 
-    def advance_the_scene_phase!(block:, phase:)
-      raise ArgumentError, "Unknown phase: #{phase}" unless SCENE_PHASES.include?(phase.to_s)
-      raise ArgumentError, "Block is not a Scene" unless block.kind == ExperienceBlock::THE_SCENE
+    def start_the_scene!(block:)
+      guard_the_scene!(block)
 
       transaction do
-        payload = block.payload || {}
-        payload["phase"] = phase.to_s
+        payload = block.payload.deep_dup || {}
+        payload["phase"] = "collecting"
+        payload["scene_started_at"] = next_scene_stamp(payload["scene_started_at"])
+        payload["winner_revealed_at"] = nil
+        assign_scene_roles!(payload)
+        block.update!(payload: payload, status: :open)
+      end
 
-        # First time we leave idle, stamp scene_started_at so votes scope cleanly.
-        if payload["phase"] != "idle" && payload["scene_started_at"].blank?
-          payload["scene_started_at"] = Time.current.iso8601(6)
+      block
+    end
+
+    def press_the_scene_buzzer!(block:)
+      guard_the_scene!(block)
+
+      payload = block.payload || {}
+      raise Experiences::InvalidTransitionError, "Buzzer is not active" unless payload["phase"] == "collecting"
+
+      participant = current_participant
+      raise Experiences::ForbiddenError, "Only the buzzer holder can press the buzzer" unless payload["buzzer_participant_id"] == participant.id
+
+      active_count = block.improv_suggestions.active.where(created_at: scene_window(payload)).count
+      raise Experiences::InvalidTransitionError, "Need at least 2 suggestions before ending the scene" if active_count < 2
+
+      scene_stamp = nil
+      transaction do
+        updated = block.payload.deep_dup
+        updated["phase"] = "winner_reveal"
+        updated["winner_revealed_at"] = Time.current.iso8601(6)
+        scene_stamp = updated["scene_started_at"]
+        block.update!(payload: updated, status: :open)
+      end
+
+      TheSceneAdvanceAfterRevealJob.set(wait: WINNER_REVEAL_DELAY_SECONDS.seconds)
+        .perform_later(block.id, scene_stamp)
+
+      block
+    end
+
+    def force_next_scene!(block:)
+      guard_the_scene!(block)
+      start_next_scene!(block: block)
+    end
+
+    def end_the_scene!(block:)
+      guard_the_scene!(block)
+
+      transaction do
+        payload = block.payload.deep_dup
+        payload["phase"] = "ended"
+        payload["prompt_participant_ids"] = []
+        payload["buzzer_participant_id"] = nil
+        block.update!(payload: payload, status: :closed)
+      end
+
+      block
+    end
+
+    def update_the_scene_performers!(block:, performer_participant_ids:)
+      guard_the_scene!(block)
+
+      ids = Array(performer_participant_ids).map(&:to_s).uniq
+      valid_ids = experience.experience_participants.where(id: ids).pluck(:id).map(&:to_s)
+
+      transaction do
+        payload = block.payload.deep_dup
+        payload["performer_participant_ids"] = valid_ids
+
+        if %w[collecting].include?(payload["phase"])
+          prompts = Array(payload["prompt_participant_ids"]).map(&:to_s) - valid_ids
+          buzzer  = payload["buzzer_participant_id"]
+          buzzer  = nil if valid_ids.include?(buzzer.to_s)
+          payload["prompt_participant_ids"] = prompts
+          payload["buzzer_participant_id"]  = buzzer
+
+          if prompts.empty? || buzzer.nil?
+            assign_scene_roles!(payload)
+          end
         end
 
-        new_status =
-          case payload["phase"]
-          when "idle"   then :hidden
-          when "ended"  then :closed
-          else               :open
-          end
-
-        block.update!(payload: payload, status: new_status)
+        block.update!(payload: payload)
       end
 
       block
     end
 
     def start_next_scene!(block:)
-      raise ArgumentError, "Block is not a Scene" unless block.kind == ExperienceBlock::THE_SCENE
+      guard_the_scene!(block)
 
       transaction do
-        payload = block.payload || {}
-        prior = payload["scene_started_at"]
-        candidate = Time.current.iso8601(6)
-
-        # Guarantee strict monotonic increase even if the host clicks
-        # twice in the same microsecond.
-        if prior.present? && candidate <= prior
-          candidate = (Time.iso8601(prior) + 0.001.seconds).iso8601(6)
-        end
-
-        payload["phase"]            = "collecting"
-        payload["scene_started_at"] = candidate
+        payload = block.payload.deep_dup || {}
+        payload["phase"]              = "collecting"
+        payload["scene_started_at"]   = next_scene_stamp(payload["scene_started_at"])
+        payload["winner_revealed_at"] = nil
+        assign_scene_roles!(payload)
         block.update!(payload: payload, status: :open)
       end
 
@@ -1002,38 +1069,54 @@ module Experiences
     end
 
     def submit_the_scene_suggestion!(block:, text:)
-      raise ArgumentError, "Block is not a Scene" unless block.kind == ExperienceBlock::THE_SCENE
+      guard_the_scene!(block)
 
       payload = block.payload || {}
-      raise Experiences::InvalidTransitionError, "Scene is not collecting suggestions" unless %w[collecting voting].include?(payload["phase"])
+      raise Experiences::InvalidTransitionError, "Scene is not collecting suggestions" unless payload["phase"] == "collecting"
+
+      participant = current_participant
+      eligible_ids = Array(payload["prompt_participant_ids"]).map(&:to_s)
+      raise Experiences::ForbiddenError, "You are not selected to submit a prompt this scene" unless eligible_ids.include?(participant.id)
 
       trimmed = text.to_s.strip
       raise ArgumentError, "Suggestion cannot be blank" if trimmed.empty?
       raise ArgumentError, "Suggestion is too long (#{ImprovSuggestion::MAX_LENGTH} max)" if trimmed.length > ImprovSuggestion::MAX_LENGTH
 
       transaction do
-        existing = block.improv_suggestions.active.find_by(experience_participant: current_participant)
-        raise Experiences::InvalidTransitionError, "You already submitted this scene" if existing
+        existing = block.improv_suggestions.active
+          .where(created_at: scene_window(payload))
+          .find_by(experience_participant: participant)
 
-        block.improv_suggestions.create!(experience_participant: current_participant, text: trimmed)
+        if existing
+          existing.update!(text: trimmed)
+          existing
+        else
+          block.improv_suggestions.create!(experience_participant: participant, text: trimmed)
+        end
       end
     end
 
     def submit_the_scene_vote!(block:, suggestion_id:)
-      raise ArgumentError, "Block is not a Scene" unless block.kind == ExperienceBlock::THE_SCENE
+      guard_the_scene!(block)
 
       payload = block.payload || {}
-      raise Experiences::InvalidTransitionError, "Voting is not open" unless payload["phase"] == "voting"
+      raise Experiences::InvalidTransitionError, "Voting is not open" unless payload["phase"] == "collecting"
+
+      participant = current_participant
+      raise Experiences::ForbiddenError, "Buzzer holder cannot vote" if payload["buzzer_participant_id"] == participant.id
 
       scene_started_at = payload["scene_started_at"]
       raise Experiences::InvalidTransitionError, "Scene has not started" if scene_started_at.blank?
 
+      active_count = block.improv_suggestions.active.where(created_at: scene_window(payload)).count
+      raise Experiences::InvalidTransitionError, "Voting opens once 2 suggestions are in" if active_count < 2
+
       suggestion = block.improv_suggestions.active.find(suggestion_id)
-      raise ArgumentError, "Cannot vote for your own suggestion" if suggestion.experience_participant_id == current_participant.id
+      raise ArgumentError, "Cannot vote for your own suggestion" if suggestion.experience_participant_id == participant.id
 
       transaction do
         vote = ImprovVote
-          .where(experience_block_id: block.id, experience_participant: current_participant, scene_started_at: scene_started_at)
+          .where(experience_block_id: block.id, experience_participant: participant, scene_started_at: scene_started_at)
           .first_or_initialize
 
         vote.improv_suggestion_id = suggestion.id
@@ -1134,6 +1217,47 @@ module Experiences
     end
 
     private
+
+    def guard_the_scene!(block)
+      raise ArgumentError, "Block is not a Scene" unless block.kind == ExperienceBlock::THE_SCENE
+    end
+
+    def next_scene_stamp(prior)
+      candidate = Time.current.iso8601(6)
+      return candidate if prior.blank?
+      return candidate if candidate > prior
+      (Time.iso8601(prior) + 0.001.seconds).iso8601(6)
+    end
+
+    def scene_window(payload)
+      start = payload["scene_started_at"]
+      return (Time.at(0)..) if start.blank?
+      Time.iso8601(start)..
+    end
+
+    def assign_scene_roles!(payload)
+      performers = Array(payload["performer_participant_ids"]).map(&:to_s).to_set
+      prompt_count = payload["prompt_input_count"].to_i
+      prompt_count = 3 if prompt_count <= 0
+
+      eligible = experience.experience_participants
+        .where.not(role: %w[host moderator])
+        .pluck(:id)
+        .map(&:to_s)
+        .reject { |id| performers.include?(id) }
+        .shuffle
+
+      # Reserve a buzzer first when possible so the scene can always be ended.
+      buzzer_id  = eligible.shift if eligible.length > 1
+      prompt_ids = eligible.first(prompt_count)
+      # If only one eligible, give them the prompt and leave buzzer empty.
+      if buzzer_id.nil? && eligible.length == 1 && prompt_count.positive?
+        prompt_ids = [eligible.first]
+      end
+
+      payload["prompt_participant_ids"] = prompt_ids
+      payload["buzzer_participant_id"]  = buzzer_id
+    end
 
     def default_sounds_for(kind)
       case kind.to_s

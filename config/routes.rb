@@ -109,8 +109,11 @@ Rails.application.routes.draw do
           post 'minigame/balloon_pump/end', action: :end_minigame_balloon_pump
           post 'minigame/balloon_pump/pump', action: :submit_minigame_balloon_pump_update
 
-          post 'the_scene/phase', action: :advance_the_scene_phase
-          post 'the_scene/next', action: :start_next_the_scene
+          post 'the_scene/start', action: :start_the_scene
+          post 'the_scene/end', action: :end_the_scene
+          post 'the_scene/force_next_scene', action: :force_next_the_scene
+          patch 'the_scene/performers', action: :update_the_scene_performers
+          post 'the_scene/buzzer', action: :press_the_scene_buzzer
           post 'the_scene/clear_top', action: :clear_the_scene_top
           post 'the_scene/clear/:suggestion_id', action: :clear_the_scene_suggestion
           post 'the_scene/clear_all', action: :clear_the_scene_all
