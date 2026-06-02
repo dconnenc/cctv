@@ -7,9 +7,10 @@ import styles from './PerformerStoriesBar.module.scss';
 interface Props {
   performers: TheScenePerformer[];
   className?: string;
+  onSelect?: (performer: TheScenePerformer) => void;
 }
 
-export function PerformerStoriesBar({ performers, className }: Props) {
+export function PerformerStoriesBar({ performers, className, onSelect }: Props) {
   if (!performers || performers.length === 0) return null;
 
   return (
@@ -31,6 +32,19 @@ export function PerformerStoriesBar({ performers, className }: Props) {
               <span className={styles.name}>{performer.name}</span>
             </>
           );
+
+          if (onSelect) {
+            return (
+              <button
+                key={performer.participant_id}
+                type="button"
+                className={styles.item}
+                onClick={() => onSelect(performer)}
+              >
+                {content}
+              </button>
+            );
+          }
 
           return performer.slug ? (
             <Link

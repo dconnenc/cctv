@@ -120,20 +120,34 @@ function ParticipantView({ block }: { block: TheSceneBlock }) {
         }
       };
 
+      const insertPerformerName = (name: string) => {
+        setText((current) => {
+          const separator = current && !/\s$/.test(current) ? ' ' : '';
+          return `${current}${separator}${name}`.slice(0, MAX_SUGGESTION_LENGTH);
+        });
+      };
+
+      const inputStories = (
+        <PerformerStoriesBar
+          performers={performers}
+          onSelect={(p) => insertPerformerName(p.name)}
+        />
+      );
+
       return (
-        <Shell stories={stories}>
+        <Shell stories={inputStories}>
           <p className={styles.heading}>{editing ? 'Edit your suggestion' : 'Drop a suggestion'}</p>
           <p className={styles.subheading}>
             {editing
               ? 'Your votes will stick to your suggestion.'
-              : 'Make it weird, make it specific.'}
+              : "The ideal suggestion, continues the narrative. For example: Jordan's character is now a doctor on a first date."}
           </p>
           <form className={styles.suggestionForm} onSubmit={handleSubmit}>
             <input
               className={styles.input}
               type="text"
               maxLength={MAX_SUGGESTION_LENGTH}
-              placeholder="A wedding on the moon…"
+              placeholder="Taylor eats a bowl of hair…"
               value={text}
               onChange={(e) => setText(e.target.value)}
               disabled={isSubmitting}

@@ -85,3 +85,10 @@ export const Mixed: Story = {
 export const Empty: Story = {
   args: { performers: [] },
 };
+
+export const Selectable: Story = {
+  args: {
+    performers: withPhotos,
+    onSelect: (performer) => alert(`Selected ${performer.name}`),
+  },
+};

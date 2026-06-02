@@ -27,6 +27,11 @@
   text-decoration: none;
   color: var(--hot-white);
   min-width: 64px;
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  cursor: pointer;
 }
 
 .ringWrap {
