@@ -3,7 +3,6 @@ import { useCallback, useState } from 'react';
 import { useAdminAuth } from '@cctv/contexts/AdminAuthContext';
 import { useExperience } from '@cctv/contexts/ExperienceContext';
 import { useExperienceState } from '@cctv/contexts/ExperienceStateContext';
-import { TheScenePhase } from '@cctv/types';
 
 interface ActionResult {
   success: boolean;
@@ -17,25 +16,24 @@ export function useTheScene() {
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const buildAdminUrl = useCallback(
+  const buildUrl = useCallback(
     (blockId: string, path: string) =>
       `/api/experiences/${encodeURIComponent(code ?? '')}/blocks/${encodeURIComponent(blockId)}/the_scene/${path}`,
     [code],
   );
 
-  const buildParticipantUrl = useCallback(
-    (blockId: string, path: string) =>
-      `/api/experiences/${encodeURIComponent(code ?? '')}/blocks/${encodeURIComponent(blockId)}/the_scene/${path}`,
-    [code],
-  );
-
-  const adminPost = useCallback(
-    async (blockId: string, path: string, body?: object): Promise<ActionResult> => {
+  const adminRequest = useCallback(
+    async (
+      method: 'POST' | 'PATCH',
+      blockId: string,
+      path: string,
+      body?: object,
+    ): Promise<ActionResult> => {
       if (!code) return { success: false, error: 'Missing experience code' };
       setError(null);
       try {
-        const res = await adminFetch(buildAdminUrl(blockId, path), {
-          method: 'POST',
+        const res = await adminFetch(buildUrl(blockId, path), {
+          method,
           ...(body !== undefined && { body: JSON.stringify(body) }),
         });
         const data = await res.json();
@@ -54,21 +52,40 @@ export function useTheScene() {
         return { success: false, error: msg };
       }
     },
-    [code, adminFetch, buildAdminUrl],
+    [code, adminFetch, buildUrl],
   );
 
-  const advancePhase = useCallback(
-    (blockId: string, phase: TheScenePhase) => adminPost(blockId, 'phase', { phase }),
-    [adminPost],
+  const startScene = useCallback(
+    (blockId: string) => adminRequest('POST', blockId, 'start'),
+    [adminRequest],
   );
-
-  const nextScene = useCallback((blockId: string) => adminPost(blockId, 'next'), [adminPost]);
-  const clearTop = useCallback((blockId: string) => adminPost(blockId, 'clear_top'), [adminPost]);
-  const clearAll = useCallback((blockId: string) => adminPost(blockId, 'clear_all'), [adminPost]);
+  const endScene = useCallback(
+    (blockId: string) => adminRequest('POST', blockId, 'end'),
+    [adminRequest],
+  );
+  const forceNextScene = useCallback(
+    (blockId: string) => adminRequest('POST', blockId, 'force_next_scene'),
+    [adminRequest],
+  );
+  const updatePerformers = useCallback(
+    (blockId: string, performerParticipantIds: string[]) =>
+      adminRequest('PATCH', blockId, 'performers', {
+        performer_participant_ids: performerParticipantIds,
+      }),
+    [adminRequest],
+  );
+  const clearTop = useCallback(
+    (blockId: string) => adminRequest('POST', blockId, 'clear_top'),
+    [adminRequest],
+  );
+  const clearAll = useCallback(
+    (blockId: string) => adminRequest('POST', blockId, 'clear_all'),
+    [adminRequest],
+  );
   const clearSuggestion = useCallback(
     (blockId: string, suggestionId: string) =>
-      adminPost(blockId, `clear/${encodeURIComponent(suggestionId)}`),
-    [adminPost],
+      adminRequest('POST', blockId, `clear/${encodeURIComponent(suggestionId)}`),
+    [adminRequest],
   );
 
   const submitSuggestion = useCallback(
@@ -77,7 +94,7 @@ export function useTheScene() {
       setIsSubmitting(true);
       setError(null);
       try {
-        const res = await experienceFetch(buildParticipantUrl(blockId, 'suggestions'), {
+        const res = await experienceFetch(buildUrl(blockId, 'suggestions'), {
           method: 'POST',
           body: JSON.stringify({ text }),
         });
@@ -108,7 +125,7 @@ export function useTheScene() {
         setIsSubmitting(false);
       }
     },
-    [code, experienceFetch, buildParticipantUrl, setSubmissionState],
+    [code, experienceFetch, buildUrl, setSubmissionState],
   );
 
   const submitVote = useCallback(
@@ -116,7 +133,7 @@ export function useTheScene() {
       if (!code) return { success: false, error: 'Missing experience code' };
       setError(null);
       try {
-        const res = await experienceFetch(buildParticipantUrl(blockId, 'votes'), {
+        const res = await experienceFetch(buildUrl(blockId, 'votes'), {
           method: 'POST',
           body: JSON.stringify({ suggestion_id: suggestionId }),
         });
@@ -142,17 +159,45 @@ export function useTheScene() {
         return { success: false, error: msg };
       }
     },
-    [code, experienceFetch, buildParticipantUrl, setSubmissionState],
+    [code, experienceFetch, buildUrl, setSubmissionState],
+  );
+
+  const pressBuzzer = useCallback(
+    async (blockId: string): Promise<ActionResult> => {
+      if (!code) return { success: false, error: 'Missing experience code' };
+      setError(null);
+      try {
+        const res = await experienceFetch(buildUrl(blockId, 'buzzer'), { method: 'POST' });
+        const data = await res.json();
+        if (!res.ok || !data?.success) {
+          const msg = data?.error || 'Failed to press buzzer';
+          setError(msg);
+          return { success: false, error: msg };
+        }
+        return { success: true };
+      } catch (e: unknown) {
+        const msg =
+          e instanceof Error && e.message === 'Authentication expired'
+            ? 'Authentication expired'
+            : 'Connection error. Please try again.';
+        setError(msg);
+        return { success: false, error: msg };
+      }
+    },
+    [code, experienceFetch, buildUrl],
   );
 
   return {
-    advancePhase,
-    nextScene,
+    startScene,
+    endScene,
+    forceNextScene,
+    updatePerformers,
     clearTop,
     clearAll,
     clearSuggestion,
     submitSuggestion,
     submitVote,
+    pressBuzzer,
     isSubmitting,
     error,
   };

@@ -28,6 +28,7 @@ class PerformerSerializer
   def self.serialize_summary(performer, current_user: nil)
     {
       id: performer.id,
+      user_id: performer.user_id,
       name: performer.name,
       bio: performer.bio,
       slug: performer.slug,

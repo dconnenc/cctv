@@ -218,7 +218,7 @@ export interface MinigameBalloonPumpLiveResult {
   fill_amount: number;
 }
 
-export type TheScenePhase = 'idle' | 'collecting' | 'voting' | 'ended';
+export type TheScenePhase = 'idle' | 'collecting' | 'winner_reveal' | 'ended';
 
 export interface TheSceneSuggestion {
   id: string;
@@ -228,11 +228,29 @@ export interface TheSceneSuggestion {
   rank: number;
 }
 
+export interface TheScenePerformer {
+  participant_id: string;
+  user_id: string;
+  name: string;
+  slug: string | null;
+  photo_url: string | null;
+  has_performer_profile: boolean;
+}
+
 export interface TheScenePayload {
   phase: TheScenePhase;
   scene_started_at: string | null;
+  winner_revealed_at: string | null;
   leaderboard_size: number;
+  prompt_input_count: number;
+  performer_participant_ids: string[];
+  prompt_participant_ids: string[];
+  buzzer_participant_id: string | null;
   leaderboard: TheSceneSuggestion[];
+  performers: TheScenePerformer[];
+  is_prompt_recipient: boolean;
+  is_buzzer_holder: boolean;
+  is_performer: boolean;
   all_suggestions?: TheSceneSuggestion[];
 }
 
@@ -311,6 +329,8 @@ export interface MinigameArithmeticApiPayload {
 export interface TheSceneApiPayload {
   type: 'the_scene';
   leaderboard_size: number;
+  prompt_input_count: number;
+  performer_participant_ids: string[];
 }
 
 export interface MinigameBalloonPumpApiPayload {
@@ -900,6 +920,7 @@ export function isDrawingUpdateMessage(msg: ExperienceChannelMessage): msg is Dr
 
 export interface Performer {
   id: string;
+  user_id?: string;
   name: string;
   bio: string | null;
   slug: string;
@@ -1012,6 +1033,8 @@ export interface MinigameBalloonPumpData {
 
 export interface TheSceneData {
   leaderboard_size: number;
+  prompt_input_count: number;
+  performer_participant_ids: string[];
 }
 
 // Union type for all block component data

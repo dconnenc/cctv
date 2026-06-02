@@ -216,6 +216,27 @@
   box-shadow: 0 0 18px var(--phosphor-glow);
 }
 
+.leaderboardWinner {
+  animation: winnerPulse 1.2s ease-in-out infinite alternate;
+  transform-origin: center;
+  z-index: 2;
+}
+
+@keyframes winnerPulse {
+  from {
+    transform: scale(1);
+    box-shadow: 0 0 18px var(--phosphor-glow);
+    border-color: var(--phosphor);
+  }
+  to {
+    transform: scale(1.04);
+    box-shadow:
+      0 0 36px var(--phosphor-glow-strong),
+      0 0 80px var(--phosphor-glow-medium);
+    border-color: var(--amber);
+  }
+}
+
 .leaderboardRank {
   font-family: var(--font-display);
   font-size: 2rem;
@@ -284,4 +305,51 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.performersConfig {
+  border: 1px dashed var(--phosphor-glow-medium);
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  font-family: var(--font-body);
+
+  summary {
+    cursor: pointer;
+    font-family: var(--font-display);
+    letter-spacing: 0.08em;
+    color: var(--phosphor);
+  }
+}
+
+.performerList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding-top: 0.5rem;
+  max-height: 16rem;
+  overflow-y: auto;
+}
+
+.performerRow {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  padding: 0.2rem 0.3rem;
+  cursor: pointer;
+
+  input[type='checkbox'] {
+    accent-color: var(--phosphor);
+  }
+}
+
+.performerBadge {
+  font-family: var(--font-display);
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  color: var(--black);
+  background: var(--phosphor);
+  padding: 0.1rem 0.4rem;
+  border-radius: 999px;
+  margin-left: auto;
 }

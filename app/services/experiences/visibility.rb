@@ -255,7 +255,7 @@ module Experiences
 
     def shape_the_scene_payload(block, participant_role, participant, view_context)
       payload          = block.payload.deep_dup || {}
-      phase            = payload["phase"] || "idle"
+      phase            = legacy_the_scene_phase(payload["phase"])
       scene_started_at = payload["scene_started_at"]
       leaderboard_size = payload["leaderboard_size"].to_i
 
@@ -265,18 +265,70 @@ module Experiences
 
       tally = TheScene::Tally.full(block: block, scene_started_at: scene_started_at)
 
+      performer_ids = Array(payload["performer_participant_ids"]).map(&:to_s)
+      prompt_ids    = Array(payload["prompt_participant_ids"]).map(&:to_s)
+      buzzer_id     = payload["buzzer_participant_id"]
+
       shaped = {
-        "phase"            => phase,
-        "scene_started_at" => scene_started_at,
-        "leaderboard_size" => leaderboard_size,
-        "leaderboard"      => tally.first(leaderboard_size).map { |entry| serialize_tally_entry(entry) }
+        "phase"                     => phase,
+        "scene_started_at"          => scene_started_at,
+        "winner_revealed_at"        => payload["winner_revealed_at"],
+        "leaderboard_size"          => leaderboard_size,
+        "prompt_input_count"        => (payload["prompt_input_count"] || 3).to_i,
+        "performer_participant_ids" => performer_ids,
+        "prompt_participant_ids"    => privileged ? prompt_ids : [],
+        "buzzer_participant_id"     => privileged ? buzzer_id : nil,
+        "leaderboard"               => tally.first(leaderboard_size).map { |entry| serialize_tally_entry(entry) },
+        "performers"                => the_scene_performer_summaries(performer_ids)
       }
+
+      if participant && view_context == :participant
+        shaped["is_prompt_recipient"] = prompt_ids.include?(participant.id)
+        shaped["is_buzzer_holder"]    = buzzer_id.to_s == participant.id
+        shaped["is_performer"]        = performer_ids.include?(participant.id)
+      else
+        shaped["is_prompt_recipient"] = false
+        shaped["is_buzzer_holder"]    = false
+        shaped["is_performer"]        = false
+      end
 
       if privileged
         shaped["all_suggestions"] = tally.map { |entry| serialize_tally_entry(entry) }
       end
 
       shaped
+    end
+
+    def legacy_the_scene_phase(phase)
+      case phase.to_s
+      when "voting" then "collecting"
+      when "", nil  then "idle"
+      else phase.to_s
+      end
+    end
+
+    def the_scene_performer_summaries(performer_participant_ids)
+      return [] if performer_participant_ids.empty?
+
+      participants = @experience.experience_participants
+        .includes(:user)
+        .where(id: performer_participant_ids)
+        .to_a
+
+      user_ids = participants.map(&:user_id)
+      performers_by_user_id = Performer.where(user_id: user_ids).index_by(&:user_id)
+
+      participants.map do |p|
+        performer = performers_by_user_id[p.user_id]
+        {
+          "participant_id" => p.id,
+          "user_id"        => p.user_id,
+          "name"           => performer&.name.presence || p.name,
+          "slug"           => performer&.slug,
+          "photo_url"      => performer&.photo_url,
+          "has_performer_profile" => performer.present?
+        }
+      end
     end
 
     def serialize_tally_entry(entry)
