@@ -37,6 +37,11 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  // Let block visuals (e.g. the buzzer's shards/shockwave) bleed vertically
+  // across the screen while clipping the horizontal axis at the viewport edge
+  // so the oversized canvas never introduces a horizontal scrollbar.
+  overflow-x: clip;
+  overflow-y: visible;
 }
 
 // Error states

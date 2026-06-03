@@ -57,3 +57,28 @@ export const LargeSize: Story = {
     onPress: () => undefined,
   },
 };
+
+// Toggle the lock to see the arm-up transition: the rim light ramps to red,
+// the dome powers on, a glint sweeps the glass, and a ready chime plays.
+export const ArmTransition: Story = {
+  render: function ArmTransition() {
+    const [locked, setLocked] = useState(true);
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', padding: '1rem' }}>
+        <GlassCaseButton
+          locked={locked}
+          lockedLabel="LOCKED"
+          onBreak={() => undefined}
+          onPress={() => undefined}
+        />
+        <button
+          type="button"
+          onClick={() => setLocked((l) => !l)}
+          style={{ fontFamily: 'var(--font-body)', padding: '0.5rem 1rem' }}
+        >
+          {locked ? 'Arm buzzer' : 'Lock buzzer'}
+        </button>
+      </div>
+    );
+  },
+};

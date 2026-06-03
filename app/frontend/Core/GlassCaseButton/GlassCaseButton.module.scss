@@ -7,7 +7,9 @@
   cursor: pointer;
   border-radius: 12px;
   outline: none;
+  overflow: visible;
   transition: transform 0.15s ease;
+  animation: fadeIn 0.5s ease-out both;
 
   &:focus-visible {
     box-shadow: 0 0 0 2px var(--phosphor);
@@ -18,12 +20,30 @@
   }
 }
 
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .root {
+    animation: none;
+  }
+}
+
+// The canvas renders larger than the root; centering it here lets the 3D
+// effects bleed past the layout box instead of being clipped at its edge.
 .canvasMount {
   position: absolute;
   inset: 0;
   display: flex;
   align-items: center;
   justify-content: center;
+  overflow: visible;
   pointer-events: none;
 
   canvas {
@@ -31,42 +51,37 @@
   }
 }
 
-.label {
+.flash {
   position: absolute;
-  bottom: 12px;
-  left: 0;
-  right: 0;
-  text-align: center;
-  font-family: var(--font-display);
-  font-size: 1.1rem;
-  letter-spacing: 0.18em;
-  color: var(--phosphor);
-  text-shadow: 0 0 8px var(--phosphor-glow-strong);
+  inset: 0;
+  border-radius: inherit;
   pointer-events: none;
+  opacity: 0;
+  mix-blend-mode: screen;
+}
+
+.flashShatter {
+  background: radial-gradient(circle at center, var(--hot-white, #fff) 0%, transparent 70%);
+  animation: flashOut 0.32s ease-out both;
+}
+
+.flashPress {
+  background: radial-gradient(circle at center, var(--red, #ff4911) 0%, transparent 70%);
+  animation: flashOut 0.4s ease-out both;
+}
+
+@keyframes flashOut {
+  0% {
+    opacity: 0;
+  }
+  12% {
+    opacity: 0.85;
+  }
+  100% {
+    opacity: 0;
+  }
 }
 
 .locked {
   cursor: not-allowed;
-
-  .label {
-    color: var(--dim);
-    text-shadow: none;
-  }
-}
-
-.armed {
-  .label {
-    color: var(--red);
-    text-shadow: 0 0 12px rgba(255, 73, 17, 0.6);
-    animation: pulseLabel 0.9s ease-in-out infinite alternate;
-  }
-}
-
-@keyframes pulseLabel {
-  from {
-    opacity: 0.6;
-  }
-  to {
-    opacity: 1;
-  }
 }

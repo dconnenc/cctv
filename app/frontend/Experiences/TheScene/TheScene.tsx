@@ -5,6 +5,7 @@ import { useExperienceState } from '@cctv/contexts/ExperienceStateContext';
 import { Button } from '@cctv/core/Button/Button';
 import { PerformerStoriesBar } from '@cctv/core/PerformerStoriesBar/PerformerStoriesBar';
 import { useTheScene } from '@cctv/hooks/useTheScene';
+import { useMonitorSound } from '@cctv/sounds';
 import { ExperienceParticipant, TheSceneBlock } from '@cctv/types';
 
 import { BuzzerPanel } from './BuzzerPanel';
@@ -286,6 +287,10 @@ function MonitorView({ block }: { block: TheSceneBlock }) {
   const { phase, leaderboard, leaderboard_size, winner_revealed_at } = block.payload;
   const top = leaderboard.slice(0, leaderboard_size);
   const revealing = phase === 'winner_reveal';
+
+  // The buzzer press is the only path into winner_reveal, so its rising edge
+  // is the cue to fire the buzzer sound through the monitor's speakers.
+  useMonitorSound(block.sounds?.on_buzzer_press, revealing, 'monitor');
 
   if (phase === 'idle') {
     return (
