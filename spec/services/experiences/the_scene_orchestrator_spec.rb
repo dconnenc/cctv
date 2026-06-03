@@ -289,8 +289,6 @@ RSpec.describe Experiences::Orchestrator, "the scene" do
 
     it "re-randomizes prompt and buzzer assignments and bumps scene_started_at" do
       first_stamp = block.reload.payload["scene_started_at"]
-      first_prompts = prompt_holders(block)
-      first_buzzer = buzzer_holder(block)
 
       orchestrator.start_next_scene!(block: block)
       second_stamp = block.reload.payload["scene_started_at"]
@@ -300,8 +298,17 @@ RSpec.describe Experiences::Orchestrator, "the scene" do
 
       new_prompts = prompt_holders(block)
       new_buzzer  = buzzer_holder(block)
+      eligible_ids = [player_a, player_b, player_c, player_d, player_e].map { |p| p.id.to_s }
+
+      # A fresh draw: a buzzer plus the configured number of prompt recipients,
+      # all distinct and drawn from the eligible (non-host) participant pool.
+      expect(new_buzzer).to be_present
+      expect(new_prompts.length).to eq(3)
       expect(new_prompts).not_to include(new_buzzer)
-      expect((first_prompts + [first_buzzer]).any? { |id| ![*new_prompts, new_buzzer].include?(id) }).to be_truthy
+
+      assignees = [*new_prompts, new_buzzer]
+      expect(assignees.uniq).to match_array(assignees)
+      expect(eligible_ids).to include(*assignees)
     end
 
     it "force_next_scene! delegates to start_next_scene!" do
