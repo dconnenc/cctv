@@ -40,7 +40,7 @@ export default function BoardGrid({ contestant }: BoardGridProps) {
             className={`${styles.boardCell} ${isEliminated ? styles.boardCellEliminated : ''}`}
           >
             <div className={styles.boardAvatarWrap}>
-              <Avatar strokes={p?.avatar?.strokes ?? null} size={88} />
+              <Avatar strokes={p?.avatar?.strokes ?? null} size={96} />
               {isUnanswered && (
                 <span className={styles.shameBadge} aria-label="Did not respond">
                   ?

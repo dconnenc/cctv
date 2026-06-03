@@ -17,7 +17,7 @@ interface GuessWhoMonitorProps {
 function ContestantHeader({ contestant }: { contestant: GuessWhoContestant }) {
   return (
     <div className={styles.contestantHeader}>
-      <Avatar strokes={contestant.contestant?.avatar?.strokes ?? null} size={72} />
+      <Avatar strokes={contestant.contestant?.avatar?.strokes ?? null} size={96} />
       <div className={styles.contestantTitle}>
         <span className={styles.contestantLabel}>Contestant</span>
         <span className={styles.contestantName}>{contestant.contestant?.name ?? 'Unassigned'}</span>

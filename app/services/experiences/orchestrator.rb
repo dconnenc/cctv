@@ -1265,6 +1265,8 @@ module Experiences
           "on_conclude_poll" => "buzzer_error",
           "on_reveal"        => "buzzer_error"
         }
+      when ExperienceBlock::THE_SCENE
+        { "on_buzzer_press" => "buzzer_error" }
       else
         {}
       end

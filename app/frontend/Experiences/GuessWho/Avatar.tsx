@@ -1,3 +1,5 @@
+import { useMemo } from 'react';
+
 import { Layer, Line, Stage } from 'react-konva';
 
 import { AvatarStroke } from '@cctv/types';
@@ -8,19 +10,64 @@ interface AvatarProps {
   className?: string;
 }
 
-export default function Avatar({ strokes, size = 96, className }: AvatarProps) {
-  const list = strokes ?? [];
-  const scale = size / 400;
+// Fraction of the box kept clear around the drawing so strokes don't touch the
+// edges when fitted.
+const PADDING_RATIO = 0.1;
 
-  if (list.length === 0) {
+export default function Avatar({ strokes, size = 96, className }: AvatarProps) {
+  const list = useMemo(() => strokes ?? [], [strokes]);
+
+  // Fit the drawing to its own bounding box so it fills the avatar area instead
+  // of floating tiny in a corner of the 400x400 drawing space.
+  const fit = useMemo(() => {
+    let minX = Infinity;
+    let minY = Infinity;
+    let maxX = -Infinity;
+    let maxY = -Infinity;
+    let maxStroke = 0;
+
+    for (const s of list) {
+      maxStroke = Math.max(maxStroke, s.width ?? 0);
+      const pts = s.points ?? [];
+      for (let i = 0; i + 1 < pts.length; i += 2) {
+        minX = Math.min(minX, pts[i]);
+        maxX = Math.max(maxX, pts[i]);
+        minY = Math.min(minY, pts[i + 1]);
+        maxY = Math.max(maxY, pts[i + 1]);
+      }
+    }
+
+    if (!Number.isFinite(minX)) return null;
+
+    const half = maxStroke / 2;
+    minX -= half;
+    minY -= half;
+    maxX += half;
+    maxY += half;
+
+    const bboxW = Math.max(maxX - minX, 1);
+    const bboxH = Math.max(maxY - minY, 1);
+    const inner = size * (1 - PADDING_RATIO * 2);
+    const scale = inner / Math.max(bboxW, bboxH);
+    const cx = (minX + maxX) / 2;
+    const cy = (minY + maxY) / 2;
+
+    return {
+      scale,
+      offsetX: size / 2 - cx * scale,
+      offsetY: size / 2 - cy * scale,
+    };
+  }, [list, size]);
+
+  if (list.length === 0 || !fit) {
     return (
       <div
         className={className}
         style={{
           width: size,
           height: size,
-          borderRadius: '50%',
-          background: 'hsl(var(--muted))',
+          borderRadius: '14%',
+          background: 'hsl(var(--muted) / 0.35)',
         }}
         aria-hidden
       />
@@ -28,18 +75,9 @@ export default function Avatar({ strokes, size = 96, className }: AvatarProps) {
   }
 
   return (
-    <div
-      className={className}
-      style={{
-        width: size,
-        height: size,
-        borderRadius: '50%',
-        overflow: 'hidden',
-        background: 'hsl(var(--muted))',
-      }}
-    >
+    <div className={className} style={{ width: size, height: size }}>
       <Stage width={size} height={size}>
-        <Layer scaleX={scale} scaleY={scale}>
+        <Layer x={fit.offsetX} y={fit.offsetY} scaleX={fit.scale} scaleY={fit.scale}>
           {list.map((s, i) => (
             <Line
               key={i}
@@ -47,6 +85,7 @@ export default function Avatar({ strokes, size = 96, className }: AvatarProps) {
               stroke={s.color}
               strokeWidth={s.width}
               lineCap="round"
+              lineJoin="round"
             />
           ))}
         </Layer>
