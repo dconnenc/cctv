@@ -1,10 +1,15 @@
 class BackfillDefaultSegments < ActiveRecord::Migration[7.2]
   def up
     Experience.where(default_segment_id: nil).find_each do |experience|
-      segment = experience.experience_segments.find_or_create_by!(name: Experience::DEFAULT_SEGMENT_NAME) do |s|
-        s.color = Experience::DEFAULT_SEGMENT_COLOR
-        s.position = (experience.experience_segments.maximum(:position) || -1) + 1
-      end
+      segment = experience.experience_segments
+        .where("LOWER(name) = LOWER(?)", Experience::DEFAULT_SEGMENT_NAME)
+        .first
+
+      segment ||= experience.experience_segments.create!(
+        name: Experience::DEFAULT_SEGMENT_NAME,
+        color: Experience::DEFAULT_SEGMENT_COLOR,
+        position: (experience.experience_segments.maximum(:position) || -1) + 1
+      )
 
       participant_ids = experience.experience_participants.where(role: Experience::AUTO_ASSIGNED_ROLES).pluck(:id)
 
