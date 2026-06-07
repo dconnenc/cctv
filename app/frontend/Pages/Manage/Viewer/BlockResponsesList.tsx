@@ -54,9 +54,13 @@ export default function BlockResponsesList({ block, participants }: BlockRespons
             )}
             {hasAnswer && (
               <div className="text-sm text-white">
-                {typeof response.answer === 'object'
-                  ? JSON.stringify(response.answer, null, 2)
-                  : String(response.answer)}
+                {typeof response.answer === 'object' &&
+                response.answer !== null &&
+                'value' in response.answer
+                  ? String((response.answer as Record<string, unknown>).value)
+                  : typeof response.answer === 'object'
+                    ? JSON.stringify(response.answer, null, 2)
+                    : String(response.answer)}
               </div>
             )}
           </div>
