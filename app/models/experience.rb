@@ -91,8 +91,7 @@ class Experience < ApplicationRecord
     transaction do
       participant = experience_participants.create!(
         user: user,
-        name: name,
-        avatar: user.most_recent_avatar.presence || {}
+        name: name
       )
 
       attach_default_segment(participant)
