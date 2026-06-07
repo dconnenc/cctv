@@ -31,7 +31,13 @@ export function extractCodeFromQr(text: string): string {
   // QR payloads (e.g. "chicagocomedy.tv/experiences/abc") still resolve —
   // `new URL` throws on those and would dump the whole string into the input.
   const codeParam = trimmed.match(/[?&]code=([^&#]+)/);
-  if (codeParam) return decodeURIComponent(codeParam[1]).toUpperCase();
+  if (codeParam) {
+    try {
+      return decodeURIComponent(codeParam[1]).toUpperCase();
+    } catch {
+      return codeParam[1].toUpperCase();
+    }
+  }
 
   const pathMatch = trimmed.match(/\/(?:code|experiences)\/([^/?#]+)/);
   if (pathMatch) return pathMatch[1].toUpperCase();

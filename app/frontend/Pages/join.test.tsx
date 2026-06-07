@@ -29,6 +29,10 @@ describe('extractCodeFromQr', () => {
     expect(extractCodeFromQr('https://chicagocomedy.tv/join?code=abc123')).toBe('ABC123');
   });
 
+  it('falls back to the raw code param when it is not valid percent-encoding', () => {
+    expect(extractCodeFromQr('https://shop.example/deals?code=SAVE50%')).toBe('SAVE50%');
+  });
+
   it('returns a bare code unchanged (uppercased)', () => {
     expect(extractCodeFromQr('abc123')).toBe('ABC123');
     expect(extractCodeFromQr('  test-code ')).toBe('TEST-CODE');
