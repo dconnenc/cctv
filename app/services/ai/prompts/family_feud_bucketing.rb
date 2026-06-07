@@ -17,8 +17,8 @@ module AI
           How a real board works: a producer combines responses that express the SAME idea into one labeled answer (e.g. "necklace", "earrings", "gold chain" all become "Jewelry"), keeps genuinely different ideas as SEPARATE answers, and leaves rare or off-topic responses off the board entirely.
 
           Follow these rules:
-          - Group responses that mean the same thing into one bucket. Different phrasings of one idea belong together.
-          - Keep distinct ideas in DISTINCT buckets. Do NOT merge two related-but-different answers just because they share a theme — "My Gut" and "My Hips" are separate board answers, not one "Body Parts" bucket. Over-merging ruins the board.
+          - Group responses that describe the same idea OR the same basic action into one bucket, even when the exact words differ. A producer reads ONE answer aloud for the whole group — e.g. "growls" and "barks" become one answer ("Growls or Barks"); "shave" and "trim" become one answer; "jog" and "run" become one answer. Different phrasings and close variations of one answer belong together.
+          - Split only when responses are genuinely DIFFERENT answers a host would read out separately — e.g. "Wax It" vs "Pluck It" vs "Bleach It" are distinct methods, and "My Gut" vs "My Hips" are distinct body parts. Do NOT merge different answers into one themed bucket ("Body Parts", "Hair Removal") — over-merging ruins the board. But when in doubt between splitting a close pair or combining it, combine it: real boards favor a few strong answers over many thin ones.
           - A bucket must contain at least two responses. If an idea was said only once, or is off-topic, a joke, or nonsense, leave it UNASSIGNED — do not bucket it.
           - Never create a catch-all bucket. No "Other", "Misc", "Various", or "General". Leftover responses stay unassigned, not swept into a grab-bag.
           - Aim for the number of buckets a real board would show for this many responses — typically a handful of strong, popular answers, not one bucket per response.

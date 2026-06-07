@@ -2,18 +2,18 @@
   "variant": "production",
   "model": "gemini-2.5-flash",
   "runs": 3,
-  "generated_at": "2026-06-07T18:18:18Z",
+  "generated_at": "2026-06-07T18:47:09Z",
   "metrics": {
-    "pairwise_f1": 0.923,
-    "pairwise_precision": 0.989,
-    "pairwise_recall": 0.887,
-    "over_merge": 0.011,
-    "over_split": 0.113,
-    "homogeneity": 0.966,
-    "completeness": 0.948,
-    "v_measure": 0.955,
-    "unassigned_precision": 0.948,
-    "unassigned_recall": 0.983,
-    "bucket_count_delta": 0.278
+    "pairwise_f1": 0.939,
+    "pairwise_precision": 0.974,
+    "pairwise_recall": 0.921,
+    "over_merge": 0.026,
+    "over_split": 0.079,
+    "homogeneity": 0.969,
+    "completeness": 0.953,
+    "v_measure": 0.96,
+    "unassigned_precision": 0.972,
+    "unassigned_recall": 0.967,
+    "bucket_count_delta": 0.194
   }
 }
