@@ -1,6 +1,21 @@
+import type { ParticipantSummary } from '@cctv/types';
+
 export function getFormData<T>(form: HTMLFormElement): Partial<T> {
   const formData = new FormData(form);
   return Object.fromEntries(formData.entries()) as Partial<T>;
+}
+
+export const TEMPLATE_NAME_FALLBACK = 'friend';
+
+const PARTICIPANT_NAME_TOKEN = /\{\{\s*participant_name\s*\}\}/g;
+
+export function renderNameTemplate(
+  template: string | null | undefined,
+  participant?: Pick<ParticipantSummary, 'name' | 'email'> | null,
+): string {
+  if (!template) return '';
+  const name = participant?.name?.trim() || participant?.email?.trim() || TEMPLATE_NAME_FALLBACK;
+  return template.replace(PARTICIPANT_NAME_TOKEN, name);
 }
 
 export function isNotNull<T>(value: T): value is NonNullable<T> {
