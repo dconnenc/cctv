@@ -445,10 +445,9 @@ export default function FamilyFeudManager({ block }: FamilyFeudManagerProps) {
     );
   }
 
-  if (isPlaying && gameState) {
-    return (
-      <div className={styles.root}>
-        <h2 className={styles.title}>{payload?.title || 'Family Feud'}</h2>
+  return (
+    <div className={styles.root}>
+      {isPlaying && gameState && (
         <FamilyFeudPlayingControls
           block={block}
           gameState={gameState}
@@ -459,18 +458,20 @@ export default function FamilyFeudManager({ block }: FamilyFeudManagerProps) {
           onRestartCategorizing={handleRestartCategorizing}
           onRestartEverything={handleRestartEverything}
         />
-      </div>
-    );
-  }
-
-  return (
-    <div className={styles.root}>
+      )}
       <div className={styles.headerRow}>
         <h2 className={styles.title}>{payload?.title ?? 'Family Feud'}</h2>
-        <Button variant="primary" size="lg" onClick={handleStartPlaying} disabled={startingPlaying}>
-          <Play size={20} />
-          {startingPlaying ? 'Starting...' : 'Start Playing'}
-        </Button>
+        {!isPlaying && (
+          <Button
+            variant="primary"
+            size="lg"
+            onClick={handleStartPlaying}
+            disabled={startingPlaying}
+          >
+            <Play size={20} />
+            {startingPlaying ? 'Starting...' : 'Start Playing'}
+          </Button>
+        )}
       </div>
       <div className={styles.aiSettings}>
         <button

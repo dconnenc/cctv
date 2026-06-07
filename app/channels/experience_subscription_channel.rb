@@ -331,6 +331,10 @@ class ExperienceSubscriptionChannel < ApplicationCable::Channel
       )
     end
 
+    ExperienceMinigameBalloonResult
+      .where(experience_block_id: block_scope, experience_participant_id: participant.id)
+      .each { |r| result[r.experience_block_id.to_s] = { fill_amount: r.fill_amount } }
+
     result
   end
 

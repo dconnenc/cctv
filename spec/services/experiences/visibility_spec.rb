@@ -256,6 +256,39 @@ RSpec.describe Experiences::Visibility do
         expect(ids).to include(child.id)
       end
     end
+
+    context "FAMILY_FEUD gathering phase transparency" do
+      let!(:participant) { create(:experience_participant, user: user, experience: experience, role: :player) }
+      let!(:ff_block) do
+        create(:experience_block, experience: experience, status: :open, kind: ExperienceBlock::FAMILY_FEUD, position: 0)
+      end
+      let!(:child) do
+        create(:experience_block, experience: experience, parent_block: ff_block, status: :open, kind: ExperienceBlock::QUESTION, position: 1)
+      end
+
+      before { create(:experience_block_link, parent_block: ff_block, child_block: child) }
+
+      it "surfaces child questions and parent to participants when FF has no game_state" do
+        result = described_class.for_participant(experience, participant)
+        ids = result[:blocks].map { |b| b[:id] }
+        expect(ids).to include(child.id, ff_block.id)
+      end
+
+      it "surfaces child questions and parent when FF is in gathering phase" do
+        ff_block.update!(payload: { "game_state" => { "phase" => "gathering" } })
+        result = described_class.for_participant(experience, participant)
+        ids = result[:blocks].map { |b| b[:id] }
+        expect(ids).to include(child.id, ff_block.id)
+      end
+
+      it "gates children and shows FF directly when in playing phase" do
+        ff_block.update!(payload: { "game_state" => { "phase" => "playing", "current_question_index" => 0, "questions" => [], "show_x" => false } })
+        result = described_class.for_participant(experience, participant)
+        ids = result[:blocks].map { |b| b[:id] }
+        expect(ids).to include(ff_block.id)
+        expect(ids).not_to include(child.id)
+      end
+    end
   end
 
   describe "response data serialization" do
@@ -272,11 +305,13 @@ RSpec.describe Experiences::Visibility do
                answer: { "selectedOptions" => ["option_a"] })
       end
 
-      it "omits user_response and user_responded for regular participants" do
-        result = described_class.for_participant(experience, participant)
-        responses = result[:blocks].first[:responses]
-        expect(responses).not_to have_key(:user_response)
-        expect(responses).not_to have_key(:user_responded)
+      it "omits user_response and user_responded for all participants" do
+        [participant, host_participant].each do |p|
+          result = described_class.for_participant(experience, p)
+          responses = result[:blocks].first[:responses]
+          expect(responses).not_to have_key(:user_response)
+          expect(responses).not_to have_key(:user_responded)
+        end
       end
 
       it "includes total and aggregate for regular participants" do
@@ -286,14 +321,12 @@ RSpec.describe Experiences::Visibility do
         expect(responses).to have_key(:aggregate)
       end
 
-      it "includes user_response, user_responded, aggregate, and all_responses for hosts" do
+      it "includes aggregate and all_responses for hosts" do
         create(:experience_poll_submission, experience_block: block, experience_participant: host_participant,
                answer: { "selectedOptions" => ["option_a"] })
 
         result = described_class.for_participant(experience, host_participant)
         responses = result[:blocks].first[:responses]
-        expect(responses[:user_responded]).to be true
-        expect(responses[:user_response]).to include(id: be_a(String))
         expect(responses[:aggregate]).to eq({ "option_a" => 2 })
         expect(responses[:all_responses]).to be_an(Array).and have_attributes(length: 2)
       end
@@ -308,11 +341,13 @@ RSpec.describe Experiences::Visibility do
         create(:experience_buzzer_submission, experience_block: block, experience_participant: participant)
       end
 
-      it "omits user_response and user_responded for regular participants" do
-        result = described_class.for_participant(experience, participant)
-        responses = result[:blocks].first[:responses]
-        expect(responses).not_to have_key(:user_response)
-        expect(responses).not_to have_key(:user_responded)
+      it "omits user_response and user_responded for all participants" do
+        [participant, host_participant].each do |p|
+          result = described_class.for_participant(experience, p)
+          responses = result[:blocks].first[:responses]
+          expect(responses).not_to have_key(:user_response)
+          expect(responses).not_to have_key(:user_responded)
+        end
       end
 
       it "includes total for regular participants" do
@@ -321,11 +356,9 @@ RSpec.describe Experiences::Visibility do
         expect(responses[:total]).to eq(1)
       end
 
-      it "includes user_response, user_responded, and all_responses for hosts" do
+      it "includes all_responses for hosts" do
         result = described_class.for_participant(experience, host_participant)
         responses = result[:blocks].first[:responses]
-        expect(responses[:user_responded]).to be false
-        expect(responses[:user_response]).to be_nil
         expect(responses[:all_responses]).to be_an(Array).and have_attributes(length: 1)
       end
     end
@@ -341,11 +374,12 @@ RSpec.describe Experiences::Visibility do
         expect(responses).to eq({ total: 0 })
       end
 
-      it "includes user_response and user_responded for hosts" do
+      it "includes all_responses for hosts but no per-participant fields" do
         result = described_class.for_participant(experience, host_participant)
         responses = result[:blocks].first[:responses]
-        expect(responses).to have_key(:user_response)
-        expect(responses).to have_key(:user_responded)
+        expect(responses).to have_key(:all_responses)
+        expect(responses).not_to have_key(:user_response)
+        expect(responses).not_to have_key(:user_responded)
       end
     end
   end

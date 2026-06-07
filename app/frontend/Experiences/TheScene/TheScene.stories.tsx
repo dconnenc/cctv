@@ -3,7 +3,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { BlockKind, TheSceneBlock, TheScenePerformer, TheSceneSuggestion } from '@cctv/types';
 
 import { ExperienceSeeder } from '../../../../.storybook/ExperienceSeeder';
-import { lobbyExperience } from '../../../../.storybook/fixtures';
+import { lobbyExperience, mockParticipant } from '../../../../.storybook/fixtures';
 import TheScene from './TheScene';
 
 const performers: TheScenePerformer[] = [
@@ -55,9 +55,6 @@ function build(overrides: Partial<TheSceneBlock['payload']> = {}): TheSceneBlock
       buzzer_participant_id: null,
       leaderboard: sampleSuggestions,
       performers,
-      is_prompt_recipient: false,
-      is_buzzer_holder: false,
-      is_performer: false,
       ...overrides,
     },
   };
@@ -69,7 +66,7 @@ const meta: Meta<typeof TheScene> = {
   tags: ['autodocs'],
   decorators: [
     (Story) => (
-      <ExperienceSeeder experience={lobbyExperience}>
+      <ExperienceSeeder experience={lobbyExperience} participant={mockParticipant}>
         <Story />
       </ExperienceSeeder>
     ),
@@ -88,7 +85,7 @@ export const ParticipantIdle: Story = {
 
 export const ParticipantPromptInput: Story = {
   args: {
-    block: build({ is_prompt_recipient: true, leaderboard: [] }),
+    block: build({ prompt_participant_ids: [mockParticipant.id], leaderboard: [] }),
     viewContext: 'participant',
   },
 };
@@ -109,21 +106,21 @@ export const ParticipantVoting: Story = {
 
 export const ParticipantBuzzerHolderLocked: Story = {
   args: {
-    block: build({ is_buzzer_holder: true, leaderboard: [] }),
+    block: build({ buzzer_participant_id: mockParticipant.id, leaderboard: [] }),
     viewContext: 'participant',
   },
 };
 
 export const ParticipantBuzzerHolderArmed: Story = {
   args: {
-    block: build({ is_buzzer_holder: true, leaderboard: sampleSuggestions }),
+    block: build({ buzzer_participant_id: mockParticipant.id, leaderboard: sampleSuggestions }),
     viewContext: 'participant',
   },
 };
 
 export const ParticipantAsPerformer: Story = {
   args: {
-    block: build({ is_performer: true }),
+    block: build({ performer_participant_ids: [mockParticipant.id] }),
     viewContext: 'participant',
   },
 };

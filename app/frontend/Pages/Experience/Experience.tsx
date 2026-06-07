@@ -8,6 +8,7 @@ import { BookOpen } from 'lucide-react';
 
 import { ParticipantsList } from '@cctv/components';
 import { useExperience } from '@cctv/contexts/ExperienceContext';
+import { useExperienceState } from '@cctv/contexts/ExperienceStateContext';
 import { useUser } from '@cctv/contexts/UserContext';
 import {
   Button,
@@ -20,7 +21,7 @@ import {
 } from '@cctv/core';
 import ExperienceBlockContainer from '@cctv/experiences/ExperienceBlockContainer/ExperienceBlockContainer';
 import { useClearAvatars } from '@cctv/hooks/useClearAvatars';
-import { AvatarStroke } from '@cctv/types';
+import { AvatarStroke, Block, BlockKind, SubmissionState } from '@cctv/types';
 
 import AdminNotification from './AdminNotification/AdminNotification';
 
@@ -79,10 +80,23 @@ function AvatarCircle({ strokes }: { strokes: AvatarStroke[] }) {
   );
 }
 
+function deriveCurrentBlock(blocks: Block[], submissionState: SubmissionState): Block | undefined {
+  if (blocks.length <= 1) return blocks[0];
+
+  const [parent, ...children] = blocks;
+  if (parent.kind === BlockKind.FAMILY_FEUD) {
+    const unanswered = children.find((child) => !submissionState[child.id]);
+    return unanswered ?? parent;
+  }
+
+  return blocks[0];
+}
+
 export default function Experience() {
   const navigate = useNavigate();
   const { state: locationState } = useLocation();
   const { experience, participant, code, isLoading, experienceStatus, error } = useExperience();
+  const { submissionState } = useExperienceState();
   const { isAdmin } = useUser();
   const { clearAvatars, isLoading: clearing } = useClearAvatars();
   const [confirmClearOpen, setConfirmClearOpen] = useState(false);
@@ -142,7 +156,7 @@ export default function Experience() {
       </section>
     );
   }
-  const currentBlock = experience?.blocks?.[0];
+  const currentBlock = deriveCurrentBlock(experience?.blocks ?? [], submissionState);
 
   if (experienceStatus === 'lobby') {
     if (currentBlock && participant) {

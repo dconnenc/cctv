@@ -30,7 +30,7 @@ module Experiences
       visible = admin_visible_blocks
 
       experience_payload(
-        blocks: visible.map { |b| serialize_block(b, participant_role: "host", participant: nil, view_context: :admin) }
+        blocks: visible.map { |b| serialize_block(b, participant_role: "host", view_context: :admin) }
       )
     end
 
@@ -50,10 +50,15 @@ module Experiences
       role    = participant.role
 
       if host_or_moderator?(role)
-        blocks = visible.map { |b| serialize_block(b, participant_role: role, participant: participant, view_context: :participant) }
+        blocks = visible.map { |b| serialize_block(b, participant_role: role, view_context: :participant) }
       else
         current = resolve_participant_block(visible)
-        blocks  = current ? [serialize_block(current, participant_role: role, participant: participant, view_context: :participant)] : []
+        if current
+          family = resolve_ff_family(current)
+          blocks = family.map { |b| serialize_block(b, participant_role: role, view_context: :participant) }
+        else
+          blocks = []
+        end
       end
 
       experience_payload(blocks: blocks)
@@ -63,10 +68,15 @@ module Experiences
       visible = profile_visible_blocks(role: role, segments: segments, user_id: user_id)
 
       if host_or_moderator?(role)
-        blocks = visible.map { |b| serialize_block(b, participant_role: role, participant: nil, view_context: :participant) }
+        blocks = visible.map { |b| serialize_block(b, participant_role: role, view_context: :participant) }
       else
         current = resolve_participant_block(visible)
-        blocks  = current ? [serialize_block(current, participant_role: role, participant: nil, view_context: :participant)] : []
+        if current
+          family = resolve_ff_family(current)
+          blocks = family.map { |b| serialize_block(b, participant_role: role, view_context: :participant) }
+        else
+          blocks = []
+        end
       end
 
       experience_payload(blocks: blocks)
@@ -156,11 +166,21 @@ module Experiences
     end
 
     def participant_facing_blocks(parents:, children:, role:, segments:, user_id:)
+      # FAMILY_FEUD blocks in gathering phase are transparent to participants:
+      # their child question blocks surface as orphans so participants can answer them.
+      # Once playing starts, FF becomes a normal open parent and gates its children.
+      gathering_ff_ids = parents
+        .select { |b| b.kind == ExperienceBlock::FAMILY_FEUD && family_feud_gathering?(b) }
+        .map(&:id).to_set
+
       visible_parents = parents
+        .reject { |b| gathering_ff_ids.include?(b.id) }
         .select { |b| b.visible_by_status?(@experience) }
         .select { |b| b.visible_to?(role: role, segments: segments, user_id: user_id) }
 
-      open_parent_ids = parents.select(&:open?).map(&:id).to_set
+      open_parent_ids = parents
+        .reject { |b| gathering_ff_ids.include?(b.id) }
+        .select(&:open?).map(&:id).to_set
 
       visible_orphan_children = children
         .reject { |c| open_parent_ids.include?(c.parent_block_id) }
@@ -170,8 +190,28 @@ module Experiences
       visible_parents + visible_orphan_children
     end
 
+    def family_feud_gathering?(block)
+      game_state = block.payload&.dig("game_state")
+      game_state.nil? || game_state["phase"] == "gathering"
+    end
+
     def resolve_participant_block(blocks)
       blocks.first
+    end
+
+    def resolve_ff_family(block)
+      if block.kind == ExperienceBlock::FAMILY_FEUD && family_feud_gathering?(block)
+        [block] + block.child_blocks.order(position: :asc).to_a
+      elsif block.parent_block_id.present?
+        parent = block.parent_block
+        if parent&.kind == ExperienceBlock::FAMILY_FEUD
+          [parent] + parent.child_blocks.order(position: :asc).to_a
+        else
+          [block]
+        end
+      else
+        [block]
+      end
     end
 
     def resolve_monitor_entry(parent, children)
@@ -212,40 +252,40 @@ module Experiences
 
     # --- Block serialization ---
 
-    def serialize_block(block, participant_role:, participant: nil, depth: 0, view_context: :admin)
+    def serialize_block(block, participant_role:, depth: 0, view_context: :admin)
       {
         id:                  block.id,
         kind:                block.kind,
         status:              block.status,
         parent_block_id:     block.parent_block_id,
-        payload:             shape_payload(block, participant_role, participant, view_context),
+        payload:             shape_payload(block, participant_role, view_context),
         sounds:              block.sounds,
         position:            block.position,
         add_to_playbill:     block.add_to_playbill,
         playbill_mysterious: block.playbill_mysterious
       }
-        .merge(responses: serialize_response_data(block, participant_role, participant))
-        .merge(visibility_metadata(block, participant_role, participant))
-        .merge(dag_metadata(block, participant_role, participant, depth))
+        .merge(responses: serialize_response_data(block, participant_role))
+        .merge(visibility_metadata(block, participant_role))
+        .merge(dag_metadata(block, participant_role, depth))
     end
 
-    def shape_payload(block, participant_role, participant, view_context)
+    def shape_payload(block, participant_role, view_context)
       case block.kind
       when ExperienceBlock::GUESS_WHO
-        shape_guess_who_payload(block, participant_role, participant, view_context)
+        shape_guess_who_payload(block, participant_role, view_context)
       when ExperienceBlock::MINIGAME_ARITHMETIC
-        shape_minigame_arithmetic_payload(block, participant_role, participant, view_context)
+        shape_minigame_arithmetic_payload(block, participant_role, view_context)
       when ExperienceBlock::MINIGAME_BALLOON_PUMP
-        shape_minigame_balloon_pump_payload(block, participant_role, participant, view_context)
+        shape_minigame_balloon_pump_payload(block, participant_role, view_context)
       when ExperienceBlock::THE_SCENE
-        shape_the_scene_payload(block, participant_role, participant, view_context)
+        shape_the_scene_payload(block, participant_role, view_context)
       else
         block.payload
       end
     end
 
 
-    def shape_the_scene_payload(block, participant_role, participant, view_context)
+    def shape_the_scene_payload(block, participant_role, view_context)
       payload          = block.payload.deep_dup || {}
       phase            = legacy_the_scene_phase(payload["phase"])
       scene_started_at = payload["scene_started_at"]
@@ -268,21 +308,11 @@ module Experiences
         "leaderboard_size"          => leaderboard_size,
         "prompt_input_count"        => (payload["prompt_input_count"] || 3).to_i,
         "performer_participant_ids" => performer_ids,
-        "prompt_participant_ids"    => privileged ? prompt_ids : [],
-        "buzzer_participant_id"     => privileged ? buzzer_id : nil,
+        "prompt_participant_ids"    => prompt_ids,
+        "buzzer_participant_id"     => buzzer_id,
         "leaderboard"               => tally.first(leaderboard_size).map { |entry| serialize_tally_entry(entry) },
         "performers"                => the_scene_performer_summaries(performer_ids)
       }
-
-      if participant && view_context == :participant
-        shaped["is_prompt_recipient"] = prompt_ids.include?(participant.id)
-        shaped["is_buzzer_holder"]    = buzzer_id.to_s == participant.id
-        shaped["is_performer"]        = performer_ids.include?(participant.id)
-      else
-        shaped["is_prompt_recipient"] = false
-        shaped["is_buzzer_holder"]    = false
-        shaped["is_performer"]        = false
-      end
 
       if privileged
         shaped["all_suggestions"] = tally.map { |entry| serialize_tally_entry(entry) }
@@ -333,7 +363,7 @@ module Experiences
       }
     end
 
-    def shape_minigame_balloon_pump_payload(block, participant_role, participant, view_context)
+    def shape_minigame_balloon_pump_payload(block, participant_role, view_context)
       payload = block.payload.deep_dup || {}
 
       privileged =
@@ -352,11 +382,6 @@ module Experiences
         "leader_participant_id"  => payload["leader_participant_id"],
         "winner_participant_ids" => Array(payload["winner_participant_ids"])
       }
-
-      if view_context == :participant && !privileged && participant
-        own = ExperienceMinigameBalloonResult.find_by(experience_block_id: block.id, experience_participant: participant)
-        shaped["own_fill"] = own&.fill_amount.to_i
-      end
 
       if ended
         shaped["podium"] = balloon_pump_podium(block, shaped["winner_participant_ids"])
@@ -428,7 +453,7 @@ module Experiences
       [gold, silver, bronze].compact.flatten.compact
     end
 
-    def shape_guess_who_payload(block, participant_role, participant, view_context)
+    def shape_guess_who_payload(block, participant_role, view_context)
       payload = block.payload.deep_dup || {}
       contestants = Array(payload["contestants"])
 
@@ -494,7 +519,7 @@ module Experiences
         .count
     end
 
-    def shape_minigame_arithmetic_payload(block, participant_role, participant, view_context)
+    def shape_minigame_arithmetic_payload(block, participant_role, view_context)
       payload = block.payload.deep_dup || {}
 
       privileged =
@@ -553,36 +578,28 @@ module Experiences
     end
 
     def serialize_monitor_block(block)
-      serialize_block(block, participant_role: "host", participant: nil, view_context: :monitor)
+      serialize_block(block, participant_role: "host", view_context: :monitor)
     end
 
-    def serialize_response_data(block, participant_role, participant)
+    def serialize_response_data(block, participant_role)
       case block.kind
       when ExperienceBlock::POLL
         submissions = block.experience_poll_submissions.to_a
         response    = { total: submissions.count }
 
         if mod_or_host?(participant_role)
-          own = submissions.find { |s| s.experience_participant_id == participant&.id }
-          response[:user_response]  = format_poll_response(own)
-          response[:user_responded] = own.present?
-          response[:aggregate]      = submissions.any? ? calculate_poll_aggregate(submissions) : {}
-          response[:all_responses]  = submissions.map { |s| submission_payload(s) }
-        else
-          response[:aggregate] = nil
+          response[:aggregate]     = submissions.any? ? calculate_poll_aggregate(submissions) : {}
+          response[:all_responses] = submissions.map { |s| submission_payload(s) }
         end
 
         response
 
       when ExperienceBlock::QUESTION
         submissions = block.experience_question_submissions.to_a
-        response = { total: submissions.count }
+        response    = { total: submissions.count }
 
         if mod_or_host?(participant_role)
-          own = submissions.find { |s| s.experience_participant_id == participant&.id }
-          response[:user_response]  = own ? { id: own.id, answer: own.answer } : nil
-          response[:user_responded] = own.present?
-          response[:all_responses]  = submissions.map { |s| submission_payload(s) }
+          response[:all_responses] = submissions.map { |s| submission_payload(s) }
         end
 
         response
@@ -595,10 +612,7 @@ module Experiences
         response    = { total: submissions.count }
 
         if mod_or_host?(participant_role)
-          own = submissions.find { |s| s.experience_participant_id == participant&.id }
-          response[:user_response]  = own && { id: own.id, answer: own.answer, photo_url: attachment_url(own.photo) }
-          response[:user_responded] = own.present?
-          response[:all_responses]  = submissions.map { |s| submission_payload(s).merge(photo_url: attachment_url(s.photo)) }
+          response[:all_responses] = submissions.map { |s| submission_payload(s).merge(photo_url: attachment_url(s.photo)) }
         end
 
         response
@@ -633,13 +647,10 @@ module Experiences
         response    = { total: submissions.count }
 
         if mod_or_host?(participant_role)
-          own     = submissions.find { |s| s.experience_participant_id == participant&.id }
-          winner  = submissions.first
+          winner        = submissions.first
           winner_avatar = winner && @experience.experience_participants.find_by(id: winner.experience_participant_id)&.avatar&.presence
 
-          response[:user_response]  = own ? { id: own.id, answer: own.answer } : nil
-          response[:user_responded] = own.present?
-          response[:all_responses]  = submissions.map.with_index do |s, i|
+          response[:all_responses] = submissions.map.with_index do |s, i|
             entry = submission_payload(s)
             entry[:avatar] = winner_avatar if i == 0 && winner_avatar
             entry
@@ -653,7 +664,7 @@ module Experiences
       end
     end
 
-    def visibility_metadata(block, participant_role, participant)
+    def visibility_metadata(block, participant_role)
       return {} unless mod_or_host?(participant_role)
       {
         visible_to_roles:    block.visible_to_roles,
@@ -663,7 +674,7 @@ module Experiences
       }
     end
 
-    def dag_metadata(block, participant_role, participant, depth)
+    def dag_metadata(block, participant_role, depth)
       if mod_or_host?(participant_role)
         metadata = {
           child_block_ids:  block.children.map(&:id),
@@ -672,7 +683,7 @@ module Experiences
 
         if depth == 0 && block.children.any?
           metadata[:children] = block.children.map do |child|
-            serialize_block(child, participant_role: participant_role, participant: participant, depth: depth + 1, view_context: :admin)
+            serialize_block(child, participant_role: participant_role, depth: depth + 1, view_context: :admin)
           end
         end
 
@@ -797,11 +808,6 @@ module Experiences
     end
 
     # --- Helpers ---
-
-    def format_poll_response(submission)
-      return nil unless submission
-      { id: submission.id, answer: { selectedOptions: Array(submission.answer["selectedOptions"]) } }
-    end
 
     def calculate_poll_aggregate(submissions)
       submissions.each_with_object({}) do |s, agg|

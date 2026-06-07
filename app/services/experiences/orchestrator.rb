@@ -116,7 +116,20 @@ module Experiences
     end
 
     def open_block!(block:)
-      block.open!
+      if block.kind == ExperienceBlock::FAMILY_FEUD
+        transaction do
+          block.open!
+          block.child_blocks.update_all(status: :open)
+        end
+      elsif block.parent_block_id.present? && block.parent_block&.kind == ExperienceBlock::FAMILY_FEUD
+        parent = block.parent_block
+        transaction do
+          parent.open!
+          parent.child_blocks.update_all(status: :open)
+        end
+      else
+        block.open!
+      end
       block
     end
 
@@ -426,6 +439,8 @@ module Experiences
 
     def start_family_feud_playing!(block:)
       transaction do
+        block.child_blocks.where(status: :open).update_all(status: :closed)
+
         current_payload = block.payload || {}
 
         questions = block.child_blocks.map do |child_block|
