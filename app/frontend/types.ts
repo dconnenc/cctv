@@ -58,6 +58,7 @@ export interface QuestionPayload {
   question: string;
   formKey: string;
   inputType?: 'text' | 'number' | 'email' | 'password' | 'tel';
+  ai_context?: string;
 }
 
 export interface AnnouncementPayload {
@@ -87,6 +88,7 @@ export interface FamilyFeudGameState {
 
 export interface FamilyFeudPayload {
   title: string;
+  ai_context?: string;
   bucket_configuration?: {
     buckets: Array<{
       id: string;

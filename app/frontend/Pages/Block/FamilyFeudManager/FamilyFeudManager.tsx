@@ -60,6 +60,7 @@ import styles from './FamilyFeudManager.module.scss';
 
 interface FamilyFeudChildPayload {
   question?: string;
+  ai_context?: string;
   buckets?: Array<{ id: string; name: string; answer_ids?: string[] }>;
 }
 
@@ -71,8 +72,15 @@ interface FamilyFeudManagerProps {
 export default function FamilyFeudManager({ block }: FamilyFeudManagerProps) {
   const { code } = useExperience();
   const [questionsState, dispatch] = useReducer(familyFeudReducer, []);
-  const { addBucket, renameBucket, deleteBucket, assignAnswer, autoCategorize } =
-    useFamilyFeudBuckets(block.id, dispatch);
+  const {
+    addBucket,
+    renameBucket,
+    deleteBucket,
+    assignAnswer,
+    autoCategorize,
+    updateAiContext,
+    updateQuestionAiContext,
+  } = useFamilyFeudBuckets(block.id, dispatch);
   const childQuestions = block.children ?? [];
   const [editingBucketNames, setEditingBucketNames] = useState<Record<string, string>>({});
   const renameTimeoutRef = useRef<Record<string, NodeJS.Timeout>>({});
@@ -85,6 +93,13 @@ export default function FamilyFeudManager({ block }: FamilyFeudManagerProps) {
   const [collapsedBuckets, setCollapsedBuckets] = useState<Set<string>>(new Set());
 
   const payload = block.kind === BlockKind.FAMILY_FEUD ? block.payload : undefined;
+
+  const [gameAiContext, setGameAiContext] = useState(payload?.ai_context ?? '');
+  const [aiSettingsExpanded, setAiSettingsExpanded] = useState(!!payload?.ai_context);
+  const gameContextTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const [questionAiContexts, setQuestionAiContexts] = useState<Record<string, string>>({});
+  const questionContextTimeoutRefs = useRef<Record<string, NodeJS.Timeout>>({});
   const gameState = payload?.game_state;
   const isPlaying = gameState?.phase === 'playing';
 
@@ -140,6 +155,13 @@ export default function FamilyFeudManager({ block }: FamilyFeudManagerProps) {
     const allBucketIds = new Set(newQuestionsState.flatMap((q) => q.buckets.map((b) => b.id)));
     setCollapsedQuestions(allQuestionIds);
     setCollapsedBuckets(allBucketIds);
+
+    const contextMap: Record<string, string> = {};
+    childQuestions.forEach((childBlock: Block) => {
+      const childPayload = childBlock.payload as FamilyFeudChildPayload | undefined;
+      contextMap[childBlock.id] = childPayload?.ai_context ?? '';
+    });
+    setQuestionAiContexts(contextMap);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -187,6 +209,30 @@ export default function FamilyFeudManager({ block }: FamilyFeudManagerProps) {
       }
     },
     [deleteBucket, block.id],
+  );
+
+  const handleGameAiContextChange = useCallback(
+    (value: string) => {
+      setGameAiContext(value);
+      if (gameContextTimeoutRef.current) clearTimeout(gameContextTimeoutRef.current);
+      gameContextTimeoutRef.current = setTimeout(() => {
+        updateAiContext(block.id, value);
+      }, 500);
+    },
+    [block.id, updateAiContext],
+  );
+
+  const handleQuestionAiContextChange = useCallback(
+    (questionId: string, value: string) => {
+      setQuestionAiContexts((prev) => ({ ...prev, [questionId]: value }));
+      if (questionContextTimeoutRefs.current[questionId]) {
+        clearTimeout(questionContextTimeoutRefs.current[questionId]);
+      }
+      questionContextTimeoutRefs.current[questionId] = setTimeout(() => {
+        updateQuestionAiContext(block.id, questionId, value);
+      }, 500);
+    },
+    [block.id, updateQuestionAiContext],
   );
 
   const handleAutoCategorize = useCallback(
@@ -426,6 +472,36 @@ export default function FamilyFeudManager({ block }: FamilyFeudManagerProps) {
           {startingPlaying ? 'Starting...' : 'Start Playing'}
         </Button>
       </div>
+      <div className={styles.aiSettings}>
+        <button
+          className={styles.aiSettingsHeader}
+          onClick={() => setAiSettingsExpanded((v) => !v)}
+          aria-expanded={aiSettingsExpanded}
+        >
+          {aiSettingsExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+          <span>AI Categorization Settings</span>
+        </button>
+        {aiSettingsExpanded && (
+          <div className={styles.aiSettingsContent}>
+            <label className={styles.aiContextLabel} htmlFor="game-ai-context">
+              Game context
+              <span className={styles.aiContextHint}>
+                {' '}
+                — Describe the event theme or audience. Applies to all questions.
+              </span>
+            </label>
+            <textarea
+              id="game-ai-context"
+              className={styles.aiContextTextarea}
+              value={gameAiContext}
+              onChange={(e) => handleGameAiContextChange(e.target.value)}
+              placeholder="e.g. Corporate team-building event for a tech company audience"
+              rows={3}
+            />
+          </div>
+        )}
+      </div>
+
       {questionsState.map((question) => {
         const isQuestionCollapsed = collapsedQuestions.has(question.questionId);
         return (
@@ -444,6 +520,24 @@ export default function FamilyFeudManager({ block }: FamilyFeudManagerProps) {
 
             {!isQuestionCollapsed && (
               <div className={styles.questionContent}>
+                <div className={styles.questionAiContext}>
+                  <label className={styles.aiContextLabel}>
+                    Question context
+                    <span className={styles.aiContextHint}>
+                      {' '}
+                      — Guide the AI for this question only (optional).
+                    </span>
+                  </label>
+                  <textarea
+                    className={styles.aiContextTextarea}
+                    value={questionAiContexts[question.questionId] ?? ''}
+                    onChange={(e) =>
+                      handleQuestionAiContextChange(question.questionId, e.target.value)
+                    }
+                    placeholder="e.g. Focus on food categories, ignore drink mentions"
+                    rows={2}
+                  />
+                </div>
                 <DragDropContext onDragEnd={(result) => handleDragEnd(result, question.questionId)}>
                   <div className={styles.layout}>
                     <BucketsColumn

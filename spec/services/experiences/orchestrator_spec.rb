@@ -251,6 +251,140 @@ RSpec.describe Experiences::Orchestrator do
     end
   end
 
+  describe "#update_family_feud_ai_context!" do
+    let(:participant_role) { ExperienceParticipant.roles[:host] }
+    let!(:block) { create(:experience_block, :family_feud, experience: experience) }
+
+    subject do
+      described_class.new(actor: user, experience: experience).update_family_feud_ai_context!(
+        block: block,
+        ai_context: "Corporate event for a tech audience"
+      )
+    end
+
+    it "stores the ai_context in the block payload" do
+      subject
+      expect(block.reload.payload["ai_context"]).to eql("Corporate event for a tech audience")
+    end
+
+    it "strips leading and trailing whitespace" do
+      described_class.new(actor: user, experience: experience).update_family_feud_ai_context!(
+        block: block,
+        ai_context: "  padded context  "
+      )
+      expect(block.reload.payload["ai_context"]).to eql("padded context")
+    end
+
+    it "preserves other payload fields" do
+      block.update!(payload: block.payload.merge("title" => "My Game"))
+      subject
+      expect(block.reload.payload["title"]).to eql("My Game")
+    end
+  end
+
+  describe "#update_family_feud_question_ai_context!" do
+    let(:participant_role) { ExperienceParticipant.roles[:host] }
+    let!(:block) { create(:experience_block, :family_feud, experience: experience) }
+    let(:question_block) { block.child_blocks.first }
+
+    subject do
+      described_class.new(actor: user, experience: experience).update_family_feud_question_ai_context!(
+        question_id: question_block.id,
+        ai_context: "Focus on food categories"
+      )
+    end
+
+    it "stores the ai_context in the question block payload" do
+      subject
+      expect(question_block.reload.payload["ai_context"]).to eql("Focus on food categories")
+    end
+
+    it "preserves existing question payload fields" do
+      subject
+      expect(question_block.reload.payload["question"]).to be_present
+    end
+  end
+
+  describe "#auto_categorize_family_feud!" do
+    let(:participant_role) { ExperienceParticipant.roles[:host] }
+    let!(:block) { create(:experience_block, :family_feud, experience: experience) }
+
+    let(:question_block) { block.child_blocks.first }
+
+    let(:ai_response) do
+      {
+        "buckets" => [
+          { "name" => "Home Life", "answer_ids" => [submission_a.id.to_s, submission_b.id.to_s] },
+          { "name" => "Work Stuff", "answer_ids" => [submission_c.id.to_s] }
+        ]
+      }
+    end
+
+    let!(:submission_a) do
+      create(:experience_question_submission, experience_block: question_block, experience_participant: participant, answer: { "value" => "cooking" })
+    end
+    let!(:submission_b) do
+      create(:experience_question_submission, experience_block: question_block, experience_participant: participant, answer: { "value" => "cleaning" })
+    end
+    let!(:submission_c) do
+      create(:experience_question_submission, experience_block: question_block, experience_participant: participant, answer: { "value" => "meetings" })
+    end
+
+    before do
+      allow(AI::Client).to receive(:call).and_return(ai_response)
+    end
+
+    subject do
+      described_class.new(actor: user, experience: experience).auto_categorize_family_feud!(
+        question_id: question_block.id
+      )
+    end
+
+    it "creates buckets from the AI response" do
+      subject
+      buckets = question_block.reload.payload["buckets"]
+      expect(buckets.length).to eq(2)
+      expect(buckets.map { |b| b["name"] }).to contain_exactly("Home Life", "Work Stuff")
+    end
+
+    it "passes game_context and question_context to the prompt builder when set" do
+      block.update!(payload: block.payload.merge("ai_context" => "Tech company event"))
+      question_block.update!(payload: question_block.payload.merge("ai_context" => "Focus on workplace themes"))
+
+      prompt_builder = instance_double(
+        AI::Prompts::FamilyFeudBucketing,
+        prompt: "prompt text",
+        response_schema: {}
+      )
+
+      expect(AI::Prompts::FamilyFeudBucketing).to receive(:new).with(
+        question_text: anything,
+        answers: anything,
+        game_context: "Tech company event",
+        question_context: "Focus on workplace themes"
+      ).and_return(prompt_builder)
+
+      subject
+    end
+
+    it "passes nil contexts when not set" do
+      prompt_builder = instance_double(
+        AI::Prompts::FamilyFeudBucketing,
+        prompt: "prompt text",
+        response_schema: {}
+      )
+
+      expect(AI::Prompts::FamilyFeudBucketing).to receive(:new).with(
+        question_text: anything,
+        answers: anything,
+        game_context: nil,
+        question_context: nil
+      ).and_return(prompt_builder)
+
+      subject
+    end
+  end
+
   describe "#start_family_feud_playing!" do
     let(:participant_role) { ExperienceParticipant.roles[:host] }
     let!(:block) do

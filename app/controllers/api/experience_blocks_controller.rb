@@ -1,7 +1,7 @@
 class Api::ExperienceBlocksController < Api::BaseController
   MANAGEMENT_ACTIONS = %i[
     create update destroy reorder set_column open close hide detach_from_parent clear_buzzer_responses
-    add_bucket rename_bucket delete_bucket assign_answer auto_categorize
+    add_bucket rename_bucket delete_bucket assign_answer auto_categorize update_ai_context update_question_ai_context
     start_playing reveal_bucket show_x next_question restart_playing
     restart_categorizing restart_everything
     start_guess_who reroll_guess_who_mystery curate_guess_who_clues
@@ -311,6 +311,34 @@ class Api::ExperienceBlocksController < Api::BaseController
       Experiences::Broadcaster.new(@experience).broadcast_experience_update
 
       render json: { success: true, data: { buckets: buckets } }, status: 200
+    end
+  end
+
+  # PATCH /api/experiences/:experience_id/blocks/:id/family_feud/ai_context
+  def update_ai_context
+    with_experience_orchestration do
+      Experiences::Orchestrator.new(
+        experience: @experience, actor: @user
+      ).update_family_feud_ai_context!(
+        block: @block,
+        ai_context: params[:ai_context]
+      )
+
+      render json: { success: true }, status: 200
+    end
+  end
+
+  # PATCH /api/experiences/:experience_id/blocks/:id/family_feud/question_ai_context
+  def update_question_ai_context
+    with_experience_orchestration do
+      Experiences::Orchestrator.new(
+        experience: @experience, actor: @user
+      ).update_family_feud_question_ai_context!(
+        question_id: params[:question_id],
+        ai_context: params[:ai_context]
+      )
+
+      render json: { success: true }, status: 200
     end
   end
 

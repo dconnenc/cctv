@@ -328,6 +328,17 @@ module Experiences
       end
     end
 
+    def update_family_feud_ai_context!(block:, ai_context:)
+      payload = block.payload || {}
+      block.update!(payload: payload.merge("ai_context" => ai_context.to_s.strip))
+    end
+
+    def update_family_feud_question_ai_context!(question_id:, ai_context:)
+      question_block = experience.experience_blocks.find(question_id)
+      payload = question_block.payload || {}
+      question_block.update!(payload: payload.merge("ai_context" => ai_context.to_s.strip))
+    end
+
     def auto_categorize_family_feud!(question_id:)
       question_block = experience.experience_blocks.find(question_id)
 
@@ -340,9 +351,13 @@ module Experiences
         question_text = question_payload["question"] || "Question"
         answers = submissions.map { |s| { id: s.id.to_s, text: s.answer.to_s } }
 
+        parent_payload = question_block.parent_block&.payload || {}
+
         prompt_builder = ::AI::Prompts::FamilyFeudBucketing.new(
           question_text: question_text,
-          answers: answers
+          answers: answers,
+          game_context: parent_payload["ai_context"],
+          question_context: question_payload["ai_context"]
         )
 
         result = ::AI::Client.call(
