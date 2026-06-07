@@ -471,25 +471,18 @@ module Experiences
 
       payload["active_poll_response_count"] = guess_who_active_poll_response_count(payload)
       payload["active_poll_total_participants"] = guess_who_active_poll_total(payload)
-      payload["active_poll"] = guess_who_active_poll_for(payload, participant) if payload["active_poll_block_id"].present?
+      payload["active_poll"] = guess_who_active_poll_for(payload) if payload["active_poll_block_id"].present?
 
       payload
     end
 
-    def guess_who_active_poll_for(payload, participant)
+    def guess_who_active_poll_for(payload)
       poll_block = @experience.experience_blocks.find_by(id: payload["active_poll_block_id"])
       return nil unless poll_block
 
-      own_submission = participant && ExperiencePollSubmission.find_by(
-        experience_block_id: poll_block.id,
-        experience_participant_id: participant.id
-      )
-
       {
         "id" => poll_block.id,
-        "options" => Array(poll_block.payload["options"]),
-        "user_responded" => own_submission.present?,
-        "user_response" => own_submission && { "id" => own_submission.id, "answer" => own_submission.answer }
+        "options" => Array(poll_block.payload["options"])
       }
     end
 
