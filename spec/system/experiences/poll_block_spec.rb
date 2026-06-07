@@ -59,8 +59,19 @@ RSpec.describe "Poll Block", type: :system do
     visit current_path
     select_and_present(1, kind: "poll")
 
+    # Monitor impersonation shows the question
+    within("[aria-label='Preview mode']") { click_button "Monitor" }
+    expect(page).to have_text("Pick your team")
+
+    # Actual monitor page shows the question
+    using_session(:monitor) do
+      visit "/experiences/test-exp/monitor"
+      expect(page).to have_text("Pick your team")
+    end
+
     ## Each participant selects a different option
     using_session(:participant) do
+      expect(page).to have_text("Pick your team")
       find("label", text: "Team A").click
       click_button "Submit"
 
@@ -68,6 +79,7 @@ RSpec.describe "Poll Block", type: :system do
     end
 
     using_session(:participant_two) do
+      expect(page).to have_text("Pick your team")
       find("label", text: "Team B").click
       click_button "Submit"
 
@@ -89,7 +101,6 @@ RSpec.describe "Poll Block", type: :system do
     queue_block(n: 2) do
       select "Announcement", from: "Kind"
       fill_in "Announcement Message", with: "Hello Team A!"
-      clear_default_segment
       find("select[aria-label='Add segment']").select("Team A")
     end
 
@@ -108,7 +119,6 @@ RSpec.describe "Poll Block", type: :system do
     queue_block(n: 3) do
       select "Announcement", from: "Kind"
       fill_in "Announcement Message", with: "Hello Team B!"
-      clear_default_segment
       find("select[aria-label='Add segment']").select("Team B")
     end
 
@@ -133,7 +143,6 @@ RSpec.describe "Poll Block", type: :system do
         fill_in "Poll Question", with: "Original question?"
         fill_in "Option 1", with: "yes"
         fill_in "Option 2", with: "no"
-        clear_default_segment
       end
 
       select_block(1, kind: "poll")

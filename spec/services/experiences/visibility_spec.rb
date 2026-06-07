@@ -35,14 +35,22 @@ RSpec.describe Experiences::Visibility do
   describe ".for_monitor" do
     subject(:result) { described_class.for_monitor(experience) }
 
-    context "with public open blocks" do
+    context "with open blocks" do
       let!(:open_block) { create(:experience_block, experience: experience, status: :open, position: 0) }
       let!(:second_block) { create(:experience_block, experience: experience, status: :open, position: 1) }
-      let!(:targeted_block) { create(:experience_block, experience: experience, status: :open, position: 2, visible_to_roles: ["player"]) }
+      let!(:segment_block) { create(:experience_block, experience: experience, status: :open, position: 2, visible_to_roles: ["player"]) }
 
-      it "includes only the first public open block" do
+      it "includes only the first open block regardless of visibility rules" do
         ids = result[:blocks].map { |b| b[:id] }
         expect(ids).to contain_exactly(open_block.id)
+      end
+
+      it "includes blocks with role visibility rules as monitor candidates" do
+        # Segment/role rules do not gate monitor visibility — show_on_monitor is the sole control.
+        # Verify segment_block would appear first if it were at position 0.
+        segment_block.update!(position: -1)
+        ids = result[:blocks].map { |b| b[:id] }
+        expect(ids).to contain_exactly(segment_block.id)
       end
 
       it "includes participant_block_active and responded_participant_ids" do

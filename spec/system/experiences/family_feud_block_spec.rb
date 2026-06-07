@@ -3,6 +3,32 @@ require "rails_helper"
 RSpec.describe "Family Feud Block", type: :system do
   let(:admin) { create(:user, :admin) }
 
+  it "shows the title on the monitor when first presented, even with segment visibility rules" do
+    sign_in(admin)
+    create_experience_and_go_to_manage(name: "Test Experience", code: "test-exp")
+
+    # Intentionally keep the default Audience segment to reproduce the monitor
+    # visibility bug where segment rules caused the block to be hidden from monitor.
+    queue_block(n: 1) do
+      select "Family Feud", from: "Kind"
+      fill_in "Title", with: "Jun 7th FF"
+      click_button "Add Question"
+      fill_in "Enter question", with: "Name a fruit"
+    end
+
+    start_experience
+
+    select_and_present(1, kind: "family.feud")
+
+    within("[aria-label='Preview mode']") { click_button "Monitor" }
+    expect(page).to have_text("Jun 7th FF")
+
+    using_session(:monitor) do
+      visit "/experiences/test-exp/monitor"
+      expect(page).to have_text("Jun 7th FF")
+    end
+  end
+
   describe "editing a family feud block" do
     before do
       sign_in(admin)

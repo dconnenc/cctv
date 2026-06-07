@@ -101,11 +101,11 @@ module Experiences
       open_parent_ids = parents.select(&:open?).map(&:id).to_set
 
       if @experience.status == "lobby"
-        parent_candidates = parents.select { |b| b.show_in_lobby? && monitor_visibility_ok?(b) }
-        child_candidates  = children.select { |c| c.show_in_lobby? && monitor_visibility_ok?(c) && !open_parent_ids.include?(c.parent_block_id) }
+        parent_candidates = parents.select(&:show_in_lobby?)
+        child_candidates  = children.select { |c| c.show_in_lobby? && !open_parent_ids.include?(c.parent_block_id) }
       else
-        parent_candidates = parents.select { |b| b.open? && monitor_visibility_ok?(b) }
-        child_candidates  = children.select { |c| c.open? && monitor_visibility_ok?(c) && !open_parent_ids.include?(c.parent_block_id) }
+        parent_candidates = parents.select(&:open?)
+        child_candidates  = children.select { |c| c.open? && !open_parent_ids.include?(c.parent_block_id) }
       end
 
       parent_entries = parent_candidates
@@ -123,14 +123,6 @@ module Experiences
     def parent_position_for(child, parents)
       parent = parents.find { |p| p.id == child.parent_block_id }
       parent&.position || Float::INFINITY
-    end
-
-    def monitor_visibility_ok?(block)
-      return true if block.kind == ExperienceBlock::MINIGAME_ARITHMETIC
-      return true if block.kind == ExperienceBlock::MINIGAME_BALLOON_PUMP
-      return true if block.kind == ExperienceBlock::THE_SCENE
-      return true if block.kind == ExperienceBlock::GUESS_WHO
-      !block.has_visibility_rules?
     end
 
     def participant_visible_blocks(participant)
