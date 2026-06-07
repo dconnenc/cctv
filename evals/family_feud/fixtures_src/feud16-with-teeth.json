@@ -1,0 +1,24 @@
+{
+  "id": "feud16-with-teeth",
+  "season": "S16",
+  "question": "Name something with teeth.",
+  "target_n": 20,
+  "difficulty_tags": ["paraphrase", "near_miss", "off_topic", "singleton"],
+  "groups": [
+    {
+      "label": "Animals",
+      "weight": 66,
+      "variants": ["a dog", "a shark", "animals", "a lion", "my cat"]
+    },
+    { "label": "People", "weight": 19, "variants": ["humans", "people", "a person", "babies"] },
+    {
+      "label": "A Zipper",
+      "weight": 8,
+      "variants": ["a zipper", "the zipper on my jeans", "zippers"]
+    },
+    { "label": "A Saw", "weight": 4, "variants": ["a saw", "a chainsaw", "a handsaw"] },
+    { "label": "A Comb", "weight": 2, "variants": ["a comb", "a hair comb"] }
+  ],
+  "singletons": ["a gear", "a key"],
+  "junk": ["idk", "teeth lol", "the dentist haha"]
+}

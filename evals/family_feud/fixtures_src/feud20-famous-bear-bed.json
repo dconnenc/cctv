@@ -1,0 +1,23 @@
+{
+  "id": "feud20-famous-bear-bed",
+  "season": "S20",
+  "question": "Name a famous bear a woman might want her man to dress up like in bed.",
+  "target_n": 22,
+  "difficulty_tags": ["paraphrase", "near_miss", "off_topic", "singleton"],
+  "groups": [
+    { "label": "Yogi Bear", "weight": 54, "variants": ["yogi", "yogi bear", "yogi the bear"] },
+    {
+      "label": "Smokey Bear",
+      "weight": 31,
+      "variants": ["smokey", "smokey the bear", "smokey bear"]
+    },
+    {
+      "label": "Winnie the Pooh",
+      "weight": 5,
+      "variants": ["winnie the pooh", "pooh bear", "winnie"]
+    },
+    { "label": "Teddy Bear", "weight": 4, "variants": ["a teddy bear", "teddy", "a teddy"] }
+  ],
+  "singletons": ["bear grylls", "paddington"],
+  "junk": ["rawr", "bears are scary", "i hate this question"]
+}

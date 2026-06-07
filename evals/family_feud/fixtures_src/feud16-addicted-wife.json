@@ -1,0 +1,31 @@
+{
+  "id": "feud16-addicted-wife",
+  "season": "S16",
+  "question": "Fill in the blank: I'm addicted to my wife's ______.",
+  "target_n": 22,
+  "difficulty_tags": ["paraphrase", "near_miss", "off_topic", "singleton", "borderline"],
+  "groups": [
+    {
+      "label": "Her Looks",
+      "weight": 46,
+      "variants": ["her pretty face", "her eyes", "her beautiful face", "her looks"]
+    },
+    {
+      "label": "Her Booty",
+      "weight": 19,
+      "variants": ["her booty", "her butt", "her behind", "that booty"]
+    },
+    {
+      "label": "Her Cooking",
+      "weight": 14,
+      "variants": ["her cooking", "her home cooking", "the meals she makes"]
+    },
+    {
+      "label": "Lovemaking",
+      "weight": 12,
+      "variants": ["her lovemaking", "being intimate with her", "the bedroom stuff"]
+    }
+  ],
+  "singletons": ["her laugh", "her money"],
+  "junk": ["my wife rocks", "lol idk", "love you babe"]
+}

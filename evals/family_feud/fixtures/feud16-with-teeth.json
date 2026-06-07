@@ -1,0 +1,132 @@
+{
+  "id": "feud16-with-teeth",
+  "season": "S16",
+  "question": "Name something with teeth.",
+  "difficulty_tags": ["paraphrase", "near_miss", "off_topic", "singleton"],
+  "board": [
+    {
+      "label": "Animals",
+      "points": 66
+    },
+    {
+      "label": "People",
+      "points": 19
+    },
+    {
+      "label": "A Zipper",
+      "points": 8
+    },
+    {
+      "label": "A Saw",
+      "points": 4
+    },
+    {
+      "label": "A Comb",
+      "points": 2
+    }
+  ],
+  "raw_responses": [
+    {
+      "id": "feud16-with-teeth-14",
+      "text": "a hair comb"
+    },
+    {
+      "id": "feud16-with-teeth-19",
+      "text": "the dentist haha"
+    },
+    {
+      "id": "feud16-with-teeth-10",
+      "text": "zippers"
+    },
+    {
+      "id": "feud16-with-teeth-5",
+      "text": "humans"
+    },
+    {
+      "id": "feud16-with-teeth-16",
+      "text": "a key"
+    },
+    {
+      "id": "feud16-with-teeth-7",
+      "text": "a person"
+    },
+    {
+      "id": "feud16-with-teeth-17",
+      "text": "idk"
+    },
+    {
+      "id": "feud16-with-teeth-8",
+      "text": "a zipper"
+    },
+    {
+      "id": "feud16-with-teeth-2",
+      "text": "animals"
+    },
+    {
+      "id": "feud16-with-teeth-1",
+      "text": "a shark"
+    },
+    {
+      "id": "feud16-with-teeth-11",
+      "text": "a saw"
+    },
+    {
+      "id": "feud16-with-teeth-12",
+      "text": "a chainsaw"
+    },
+    {
+      "id": "feud16-with-teeth-18",
+      "text": "teeth lol"
+    },
+    {
+      "id": "feud16-with-teeth-9",
+      "text": "the zipper on my jeans"
+    },
+    {
+      "id": "feud16-with-teeth-3",
+      "text": "a lion"
+    },
+    {
+      "id": "feud16-with-teeth-0",
+      "text": "a dog"
+    },
+    {
+      "id": "feud16-with-teeth-4",
+      "text": "my cat"
+    },
+    {
+      "id": "feud16-with-teeth-13",
+      "text": "a comb"
+    },
+    {
+      "id": "feud16-with-teeth-15",
+      "text": "a gear"
+    },
+    {
+      "id": "feud16-with-teeth-6",
+      "text": "people"
+    }
+  ],
+  "gold": {
+    "groups": {
+      "A Comb": ["feud16-with-teeth-14", "feud16-with-teeth-13"],
+      "A Zipper": ["feud16-with-teeth-10", "feud16-with-teeth-8", "feud16-with-teeth-9"],
+      "People": ["feud16-with-teeth-5", "feud16-with-teeth-7", "feud16-with-teeth-6"],
+      "Animals": [
+        "feud16-with-teeth-2",
+        "feud16-with-teeth-1",
+        "feud16-with-teeth-3",
+        "feud16-with-teeth-0",
+        "feud16-with-teeth-4"
+      ],
+      "A Saw": ["feud16-with-teeth-11", "feud16-with-teeth-12"]
+    },
+    "unassigned": [
+      "feud16-with-teeth-19",
+      "feud16-with-teeth-16",
+      "feud16-with-teeth-17",
+      "feud16-with-teeth-18",
+      "feud16-with-teeth-15"
+    ]
+  }
+}

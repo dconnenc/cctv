@@ -1,0 +1,147 @@
+{
+  "id": "feud20-famous-bear-bed",
+  "season": "S20",
+  "question": "Name a famous bear a woman might want her man to dress up like in bed.",
+  "difficulty_tags": ["paraphrase", "near_miss", "off_topic", "singleton"],
+  "board": [
+    {
+      "label": "Yogi Bear",
+      "points": 54
+    },
+    {
+      "label": "Smokey Bear",
+      "points": 31
+    },
+    {
+      "label": "Winnie the Pooh",
+      "points": 5
+    },
+    {
+      "label": "Teddy Bear",
+      "points": 4
+    }
+  ],
+  "raw_responses": [
+    {
+      "id": "feud20-famous-bear-bed-19",
+      "text": "rawr"
+    },
+    {
+      "id": "feud20-famous-bear-bed-21",
+      "text": "i hate this question"
+    },
+    {
+      "id": "feud20-famous-bear-bed-8",
+      "text": "smokey the bear"
+    },
+    {
+      "id": "feud20-famous-bear-bed-3",
+      "text": "yogi"
+    },
+    {
+      "id": "feud20-famous-bear-bed-0",
+      "text": "yogi"
+    },
+    {
+      "id": "feud20-famous-bear-bed-4",
+      "text": "yogi bear"
+    },
+    {
+      "id": "feud20-famous-bear-bed-9",
+      "text": "smokey bear"
+    },
+    {
+      "id": "feud20-famous-bear-bed-15",
+      "text": "a teddy bear"
+    },
+    {
+      "id": "feud20-famous-bear-bed-13",
+      "text": "pooh bear"
+    },
+    {
+      "id": "feud20-famous-bear-bed-20",
+      "text": "bears are scary"
+    },
+    {
+      "id": "feud20-famous-bear-bed-18",
+      "text": "paddington"
+    },
+    {
+      "id": "feud20-famous-bear-bed-6",
+      "text": "yogi"
+    },
+    {
+      "id": "feud20-famous-bear-bed-1",
+      "text": "yogi bear"
+    },
+    {
+      "id": "feud20-famous-bear-bed-5",
+      "text": "yogi the bear"
+    },
+    {
+      "id": "feud20-famous-bear-bed-7",
+      "text": "smokey"
+    },
+    {
+      "id": "feud20-famous-bear-bed-12",
+      "text": "winnie the pooh"
+    },
+    {
+      "id": "feud20-famous-bear-bed-16",
+      "text": "teddy"
+    },
+    {
+      "id": "feud20-famous-bear-bed-10",
+      "text": "smokey"
+    },
+    {
+      "id": "feud20-famous-bear-bed-11",
+      "text": "smokey the bear"
+    },
+    {
+      "id": "feud20-famous-bear-bed-14",
+      "text": "winnie"
+    },
+    {
+      "id": "feud20-famous-bear-bed-17",
+      "text": "bear grylls"
+    },
+    {
+      "id": "feud20-famous-bear-bed-2",
+      "text": "yogi the bear"
+    }
+  ],
+  "gold": {
+    "groups": {
+      "Smokey Bear": [
+        "feud20-famous-bear-bed-8",
+        "feud20-famous-bear-bed-9",
+        "feud20-famous-bear-bed-7",
+        "feud20-famous-bear-bed-10",
+        "feud20-famous-bear-bed-11"
+      ],
+      "Yogi Bear": [
+        "feud20-famous-bear-bed-3",
+        "feud20-famous-bear-bed-0",
+        "feud20-famous-bear-bed-4",
+        "feud20-famous-bear-bed-6",
+        "feud20-famous-bear-bed-1",
+        "feud20-famous-bear-bed-5",
+        "feud20-famous-bear-bed-2"
+      ],
+      "Teddy Bear": ["feud20-famous-bear-bed-15", "feud20-famous-bear-bed-16"],
+      "Winnie the Pooh": [
+        "feud20-famous-bear-bed-13",
+        "feud20-famous-bear-bed-12",
+        "feud20-famous-bear-bed-14"
+      ]
+    },
+    "unassigned": [
+      "feud20-famous-bear-bed-19",
+      "feud20-famous-bear-bed-21",
+      "feud20-famous-bear-bed-20",
+      "feud20-famous-bear-bed-18",
+      "feud20-famous-bear-bed-17"
+    ]
+  }
+}

@@ -1,0 +1,110 @@
+{
+  "id": "feud18-rhymes-teeny",
+  "season": "S18",
+  "question": "Name a word that rhymes with \"teeny.\"",
+  "difficulty_tags": ["off_topic", "singleton", "borderline"],
+  "board": [
+    {
+      "label": "Weenie",
+      "points": 71
+    },
+    {
+      "label": "Beanie",
+      "points": 15
+    },
+    {
+      "label": "Meanie",
+      "points": 12
+    },
+    {
+      "label": "Genie",
+      "points": 2
+    }
+  ],
+  "raw_responses": [
+    {
+      "id": "feud18-rhymes-teeny-9",
+      "text": "genie"
+    },
+    {
+      "id": "feud18-rhymes-teeny-5",
+      "text": "beany"
+    },
+    {
+      "id": "feud18-rhymes-teeny-11",
+      "text": "zucchini"
+    },
+    {
+      "id": "feud18-rhymes-teeny-8",
+      "text": "meany"
+    },
+    {
+      "id": "feud18-rhymes-teeny-13",
+      "text": "teeny"
+    },
+    {
+      "id": "feud18-rhymes-teeny-12",
+      "text": "martini"
+    },
+    {
+      "id": "feud18-rhymes-teeny-7",
+      "text": "meanie"
+    },
+    {
+      "id": "feud18-rhymes-teeny-14",
+      "text": "i dont know"
+    },
+    {
+      "id": "feud18-rhymes-teeny-0",
+      "text": "weenie"
+    },
+    {
+      "id": "feud18-rhymes-teeny-6",
+      "text": "beanie"
+    },
+    {
+      "id": "feud18-rhymes-teeny-1",
+      "text": "weeny"
+    },
+    {
+      "id": "feud18-rhymes-teeny-3",
+      "text": "weenie"
+    },
+    {
+      "id": "feud18-rhymes-teeny-10",
+      "text": "jeannie"
+    },
+    {
+      "id": "feud18-rhymes-teeny-15",
+      "text": "rhyming is hard"
+    },
+    {
+      "id": "feud18-rhymes-teeny-2",
+      "text": "wienie"
+    },
+    {
+      "id": "feud18-rhymes-teeny-4",
+      "text": "beanie"
+    }
+  ],
+  "gold": {
+    "groups": {
+      "Genie": ["feud18-rhymes-teeny-9", "feud18-rhymes-teeny-10"],
+      "Beanie": ["feud18-rhymes-teeny-5", "feud18-rhymes-teeny-6", "feud18-rhymes-teeny-4"],
+      "Meanie": ["feud18-rhymes-teeny-8", "feud18-rhymes-teeny-7"],
+      "Weenie": [
+        "feud18-rhymes-teeny-0",
+        "feud18-rhymes-teeny-1",
+        "feud18-rhymes-teeny-3",
+        "feud18-rhymes-teeny-2"
+      ]
+    },
+    "unassigned": [
+      "feud18-rhymes-teeny-11",
+      "feud18-rhymes-teeny-13",
+      "feud18-rhymes-teeny-12",
+      "feud18-rhymes-teeny-14",
+      "feud18-rhymes-teeny-15"
+    ]
+  }
+}
