@@ -30,6 +30,12 @@ export const WithParticipantName: Story = {
   },
 };
 
+export const WithoutParticipantFallback: Story = {
+  args: {
+    message: 'Hey {{ participant_name }}, get ready!',
+  },
+};
+
 export const LongMessage: Story = {
   args: {
     message:

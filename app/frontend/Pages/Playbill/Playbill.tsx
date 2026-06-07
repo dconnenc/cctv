@@ -6,7 +6,13 @@ import { ChevronLeft } from 'lucide-react';
 
 import { useExperience } from '@cctv/contexts/ExperienceContext';
 import { Button } from '@cctv/core';
-import { BLOCK_KIND_LABELS, BlockKind, PlaybillRunningOrderEntry } from '@cctv/types';
+import {
+  BLOCK_KIND_LABELS,
+  BlockKind,
+  ParticipantSummary,
+  PlaybillRunningOrderEntry,
+} from '@cctv/types';
+import { renderNameTemplate } from '@cctv/utils';
 
 import styles from './Playbill.module.scss';
 
@@ -94,7 +100,7 @@ export default function Playbill() {
 }
 
 function PerformersTab() {
-  const { experience } = useExperience();
+  const { experience, participant } = useExperience();
   const sections = experience?.playbill || [];
 
   if (sections.length === 0) {
@@ -118,7 +124,7 @@ function PerformersTab() {
               <img
                 className={styles.image}
                 src={section.image_url}
-                alt={section.title || `Performer ${index + 1}`}
+                alt={renderNameTemplate(section.title, participant) || `Performer ${index + 1}`}
                 loading="lazy"
                 decoding="async"
                 width={section.image_width}
@@ -127,8 +133,8 @@ function PerformersTab() {
             </div>
           )}
           <div className={styles.textWrap}>
-            <h3 className={styles.itemTitle}>{section.title}</h3>
-            <p className={styles.itemBody}>{section.body}</p>
+            <h3 className={styles.itemTitle}>{renderNameTemplate(section.title, participant)}</h3>
+            <p className={styles.itemBody}>{renderNameTemplate(section.body, participant)}</p>
           </div>
         </div>
       ))}
@@ -137,7 +143,7 @@ function PerformersTab() {
 }
 
 function RunningOrderTab() {
-  const { experience } = useExperience();
+  const { experience, participant } = useExperience();
   const entries = experience?.playbill_running_order || [];
 
   if (entries.length === 0) {
@@ -151,13 +157,21 @@ function RunningOrderTab() {
   return (
     <ol className={styles.runningOrder}>
       {entries.map((entry, index) => (
-        <RunningOrderItem key={entry.id} entry={entry} index={index} />
+        <RunningOrderItem key={entry.id} entry={entry} index={index} participant={participant} />
       ))}
     </ol>
   );
 }
 
-function RunningOrderItem({ entry, index }: { entry: PlaybillRunningOrderEntry; index: number }) {
+function RunningOrderItem({
+  entry,
+  index,
+  participant,
+}: {
+  entry: PlaybillRunningOrderEntry;
+  index: number;
+  participant?: ParticipantSummary | null;
+}) {
   if (entry.playbill_mysterious) {
     return (
       <li className={`${styles.runningOrderItem} ${styles.runningOrderItemMysterious}`}>
@@ -176,7 +190,9 @@ function RunningOrderItem({ entry, index }: { entry: PlaybillRunningOrderEntry; 
     <li className={styles.runningOrderItem}>
       <span className={styles.runningOrderIndex}>{index + 1}</span>
       <div className={styles.runningOrderText}>
-        <h3 className={styles.runningOrderTitle}>{entry.title || BLOCK_KIND_LABELS[entry.kind]}</h3>
+        <h3 className={styles.runningOrderTitle}>
+          {renderNameTemplate(entry.title, participant) || BLOCK_KIND_LABELS[entry.kind]}
+        </h3>
         <p className={styles.runningOrderDescription}>{BLOCK_KIND_DESCRIPTIONS[entry.kind]}</p>
       </div>
     </li>
