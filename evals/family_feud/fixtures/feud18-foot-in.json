@@ -1,0 +1,143 @@
+{
+  "id": "feud18-foot-in",
+  "season": "S18",
+  "question": "Name something you put your foot in.",
+  "difficulty_tags": ["paraphrase", "near_miss", "off_topic", "singleton"],
+  "board": [
+    {
+      "label": "Shoes",
+      "points": 67
+    },
+    {
+      "label": "My Mouth",
+      "points": 16
+    },
+    {
+      "label": "Socks",
+      "points": 14
+    },
+    {
+      "label": "A Pool",
+      "points": 3
+    }
+  ],
+  "raw_responses": [
+    {
+      "id": "feud18-foot-in-11",
+      "text": "my mouth"
+    },
+    {
+      "id": "feud18-foot-in-3",
+      "text": "slippers"
+    },
+    {
+      "id": "feud18-foot-in-10",
+      "text": "my mouth when i say something dumb"
+    },
+    {
+      "id": "feud18-foot-in-5",
+      "text": "shoes"
+    },
+    {
+      "id": "feud18-foot-in-21",
+      "text": "ew feet"
+    },
+    {
+      "id": "feud18-foot-in-0",
+      "text": "shoes"
+    },
+    {
+      "id": "feud18-foot-in-18",
+      "text": "quicksand"
+    },
+    {
+      "id": "feud18-foot-in-2",
+      "text": "sneakers"
+    },
+    {
+      "id": "feud18-foot-in-1",
+      "text": "a boot"
+    },
+    {
+      "id": "feud18-foot-in-4",
+      "text": "my shoe"
+    },
+    {
+      "id": "feud18-foot-in-6",
+      "text": "a boot"
+    },
+    {
+      "id": "feud18-foot-in-20",
+      "text": "i dont know"
+    },
+    {
+      "id": "feud18-foot-in-13",
+      "text": "a sock"
+    },
+    {
+      "id": "feud18-foot-in-8",
+      "text": "my mouth"
+    },
+    {
+      "id": "feud18-foot-in-15",
+      "text": "the pool"
+    },
+    {
+      "id": "feud18-foot-in-7",
+      "text": "sneakers"
+    },
+    {
+      "id": "feud18-foot-in-12",
+      "text": "socks"
+    },
+    {
+      "id": "feud18-foot-in-9",
+      "text": "put my foot in my mouth"
+    },
+    {
+      "id": "feud18-foot-in-17",
+      "text": "a stirrup"
+    },
+    {
+      "id": "feud18-foot-in-19",
+      "text": "feet"
+    },
+    {
+      "id": "feud18-foot-in-16",
+      "text": "a swimming pool"
+    },
+    {
+      "id": "feud18-foot-in-14",
+      "text": "tube socks"
+    }
+  ],
+  "gold": {
+    "groups": {
+      "My Mouth": [
+        "feud18-foot-in-11",
+        "feud18-foot-in-10",
+        "feud18-foot-in-8",
+        "feud18-foot-in-9"
+      ],
+      "Shoes": [
+        "feud18-foot-in-3",
+        "feud18-foot-in-5",
+        "feud18-foot-in-0",
+        "feud18-foot-in-2",
+        "feud18-foot-in-1",
+        "feud18-foot-in-4",
+        "feud18-foot-in-6",
+        "feud18-foot-in-7"
+      ],
+      "Socks": ["feud18-foot-in-13", "feud18-foot-in-12", "feud18-foot-in-14"],
+      "A Pool": ["feud18-foot-in-15", "feud18-foot-in-16"]
+    },
+    "unassigned": [
+      "feud18-foot-in-21",
+      "feud18-foot-in-18",
+      "feud18-foot-in-20",
+      "feud18-foot-in-17",
+      "feud18-foot-in-19"
+    ]
+  }
+}

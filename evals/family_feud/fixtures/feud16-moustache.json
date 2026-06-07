@@ -1,0 +1,152 @@
+{
+  "id": "feud16-moustache",
+  "season": "S16",
+  "question": "Name something a woman might do to her moustache.",
+  "difficulty_tags": ["paraphrase", "near_miss", "off_topic", "singleton"],
+  "board": [
+    {
+      "label": "Shave or Trim It",
+      "points": 42
+    },
+    {
+      "label": "Wax It",
+      "points": 32
+    },
+    {
+      "label": "Pluck It",
+      "points": 13
+    },
+    {
+      "label": "Bleach It",
+      "points": 11
+    }
+  ],
+  "raw_responses": [
+    {
+      "id": "feud16-moustache-17",
+      "text": "lighten it"
+    },
+    {
+      "id": "feud16-moustache-19",
+      "text": "dye it a color"
+    },
+    {
+      "id": "feud16-moustache-11",
+      "text": "get it waxed"
+    },
+    {
+      "id": "feud16-moustache-10",
+      "text": "wax it"
+    },
+    {
+      "id": "feud16-moustache-9",
+      "text": "waxing"
+    },
+    {
+      "id": "feud16-moustache-8",
+      "text": "get it waxed"
+    },
+    {
+      "id": "feud16-moustache-22",
+      "text": "mustache rides"
+    },
+    {
+      "id": "feud16-moustache-21",
+      "text": "lol"
+    },
+    {
+      "id": "feud16-moustache-14",
+      "text": "tweeze it"
+    },
+    {
+      "id": "feud16-moustache-3",
+      "text": "use a razor on it"
+    },
+    {
+      "id": "feud16-moustache-16",
+      "text": "bleach it"
+    },
+    {
+      "id": "feud16-moustache-4",
+      "text": "shave it"
+    },
+    {
+      "id": "feud16-moustache-6",
+      "text": "shave it off"
+    },
+    {
+      "id": "feud16-moustache-12",
+      "text": "waxing"
+    },
+    {
+      "id": "feud16-moustache-0",
+      "text": "shave it"
+    },
+    {
+      "id": "feud16-moustache-2",
+      "text": "shave it off"
+    },
+    {
+      "id": "feud16-moustache-1",
+      "text": "trim it"
+    },
+    {
+      "id": "feud16-moustache-20",
+      "text": "draw it on with makeup"
+    },
+    {
+      "id": "feud16-moustache-15",
+      "text": "pull the hairs out"
+    },
+    {
+      "id": "feud16-moustache-13",
+      "text": "pluck it"
+    },
+    {
+      "id": "feud16-moustache-23",
+      "text": "i shave mine too"
+    },
+    {
+      "id": "feud16-moustache-5",
+      "text": "trim it"
+    },
+    {
+      "id": "feud16-moustache-18",
+      "text": "bleach the hairs"
+    },
+    {
+      "id": "feud16-moustache-7",
+      "text": "wax it"
+    }
+  ],
+  "gold": {
+    "groups": {
+      "Bleach It": ["feud16-moustache-17", "feud16-moustache-16", "feud16-moustache-18"],
+      "Wax It": [
+        "feud16-moustache-11",
+        "feud16-moustache-10",
+        "feud16-moustache-9",
+        "feud16-moustache-8",
+        "feud16-moustache-12",
+        "feud16-moustache-7"
+      ],
+      "Pluck It": ["feud16-moustache-14", "feud16-moustache-15", "feud16-moustache-13"],
+      "Shave or Trim It": [
+        "feud16-moustache-3",
+        "feud16-moustache-4",
+        "feud16-moustache-6",
+        "feud16-moustache-0",
+        "feud16-moustache-2",
+        "feud16-moustache-1",
+        "feud16-moustache-5"
+      ]
+    },
+    "unassigned": [
+      "feud16-moustache-19",
+      "feud16-moustache-22",
+      "feud16-moustache-21",
+      "feud16-moustache-20",
+      "feud16-moustache-23"
+    ]
+  }
+}

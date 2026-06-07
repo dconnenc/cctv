@@ -1,0 +1,164 @@
+{
+  "id": "feud20-thanksgiving-heads",
+  "season": "S20",
+  "question": "At the Thanksgiving table, name a reason people are bowing their heads.",
+  "difficulty_tags": ["paraphrase", "near_miss", "off_topic", "singleton", "borderline"],
+  "board": [
+    {
+      "label": "Praying",
+      "points": 85
+    },
+    {
+      "label": "Stuffed and Sleepy",
+      "points": 4
+    },
+    {
+      "label": "Busy Eating",
+      "points": 3
+    },
+    {
+      "label": "Ashamed of Family",
+      "points": 3
+    }
+  ],
+  "raw_responses": [
+    {
+      "id": "feud20-thanksgiving-heads-6",
+      "text": "praying"
+    },
+    {
+      "id": "feud20-thanksgiving-heads-20",
+      "text": "ashamed of the family"
+    },
+    {
+      "id": "feud20-thanksgiving-heads-3",
+      "text": "bowing to pray"
+    },
+    {
+      "id": "feud20-thanksgiving-heads-9",
+      "text": "prayer before the meal"
+    },
+    {
+      "id": "feud20-thanksgiving-heads-4",
+      "text": "prayer before the meal"
+    },
+    {
+      "id": "feud20-thanksgiving-heads-12",
+      "text": "giving thanks"
+    },
+    {
+      "id": "feud20-thanksgiving-heads-14",
+      "text": "food coma"
+    },
+    {
+      "id": "feud20-thanksgiving-heads-17",
+      "text": "digging into the food"
+    },
+    {
+      "id": "feud20-thanksgiving-heads-2",
+      "text": "giving thanks"
+    },
+    {
+      "id": "feud20-thanksgiving-heads-5",
+      "text": "saying grace"
+    },
+    {
+      "id": "feud20-thanksgiving-heads-10",
+      "text": "saying grace"
+    },
+    {
+      "id": "feud20-thanksgiving-heads-24",
+      "text": "gobble gobble"
+    },
+    {
+      "id": "feud20-thanksgiving-heads-18",
+      "text": "head down eating"
+    },
+    {
+      "id": "feud20-thanksgiving-heads-21",
+      "text": "crying"
+    },
+    {
+      "id": "feud20-thanksgiving-heads-25",
+      "text": "happy thanksgiving"
+    },
+    {
+      "id": "feud20-thanksgiving-heads-1",
+      "text": "praying"
+    },
+    {
+      "id": "feud20-thanksgiving-heads-8",
+      "text": "bowing to pray"
+    },
+    {
+      "id": "feud20-thanksgiving-heads-15",
+      "text": "too full and tired"
+    },
+    {
+      "id": "feud20-thanksgiving-heads-23",
+      "text": "turkey is the best"
+    },
+    {
+      "id": "feud20-thanksgiving-heads-7",
+      "text": "giving thanks"
+    },
+    {
+      "id": "feud20-thanksgiving-heads-19",
+      "text": "embarrassed by the relatives"
+    },
+    {
+      "id": "feud20-thanksgiving-heads-13",
+      "text": "bowing to pray"
+    },
+    {
+      "id": "feud20-thanksgiving-heads-0",
+      "text": "saying grace"
+    },
+    {
+      "id": "feud20-thanksgiving-heads-16",
+      "text": "sleepy after eating"
+    },
+    {
+      "id": "feud20-thanksgiving-heads-11",
+      "text": "praying"
+    },
+    {
+      "id": "feud20-thanksgiving-heads-22",
+      "text": "checking their phone"
+    }
+  ],
+  "gold": {
+    "groups": {
+      "Praying": [
+        "feud20-thanksgiving-heads-6",
+        "feud20-thanksgiving-heads-3",
+        "feud20-thanksgiving-heads-9",
+        "feud20-thanksgiving-heads-4",
+        "feud20-thanksgiving-heads-12",
+        "feud20-thanksgiving-heads-2",
+        "feud20-thanksgiving-heads-5",
+        "feud20-thanksgiving-heads-10",
+        "feud20-thanksgiving-heads-1",
+        "feud20-thanksgiving-heads-8",
+        "feud20-thanksgiving-heads-7",
+        "feud20-thanksgiving-heads-13",
+        "feud20-thanksgiving-heads-0",
+        "feud20-thanksgiving-heads-11"
+      ],
+      "Ashamed of Family": ["feud20-thanksgiving-heads-20", "feud20-thanksgiving-heads-19"],
+      "Stuffed and Sleepy": [
+        "feud20-thanksgiving-heads-14",
+        "feud20-thanksgiving-heads-15",
+        "feud20-thanksgiving-heads-16"
+      ],
+      "Busy Eating": ["feud20-thanksgiving-heads-17", "feud20-thanksgiving-heads-18"]
+    },
+    "unassigned": [
+      "feud20-thanksgiving-heads-24",
+      "feud20-thanksgiving-heads-21",
+      "feud20-thanksgiving-heads-25",
+      "feud20-thanksgiving-heads-23",
+      "feud20-thanksgiving-heads-22"
+    ]
+  }
+}

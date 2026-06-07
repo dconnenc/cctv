@@ -1,0 +1,23 @@
+{
+  "id": "feud18-carve-meat",
+  "season": "S18",
+  "question": "Name a meat you carve at the table.",
+  "target_n": 18,
+  "difficulty_tags": ["paraphrase", "off_topic", "singleton", "borderline"],
+  "groups": [
+    {
+      "label": "Turkey",
+      "weight": 64,
+      "variants": ["turkey", "a turkey", "roast turkey", "thanksgiving turkey"]
+    },
+    {
+      "label": "Beef or Steak",
+      "weight": 22,
+      "variants": ["roast beef", "steak", "prime rib", "beef roast"]
+    },
+    { "label": "Ham", "weight": 12, "variants": ["ham", "a ham", "honey ham"] },
+    { "label": "Lamb", "weight": 2, "variants": ["lamb", "leg of lamb"] }
+  ],
+  "singletons": ["a pork roast", "duck"],
+  "junk": ["meat lol", "im a vegetarian", "a knife"]
+}

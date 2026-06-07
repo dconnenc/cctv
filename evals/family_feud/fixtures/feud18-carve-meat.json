@@ -1,0 +1,119 @@
+{
+  "id": "feud18-carve-meat",
+  "season": "S18",
+  "question": "Name a meat you carve at the table.",
+  "difficulty_tags": ["paraphrase", "off_topic", "singleton", "borderline"],
+  "board": [
+    {
+      "label": "Turkey",
+      "points": 64
+    },
+    {
+      "label": "Beef or Steak",
+      "points": 22
+    },
+    {
+      "label": "Ham",
+      "points": 12
+    },
+    {
+      "label": "Lamb",
+      "points": 2
+    }
+  ],
+  "raw_responses": [
+    {
+      "id": "feud18-carve-meat-1",
+      "text": "a turkey"
+    },
+    {
+      "id": "feud18-carve-meat-10",
+      "text": "honey ham"
+    },
+    {
+      "id": "feud18-carve-meat-2",
+      "text": "roast turkey"
+    },
+    {
+      "id": "feud18-carve-meat-3",
+      "text": "thanksgiving turkey"
+    },
+    {
+      "id": "feud18-carve-meat-15",
+      "text": "meat lol"
+    },
+    {
+      "id": "feud18-carve-meat-5",
+      "text": "roast beef"
+    },
+    {
+      "id": "feud18-carve-meat-11",
+      "text": "lamb"
+    },
+    {
+      "id": "feud18-carve-meat-0",
+      "text": "turkey"
+    },
+    {
+      "id": "feud18-carve-meat-8",
+      "text": "ham"
+    },
+    {
+      "id": "feud18-carve-meat-9",
+      "text": "a ham"
+    },
+    {
+      "id": "feud18-carve-meat-6",
+      "text": "steak"
+    },
+    {
+      "id": "feud18-carve-meat-14",
+      "text": "duck"
+    },
+    {
+      "id": "feud18-carve-meat-7",
+      "text": "prime rib"
+    },
+    {
+      "id": "feud18-carve-meat-16",
+      "text": "im a vegetarian"
+    },
+    {
+      "id": "feud18-carve-meat-4",
+      "text": "turkey"
+    },
+    {
+      "id": "feud18-carve-meat-12",
+      "text": "leg of lamb"
+    },
+    {
+      "id": "feud18-carve-meat-13",
+      "text": "a pork roast"
+    },
+    {
+      "id": "feud18-carve-meat-17",
+      "text": "a knife"
+    }
+  ],
+  "gold": {
+    "groups": {
+      "Turkey": [
+        "feud18-carve-meat-1",
+        "feud18-carve-meat-2",
+        "feud18-carve-meat-3",
+        "feud18-carve-meat-0",
+        "feud18-carve-meat-4"
+      ],
+      "Ham": ["feud18-carve-meat-10", "feud18-carve-meat-8", "feud18-carve-meat-9"],
+      "Beef or Steak": ["feud18-carve-meat-5", "feud18-carve-meat-6", "feud18-carve-meat-7"],
+      "Lamb": ["feud18-carve-meat-11", "feud18-carve-meat-12"]
+    },
+    "unassigned": [
+      "feud18-carve-meat-15",
+      "feud18-carve-meat-14",
+      "feud18-carve-meat-16",
+      "feud18-carve-meat-13",
+      "feud18-carve-meat-17"
+    ]
+  }
+}

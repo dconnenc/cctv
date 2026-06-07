@@ -1,0 +1,149 @@
+{
+  "id": "feud20-fatman",
+  "season": "S20",
+  "question": "If there were a superhero called Fatman, tell me something he probably couldn't do like Superman.",
+  "difficulty_tags": ["paraphrase", "near_miss", "off_topic", "singleton"],
+  "board": [
+    {
+      "label": "Fly",
+      "points": 79
+    },
+    {
+      "label": "Leap Tall Buildings",
+      "points": 5
+    },
+    {
+      "label": "Run Fast",
+      "points": 4
+    },
+    {
+      "label": "Fit His Suit",
+      "points": 4
+    }
+  ],
+  "raw_responses": [
+    {
+      "id": "feud20-fatman-18",
+      "text": "squeeze into spandex"
+    },
+    {
+      "id": "feud20-fatman-5",
+      "text": "fly through the air"
+    },
+    {
+      "id": "feud20-fatman-22",
+      "text": "superman is better"
+    },
+    {
+      "id": "feud20-fatman-13",
+      "text": "leap a building in one bound"
+    },
+    {
+      "id": "feud20-fatman-7",
+      "text": "soar in the sky"
+    },
+    {
+      "id": "feud20-fatman-3",
+      "text": "soar in the sky"
+    },
+    {
+      "id": "feud20-fatman-10",
+      "text": "take off and fly"
+    },
+    {
+      "id": "feud20-fatman-11",
+      "text": "leap tall buildings"
+    },
+    {
+      "id": "feud20-fatman-0",
+      "text": "fly"
+    },
+    {
+      "id": "feud20-fatman-14",
+      "text": "run fast"
+    },
+    {
+      "id": "feud20-fatman-8",
+      "text": "fly"
+    },
+    {
+      "id": "feud20-fatman-15",
+      "text": "run quickly"
+    },
+    {
+      "id": "feud20-fatman-4",
+      "text": "fly"
+    },
+    {
+      "id": "feud20-fatman-21",
+      "text": "fatman lol"
+    },
+    {
+      "id": "feud20-fatman-2",
+      "text": "take off and fly"
+    },
+    {
+      "id": "feud20-fatman-9",
+      "text": "fly through the air"
+    },
+    {
+      "id": "feud20-fatman-12",
+      "text": "jump over a building"
+    },
+    {
+      "id": "feud20-fatman-16",
+      "text": "sprint"
+    },
+    {
+      "id": "feud20-fatman-19",
+      "text": "see his own feet"
+    },
+    {
+      "id": "feud20-fatman-23",
+      "text": "hahaha"
+    },
+    {
+      "id": "feud20-fatman-20",
+      "text": "fit through a door"
+    },
+    {
+      "id": "feud20-fatman-1",
+      "text": "fly through the air"
+    },
+    {
+      "id": "feud20-fatman-6",
+      "text": "take off and fly"
+    },
+    {
+      "id": "feud20-fatman-17",
+      "text": "fit in the tight suit"
+    }
+  ],
+  "gold": {
+    "groups": {
+      "Fit His Suit": ["feud20-fatman-18", "feud20-fatman-17"],
+      "Fly": [
+        "feud20-fatman-5",
+        "feud20-fatman-7",
+        "feud20-fatman-3",
+        "feud20-fatman-10",
+        "feud20-fatman-0",
+        "feud20-fatman-8",
+        "feud20-fatman-4",
+        "feud20-fatman-2",
+        "feud20-fatman-9",
+        "feud20-fatman-1",
+        "feud20-fatman-6"
+      ],
+      "Leap Tall Buildings": ["feud20-fatman-13", "feud20-fatman-11", "feud20-fatman-12"],
+      "Run Fast": ["feud20-fatman-14", "feud20-fatman-15", "feud20-fatman-16"]
+    },
+    "unassigned": [
+      "feud20-fatman-22",
+      "feud20-fatman-21",
+      "feud20-fatman-19",
+      "feud20-fatman-23",
+      "feud20-fatman-20"
+    ]
+  }
+}

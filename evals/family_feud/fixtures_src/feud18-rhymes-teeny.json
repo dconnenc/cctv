@@ -1,0 +1,15 @@
+{
+  "id": "feud18-rhymes-teeny",
+  "season": "S18",
+  "question": "Name a word that rhymes with \"teeny.\"",
+  "target_n": 16,
+  "difficulty_tags": ["off_topic", "singleton", "borderline"],
+  "groups": [
+    { "label": "Weenie", "weight": 71, "variants": ["weenie", "weeny", "wienie"] },
+    { "label": "Beanie", "weight": 15, "variants": ["beanie", "beany"] },
+    { "label": "Meanie", "weight": 12, "variants": ["meanie", "meany"] },
+    { "label": "Genie", "weight": 2, "variants": ["genie", "jeannie"] }
+  ],
+  "singletons": ["zucchini", "martini"],
+  "junk": ["teeny", "i dont know", "rhyming is hard"]
+}

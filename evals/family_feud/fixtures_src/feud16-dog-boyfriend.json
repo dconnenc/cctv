@@ -1,0 +1,26 @@
+{
+  "id": "feud16-dog-boyfriend",
+  "season": "S16",
+  "question": "Name something your dog does to let you know he doesn't like your new boyfriend.",
+  "target_n": 20,
+  "difficulty_tags": ["paraphrase", "near_miss", "off_topic", "singleton"],
+  "groups": [
+    {
+      "label": "Growls or Barks",
+      "weight": 50,
+      "variants": ["growls at him", "barks at him", "snarls at him", "growling and barking"]
+    },
+    {
+      "label": "Bites Him",
+      "weight": 28,
+      "variants": ["bites him", "nips at him", "tries to bite him", "chomps on him"]
+    },
+    {
+      "label": "Pees on Him",
+      "weight": 14,
+      "variants": ["pees on him", "marks him", "poops on his stuff", "goes potty on his shoes"]
+    }
+  ],
+  "singletons": ["ignores him completely", "whines"],
+  "junk": ["dogs are smart", "good boy", "woof woof"]
+}

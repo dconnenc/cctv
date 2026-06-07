@@ -1,0 +1,46 @@
+{
+  "id": "feud20-thanksgiving-heads",
+  "season": "S20",
+  "question": "At the Thanksgiving table, name a reason people are bowing their heads.",
+  "target_n": 26,
+  "difficulty_tags": ["paraphrase", "near_miss", "off_topic", "singleton", "borderline"],
+  "groups": [
+    {
+      "label": "Praying",
+      "weight": 85,
+      "variants": [
+        "saying grace",
+        "praying",
+        "giving thanks",
+        "bowing to pray",
+        "prayer before the meal"
+      ]
+    },
+    {
+      "label": "Stuffed and Sleepy",
+      "weight": 4,
+      "variants": [
+        "food coma",
+        "too full and tired",
+        "sleepy after eating",
+        "stuffed and dozing off"
+      ]
+    },
+    {
+      "label": "Busy Eating",
+      "weight": 3,
+      "variants": ["digging into the food", "head down eating", "too busy eating"]
+    },
+    {
+      "label": "Ashamed of Family",
+      "weight": 3,
+      "variants": [
+        "embarrassed by the relatives",
+        "ashamed of the family",
+        "hiding from crazy relatives"
+      ]
+    }
+  ],
+  "singletons": ["crying", "checking their phone"],
+  "junk": ["turkey is the best", "gobble gobble", "happy thanksgiving"]
+}

@@ -1,0 +1,23 @@
+{
+  "id": "feud18-foot-in",
+  "season": "S18",
+  "question": "Name something you put your foot in.",
+  "target_n": 22,
+  "difficulty_tags": ["paraphrase", "near_miss", "off_topic", "singleton"],
+  "groups": [
+    {
+      "label": "Shoes",
+      "weight": 67,
+      "variants": ["shoes", "a boot", "sneakers", "slippers", "my shoe"]
+    },
+    {
+      "label": "My Mouth",
+      "weight": 16,
+      "variants": ["my mouth", "put my foot in my mouth", "my mouth when i say something dumb"]
+    },
+    { "label": "Socks", "weight": 14, "variants": ["socks", "a sock", "tube socks"] },
+    { "label": "A Pool", "weight": 3, "variants": ["the pool", "a swimming pool", "pool water"] }
+  ],
+  "singletons": ["a stirrup", "quicksand"],
+  "junk": ["feet", "i dont know", "ew feet"]
+}
