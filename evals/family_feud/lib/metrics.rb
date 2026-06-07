@@ -52,6 +52,16 @@ module FamilyFeudEval
       }
     end
 
+    # Keep only the `max` largest buckets (by member count), preserving order;
+    # overflow buckets' answers fall to unassigned. Mirrors the production cap in
+    # Experiences::Orchestrator so the eval measures what actually ships.
+    def cap_buckets(buckets, max: 8)
+      return buckets if buckets.length <= max
+
+      keep = buckets.each_index.sort_by { |i| [-(buckets[i]["answer_ids"] || []).length, i] }.first(max).to_set
+      buckets.select.with_index { |_, i| keep.include?(i) }
+    end
+
     # First-bucket-wins on duplicate ids, drop unknown ids, drop empty buckets.
     def normalize_pred(pred, id_set)
       seen = Set.new

@@ -22,6 +22,7 @@ module AI
           - A bucket must contain at least two responses. If an idea was said only once, or is off-topic, a joke, or nonsense, leave it UNASSIGNED — do not bucket it.
           - Never create a catch-all bucket. No "Other", "Misc", "Various", or "General". Leftover responses stay unassigned, not swept into a grab-bag.
           - Aim for the number of buckets a real board would show for this many responses — typically a handful of strong, popular answers, not one bucket per response.
+          - A real board shows at most 8 answers. Never create more than 8 buckets. If more than 8 distinct ideas exist, keep only the 8 most common (the largest groups) and leave the rest unassigned.
           - Bucket names: 1-4 words, concise, natural, fun for a live audience, and named after the most common phrasing in the bucket (e.g. "Sleeping In", "The Commute", "Mom's Cooking"). Every name must be clearly distinct from the others.
           - Return valid JSON matching the schema
           #{game_context_section}#{question_context_section}

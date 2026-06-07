@@ -74,6 +74,28 @@ RSpec.describe "FamilyFeudEval pure functions" do
       expect(r["pairwise_precision"]).to eq(1.0)
       expect(r["pairwise_recall"]).to eq(1.0)
     end
+
+    describe ".cap_buckets" do
+      def bucket(name, size)
+        { "name" => name, "answer_ids" => Array.new(size) { |i| "#{name}-#{i}" } }
+      end
+
+      it "leaves boards of 8 or fewer buckets untouched" do
+        buckets = Array.new(8) { |i| bucket("b#{i}", 2) }
+        expect(described_class.cap_buckets(buckets, max: 8)).to eq(buckets)
+      end
+
+      it "keeps the 8 largest buckets and drops the overflow (which becomes unassigned)" do
+        sizes = [5, 4, 3, 2, 1, 5, 4, 3, 2, 1]
+        buckets = sizes.each_with_index.map { |s, i| bucket("b#{i}", s) }
+        capped = described_class.cap_buckets(buckets, max: 8)
+
+        expect(capped.length).to eq(8)
+        names = capped.map { |b| b["name"] }
+        expect(names).not_to include("b4", "b9") # the two smallest (size 1)
+        expect(names).to eq(%w[b0 b1 b2 b3 b5 b6 b7 b8]) # original order preserved
+      end
+    end
   end
 
   describe FamilyFeudEval::Expand do

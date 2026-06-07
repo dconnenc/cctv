@@ -10,6 +10,7 @@ module FamilyFeudEval
   class Runner
     N_RUNS = 3
     FLASH = "gemini-2.5-flash"
+    MAX_BUCKETS = 8 # a real Family Feud board shows at most 8 answers
     HIGH_VARIANCE = 0.1 # stdev of pairwise_f1 across runs
     MAX_RETRIES = 4
     # Transient Gemini conditions worth retrying with backoff (demand spikes,
@@ -99,12 +100,13 @@ module FamilyFeudEval
         ::AI::Client.call(prompt: prompt, response_schema: schema, model: FLASH, temperature: 0)
       end
       id_set = all_ids.to_set
-      (result["buckets"] || []).filter_map do |b|
+      buckets = (result["buckets"] || []).filter_map do |b|
         ids = (b["answer_ids"] || []).select { |i| id_set.include?(i) }
         next if ids.empty?
 
         { "name" => b["name"].to_s, "answer_ids" => ids }
       end
+      Metrics.cap_buckets(buckets, max: MAX_BUCKETS)
     end
 
     # Retry transient Gemini failures with capped exponential backoff. Any other

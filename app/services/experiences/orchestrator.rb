@@ -1,5 +1,8 @@
 module Experiences
   class Orchestrator < BaseService
+    # A real Family Feud board shows at most 8 answers.
+    MAX_FAMILY_FEUD_BUCKETS = 8
+
     attr_reader :profile_changes
     def kick_participant!(participant)
       participant.destroy!
@@ -382,7 +385,7 @@ module Experiences
         valid_ids = answers.map { |a| a[:id] }.to_set
         ai_buckets = result["buckets"] || []
 
-        question_payload["buckets"] = ai_buckets.filter_map do |ai_bucket|
+        built = ai_buckets.filter_map do |ai_bucket|
           filtered_ids = (ai_bucket["answer_ids"] || []).select { |id| valid_ids.include?(id) }
           next if filtered_ids.empty?
 
@@ -392,6 +395,8 @@ module Experiences
             "answer_ids" => filtered_ids
           }
         end
+
+        question_payload["buckets"] = cap_family_feud_buckets(built)
 
         question_block.update!(payload: question_payload)
         question_payload["buckets"]
@@ -1232,6 +1237,18 @@ module Experiences
     end
 
     private
+
+    # Cap the board at the most popular MAX_FAMILY_FEUD_BUCKETS buckets (by member
+    # count), preserving order; overflow buckets' answers fall back to unassigned.
+    def cap_family_feud_buckets(buckets)
+      return buckets if buckets.length <= MAX_FAMILY_FEUD_BUCKETS
+
+      keep = buckets.each_index
+                    .sort_by { |i| [-buckets[i]["answer_ids"].length, i] }
+                    .first(MAX_FAMILY_FEUD_BUCKETS)
+                    .to_set
+      buckets.select.with_index { |_, i| keep.include?(i) }
+    end
 
     def guard_the_scene!(block)
       raise ArgumentError, "Block is not a Scene" unless block.kind == ExperienceBlock::THE_SCENE
