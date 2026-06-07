@@ -148,8 +148,8 @@ export type GuessWhoMonitorView =
 export interface GuessWhoActivePoll {
   id: string;
   options: string[];
-  user_responded: boolean;
-  user_response: { id: string; answer: { selectedOptions?: string[] } } | null;
+  user_responded?: boolean;
+  user_response?: { id: string; answer: { selectedOptions?: string[] } } | null;
 }
 
 export interface GuessWhoPayload {

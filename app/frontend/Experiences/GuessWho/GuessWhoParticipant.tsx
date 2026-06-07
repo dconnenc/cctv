@@ -1,10 +1,9 @@
-import { FormEvent, useState } from 'react';
+import { useState } from 'react';
 
+import { useExperienceState } from '@cctv/contexts/ExperienceStateContext';
 import { Button } from '@cctv/core/Button/Button';
-import { Option } from '@cctv/core/Option/Option';
 import { useSubmitPollResponse } from '@cctv/hooks/useSubmitPollResponse';
 import { GuessWhoBlock } from '@cctv/types';
-import { getFormData } from '@cctv/utils';
 
 import styles from './GuessWho.module.scss';
 
@@ -15,6 +14,7 @@ interface GuessWhoParticipantProps {
 export default function GuessWhoParticipant({ block }: GuessWhoParticipantProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { submitPollResponse, error } = useSubmitPollResponse();
+  const { submissionState } = useExperienceState();
   const activePoll = block.payload.active_poll;
 
   if (!activePoll) {
@@ -26,8 +26,14 @@ export default function GuessWhoParticipant({ block }: GuessWhoParticipantProps)
     );
   }
 
-  if (activePoll.user_responded) {
-    const answer = activePoll.user_response?.answer?.selectedOptions?.join(', ') ?? '';
+  const submission = submissionState[activePoll.id];
+  const userResponded = !!submission || !!activePoll.user_responded;
+
+  if (userResponded) {
+    const selected =
+      (submission?.answer?.selectedOptions as string[] | undefined) ??
+      activePoll.user_response?.answer?.selectedOptions;
+    const answer = selected?.join(', ') ?? '';
     return (
       <div className={styles.root}>
         <h2 className={styles.title}>Guess Who?</h2>
@@ -37,16 +43,12 @@ export default function GuessWhoParticipant({ block }: GuessWhoParticipantProps)
     );
   }
 
-  const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const formData = getFormData<{ selectedOptions: string[] }>(e.currentTarget);
-    if (!formData.selectedOptions) return;
-
+  const handleSelect = async (option: string) => {
     setIsSubmitting(true);
     const response = await submitPollResponse({
       blockId: activePoll.id,
       answer: {
-        selectedOptions: formData.selectedOptions,
+        selectedOptions: [option],
         submittedAt: new Date().toISOString(),
       },
     });
@@ -56,21 +58,14 @@ export default function GuessWhoParticipant({ block }: GuessWhoParticipantProps)
   return (
     <div className={styles.root}>
       <h2 className={styles.title}>True or False?</h2>
-      <form onSubmit={onSubmit}>
-        <fieldset disabled={isSubmitting} className={styles.fieldset}>
-          {error && <p className={styles.error}>{error}</p>}
-          {activePoll.options.map((option) => (
-            <Option
-              allowMultiple={false}
-              key={option}
-              option={option}
-              name="selectedOptions"
-              disabled={isSubmitting}
-            />
-          ))}
-          <Button type="submit">Submit</Button>
-        </fieldset>
-      </form>
+      {error && <p className={styles.error}>{error}</p>}
+      <div className={styles.fieldset}>
+        {activePoll.options.map((option) => (
+          <Button key={option} disabled={isSubmitting} onClick={() => handleSelect(option)}>
+            {option}
+          </Button>
+        ))}
+      </div>
     </div>
   );
 }
