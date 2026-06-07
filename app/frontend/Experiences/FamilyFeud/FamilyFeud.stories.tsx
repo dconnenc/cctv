@@ -77,3 +77,14 @@ export const ShowingXWithSound: Story = {
     sounds: { on_show_x: 'buzzer_error' },
   },
 };
+
+// Monitor-only: the theme track loops while `theme_music_playing` is true.
+// Toggling the control off in the Storybook controls panel pauses it.
+export const ThemeMusicPlaying: Story = {
+  args: {
+    ...Playing.args,
+    viewContext: 'monitor',
+    theme_music_playing: true,
+    sounds: { theme: 'family_feud_theme' },
+  },
+};

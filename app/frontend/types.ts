@@ -97,6 +97,7 @@ export interface FamilyFeudPayload {
     }>;
   };
   game_state?: FamilyFeudGameState;
+  theme_music_playing?: boolean;
 }
 
 export interface PhotoUploadPayload {

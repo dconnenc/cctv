@@ -89,6 +89,7 @@ Rails.application.routes.draw do
           post 'family_feud/start_playing', action: :start_playing
           post 'family_feud/reveal_bucket', action: :reveal_bucket
           post 'family_feud/show_x', action: :show_x
+          post 'family_feud/theme_music', action: :set_theme_music
           post 'family_feud/next_question', action: :next_question
           post 'family_feud/restart_playing', action: :restart_playing
           post 'family_feud/restart_categorizing', action: :restart_categorizing

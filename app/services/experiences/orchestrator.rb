@@ -499,6 +499,16 @@ module Experiences
       end
     end
 
+    def set_family_feud_theme_music!(block:, playing:)
+      transaction do
+        current_payload = block.payload || {}
+        current_payload["theme_music_playing"] = playing
+        block.update!(payload: current_payload)
+
+        block
+      end
+    end
+
     def next_family_feud_question!(block:)
       transaction do
         current_payload = block.payload || {}
@@ -1273,7 +1283,7 @@ module Experiences
     def default_sounds_for(kind)
       case kind.to_s
       when ExperienceBlock::FAMILY_FEUD
-        { "on_show_x" => "buzzer_error" }
+        { "on_show_x" => "buzzer_error", "theme" => "family_feud_theme" }
       when ExperienceBlock::GUESS_WHO
         {
           "on_dispatch_poll" => "buzzer_error",

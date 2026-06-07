@@ -14,7 +14,18 @@ begin
     system! "bin/wt-env"
 
     puts "\n== Installing JS dependencies =="
-    system! "yarn install"
+    # The setup shell defaults to the system Node, which can be older than the
+    # version our dependencies require. Activate the version pinned in .nvmrc
+    # via nvm (installing it if missing) so yarn runs against a compatible Node.
+    system! "bash", "-c", <<~SH
+      export NVM_DIR="${NVM_DIR:-$HOME/.nvm}"
+      if [ -s "$NVM_DIR/nvm.sh" ]; then
+        . "$NVM_DIR/nvm.sh"
+        nvm install >/dev/null
+        nvm use >/dev/null
+      fi
+      yarn install
+    SH
 
     puts "\n== Installing Ruby dependencies =="
     system! "gem install bundler --conservative"
