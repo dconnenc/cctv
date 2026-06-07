@@ -297,6 +297,82 @@ RSpec.describe Api::ExperienceBlocksController, type: :controller do
     end
   end
 
+  describe "PATCH #update_ai_context" do
+    let!(:block) { create(:experience_block, :family_feud, experience: experience) }
+
+    subject do
+      patch(
+        :update_ai_context,
+        params: {
+          experience_id: experience.code_slug,
+          id: block.id,
+          ai_context: "Corporate team-building event"
+        },
+        format: :json
+      )
+    end
+
+    it "saves the ai_context to the block payload and returns 200" do
+      subject
+      expect(response.status).to eql(200)
+      expect(block.reload.payload["ai_context"]).to eql("Corporate team-building event")
+    end
+
+    context "when the actor is not authorized" do
+      let(:regular_user) { create(:user, :user) }
+
+      before do
+        create(:experience_participant, user: regular_user, experience: experience, role: :audience)
+        jwt = Experiences::AuthService.jwt_for_participant(experience: experience, user: regular_user)
+        request.headers["Authorization"] = "Bearer #{jwt}"
+      end
+
+      it "returns 403" do
+        subject
+        expect(response.status).to eql(403)
+      end
+    end
+  end
+
+  describe "PATCH #update_question_ai_context" do
+    let!(:block) { create(:experience_block, :family_feud, experience: experience) }
+
+    subject do
+      patch(
+        :update_question_ai_context,
+        params: {
+          experience_id: experience.code_slug,
+          id: block.id,
+          question_id: block.child_blocks.first.id,
+          ai_context: "Focus on food categories"
+        },
+        format: :json
+      )
+    end
+
+    it "saves the ai_context to the question block payload and returns 200" do
+      question_block = block.child_blocks.first
+      subject
+      expect(response.status).to eql(200)
+      expect(question_block.reload.payload["ai_context"]).to eql("Focus on food categories")
+    end
+
+    context "when the actor is not authorized" do
+      let(:regular_user) { create(:user, :user) }
+
+      before do
+        create(:experience_participant, user: regular_user, experience: experience, role: :audience)
+        jwt = Experiences::AuthService.jwt_for_participant(experience: experience, user: regular_user)
+        request.headers["Authorization"] = "Bearer #{jwt}"
+      end
+
+      it "returns 403" do
+        subject
+        expect(response.status).to eql(403)
+      end
+    end
+  end
+
   describe "DELETE #destroy" do
     let!(:block) { create(:experience_block, experience: experience, status: :hidden) }
 

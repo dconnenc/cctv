@@ -181,6 +181,44 @@ export function useFamilyFeudBuckets(blockId?: string, dispatch?: (action: any) 
     [code, adminFetch],
   );
 
+  const updateAiContext = useCallback(
+    async (blockId: string, aiContext: string): Promise<boolean> => {
+      if (!code) return false;
+
+      const url = `/api/experiences/${encodeURIComponent(code)}/blocks/${encodeURIComponent(blockId)}/family_feud/ai_context`;
+
+      try {
+        const res = await adminFetch(url, {
+          method: 'PATCH',
+          body: JSON.stringify({ ai_context: aiContext }),
+        });
+        return res.ok;
+      } catch {
+        return false;
+      }
+    },
+    [code, adminFetch],
+  );
+
+  const updateQuestionAiContext = useCallback(
+    async (blockId: string, questionId: string, aiContext: string): Promise<boolean> => {
+      if (!code) return false;
+
+      const url = `/api/experiences/${encodeURIComponent(code)}/blocks/${encodeURIComponent(blockId)}/family_feud/question_ai_context`;
+
+      try {
+        const res = await adminFetch(url, {
+          method: 'PATCH',
+          body: JSON.stringify({ question_id: questionId, ai_context: aiContext }),
+        });
+        return res.ok;
+      } catch {
+        return false;
+      }
+    },
+    [code, adminFetch],
+  );
+
   const autoCategorize = useCallback(
     async (blockId: string, questionId: string): Promise<AutoCategorizeResult | null> => {
       if (!code) {
@@ -225,6 +263,8 @@ export function useFamilyFeudBuckets(blockId?: string, dispatch?: (action: any) 
     deleteBucket,
     assignAnswer,
     autoCategorize,
+    updateAiContext,
+    updateQuestionAiContext,
     isLoading,
     error,
     setError,

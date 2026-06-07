@@ -319,6 +319,85 @@
   font-size: 16px;
 }
 
+.aiSettings {
+  margin-bottom: 1.5rem;
+  background-color: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
+  border-radius: 8px;
+}
+
+.aiSettingsHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  padding: 0.75rem 1rem;
+  color: hsl(var(--foreground));
+  font-size: 14px;
+  font-weight: 600;
+  border-radius: 8px;
+}
+
+.aiSettingsHeader:hover {
+  opacity: 0.9;
+}
+
+.aiSettingsHeader[aria-expanded='true'] {
+  border-radius: 8px 8px 0 0;
+  border-bottom: 1px solid hsl(var(--border));
+}
+
+.aiSettingsContent {
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.questionAiContext {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  padding: 0.75rem;
+  background-color: hsl(var(--secondary));
+  border: 1px solid hsl(var(--border));
+  border-radius: 8px;
+}
+
+.aiContextLabel {
+  font-size: 13px;
+  font-weight: 600;
+  color: hsl(var(--foreground));
+}
+
+.aiContextHint {
+  font-weight: 400;
+  color: hsl(var(--muted-foreground));
+}
+
+.aiContextTextarea {
+  width: 100%;
+  resize: vertical;
+  border: 1px solid hsl(var(--border));
+  border-radius: 6px;
+  padding: 0.5rem 0.75rem;
+  font-size: 13px;
+  font-family: inherit;
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
+  line-height: 1.5;
+}
+
+.aiContextTextarea:focus {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
+}
+
 @media (max-width: 1024px) {
   .layout {
     grid-template-columns: 1fr;

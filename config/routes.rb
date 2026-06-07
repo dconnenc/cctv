@@ -80,6 +80,8 @@ Rails.application.routes.draw do
           delete :clear_buzzer_responses
 
           post 'family_feud/auto_categorize', action: :auto_categorize
+          patch 'family_feud/ai_context', action: :update_ai_context
+          patch 'family_feud/question_ai_context', action: :update_question_ai_context
           post 'family_feud/add_bucket', action: :add_bucket
           patch 'family_feud/buckets/:bucket_id', action: :rename_bucket
           delete 'family_feud/buckets/:bucket_id', action: :delete_bucket
