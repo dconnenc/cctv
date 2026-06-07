@@ -47,8 +47,10 @@ RSpec.describe Experiences::Visibility do
 
       it "includes blocks with role visibility rules as monitor candidates" do
         # Segment/role rules do not gate monitor visibility — show_on_monitor is the sole control.
-        # Verify segment_block would appear first if it were at position 0.
-        segment_block.update!(position: -1)
+        # Verify segment_block appears first when it has the lowest position.
+        open_block.update!(position: 1)
+        second_block.update!(position: 2)
+        segment_block.update!(position: 0)
         ids = result[:blocks].map { |b| b[:id] }
         expect(ids).to contain_exactly(segment_block.id)
       end
