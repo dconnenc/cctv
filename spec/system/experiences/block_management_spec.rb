@@ -112,7 +112,7 @@ RSpec.describe "Managing Blocks", type: :system do
       select "#{participant_name} (player)", from: "View as participant"
       expect(page).to have_text("Welcome #{participant_name}")
       within("[aria-label='Preview mode']") { click_button "Monitor" }
-      expect(page).to have_text("Welcome {{ participant_name }}")
+      expect(page).to have_text("Welcome friend")
 
       # Queue new block
       queue_block(n: 2) do
@@ -125,7 +125,7 @@ RSpec.describe "Managing Blocks", type: :system do
 
       # Assert original block is still displayed. New block is only enqueued
       within("[aria-label='Preview mode']") { click_button "Monitor" }
-      expect(page).to have_text("Welcome {{ participant_name }}")
+      expect(page).to have_text("Welcome friend")
 
       # Present new block
       select_block(2, kind: "announcement")
@@ -137,7 +137,7 @@ RSpec.describe "Managing Blocks", type: :system do
       select "#{participant_name} (player)", from: "View as participant"
       expect(page).to have_text("Welcome #{participant_name} again")
       within("[aria-label='Preview mode']") { click_button "Monitor" }
-      expect(page).to have_text("Welcome {{ participant_name }} again")
+      expect(page).to have_text("Welcome friend again")
     end
   end
 end
