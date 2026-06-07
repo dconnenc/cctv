@@ -115,10 +115,10 @@ export default function Experience() {
 
   useEffect(() => {
     if (locationState?.avatarSubmitted) return;
-    if (experienceStatus === 'lobby' && needsAvatar && code && !isLoading && hasInitialData) {
+    if (needsAvatar && code && !isLoading && hasInitialData) {
       navigate(`/experiences/${code}/avatar`, { replace: true });
     }
-  }, [locationState, experienceStatus, needsAvatar, code, navigate, isLoading, hasInitialData]);
+  }, [locationState, needsAvatar, code, navigate, isLoading, hasInitialData]);
 
   if (isLoading) {
     return (
@@ -142,6 +142,18 @@ export default function Experience() {
       </section>
     );
   }
+  // Avatar comes first: while a participant still needs one, don't render any
+  // block (the redirect effect above sends them to the avatar editor). This
+  // prevents flashing/interacting with a live block before drawing.
+  if (needsAvatar && !locationState?.avatarSubmitted) {
+    return (
+      <section className="page">
+        <h1 className={styles.title}>{experience?.name || code}</h1>
+        <p className={styles.subtitle}>Preparing experience…</p>
+      </section>
+    );
+  }
+
   const currentBlock = experience?.blocks?.[0];
 
   if (experienceStatus === 'lobby') {
