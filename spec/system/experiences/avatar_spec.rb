@@ -24,7 +24,8 @@ RSpec.describe "Avatar flow", type: :system do
           code: experience.code_slug,
           name: "Alice",
           email: "alice@example.com",
-          experience_name: experience.name
+          experience_name: experience.name,
+          draw_avatar: false
         )
 
         expect(page).to have_text("Draw your avatar to continue")
@@ -44,7 +45,8 @@ RSpec.describe "Avatar flow", type: :system do
           code: experience.code_slug,
           name: "Alice",
           email: "alice@example.com",
-          experience_name: experience.name
+          experience_name: experience.name,
+          draw_avatar: false
         )
 
         expect(page).to have_current_path("/experiences/#{experience.code_slug}/avatar")
@@ -60,7 +62,8 @@ RSpec.describe "Avatar flow", type: :system do
           code: experience.code_slug,
           name: "Alice",
           email: "alice@example.com",
-          experience_name: experience.name
+          experience_name: experience.name,
+          draw_avatar: false
         )
 
         visit "/experiences/#{experience.code_slug}"
@@ -76,7 +79,8 @@ RSpec.describe "Avatar flow", type: :system do
           code: experience.code_slug,
           name: "Alice",
           email: "alice@example.com",
-          experience_name: experience.name
+          experience_name: experience.name,
+          draw_avatar: false
         )
 
         draw_and_submit_avatar
@@ -99,7 +103,8 @@ RSpec.describe "Avatar flow", type: :system do
           code: experience.code_slug,
           name: "Alice",
           email: "alice@example.com",
-          experience_name: experience.name
+          experience_name: experience.name,
+          draw_avatar: false
         )
 
         draw_and_submit_avatar
@@ -129,7 +134,8 @@ RSpec.describe "Avatar flow", type: :system do
           code: experience.code_slug,
           name: "Alice",
           email: "alice@example.com",
-          experience_name: experience.name
+          experience_name: experience.name,
+          draw_avatar: false
         )
 
         draw_and_submit_avatar
@@ -174,7 +180,8 @@ RSpec.describe "Avatar flow", type: :system do
           code: experience.code_slug,
           name: "Rex",
           email: "rex@example.com",
-          experience_name: experience.name
+          experience_name: experience.name,
+          draw_avatar: false
         )
 
         expect(page).to have_current_path("/experiences/#{experience.code_slug}/avatar")
@@ -190,7 +197,8 @@ RSpec.describe "Avatar flow", type: :system do
           code: experience.code_slug,
           name: "Rex",
           email: "rex@example.com",
-          experience_name: experience.name
+          experience_name: experience.name,
+          draw_avatar: false
         )
 
         draw_and_submit_avatar
@@ -206,7 +214,8 @@ RSpec.describe "Avatar flow", type: :system do
           code: experience.code_slug,
           name: "Alice",
           email: "alice@example.com",
-          experience_name: experience.name
+          experience_name: experience.name,
+          draw_avatar: false
         )
 
         expect(page).to have_current_path("/experiences/#{experience.code_slug}/avatar")
@@ -229,7 +238,8 @@ RSpec.describe "Avatar flow", type: :system do
           code: experience.code_slug,
           name: "Alice",
           email: "alice@example.com",
-          experience_name: experience.name
+          experience_name: experience.name,
+          draw_avatar: false
         )
 
         expect(page).to have_current_path("/experiences/#{experience.code_slug}/avatar")
@@ -251,7 +261,8 @@ RSpec.describe "Avatar flow", type: :system do
           code: experience.code_slug,
           name: "Alice",
           email: "alice@example.com",
-          experience_name: experience.name
+          experience_name: experience.name,
+          draw_avatar: false
         )
 
         draw_and_submit_avatar
@@ -275,7 +286,8 @@ RSpec.describe "Avatar flow", type: :system do
           code: experience.code_slug,
           name: "Alice",
           email: "alice@example.com",
-          experience_name: experience.name
+          experience_name: experience.name,
+          draw_avatar: false
         )
 
         expect(page).to have_current_path("/experiences/#{experience.code_slug}/avatar")
@@ -306,7 +318,8 @@ RSpec.describe "Avatar flow", type: :system do
           code: experience.code_slug,
           name: "Bob",
           email: "bob@example.com",
-          experience_name: experience.name
+          experience_name: experience.name,
+          draw_avatar: false
         )
 
         expect(page).to have_current_path("/experiences/#{experience.code_slug}/avatar")
@@ -322,7 +335,8 @@ RSpec.describe "Avatar flow", type: :system do
           code: experience.code_slug,
           name: "Bob",
           email: "bob@example.com",
-          experience_name: experience.name
+          experience_name: experience.name,
+          draw_avatar: false
         )
 
         expect(page).to have_current_path(/avatar/, wait: 10)
@@ -342,7 +356,8 @@ RSpec.describe "Avatar flow", type: :system do
           code: experience.code_slug,
           name: "Bob",
           email: "bob@example.com",
-          experience_name: experience.name
+          experience_name: experience.name,
+          draw_avatar: false
         )
 
         # Clear the gate by drawing + submitting first.
