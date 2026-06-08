@@ -973,6 +973,36 @@ export interface EventApiResponse {
   event: CalendarEvent;
 }
 
+export interface DiscoverTheater {
+  slug: string;
+  name: string;
+  neighborhood: string;
+  lat: number;
+  lng: number;
+}
+
+export interface DiscoverEvent {
+  id: string;
+  title: string;
+  starts_at: string;
+  ends_at: string;
+  venue_name: string | null;
+  venue_address: string | null;
+  pricing_text: string | null;
+  ticket_url: string | null;
+  slug: string;
+  performers: Pick<Performer, 'id' | 'name' | 'slug'>[];
+  theater_slug: string | null;
+  is_live: boolean;
+}
+
+export interface DiscoverApiResponse {
+  type: 'success';
+  success: true;
+  theaters: DiscoverTheater[];
+  events: DiscoverEvent[];
+}
+
 export interface PerformersApiResponse {
   type: 'success';
   success: true;

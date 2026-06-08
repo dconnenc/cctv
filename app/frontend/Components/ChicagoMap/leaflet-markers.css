@@ -1,0 +1,106 @@
+/* Global because Leaflet divIcon markers are injected as raw HTML with literal
+   class names (CSS modules can't hash them). All classes are namespaced cctv-. */
+
+/* Map is non-interactive (no pan/zoom), so no grab cursor — only the dots react. */
+.leaflet-container {
+  cursor: default;
+}
+
+.leaflet-div-icon.cctv-marker {
+  background: transparent;
+  border: none;
+}
+
+.cctv-dot {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  cursor: pointer;
+}
+
+.cctv-dot__core {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: var(--phosphor);
+  box-shadow: 0 0 0 3px var(--phosphor-glow-medium);
+  transition:
+    transform 0.12s ease,
+    box-shadow 0.12s ease,
+    opacity 0.12s ease;
+}
+
+.cctv-dot--dim .cctv-dot__core {
+  opacity: 0.4;
+  transform: scale(0.7);
+  box-shadow: none;
+}
+
+.cctv-dot--highlighted .cctv-dot__core,
+.cctv-dot:hover .cctv-dot__core {
+  transform: scale(1.4);
+  box-shadow: 0 0 0 5px var(--phosphor-glow-medium);
+  opacity: 1;
+}
+
+.cctv-dot__pulse {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: var(--phosphor);
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .cctv-dot__pulse {
+    animation: cctv-dot-pulse 2s ease-out infinite;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cctv-dot--focused .cctv-dot__core {
+    box-shadow: 0 0 0 6px var(--phosphor-glow-medium);
+  }
+}
+
+@keyframes cctv-dot-pulse {
+  0% {
+    transform: scale(1);
+    opacity: 0.6;
+  }
+  100% {
+    transform: scale(4.5);
+    opacity: 0;
+  }
+}
+
+/* Popup themed to the design system tokens */
+.leaflet-popup-content-wrapper {
+  background: hsl(var(--popover));
+  color: hsl(var(--popover-foreground));
+  border: 1px solid hsl(var(--border));
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-lg);
+}
+
+.leaflet-popup-tip {
+  background: hsl(var(--popover));
+  border: 1px solid hsl(var(--border));
+}
+
+.leaflet-popup-content {
+  margin: 0.75rem;
+}
+
+.leaflet-container a.leaflet-popup-close-button {
+  color: hsl(var(--muted-foreground));
+  padding: 0.35rem 0.35rem 0 0;
+}
+
+.leaflet-container a.leaflet-popup-close-button:hover {
+  color: hsl(var(--foreground));
+}

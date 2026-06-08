@@ -49,3 +49,9 @@
   max-width: 50ch;
   line-height: 1.6;
 }
+
+.credits {
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  color: hsl(var(--muted-foreground));
+}

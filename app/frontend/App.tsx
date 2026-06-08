@@ -2,6 +2,8 @@ import { Suspense, lazy, useEffect, useState } from 'react';
 
 import { Outlet, Route, useLocation } from 'react-router-dom';
 
+import { MotionConfig } from 'motion/react';
+
 import { RouteWink, TopNav } from '@cctv/components';
 import { ExperienceProvider } from '@cctv/contexts/ExperienceContext';
 import { UserProvider } from '@cctv/contexts/UserContext';
@@ -52,68 +54,70 @@ function App() {
 
   return (
     <UserProvider>
-      <div className={`app${booting ? ' app--booting' : ''}`}>
-        {!currentRoute.pathname.includes('/monitor') &&
-          !currentRoute.pathname.includes('/playbill') && <TopNav />}
-        <div className={styles.root}>
-          <Suspense fallback={<div className="flex-centered">Loading…</div>}>
-            <RouteWink>
-              <Route path="/" element={<Home />} />
-              <Route path="/about" element={<About />} />
-              <Route path="/join" element={<Join />} />
-              <Route path="/stylesheet" element={<Stylesheet />} />
+      <MotionConfig reducedMotion="user">
+        <div className={`app${booting ? ' app--booting' : ''}`}>
+          {!currentRoute.pathname.includes('/monitor') &&
+            !currentRoute.pathname.includes('/playbill') && <TopNav />}
+          <div className={styles.root}>
+            <Suspense fallback={<div className="flex-centered">Loading…</div>}>
+              <RouteWink>
+                <Route path="/" element={<Home />} />
+                <Route path="/about" element={<About />} />
+                <Route path="/join" element={<Join />} />
+                <Route path="/stylesheet" element={<Stylesheet />} />
 
-              {/* Public event & performer pages */}
-              <Route path="/events" element={<Calendar />} />
-              <Route path="/events/:slug" element={<EventDetail />} />
-              <Route path="/performers" element={<PerformersList />} />
-              <Route path="/performers/:slug" element={<PerformerProfile />} />
+                {/* Public event & performer pages */}
+                <Route path="/events" element={<Calendar />} />
+                <Route path="/events/:slug" element={<EventDetail />} />
+                <Route path="/performers" element={<PerformersList />} />
+                <Route path="/performers/:slug" element={<PerformerProfile />} />
 
-              {/* Logged-in user routes */}
-              <Route element={<RequireAuth />}>
-                <Route path="/performers/new" element={<CreatePerformer />} />
-                <Route path="/performers/:slug/edit" element={<EditPerformer />} />
-              </Route>
-
-              {/* Admin-only */}
-              <Route element={<RequireAdmin />}>
-                <Route path="/create" element={<Create />} />
-                <Route path="/events/new" element={<CreateEvent />} />
-                <Route path="/events/:slug/edit" element={<EditEvent />} />
-              </Route>
-
-              <Route
-                path="/experiences/:code"
-                element={
-                  <ExperienceProvider>
-                    <Outlet />
-                  </ExperienceProvider>
-                }
-              >
-                <Route element={<AllowRegisterRoute />}>
-                  <Route path="register" element={<Register />} />
+                {/* Logged-in user routes */}
+                <Route element={<RequireAuth />}>
+                  <Route path="/performers/new" element={<CreatePerformer />} />
+                  <Route path="/performers/:slug/edit" element={<EditPerformer />} />
                 </Route>
 
-                {/* Public/unauthenticated Monitor view */}
-                <Route path="monitor" element={<Monitor />} />
+                {/* Admin-only */}
+                <Route element={<RequireAdmin />}>
+                  <Route path="/create" element={<Create />} />
+                  <Route path="/events/new" element={<CreateEvent />} />
+                  <Route path="/events/:slug/edit" element={<EditEvent />} />
+                </Route>
 
-                <Route element={<RequireExperienceParticipantOrAdmin />}>
-                  <Route index element={<Experience />} />
-                  <Route path="avatar" element={<Avatar />} />
-                  <Route path="playbill" element={<Playbill />} />
+                <Route
+                  path="/experiences/:code"
+                  element={
+                    <ExperienceProvider>
+                      <Outlet />
+                    </ExperienceProvider>
+                  }
+                >
+                  <Route element={<AllowRegisterRoute />}>
+                    <Route path="register" element={<Register />} />
+                  </Route>
 
-                  <Route element={<RequireExperienceHostOrAdmin />}>
-                    <Route path="manage" element={<ManageViewer />} />
-                    <Route path="manage/blocks/new" element={<ManageCreateBlock />} />
-                    <Route path="manage/blocks/:blockId" element={<BlockPage />} />
-                    <Route path="timeline" element={<Timeline />} />
+                  {/* Public/unauthenticated Monitor view */}
+                  <Route path="monitor" element={<Monitor />} />
+
+                  <Route element={<RequireExperienceParticipantOrAdmin />}>
+                    <Route index element={<Experience />} />
+                    <Route path="avatar" element={<Avatar />} />
+                    <Route path="playbill" element={<Playbill />} />
+
+                    <Route element={<RequireExperienceHostOrAdmin />}>
+                      <Route path="manage" element={<ManageViewer />} />
+                      <Route path="manage/blocks/new" element={<ManageCreateBlock />} />
+                      <Route path="manage/blocks/:blockId" element={<BlockPage />} />
+                      <Route path="timeline" element={<Timeline />} />
+                    </Route>
                   </Route>
                 </Route>
-              </Route>
-            </RouteWink>
-          </Suspense>
+              </RouteWink>
+            </Suspense>
+          </div>
         </div>
-      </div>
+      </MotionConfig>
     </UserProvider>
   );
 }

@@ -39,6 +39,27 @@ export default function About() {
           }
         </p>
       </div>
+
+      <p className={styles.credits}>
+        Map data &copy;{' '}
+        <a
+          className="link"
+          href="https://www.openstreetmap.org/copyright"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          OpenStreetMap
+        </a>{' '}
+        contributors, &copy;{' '}
+        <a
+          className="link"
+          href="https://carto.com/attributions"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          CARTO
+        </a>
+      </p>
     </section>
   );
 }
