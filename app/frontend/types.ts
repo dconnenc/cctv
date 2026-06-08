@@ -1103,7 +1103,6 @@ export interface CreateBlockContextValue {
   // Visibility — segments default to the experience's default segment.
   visibleSegments: string[];
   setVisibleSegments: (segments: string[]) => void;
-  defaultSegmentName: string | null;
   viewAdditionalDetails: boolean;
   setViewAdditionalDetails: (view: boolean) => void;
 

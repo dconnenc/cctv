@@ -511,6 +511,11 @@ export default function FamilyFeudManager({ block }: FamilyFeudManagerProps) {
               className={styles.questionHeader}
               onClick={() => toggleQuestion(question.questionId)}
               aria-expanded={!isQuestionCollapsed}
+              aria-label={
+                isQuestionCollapsed
+                  ? `Expand ${question.questionText}`
+                  : `Collapse ${question.questionText}`
+              }
             >
               {isQuestionCollapsed ? <ChevronRight size={20} /> : <ChevronDown size={20} />}
               <h3 className={styles.questionTitle}>{question.questionText}</h3>

@@ -183,6 +183,30 @@ module SystemHelpers
     expect(page).to have_text("Edit Block")
   end
 
+  # Workaround for the unreliability of drag-and-drop bucket assignment in browser tests.
+  # Directly assigns all submitted answers for each Family Feud question into a single
+  # named bucket via DB mutation, then reloads the manage page so the manager reflects
+  # the categorized state. Use this in place of the DnD UI interaction.
+  def categorize_family_feud(code:, bucket_name: "Bucket 1")
+    experience = Experience.find_by!(code: code)
+    parent = experience.experience_blocks.find_by!(kind: ExperienceBlock::FAMILY_FEUD)
+
+    parent.child_blocks.each do |child|
+      submission_ids = child.experience_question_submissions.pluck(:id).map(&:to_s)
+      next if submission_ids.empty?
+
+      payload = child.payload || {}
+      payload["buckets"] = [{
+        "id" => "bucket-#{SecureRandom.hex(8)}",
+        "name" => bucket_name,
+        "answer_ids" => submission_ids
+      }]
+      child.update!(payload: payload)
+    end
+
+    visit current_path
+  end
+
   # Opens the participants panel, yields, then closes it.
   # Requires the manage page (/manage) to be the current path.
   def within_participants_panel(&block)
