@@ -196,21 +196,12 @@ export function CreateBlockProvider({
           break;
         case BlockKind.MINIGAME_ARITHMETIC:
           validationError = validateMinigameArithmetic(blockData.data);
-          if (!validationError && visibleSegments.length === 0) {
-            validationError = 'A segment is required for arithmetic minigames';
-          }
           break;
         case BlockKind.MINIGAME_BALLOON_PUMP:
           validationError = validateMinigameBalloonPump(blockData.data);
-          if (!validationError && visibleSegments.length === 0) {
-            validationError = 'A segment is required for balloon pump minigames';
-          }
           break;
         case BlockKind.THE_SCENE:
           validationError = validateTheScene(blockData.data);
-          if (!validationError && visibleSegments.length === 0) {
-            validationError = 'A segment is required for The Scene';
-          }
           break;
         default: {
           const _exhaust: never = blockData;

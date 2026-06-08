@@ -137,8 +137,7 @@ export default function CreateTheScene({
       </fieldset>
 
       <p className={styles.help}>
-        A segment is required — set it under "Additional Details". Suggestions persist across scenes
-        unless cleared. Votes reset each scene.
+        Suggestions persist across scenes unless cleared. Votes reset each scene.
       </p>
     </div>
   );

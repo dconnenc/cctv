@@ -1033,7 +1033,6 @@ module Experiences
     # The Scene -------------------------------------------------------------
 
     SCENE_PHASES = %w[idle collecting winner_reveal ended].freeze
-    WINNER_REVEAL_DELAY_SECONDS = 15
 
     def start_the_scene!(block:)
       guard_the_scene!(block)
@@ -1059,7 +1058,7 @@ module Experiences
       participant = current_participant
       raise Experiences::ForbiddenError, "Only the buzzer holder can press the buzzer" unless payload["buzzer_participant_id"] == participant.id
 
-      active_count = block.improv_suggestions.active.where(created_at: scene_window(payload)).count
+      active_count = block.improv_suggestions.active.count
       raise Experiences::InvalidTransitionError, "Need at least 2 suggestions before ending the scene" if active_count < 2
 
       scene_stamp = nil
@@ -1070,9 +1069,6 @@ module Experiences
         scene_stamp = updated["scene_started_at"]
         block.update!(payload: updated, status: :open)
       end
-
-      TheSceneAdvanceAfterRevealJob.set(wait: WINNER_REVEAL_DELAY_SECONDS.seconds)
-        .perform_later(block.id, scene_stamp)
 
       block
     end
@@ -1179,7 +1175,7 @@ module Experiences
       scene_started_at = payload["scene_started_at"]
       raise Experiences::InvalidTransitionError, "Scene has not started" if scene_started_at.blank?
 
-      active_count = block.improv_suggestions.active.where(created_at: scene_window(payload)).count
+      active_count = block.improv_suggestions.active.count
       raise Experiences::InvalidTransitionError, "Voting opens once 2 suggestions are in" if active_count < 2
 
       suggestion = block.improv_suggestions.active.find(suggestion_id)

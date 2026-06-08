@@ -245,11 +245,9 @@ RSpec.describe Experiences::Orchestrator, "the scene" do
       @suggestion_b = player_orchestrator(@recipient_b).submit_the_scene_suggestion!(block: block, text: "a circus")
     end
 
-    it "transitions to winner_reveal and enqueues the advance job" do
+    it "transitions to winner_reveal" do
       buzzer = experience.experience_participants.find(buzzer_holder(block))
-      expect {
-        player_orchestrator(buzzer).press_the_scene_buzzer!(block: block)
-      }.to have_enqueued_job(TheSceneAdvanceAfterRevealJob)
+      player_orchestrator(buzzer).press_the_scene_buzzer!(block: block)
 
       payload = block.reload.payload
       expect(payload["phase"]).to eq("winner_reveal")

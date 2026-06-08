@@ -728,9 +728,9 @@ module Experiences
     def serialize_participants(participants)
       participants.map do |p|
         {
-          id:            p.id,
-          user_id:       p.user.id,
-          experience_id: p.experience_id,
+          id:            p.id.to_s,
+          user_id:       p.user.id.to_s,
+          experience_id: p.experience_id.to_s,
           name:          p.name,
           email:         p.user.email,
           status:        p.status,

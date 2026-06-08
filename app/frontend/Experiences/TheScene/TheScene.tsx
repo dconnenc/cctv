@@ -219,6 +219,9 @@ function ParticipantView({ block }: { block: TheSceneBlock }) {
   return (
     <Shell stories={stories}>
       <p className={styles.heading}>{votingOpen ? 'Vote' : 'Waiting on suggestions'}</p>
+      {own_suggestion && (
+        <div className={styles.ownSuggestion}>Your suggestion: "{own_suggestion.text}"</div>
+      )}
       <VotingBody
         blockId={block.id}
         votingOpen={votingOpen}
@@ -294,6 +297,7 @@ function VotingBody({
 }
 
 const ROW_HEIGHT_PX = 76;
+const ROW_GAP_PX = 8;
 
 function MonitorView({ block }: { block: TheSceneBlock }) {
   const { phase, leaderboard, leaderboard_size, winner_revealed_at } = block.payload;
@@ -337,7 +341,8 @@ function Leaderboard({
   reveal: boolean;
   revealKey: string | null;
 }) {
-  const containerHeight = Math.max(suggestions.length * ROW_HEIGHT_PX, ROW_HEIGHT_PX);
+  const rowStep = ROW_HEIGHT_PX + ROW_GAP_PX;
+  const containerHeight = Math.max(suggestions.length * rowStep - ROW_GAP_PX, ROW_HEIGHT_PX);
 
   return (
     <div className={styles.monitorLeaderboard} style={{ height: containerHeight }}>
@@ -349,7 +354,7 @@ function Leaderboard({
             className={`${styles.leaderboardRow} ${isWinner ? styles.leaderboardWinner : ''}`}
             data-rank={s.rank}
             data-reveal-key={isWinner ? (revealKey ?? '') : undefined}
-            style={{ top: `${index * ROW_HEIGHT_PX}px` }}
+            style={{ top: `${index * rowStep}px` }}
           >
             <span className={styles.leaderboardRank}>#{s.rank}</span>
             <span className={styles.leaderboardText}>{s.text}</span>
@@ -451,7 +456,7 @@ function ManageView({ block }: { block: TheSceneBlock }) {
         )}
         {phase === 'winner_reveal' && (
           <>
-            <Button onClick={() => forceNextScene(block.id)}>Skip wait → next scene</Button>
+            <Button onClick={() => forceNextScene(block.id)}>Next scene</Button>
             <Button variant="secondary" onClick={() => endScene(block.id)}>
               End block
             </Button>
