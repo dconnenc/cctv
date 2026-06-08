@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Layer, Line, Stage } from 'react-konva';
 
 import { useExperience } from '@cctv/contexts/ExperienceContext';
+import { useExperienceState } from '@cctv/contexts/ExperienceStateContext';
 import { Button } from '@cctv/core/Button/Button';
 import { useBalloonPumpLeader, useMinigameBalloonPump } from '@cctv/hooks/useMinigameBalloonPump';
 import { MinigameBalloonPumpBlock, MinigameBalloonPumpPodiumEntry } from '@cctv/types';
@@ -31,8 +32,9 @@ export default function MinigameBalloonPump({ block, viewContext = 'participant'
 function ParticipantView({ block }: { block: MinigameBalloonPumpBlock }) {
   const { submitPump } = useMinigameBalloonPump();
   const { participant } = useExperience();
-  const { target_units, started_at, ended_at, own_fill, winner_participant_ids } = block.payload;
-  const [localFill, setLocalFill] = useState(own_fill ?? 0);
+  const { submissionState } = useExperienceState();
+  const { target_units, started_at, ended_at, winner_participant_ids } = block.payload;
+  const [localFill, setLocalFill] = useState(submissionState[block.id]?.fill_amount ?? 0);
   const localFillRef = useRef(localFill);
 
   useEffect(() => {

@@ -147,11 +147,7 @@ export function CreateBlockProvider({
 
   const { experience } = useExperience();
 
-  const defaultSegmentName =
-    experience?.segments?.find((s) => s.id === experience.default_segment_id)?.name ?? null;
-  const initialVisibleSegments = defaultSegmentName ? [defaultSegmentName] : [];
-
-  const [visibleSegments, setVisibleSegments] = useState<string[]>(initialVisibleSegments);
+  const [visibleSegments, setVisibleSegments] = useState<string[]>([]);
   const [viewAdditionalDetails, setViewAdditionalDetails] = useState<boolean>(false);
   const [addToPlaybill, setAddToPlaybill] = useState<boolean>(true);
   const [playbillMysterious, setPlaybillMysterious] = useState<boolean>(false);
@@ -425,7 +421,6 @@ export function CreateBlockProvider({
 
       // Reset all form state
       setBlockData(getDefaultFormData(blockData.kind));
-      setVisibleSegments(initialVisibleSegments);
       setViewAdditionalDetails(false);
       setAddToPlaybill(true);
       setPlaybillMysterious(false);
@@ -440,7 +435,6 @@ export function CreateBlockProvider({
       setCreateError,
       getDefaultFormData,
       experience,
-      initialVisibleSegments,
       addToPlaybill,
       playbillMysterious,
     ],
@@ -456,7 +450,6 @@ export function CreateBlockProvider({
     error: createError,
     visibleSegments,
     setVisibleSegments,
-    defaultSegmentName,
     viewAdditionalDetails,
     setViewAdditionalDetails,
     addToPlaybill,

@@ -114,6 +114,7 @@ export default function CreateFamilyFeud({ data, onChange }: BlockComponentProps
           <div className={styles.questionNumber}>{index + 1}</div>
           <div className={styles.questionField}>
             <TextInput
+              label={`Question ${index + 1}`}
               placeholder="Enter question"
               value={question.question}
               onChange={(e) => updateQuestion(index, e.target.value)}

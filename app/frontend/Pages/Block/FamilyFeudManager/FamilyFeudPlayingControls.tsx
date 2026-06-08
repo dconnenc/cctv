@@ -136,6 +136,11 @@ export default function FamilyFeudPlayingControls({
                   size="sm"
                   onClick={() => handleRevealBucket(index)}
                   disabled={bucket.revealed || isRevealing}
+                  aria-label={
+                    bucket.revealed
+                      ? `Revealed ${bucket.bucket_name}`
+                      : `Reveal ${bucket.bucket_name}`
+                  }
                 >
                   <Eye size={16} />
                   {bucket.revealed ? 'Revealed' : isRevealing ? 'Revealing...' : 'Reveal'}

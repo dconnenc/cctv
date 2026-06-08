@@ -27,6 +27,17 @@ RSpec.describe "Question Block", type: :system do
     visit current_path
     select_and_present(1, kind: "question")
 
+    # Monitor impersonation shows the question
+    within("[aria-label='Preview mode']") { click_button "Monitor" }
+    expect(page).to have_text("What is your favorite color?")
+
+    # Actual monitor page shows the question
+    using_session(:monitor) do
+      visit "/experiences/test-exp/monitor"
+      expect(page).to have_text("What is your favorite color?")
+    end
+
+    # Participant sees the question and submits an answer
     using_session(:participant) do
       expect(page).to have_text("What is your favorite color?")
       expect(page).to have_button("Submit", disabled: false)
@@ -34,6 +45,12 @@ RSpec.describe "Question Block", type: :system do
       click_button "Submit"
       expect(page).to have_text("blue")
     end
+
+    # Manage view reflects the submitted response
+    visit current_path
+    select_block(1, kind: "question")
+    within("[aria-label='Preview mode']") { click_button "Responses" }
+    expect(page).to have_text(/Responses \(1\)/i)
   end
 
   describe "editing a question block" do
@@ -44,7 +61,6 @@ RSpec.describe "Question Block", type: :system do
       queue_block(n: 1) do
         select "Question", from: "Kind"
         fill_in "Question", with: "Original question?"
-        clear_default_segment
       end
 
       select_block(1, kind: "question")

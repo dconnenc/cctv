@@ -509,7 +509,6 @@ export default function FamilyFeudManager({ block }: FamilyFeudManagerProps) {
       </div>
     );
   }
-
   return (
     <div className={styles.root}>
       <div className={styles.headerRow}>
@@ -565,6 +564,11 @@ export default function FamilyFeudManager({ block }: FamilyFeudManagerProps) {
               className={styles.questionHeader}
               onClick={() => toggleQuestion(question.questionId)}
               aria-expanded={!isQuestionCollapsed}
+              aria-label={
+                isQuestionCollapsed
+                  ? `Expand ${question.questionText}`
+                  : `Collapse ${question.questionText}`
+              }
             >
               {isQuestionCollapsed ? <ChevronRight size={20} /> : <ChevronDown size={20} />}
               <h3 className={styles.questionTitle}>{question.questionText}</h3>

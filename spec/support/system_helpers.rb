@@ -189,23 +189,36 @@ module SystemHelpers
     present_block
   end
 
-  # Removes the default "Audience" segment from the Create/Edit Block form.
-  # Use inside `queue_block` (or an edit form) when a test needs the block
-  # to be visible to the monitor or to a non-audience segment in isolation —
-  # new blocks default to the experience's default segment, which hides them
-  # from the monitor view.
-  def clear_default_segment
-    if page.has_button?("Remove Audience", wait: 0)
-      click_button "Remove Audience"
-    end
-  end
-
   # Opens the edit form for the currently selected block.
   # Pre-asserts "Edit" is available; post-asserts "Edit Block" heading appears.
   def edit_block
     expect(page).to have_button("Edit")
     click_button "Edit"
     expect(page).to have_text("Edit Block")
+  end
+
+  # Workaround for the unreliability of drag-and-drop bucket assignment in browser tests.
+  # Directly assigns all submitted answers for each Family Feud question into a single
+  # named bucket via DB mutation, then reloads the manage page so the manager reflects
+  # the categorized state. Use this in place of the DnD UI interaction.
+  def categorize_family_feud(code:, bucket_name: "Bucket 1")
+    experience = Experience.find_by!(code: code)
+    parent = experience.experience_blocks.find_by!(kind: ExperienceBlock::FAMILY_FEUD)
+
+    parent.child_blocks.each do |child|
+      submission_ids = child.experience_question_submissions.pluck(:id).map(&:to_s)
+      next if submission_ids.empty?
+
+      payload = child.payload || {}
+      payload["buckets"] = [{
+        "id" => "bucket-#{SecureRandom.hex(8)}",
+        "name" => bucket_name,
+        "answer_ids" => submission_ids
+      }]
+      child.update!(payload: payload)
+    end
+
+    visit current_path
   end
 
   # Opens the participants panel, yields, then closes it.

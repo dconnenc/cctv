@@ -251,9 +251,6 @@ export interface TheScenePayload {
   buzzer_participant_id: string | null;
   leaderboard: TheSceneSuggestion[];
   performers: TheScenePerformer[];
-  is_prompt_recipient: boolean;
-  is_buzzer_holder: boolean;
-  is_performer: boolean;
   all_suggestions?: TheSceneSuggestion[];
 }
 
@@ -265,7 +262,6 @@ export interface MinigameBalloonPumpPayload {
   leader_fill: number;
   leader_participant_id: string | null;
   winner_participant_ids: string[];
-  own_fill?: number;
   podium?: MinigameBalloonPumpPodiumEntry[];
   live_results?: MinigameBalloonPumpLiveResult[];
 }
@@ -869,6 +865,7 @@ export type SubmissionState = Record<
     own_vote_suggestion_id?: string | null;
     current_question?: { index: number; prompt: string } | null;
     score?: { correct: number; completed: number };
+    fill_amount?: number;
   }
 >;
 
@@ -1137,7 +1134,6 @@ export interface CreateBlockContextValue {
   // Visibility — segments default to the experience's default segment.
   visibleSegments: string[];
   setVisibleSegments: (segments: string[]) => void;
-  defaultSegmentName: string | null;
   viewAdditionalDetails: boolean;
   setViewAdditionalDetails: (view: boolean) => void;
 

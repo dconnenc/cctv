@@ -33,8 +33,20 @@ export default function TheScene({ block, viewContext = 'participant' }: Props) 
 function ParticipantView({ block }: { block: TheSceneBlock }) {
   const { submitSuggestion, submitVote, isSubmitting } = useTheScene();
   const { submissionState } = useExperienceState();
-  const { phase, leaderboard, performers, is_prompt_recipient, is_buzzer_holder, is_performer } =
-    block.payload;
+  const { participant } = useExperience();
+  const {
+    phase,
+    leaderboard,
+    performers,
+    performer_participant_ids,
+    prompt_participant_ids,
+    buzzer_participant_id,
+  } = block.payload;
+
+  const participantId = participant?.id ?? '';
+  const is_performer = performer_participant_ids.includes(participantId);
+  const is_buzzer_holder = buzzer_participant_id === participantId;
+  const is_prompt_recipient = prompt_participant_ids.includes(participantId);
 
   const activeSuggestionCount = leaderboard.length;
   const votingOpen = phase === 'collecting' && activeSuggestionCount >= 2;

@@ -13,7 +13,6 @@ RSpec.describe "Buzzer Block", type: :system do
       select "Buzzer", from: "Kind"
       fill_in "Prompt", with: "Get ready to buzz in!"
       fill_in "Button Label (optional)", with: "Hit it!"
-      clear_default_segment
     end
 
     start_experience
@@ -58,7 +57,6 @@ RSpec.describe "Buzzer Block", type: :system do
       select "Buzzer", from: "Kind"
       fill_in "Prompt", with: "Get ready to buzz in!"
       fill_in "Button Label (optional)", with: "Hit it!"
-      clear_default_segment
     end
 
     start_experience
@@ -118,7 +116,6 @@ RSpec.describe "Buzzer Block", type: :system do
       queue_block(n: 1) do
         select "Buzzer", from: "Kind"
         fill_in "Prompt", with: "Original prompt"
-        clear_default_segment
       end
 
       select_block(1, kind: "buzzer")
