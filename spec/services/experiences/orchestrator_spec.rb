@@ -347,6 +347,19 @@ RSpec.describe Experiences::Orchestrator do
       expect(buckets.map { |b| b["name"] }).to contain_exactly("Home Life", "Work Stuff")
     end
 
+    it "caps the board at 8 buckets, keeping the largest and dropping the overflow" do
+      orchestrator = described_class.new(actor: user, experience: experience)
+      buckets = (0..9).map do |i|
+        size = [4, 9].include?(i) ? 1 : 3
+        { "id" => "b#{i}", "name" => "b#{i}", "answer_ids" => Array.new(size, "x") }
+      end
+
+      result = orchestrator.send(:cap_family_feud_buckets, buckets)
+
+      expect(result.length).to eq(8)
+      expect(result.map { |b| b["name"] }).not_to include("b4", "b9")
+    end
+
     it "passes game_context and question_context to the prompt builder when set" do
       block.update!(payload: block.payload.merge("ai_context" => "Tech company event"))
       question_block.update!(payload: question_block.payload.merge("ai_context" => "Focus on workplace themes"))

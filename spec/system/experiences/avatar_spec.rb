@@ -24,10 +24,11 @@ RSpec.describe "Avatar flow", type: :system do
           code: experience.code_slug,
           name: "Alice",
           email: "alice@example.com",
-          experience_name: experience.name
+          experience_name: experience.name,
+          draw_avatar: false
         )
 
-        expect(page).to have_text("Draw your avatar to enter the lobby")
+        expect(page).to have_text("Draw your avatar to continue")
 
         draw_and_submit_avatar
         expect(page).to have_text("Players in Lobby:")
@@ -44,11 +45,12 @@ RSpec.describe "Avatar flow", type: :system do
           code: experience.code_slug,
           name: "Alice",
           email: "alice@example.com",
-          experience_name: experience.name
+          experience_name: experience.name,
+          draw_avatar: false
         )
 
         expect(page).to have_current_path("/experiences/#{experience.code_slug}/avatar")
-        expect(page).to have_text("Draw your avatar to enter the lobby")
+        expect(page).to have_text("Draw your avatar to continue")
         expect(page).to have_button("Submit", disabled: true)
         expect(page).to have_no_button("Save")
       end
@@ -60,13 +62,14 @@ RSpec.describe "Avatar flow", type: :system do
           code: experience.code_slug,
           name: "Alice",
           email: "alice@example.com",
-          experience_name: experience.name
+          experience_name: experience.name,
+          draw_avatar: false
         )
 
         visit "/experiences/#{experience.code_slug}"
 
         expect(page).to have_current_path("/experiences/#{experience.code_slug}/avatar")
-        expect(page).to have_text("Draw your avatar to enter the lobby")
+        expect(page).to have_text("Draw your avatar to continue")
       end
     end
 
@@ -76,7 +79,8 @@ RSpec.describe "Avatar flow", type: :system do
           code: experience.code_slug,
           name: "Alice",
           email: "alice@example.com",
-          experience_name: experience.name
+          experience_name: experience.name,
+          draw_avatar: false
         )
 
         draw_and_submit_avatar
@@ -87,7 +91,7 @@ RSpec.describe "Avatar flow", type: :system do
         wait_for_animation
 
         expect(page).to have_current_path("/experiences/#{experience.code_slug}/avatar")
-        expect(page).to have_no_text("Draw your avatar to enter the lobby")
+        expect(page).to have_no_text("Draw your avatar to continue")
         expect(page).to have_button("Save")
         expect(page).to have_no_button("Submit")
       end
@@ -99,7 +103,8 @@ RSpec.describe "Avatar flow", type: :system do
           code: experience.code_slug,
           name: "Alice",
           email: "alice@example.com",
-          experience_name: experience.name
+          experience_name: experience.name,
+          draw_avatar: false
         )
 
         draw_and_submit_avatar
@@ -129,7 +134,8 @@ RSpec.describe "Avatar flow", type: :system do
           code: experience.code_slug,
           name: "Alice",
           email: "alice@example.com",
-          experience_name: experience.name
+          experience_name: experience.name,
+          draw_avatar: false
         )
 
         draw_and_submit_avatar
@@ -146,6 +152,85 @@ RSpec.describe "Avatar flow", type: :system do
     end
   end
 
+  describe "Returning participant (has an avatar from a prior experience)" do
+    let!(:earlier_experience) do
+      create(
+        :experience,
+        :draft,
+        creator: admin,
+        name: "Earlier Experience",
+        code: "earlier-experience"
+      )
+    end
+
+    let!(:returning_user) { create(:user, name: "Rex", email: "rex@example.com") }
+
+    before do
+      create(
+        :experience_participant,
+        :with_avatar,
+        experience: earlier_experience,
+        user: returning_user
+      )
+    end
+
+    it "still prompts them to draw a fresh avatar instead of reusing the old one" do
+      using_session(:participant) do
+        register_participant(
+          code: experience.code_slug,
+          name: "Rex",
+          email: "rex@example.com",
+          experience_name: experience.name,
+          draw_avatar: false
+        )
+
+        expect(page).to have_current_path("/experiences/#{experience.code_slug}/avatar")
+        expect(page).to have_text("Draw your avatar to continue")
+        # The prior avatar is not carried over, so the canvas starts empty.
+        expect(page).to have_button("Submit", disabled: true)
+      end
+    end
+
+    it "lets them draw and enter the lobby" do
+      using_session(:participant) do
+        register_participant(
+          code: experience.code_slug,
+          name: "Rex",
+          email: "rex@example.com",
+          experience_name: experience.name,
+          draw_avatar: false
+        )
+
+        draw_and_submit_avatar
+        expect(page).to have_text("Players in Lobby:")
+      end
+    end
+  end
+
+  describe "Auto-save while drawing" do
+    it "persists strokes as they are drawn, before any submit" do
+      using_session(:participant) do
+        register_participant(
+          code: experience.code_slug,
+          name: "Alice",
+          email: "alice@example.com",
+          experience_name: experience.name,
+          draw_avatar: false
+        )
+
+        expect(page).to have_current_path("/experiences/#{experience.code_slug}/avatar")
+        draw_on_canvas
+
+        # Reload without submitting — the stroke was committed live over the
+        # websocket, so it rehydrates and Undo stays enabled.
+        visit "/experiences/#{experience.code_slug}/avatar"
+
+        expect(page).to have_css("canvas", wait: 10)
+        expect(page).to have_button("Undo", disabled: false)
+      end
+    end
+  end
+
   describe "Undo" do
     it "undoes the last stroke and disables undo when no uncommitted strokes remain" do
       using_session(:participant) do
@@ -153,7 +238,8 @@ RSpec.describe "Avatar flow", type: :system do
           code: experience.code_slug,
           name: "Alice",
           email: "alice@example.com",
-          experience_name: experience.name
+          experience_name: experience.name,
+          draw_avatar: false
         )
 
         expect(page).to have_current_path("/experiences/#{experience.code_slug}/avatar")
@@ -175,7 +261,8 @@ RSpec.describe "Avatar flow", type: :system do
           code: experience.code_slug,
           name: "Alice",
           email: "alice@example.com",
-          experience_name: experience.name
+          experience_name: experience.name,
+          draw_avatar: false
         )
 
         draw_and_submit_avatar
@@ -199,7 +286,8 @@ RSpec.describe "Avatar flow", type: :system do
           code: experience.code_slug,
           name: "Alice",
           email: "alice@example.com",
-          experience_name: experience.name
+          experience_name: experience.name,
+          draw_avatar: false
         )
 
         expect(page).to have_current_path("/experiences/#{experience.code_slug}/avatar")
@@ -224,34 +312,65 @@ RSpec.describe "Avatar flow", type: :system do
       expect(page).to have_button("Pause")
     end
 
-    it "does not gate a participant without an avatar when the experience is live" do
+    it "still gates a participant without an avatar when the experience is live" do
       using_session(:participant) do
         register_participant(
           code: experience.code_slug,
           name: "Bob",
           email: "bob@example.com",
-          experience_name: experience.name
+          experience_name: experience.name,
+          draw_avatar: false
         )
 
-        expect(page).to have_no_current_path("/experiences/#{experience.code_slug}/avatar")
+        expect(page).to have_current_path("/experiences/#{experience.code_slug}/avatar")
+        expect(page).to have_text("Draw your avatar to continue")
+        expect(page).to have_button("Submit", disabled: true)
+        expect(page).to have_no_button("Save")
+      end
+    end
+
+    it "lets a gated participant draw and then proceed into the live experience" do
+      using_session(:participant) do
+        register_participant(
+          code: experience.code_slug,
+          name: "Bob",
+          email: "bob@example.com",
+          experience_name: experience.name,
+          draw_avatar: false
+        )
+
+        expect(page).to have_current_path(/avatar/, wait: 10)
+        draw_on_canvas
+        expect(page).to have_button("Submit", disabled: false)
+        click_button "Submit"
+
+        expect(page).to have_current_path("/experiences/#{experience.code_slug}")
+        expect(page).to have_text("Waiting for the next activity...")
         expect(page).to have_css('button[aria-label="Edit avatar"]')
       end
     end
 
-    it "allows a participant to navigate to avatar editor and back without a lobby gate" do
+    it "allows a participant who already has an avatar to free-edit without a gate" do
       using_session(:participant) do
         register_participant(
           code: experience.code_slug,
           name: "Bob",
           email: "bob@example.com",
-          experience_name: experience.name
+          experience_name: experience.name,
+          draw_avatar: false
         )
+
+        # Clear the gate by drawing + submitting first.
+        expect(page).to have_current_path(/avatar/, wait: 10)
+        draw_on_canvas
+        click_button "Submit"
+        expect(page).to have_current_path("/experiences/#{experience.code_slug}")
 
         find('button[aria-label="Edit avatar"]').click
         wait_for_animation
 
         expect(page).to have_current_path("/experiences/#{experience.code_slug}/avatar")
-        expect(page).to have_no_text("Draw your avatar to enter the lobby")
+        expect(page).to have_no_text("Draw your avatar to continue")
         expect(page).to have_button("Save")
         expect(page).to have_no_button("Submit")
 

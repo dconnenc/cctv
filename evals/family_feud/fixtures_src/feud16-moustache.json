@@ -1,0 +1,27 @@
+{
+  "id": "feud16-moustache",
+  "season": "S16",
+  "question": "Name something a woman might do to her moustache.",
+  "target_n": 24,
+  "difficulty_tags": ["paraphrase", "near_miss", "off_topic", "singleton"],
+  "groups": [
+    {
+      "label": "Shave or Trim It",
+      "weight": 42,
+      "variants": ["shave it", "trim it", "shave it off", "use a razor on it"]
+    },
+    { "label": "Wax It", "weight": 32, "variants": ["wax it", "get it waxed", "waxing"] },
+    {
+      "label": "Pluck It",
+      "weight": 13,
+      "variants": ["pluck it", "tweeze it", "pull the hairs out"]
+    },
+    {
+      "label": "Bleach It",
+      "weight": 11,
+      "variants": ["bleach it", "lighten it", "bleach the hairs"]
+    }
+  ],
+  "singletons": ["dye it a color", "draw it on with makeup"],
+  "junk": ["lol", "mustache rides", "i shave mine too"]
+}

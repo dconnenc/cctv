@@ -1,15 +1,17 @@
 module AI
   module Providers
     class Gemini
-      API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent"
+      DEFAULT_MODEL = "gemini-2.5-flash".freeze
+      API_BASE = "https://generativelanguage.googleapis.com/v1beta/models".freeze
 
-      def self.call(prompt:, response_schema: nil)
+      def self.call(prompt:, response_schema: nil, model: nil, temperature: 0)
         api_key = ENV["GEMINI_API_KEY"]
         raise AI::Client::Error, "GEMINI_API_KEY not configured" if api_key.blank?
 
-        body = build_request_body(prompt, response_schema)
+        model ||= DEFAULT_MODEL
+        body = build_request_body(prompt, response_schema, temperature)
 
-        uri = URI("#{API_URL}?key=#{api_key}")
+        uri = URI("#{API_BASE}/#{model}:generateContent?key=#{api_key}")
         http = Net::HTTP.new(uri.host, uri.port)
         http.use_ssl = true
         http.open_timeout = 10
@@ -32,15 +34,18 @@ module AI
         JSON.parse(text)
       rescue JSON::ParserError => e
         raise AI::Client::Error, "Failed to parse Gemini response: #{e.message}"
-      rescue Net::TimeoutError, Net::OpenTimeout, Errno::ECONNREFUSED => e
-        raise AI::Client::Error, "Gemini API connection error: #{e.message}"
+      rescue Net::OpenTimeout, Net::ReadTimeout, Net::WriteTimeout, Timeout::Error,
+             SocketError, OpenSSL::SSL::SSLError, IOError,
+             Errno::ECONNREFUSED, Errno::ECONNRESET, Errno::ETIMEDOUT, Errno::EPIPE => e
+        raise AI::Client::Error, "Gemini API connection error (#{e.class}): #{e.message}"
       end
 
-      def self.build_request_body(prompt, response_schema)
+      def self.build_request_body(prompt, response_schema, temperature)
         body = {
           contents: [{ parts: [{ text: prompt }] }],
           generationConfig: {
-            responseMimeType: "application/json"
+            responseMimeType: "application/json",
+            temperature: temperature
           }
         }
 

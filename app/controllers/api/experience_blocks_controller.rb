@@ -522,6 +522,22 @@ class Api::ExperienceBlocksController < Api::BaseController
     end
   end
 
+  # POST /api/experiences/:experience_id/blocks/:id/family_feud/theme_music
+  def set_theme_music
+    with_experience_orchestration do
+      Experiences::Orchestrator.new(
+        experience: @experience, actor: @user
+      ).set_family_feud_theme_music!(
+        block: @block,
+        playing: ActiveModel::Type::Boolean.new.cast(params[:playing])
+      )
+
+      Experiences::Broadcaster.new(@experience).broadcast_experience_update
+
+      render json: { success: true }, status: 200
+    end
+  end
+
   # POST /api/experiences/:experience_id/blocks/:id/family_feud/next_question
   def next_question
     with_experience_orchestration do

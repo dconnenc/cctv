@@ -27,6 +27,18 @@ import AdminNotification from './AdminNotification/AdminNotification';
 
 import styles from './Experience.module.scss';
 
+function deriveCurrentBlock(blocks: Block[], submissionState: SubmissionState): Block | undefined {
+  if (blocks.length <= 1) return blocks[0];
+
+  const [parent, ...children] = blocks;
+  if (parent.kind === BlockKind.FAMILY_FEUD) {
+    const unanswered = children.find((child) => !submissionState[child.id]);
+    return unanswered ?? parent;
+  }
+
+  return blocks[0];
+}
+
 function AvatarCircle({ strokes }: { strokes: AvatarStroke[] }) {
   if (!strokes.length) {
     return (
@@ -80,18 +92,6 @@ function AvatarCircle({ strokes }: { strokes: AvatarStroke[] }) {
   );
 }
 
-function deriveCurrentBlock(blocks: Block[], submissionState: SubmissionState): Block | undefined {
-  if (blocks.length <= 1) return blocks[0];
-
-  const [parent, ...children] = blocks;
-  if (parent.kind === BlockKind.FAMILY_FEUD) {
-    const unanswered = children.find((child) => !submissionState[child.id]);
-    return unanswered ?? parent;
-  }
-
-  return blocks[0];
-}
-
 export default function Experience() {
   const navigate = useNavigate();
   const { state: locationState } = useLocation();
@@ -129,10 +129,10 @@ export default function Experience() {
 
   useEffect(() => {
     if (locationState?.avatarSubmitted) return;
-    if (experienceStatus === 'lobby' && needsAvatar && code && !isLoading && hasInitialData) {
+    if (needsAvatar && code && !isLoading && hasInitialData) {
       navigate(`/experiences/${code}/avatar`, { replace: true });
     }
-  }, [locationState, experienceStatus, needsAvatar, code, navigate, isLoading, hasInitialData]);
+  }, [locationState, needsAvatar, code, navigate, isLoading, hasInitialData]);
 
   if (isLoading) {
     return (
@@ -156,6 +156,18 @@ export default function Experience() {
       </section>
     );
   }
+  // Avatar comes first: while a participant still needs one, don't render any
+  // block (the redirect effect above sends them to the avatar editor). This
+  // prevents flashing/interacting with a live block before drawing.
+  if (needsAvatar && !locationState?.avatarSubmitted) {
+    return (
+      <section className="page">
+        <h1 className={styles.title}>{experience?.name || code}</h1>
+        <p className={styles.subtitle}>Preparing experience…</p>
+      </section>
+    );
+  }
+
   const currentBlock = deriveCurrentBlock(experience?.blocks ?? [], submissionState);
 
   if (experienceStatus === 'lobby') {

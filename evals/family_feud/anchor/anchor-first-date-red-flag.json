@@ -1,0 +1,38 @@
+{
+  "id": "anchor-first-date-red-flag",
+  "season": "anchor",
+  "question": "Name a red flag on a first date.",
+  "difficulty_tags": ["paraphrase", "off_topic", "singleton"],
+  "board": [
+    { "label": "Always On Their Phone", "points": 3 },
+    { "label": "Rude to the Waiter", "points": 3 },
+    { "label": "Talks About Their Ex", "points": 3 },
+    { "label": "Bad Hygiene", "points": 3 }
+  ],
+  "raw_responses": [
+    { "id": "a7", "text": "wouldn't stop talking about his ex" },
+    { "id": "a1", "text": "kept texting the whole time" },
+    { "id": "a11", "text": "had terrible breath" },
+    { "id": "a4", "text": "was mean to the server" },
+    { "id": "a13", "text": "showed up 30 minutes late" },
+    { "id": "a2", "text": "on their phone constantly" },
+    { "id": "a9", "text": "talked about the ex all night" },
+    { "id": "a6", "text": "snapped at the waitress" },
+    { "id": "a14", "text": "lol my ex haha" },
+    { "id": "a10", "text": "smelled bad" },
+    { "id": "a3", "text": "wouldn't put the phone down" },
+    { "id": "a8", "text": "brought up their ex right away" },
+    { "id": "a5", "text": "rude to the waiter" },
+    { "id": "a12", "text": "clearly hadn't showered" },
+    { "id": "a15", "text": "i hate dating apps" }
+  ],
+  "gold": {
+    "groups": {
+      "Always On Their Phone": ["a1", "a2", "a3"],
+      "Rude to the Waiter": ["a4", "a5", "a6"],
+      "Talks About Their Ex": ["a7", "a8", "a9"],
+      "Bad Hygiene": ["a10", "a11", "a12"]
+    },
+    "unassigned": ["a13", "a14", "a15"]
+  }
+}

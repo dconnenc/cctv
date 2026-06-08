@@ -40,7 +40,17 @@
 import { useCallback, useEffect, useReducer, useRef, useState } from 'react';
 
 import { DragDropContext, Draggable, Droppable } from '@hello-pangea/dnd';
-import { ChevronDown, ChevronRight, Loader2, Play, Plus, Sparkles, Trash2 } from 'lucide-react';
+import {
+  ChevronDown,
+  ChevronRight,
+  Loader2,
+  Music,
+  Pause,
+  Play,
+  Plus,
+  Sparkles,
+  Trash2,
+} from 'lucide-react';
 
 import { useExperience } from '@cctv/contexts/ExperienceContext';
 import { Button } from '@cctv/core';
@@ -87,6 +97,7 @@ export default function FamilyFeudManager({ block }: FamilyFeudManagerProps) {
   const [addingBucketForQuestion, setAddingBucketForQuestion] = useState<string | null>(null);
   const [deletingBucketId, setDeletingBucketId] = useState<string | null>(null);
   const [startingPlaying, setStartingPlaying] = useState(false);
+  const [togglingTheme, setTogglingTheme] = useState(false);
   const [autoCategorizing, setAutoCategorizing] = useState<string | null>(null);
 
   const [collapsedQuestions, setCollapsedQuestions] = useState<Set<string>>(new Set());
@@ -102,6 +113,7 @@ export default function FamilyFeudManager({ block }: FamilyFeudManagerProps) {
   const questionContextTimeoutRefs = useRef<Record<string, NodeJS.Timeout>>({});
   const gameState = payload?.game_state;
   const isPlaying = gameState?.phase === 'playing';
+  const isThemePlaying = payload?.theme_music_playing ?? false;
 
   // Initialize state from block data on mount only
   // Subsequent updates come via websocket broadcasts -> reducer actions
@@ -335,6 +347,26 @@ export default function FamilyFeudManager({ block }: FamilyFeudManagerProps) {
     }
   }, [code, block.id]);
 
+  const handleToggleThemeMusic = useCallback(async () => {
+    if (!code) return;
+    setTogglingTheme(true);
+    try {
+      const response = await fetch(
+        `/api/experiences/${code}/blocks/${block.id}/family_feud/theme_music`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ playing: !isThemePlaying }),
+        },
+      );
+      if (!response.ok) throw new Error('Failed to toggle theme music');
+    } catch (error) {
+      console.error('Error toggling theme music:', error);
+    } finally {
+      setTogglingTheme(false);
+    }
+  }, [code, block.id, isThemePlaying]);
+
   const handleRevealBucket = useCallback(
     async (questionIndex: number, bucketIndex: number) => {
       if (!code) return;
@@ -435,6 +467,18 @@ export default function FamilyFeudManager({ block }: FamilyFeudManagerProps) {
     }
   }, [code, block.id]);
 
+  const themeMusicButton = (
+    <Button
+      variant="outline"
+      size="sm"
+      onClick={handleToggleThemeMusic}
+      disabled={togglingTheme}
+      icon={isThemePlaying ? <Pause size={16} /> : <Music size={16} />}
+    >
+      {isThemePlaying ? 'Pause Theme' : 'Play Theme'}
+    </Button>
+  );
+
   if (childQuestions.length === 0) {
     return (
       <div className={styles.root}>
@@ -445,9 +489,13 @@ export default function FamilyFeudManager({ block }: FamilyFeudManagerProps) {
     );
   }
 
-  return (
-    <div className={styles.root}>
-      {isPlaying && gameState && (
+  if (isPlaying && gameState) {
+    return (
+      <div className={styles.root}>
+        <div className={styles.headerRow}>
+          <h2 className={styles.title}>{payload?.title || 'Family Feud'}</h2>
+          {themeMusicButton}
+        </div>
         <FamilyFeudPlayingControls
           block={block}
           gameState={gameState}
@@ -458,10 +506,15 @@ export default function FamilyFeudManager({ block }: FamilyFeudManagerProps) {
           onRestartCategorizing={handleRestartCategorizing}
           onRestartEverything={handleRestartEverything}
         />
-      )}
+      </div>
+    );
+  }
+  return (
+    <div className={styles.root}>
       <div className={styles.headerRow}>
         <h2 className={styles.title}>{payload?.title ?? 'Family Feud'}</h2>
-        {!isPlaying && (
+        <div className={styles.headerActions}>
+          {themeMusicButton}
           <Button
             variant="primary"
             size="lg"
@@ -471,7 +524,7 @@ export default function FamilyFeudManager({ block }: FamilyFeudManagerProps) {
             <Play size={20} />
             {startingPlaying ? 'Starting...' : 'Start Playing'}
           </Button>
-        )}
+        </div>
       </div>
       <div className={styles.aiSettings}>
         <button

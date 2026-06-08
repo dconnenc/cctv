@@ -1,0 +1,170 @@
+{
+  "id": "feud18-wont-do",
+  "season": "S18",
+  "question": "Name something you still won't do in front of your husband.",
+  "difficulty_tags": ["paraphrase", "near_miss", "off_topic", "singleton"],
+  "board": [
+    {
+      "label": "Use the Bathroom",
+      "points": 37
+    },
+    {
+      "label": "Fart",
+      "points": 15
+    },
+    {
+      "label": "Get Undressed",
+      "points": 14
+    },
+    {
+      "label": "Put On Makeup",
+      "points": 13
+    }
+  ],
+  "raw_responses": [
+    {
+      "id": "feud18-wont-do-4",
+      "text": "poop"
+    },
+    {
+      "id": "feud18-wont-do-17",
+      "text": "put on makeup"
+    },
+    {
+      "id": "feud18-wont-do-22",
+      "text": "pick my nose"
+    },
+    {
+      "id": "feud18-wont-do-10",
+      "text": "rip one"
+    },
+    {
+      "id": "feud18-wont-do-3",
+      "text": "use the toilet"
+    },
+    {
+      "id": "feud18-wont-do-18",
+      "text": "do my makeup"
+    },
+    {
+      "id": "feud18-wont-do-24",
+      "text": "tmi lol"
+    },
+    {
+      "id": "feud18-wont-do-0",
+      "text": "poop"
+    },
+    {
+      "id": "feud18-wont-do-2",
+      "text": "go number two"
+    },
+    {
+      "id": "feud18-wont-do-13",
+      "text": "change clothes"
+    },
+    {
+      "id": "feud18-wont-do-15",
+      "text": "take all my clothes off"
+    },
+    {
+      "id": "feud18-wont-do-14",
+      "text": "get fully undressed"
+    },
+    {
+      "id": "feud18-wont-do-6",
+      "text": "go number two"
+    },
+    {
+      "id": "feud18-wont-do-9",
+      "text": "pass gas"
+    },
+    {
+      "id": "feud18-wont-do-11",
+      "text": "let one go"
+    },
+    {
+      "id": "feud18-wont-do-1",
+      "text": "take a dump"
+    },
+    {
+      "id": "feud18-wont-do-12",
+      "text": "fart"
+    },
+    {
+      "id": "feud18-wont-do-19",
+      "text": "apply my makeup"
+    },
+    {
+      "id": "feud18-wont-do-23",
+      "text": "my husband is gross too"
+    },
+    {
+      "id": "feud18-wont-do-25",
+      "text": "none of your business"
+    },
+    {
+      "id": "feud18-wont-do-20",
+      "text": "put on makeup"
+    },
+    {
+      "id": "feud18-wont-do-21",
+      "text": "cry"
+    },
+    {
+      "id": "feud18-wont-do-7",
+      "text": "use the toilet"
+    },
+    {
+      "id": "feud18-wont-do-5",
+      "text": "take a dump"
+    },
+    {
+      "id": "feud18-wont-do-16",
+      "text": "change clothes"
+    },
+    {
+      "id": "feud18-wont-do-8",
+      "text": "fart"
+    }
+  ],
+  "gold": {
+    "groups": {
+      "Use the Bathroom": [
+        "feud18-wont-do-4",
+        "feud18-wont-do-3",
+        "feud18-wont-do-0",
+        "feud18-wont-do-2",
+        "feud18-wont-do-6",
+        "feud18-wont-do-1",
+        "feud18-wont-do-7",
+        "feud18-wont-do-5"
+      ],
+      "Put On Makeup": [
+        "feud18-wont-do-17",
+        "feud18-wont-do-18",
+        "feud18-wont-do-19",
+        "feud18-wont-do-20"
+      ],
+      "Fart": [
+        "feud18-wont-do-10",
+        "feud18-wont-do-9",
+        "feud18-wont-do-11",
+        "feud18-wont-do-12",
+        "feud18-wont-do-8"
+      ],
+      "Get Undressed": [
+        "feud18-wont-do-13",
+        "feud18-wont-do-15",
+        "feud18-wont-do-14",
+        "feud18-wont-do-16"
+      ]
+    },
+    "unassigned": [
+      "feud18-wont-do-22",
+      "feud18-wont-do-24",
+      "feud18-wont-do-23",
+      "feud18-wont-do-25",
+      "feud18-wont-do-21"
+    ]
+  }
+}

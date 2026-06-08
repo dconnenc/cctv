@@ -57,11 +57,11 @@ RSpec.describe "Announcement Block", type: :system do
     expect(page).to have_text("Welcome Bob to the show!")
 
     within("[aria-label='Preview mode']") { click_button "Monitor" }
-    expect(page).to have_text("Welcome {{ participant_name }} to the show!")
+    expect(page).to have_text("Welcome friend to the show!")
 
     using_session(:monitor) do
       visit "/experiences/test-exp/monitor"
-      expect(page).to have_text("Welcome {{ participant_name }} to the show!")
+      expect(page).to have_text("Welcome friend to the show!")
     end
   end
 

@@ -1,17 +1,33 @@
-import { useMemo, useState } from 'react';
+import { Suspense, lazy, useMemo, useState } from 'react';
 
 import { Link } from 'react-router-dom';
 
 import { CalendarDays, ChevronLeft, ChevronRight, MapPin } from 'lucide-react';
 
 import { Button } from '@cctv/core';
-import { useEvents } from '@cctv/hooks';
+import { useEvents, useMediaQuery } from '@cctv/hooks';
 import { CalendarEvent } from '@cctv/types';
 import { formatEventTime, groupEventsByDate } from '@cctv/utils/calendar';
 
 import styles from './Calendar.module.scss';
 
+const BrowseEventsDesktop = lazy(() => import('./BrowseEventsDesktop'));
+
 export default function Calendar() {
+  const isDesktop = useMediaQuery('(min-width: 1024px)');
+
+  if (isDesktop) {
+    return (
+      <Suspense fallback={null}>
+        <BrowseEventsDesktop />
+      </Suspense>
+    );
+  }
+
+  return <CalendarMobile />;
+}
+
+function CalendarMobile() {
   const now = new Date();
   const [month, setMonth] = useState(now.getMonth() + 1);
   const [year, setYear] = useState(now.getFullYear());

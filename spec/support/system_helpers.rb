@@ -79,10 +79,11 @@ module SystemHelpers
   end
 
   # Registers a participant via the /join flow.
-  # Leaves the page on the experience page with experience_name visible.
-  # Depending on experience state, the next page may be the avatar page
-  # (lobby not started) or the experience waiting screen (experience live).
-  def register_participant(code:, name:, email:, experience_name:)
+  # By default it also clears the avatar gate (draws + submits an avatar) so the
+  # caller lands in the experience — every participant must draw an avatar before
+  # doing anything, regardless of experience status. Pass draw_avatar: false when
+  # the test needs to assert on the avatar gate itself.
+  def register_participant(code:, name:, email:, experience_name:, draw_avatar: true)
     visit "/join?code=#{code}"
 
     expect(page).to have_text("Enter the secret code")
@@ -95,6 +96,19 @@ module SystemHelpers
     click_button "Register"
 
     expect(page).to have_text(experience_name)
+
+    clear_avatar_gate if draw_avatar
+  end
+
+  # A participant without an avatar is gated on the avatar editor before they can
+  # do anything. Draw + submit one so they land back in the experience.
+  def clear_avatar_gate
+    return unless page.has_text?("Draw your avatar to continue", wait: 10)
+
+    draw_on_canvas
+    expect(page).to have_button("Submit", disabled: false)
+    click_button "Submit"
+    expect(page).to have_current_path(%r{/experiences/[^/]+\z}, wait: 10)
   end
 
   # Draws a stroke on the avatar canvas using low-level mouse events.

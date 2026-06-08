@@ -24,17 +24,25 @@ const TicketRip = lazy(() => import('./TicketRip'));
 
 const SESSION_KEY = 'cctv_last_join_code';
 
-function extractCodeFromQr(text: string): string {
-  try {
-    const url = new URL(text);
-    const codeParam = url.searchParams.get('code');
-    if (codeParam) return codeParam.toUpperCase();
-    const pathMatch = url.pathname.match(/\/experiences\/([^/]+)/);
-    if (pathMatch) return pathMatch[1].toUpperCase();
-  } catch {
-    // not a URL
+export function extractCodeFromQr(text: string): string {
+  const trimmed = text.trim();
+
+  // Parse the raw text directly rather than via `new URL` so schemeless
+  // QR payloads (e.g. "chicagocomedy.tv/experiences/abc") still resolve —
+  // `new URL` throws on those and would dump the whole string into the input.
+  const codeParam = trimmed.match(/[?&]code=([^&#]+)/);
+  if (codeParam) {
+    try {
+      return decodeURIComponent(codeParam[1]).toUpperCase();
+    } catch {
+      return codeParam[1].toUpperCase();
+    }
   }
-  return text.trim().toUpperCase();
+
+  const pathMatch = trimmed.match(/\/(?:code|experiences)\/([^/?#]+)/);
+  if (pathMatch) return pathMatch[1].toUpperCase();
+
+  return trimmed.toUpperCase();
 }
 
 interface RegistrationInfoResponse {
