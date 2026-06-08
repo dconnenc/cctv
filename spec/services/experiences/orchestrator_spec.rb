@@ -465,7 +465,7 @@ RSpec.describe Experiences::Orchestrator do
       described_class.new(actor: user, experience: experience).close_block!(block: block)
     end
 
-    context "when closing a family feud block" do
+    context "when closing a family feud parent block" do
       let!(:block) do
         create(
           :experience_block,
@@ -476,13 +476,32 @@ RSpec.describe Experiences::Orchestrator do
         )
       end
 
-      it "closes only the parent; child question blocks retain their status" do
-        children_status_before = block.child_blocks.map(&:status)
+      it "closes the parent and all child question blocks atomically" do
         subject
 
         expect(block.reload.status).to eq("closed")
         expect(block.child_blocks.count).to eq(2)
-        expect(block.child_blocks.map(&:status)).to eq(children_status_before)
+        expect(block.child_blocks.map(&:status)).to all(eq("closed"))
+      end
+    end
+
+    context "when closing a family feud child block" do
+      let!(:block) do
+        create(
+          :experience_block,
+          :family_feud,
+          experience: experience,
+          status: :open,
+          question_count: 2
+        )
+      end
+
+      it "closes the parent and all siblings atomically" do
+        child = block.child_blocks.first
+        described_class.new(actor: user, experience: experience).close_block!(block: child)
+
+        expect(block.reload.status).to eq("closed")
+        expect(block.child_blocks.map(&:status)).to all(eq("closed"))
       end
     end
   end
@@ -494,7 +513,7 @@ RSpec.describe Experiences::Orchestrator do
       described_class.new(actor: user, experience: experience).hide_block!(block: block)
     end
 
-    context "when hiding a family feud block" do
+    context "when hiding a family feud parent block" do
       let!(:block) do
         create(
           :experience_block,
@@ -505,13 +524,32 @@ RSpec.describe Experiences::Orchestrator do
         )
       end
 
-      it "hides only the parent; child question blocks retain their status" do
-        children_status_before = block.child_blocks.map(&:status)
+      it "hides the parent and all child question blocks atomically" do
         subject
 
         expect(block.reload.status).to eq("hidden")
         expect(block.child_blocks.count).to eq(2)
-        expect(block.child_blocks.map(&:status)).to eq(children_status_before)
+        expect(block.child_blocks.map(&:status)).to all(eq("hidden"))
+      end
+    end
+
+    context "when hiding a family feud child block" do
+      let!(:block) do
+        create(
+          :experience_block,
+          :family_feud,
+          experience: experience,
+          status: :open,
+          question_count: 2
+        )
+      end
+
+      it "hides the parent and all siblings atomically" do
+        child = block.child_blocks.first
+        described_class.new(actor: user, experience: experience).hide_block!(block: child)
+
+        expect(block.reload.status).to eq("hidden")
+        expect(block.child_blocks.map(&:status)).to all(eq("hidden"))
       end
     end
   end

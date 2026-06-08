@@ -111,7 +111,20 @@ module Experiences
     end
 
     def close_block!(block:)
-      block.close!
+      if block.kind == ExperienceBlock::FAMILY_FEUD
+        transaction do
+          block.close!
+          block.child_blocks.update_all(status: :closed)
+        end
+      elsif block.parent_block_id.present? && block.parent_block&.kind == ExperienceBlock::FAMILY_FEUD
+        parent = block.parent_block
+        transaction do
+          parent.close!
+          parent.child_blocks.update_all(status: :closed)
+        end
+      else
+        block.close!
+      end
       block
     end
 
@@ -134,7 +147,20 @@ module Experiences
     end
 
     def hide_block!(block:)
-      block.hide!
+      if block.kind == ExperienceBlock::FAMILY_FEUD
+        transaction do
+          block.hide!
+          block.child_blocks.update_all(status: :hidden)
+        end
+      elsif block.parent_block_id.present? && block.parent_block&.kind == ExperienceBlock::FAMILY_FEUD
+        parent = block.parent_block
+        transaction do
+          parent.hide!
+          parent.child_blocks.update_all(status: :hidden)
+        end
+      else
+        block.hide!
+      end
       block
     end
 
