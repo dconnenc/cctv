@@ -230,10 +230,12 @@ export function ChicagoMap({
                         </li>
                       ))}
                       {shows.length > 3 && (
-                        <Link to="/events" className={styles.popMore}>
-                          See all {shows.length}
-                          <ArrowRight size={12} />
-                        </Link>
+                        <li>
+                          <Link to="/events" className={styles.popMore}>
+                            See all {shows.length}
+                            <ArrowRight size={12} />
+                          </Link>
+                        </li>
                       )}
                     </ul>
                   )}

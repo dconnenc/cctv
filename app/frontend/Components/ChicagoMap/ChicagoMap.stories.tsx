@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
+import { ThemeProvider } from '@cctv/contexts/ThemeContext';
 import { DiscoverEvent, DiscoverTheater } from '@cctv/types';
 
 import { ChicagoMap } from './ChicagoMap';
@@ -74,6 +75,11 @@ const meta: Meta<typeof ChicagoMap> = {
   title: 'Discover/ChicagoMap',
   component: ChicagoMap,
   decorators: [
+    (Story) => (
+      <ThemeProvider>
+        <Story />
+      </ThemeProvider>
+    ),
     // Leaflet needs an explicitly sized container to mount into. Tiles require
     // network access, so the basemap is blank offline — markers still render.
     (Story) => (

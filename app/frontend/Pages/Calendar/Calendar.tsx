@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { Suspense, lazy, useMemo, useState } from 'react';
 
 import { Link } from 'react-router-dom';
 
@@ -9,14 +9,20 @@ import { useEvents, useMediaQuery } from '@cctv/hooks';
 import { CalendarEvent } from '@cctv/types';
 import { formatEventTime, groupEventsByDate } from '@cctv/utils/calendar';
 
-import BrowseEventsDesktop from './BrowseEventsDesktop';
-
 import styles from './Calendar.module.scss';
+
+const BrowseEventsDesktop = lazy(() => import('./BrowseEventsDesktop'));
 
 export default function Calendar() {
   const isDesktop = useMediaQuery('(min-width: 1024px)');
 
-  if (isDesktop) return <BrowseEventsDesktop />;
+  if (isDesktop) {
+    return (
+      <Suspense fallback={null}>
+        <BrowseEventsDesktop />
+      </Suspense>
+    );
+  }
 
   return <CalendarMobile />;
 }

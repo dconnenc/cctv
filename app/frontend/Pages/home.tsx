@@ -1,16 +1,24 @@
+import { Suspense, lazy } from 'react';
+
 import { Link } from 'react-router-dom';
 
 import { Button } from '@cctv/core/Button/Button';
 import { useMediaQuery } from '@cctv/hooks';
 
-import HomeDesktop from './HomeDesktop/HomeDesktop';
-
 import styles from './home.module.scss';
+
+const HomeDesktop = lazy(() => import('./HomeDesktop/HomeDesktop'));
 
 export default function Home() {
   const isDesktop = useMediaQuery('(min-width: 1024px)');
 
-  if (isDesktop) return <HomeDesktop />;
+  if (isDesktop) {
+    return (
+      <Suspense fallback={null}>
+        <HomeDesktop />
+      </Suspense>
+    );
+  }
 
   return <HomeMobile />;
 }
