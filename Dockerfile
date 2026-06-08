@@ -20,7 +20,10 @@ RUN apt-get update -qq && \
 ENV RAILS_ENV="production" \
     BUNDLE_DEPLOYMENT="1" \
     BUNDLE_PATH="/usr/local/bundle" \
-    BUNDLE_WITHOUT="development"
+    BUNDLE_WITHOUT="development" \
+    CCTV_AWS_S3_BUCKET="build" \
+    CCTV_AWS_ACCESS_KEY_ID="build" \
+    CCTV_AWS_SECRET_ACCESS_KEY="build"
 
 # Throw-away build stage to reduce size of final image
 FROM base AS build
