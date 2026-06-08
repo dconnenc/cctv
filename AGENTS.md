@@ -25,10 +25,9 @@ The role refers to the participant role (from ExperienceParticipant), not the
 user record's system role. These rules are reflected in the visibility service
 and policy files.
 
-**Important:** The frontend should NEVER filter blocks. The backend sends the
-correct blocks based on visibility rules. Participants receive exactly ONE block
-(or zero) - the block they should currently see. Hosts/moderators receive all
-parent blocks.
+**Important:** See `.claude/skills/experience-blocks/SKILL.md` for block
+architecture, data storage patterns, the client submission state model, and the
+checklist for adding or auditing blocks.
 
 ## Auth
 
@@ -73,16 +72,17 @@ updates flow through websockets - there is NO manual refetching.
 
 ### Three Stream Types
 
-**1. Participant Streams (Individual)**
+**1. Profile Streams (Shared per visibility profile)**
 
-- Stream key: `experience_{experience_id}_participant_{participant_id}`
-- One per participant
-- Receives filtered view based on visibility rules
-- Backend sends exactly the block(s) that participant should see
+- Stream key: `experience_{experience_id}_profile_{fingerprint}`
+- One per unique visibility profile (role + segments + targeted block IDs hashed)
+- Participants with identical visibility profiles share a stream
+- Payload contains no per-user data — all per-participant state (submissions, etc.) lives on the client, hydrated via `submission_state` message on subscribe
+- On profile change (e.g. segment assignment), the server sends a `resubscribe_required` message and the client re-subscribes to the new profile stream
 
 **2. Monitor Stream (Shared)**
 
-- Stream key: `experience_{experience_id}_Monitor`
+- Stream key: `experience_{experience_id}_monitor`
 - Shared by all Monitor viewers
 - Receives public/projected view
 - Shows all parent blocks (for projection/display)
@@ -100,28 +100,26 @@ updates flow through websockets - there is NO manual refetching.
 Creates 3 websocket connections:
 
 1. Admin websocket → subscribes to admin stream → updates main experience state
-2. Monitor websocket → subscribes to Monitor stream → updates Monitor preview panel
-3. Impersonation websocket → subscribes to participant stream → updates selected participant preview
+2. Monitor websocket → subscribes to monitor stream → updates Monitor preview panel
+3. Impersonation websocket → subscribes to the impersonated participant's profile stream → updates selected participant preview
 
 **Participant Page:**
 Creates 1 websocket connection:
 
-- Participant websocket → subscribes to their participant stream → updates their view
+- Participant websocket → subscribes to their profile stream → updates their view
+- On subscribe, receives a `submission_state` message with all prior submissions keyed by block ID
 
 ### Broadcast Flow
 
-When any action occurs (start/pause/resume, block status change, poll response, etc.):
+When any action occurs (start/pause/resume, block status change, etc.):
 
 1. API endpoint processes the action
 2. `Experiences::Broadcaster.broadcast_experience_update` is called
-3. Three broadcasts are sent:
-   - To all participant streams (each gets their filtered payload)
-   - To Monitor stream (public view with all blocks)
-   - To admin stream (full view with all blocks)
-4. Frontend websockets receive updates
-5. UI updates automatically
+3. Participants are grouped by visibility fingerprint; one broadcast is sent per unique profile
+4. Monitor stream and admin stream each receive one broadcast
+5. Frontend websockets receive updates and UI updates automatically
 
-**No manual refetching occurs anywhere.** Everything is real-time via websockets.
+**Submission state is an exception:** when a participant submits a response, the POST endpoint returns the submission data directly in the response body so the client updates immediately. The broadcast that follows carries no per-user submission data — participants derive their submission UI state entirely from client-held `submissionState`.
 
 ### Backend Stream Routing
 
@@ -129,9 +127,9 @@ When any action occurs (start/pause/resume, block status change, poll response, 
 
 - System admin (admin JWT) → admin stream
 - Experience host/moderator (participant JWT, role=host/moderator) → admin stream
-- Regular participant (participant JWT, role=player/audience) → participant stream
-- Monitor view parameter (`view_type: 'monitor'`) → Monitor stream
-- Impersonation parameter (`as_participant_id: X`) → that participant's stream
+- Regular participant (participant JWT, role=player/audience) → profile stream (`experience_{id}_profile_{fingerprint}`)
+- Monitor view parameter (`view_type: 'monitor'`) → monitor stream
+- Impersonation parameter (`as_participant_id: X`) → that participant's profile stream
 
 ## Frontend Context Management
 
@@ -151,54 +149,7 @@ The context automatically:
 
 ## Sound effects
 
-Blocks can attach sound effects that play on the Monitor view in response to
-block state transitions.
-
-### Data model
-
-- `experience_blocks.sounds` is a jsonb column **sibling to `payload`** — not
-  nested inside it. Use this column for any uniform-shape per-block metadata
-  where every kind shares the same structure.
-- Shape: `Record<TriggerName, SoundKey>`. Trigger names are kind-specific
-  conventions (e.g. `on_show_x` for FamilyFeud). Sound keys are members of the
-  `SoundKey` TS union.
-- Server-side defaults live in `Experiences::Orchestrator#default_sounds_for`
-  and are applied at block creation in `add_block_with_dependencies!`.
-- `Experiences::Visibility#serialize_block` emits `sounds` on every block.
-
-### Frontend (`@cctv/sounds`)
-
-- `SoundKey` — string union of valid sound keys
-- `play(key)` — fire-and-forget playback; the single entry point to audio
-- `useMonitorSound(key, when, viewContext)` — fires `play(key)` on the rising
-  edge of `when`; no-op unless `viewContext === 'monitor'`. Pass
-  `block.sounds?.<trigger_name>` as the key
-
-MP3 assets live alongside the module in `app/frontend/sounds/` and are imported
-directly (bundled, fingerprinted by Vite).
-
-### Adding a sound
-
-1. Drop the mp3 in `app/frontend/sounds/`.
-2. Add it to `SoundKey` and `SOUND_URLS` in `registry.ts`.
-3. To default it on a block kind, extend `default_sounds_for`.
-4. In the block's component, call `useMonitorSound(block.sounds?.<trigger>,
-<state>, viewContext)`.
-
-### Wiring a new block kind
-
-Sound-using block components need `sounds` and `viewContext` props. Most kinds
-in `ExperienceBlockContainer` receive only `{...block.payload}` — explicitly
-pass `sounds={block.sounds} viewContext={viewContext}` for any kind that
-consumes audio.
-
-### Constraints
-
-- Monitor only. Participant and manage views never play audio.
-- Bundled mp3s only — no host-uploaded sounds yet.
-- Never construct `new Audio()` in components; always go through `play(key)`.
-  That entry point is the stable seam for future features (e.g. participant
-  soundboard).
+Covered in `.claude/skills/experience-blocks/SKILL.md` (Sounds section).
 
 ## Code style
 
@@ -221,7 +172,7 @@ outside of the test suite
 - Import from index files, not full paths
 - Don't cast `as any`. Use the type system correctly
 - Trust backend visibility logic - never filter blocks on frontend
-- All state updates come from websockets, not API calls
+- Experience state updates come from websockets. Submission state updates immediately from POST response body, then is durably held in client `submissionState` context (not derived from broadcast payloads)
 - New components and visible UI states get a Storybook story alongside the
   component (`<Component>.stories.tsx`). Cover the meaningful variants — empty
   state, loading, error, and any state-driven effects (e.g. monitor-only sound
@@ -233,3 +184,8 @@ outside of the test suite
 - Authorization: Check system admin OR experience host/moderator
 - Always broadcast after state changes - never return just JSON
 - Use `Experiences::Broadcaster.broadcast_experience_update` after any experience modification
+
+### System specs
+
+System specs are required for new features and block interactions. See
+`.claude/skills/system-specs/SKILL.md` for assertion patterns.
