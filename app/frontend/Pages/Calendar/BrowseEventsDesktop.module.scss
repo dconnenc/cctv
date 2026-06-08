@@ -1,0 +1,102 @@
+.stage {
+  position: relative;
+  width: 100%;
+  height: calc(100dvh - var(--nav-h));
+  overflow: hidden;
+}
+
+// Full-bleed so Lake Michigan reaches the right edge. z-index here contains
+// Leaflet's internal panes within this element's stacking context.
+.mapBg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+
+.intro {
+  position: absolute;
+  top: 12%;
+  left: clamp(2rem, 4vw, 5rem);
+  z-index: 2;
+  max-width: 24rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.title {
+  font-size: clamp(4rem, 7vw, 7rem);
+  line-height: 0.9;
+}
+
+.subtitle {
+  font-family: var(--font-body);
+  font-size: 1.05rem;
+  color: hsl(var(--muted-foreground));
+}
+
+.rail {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 2;
+  width: clamp(23rem, 34vw, 33rem);
+  display: flex;
+  flex-direction: column;
+  padding: clamp(1.5rem, 3vw, 3rem) clamp(1.5rem, 3vw, 3rem) 1.5rem;
+  overflow: hidden;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  overflow-y: auto;
+  padding-right: 0.5rem;
+  scrollbar-width: thin;
+}
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1.5rem;
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
+  border-radius: var(--radius);
+
+  p {
+    color: hsl(var(--muted-foreground));
+    font-size: 1rem;
+  }
+}
+
+.skeleton {
+  border-radius: var(--radius);
+  background: hsl(var(--muted) / 0.6);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .skeleton {
+    animation: skeleton-pulse 1.4s ease-in-out infinite;
+  }
+}
+
+.skeletonFeatured {
+  height: 12rem;
+}
+
+.skeletonSmall {
+  height: 5rem;
+}
+
+@keyframes skeleton-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}

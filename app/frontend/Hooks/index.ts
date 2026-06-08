@@ -36,6 +36,8 @@ export {
 } from './useSegments';
 export { useEvents } from './useEvents';
 export { useEvent } from './useEvent';
+export { useDiscover } from './useDiscover';
+export { useMediaQuery } from './useMediaQuery';
 export { usePerformers } from './usePerformers';
 export { usePerformer } from './usePerformer';
 export { useFollowPerformer } from './useFollowPerformer';

@@ -25,6 +25,8 @@ Rails.application.routes.draw do
   get "manifest" => "rails/pwa#manifest", as: :pwa_manifest
 
   namespace :api do
+    get "discover", to: "discover#index"
+
     resources :users, only: [] do
       get "me", on: :collection
       post "sign_out_user", on: :collection
