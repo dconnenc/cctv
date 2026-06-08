@@ -1,0 +1,38 @@
+{
+  "id": "anchor-pretend-to-understand",
+  "season": "anchor",
+  "question": "What's something people pretend to understand but don't?",
+  "difficulty_tags": ["paraphrase", "near_miss", "off_topic", "singleton"],
+  "board": [
+    { "label": "Taxes", "points": 3 },
+    { "label": "Cryptocurrency", "points": 3 },
+    { "label": "Wine", "points": 3 },
+    { "label": "The Stock Market", "points": 3 }
+  ],
+  "raw_responses": [
+    { "id": "b10", "text": "the stock market" },
+    { "id": "b1", "text": "how taxes work" },
+    { "id": "b7", "text": "wine tasting" },
+    { "id": "b4", "text": "crypto" },
+    { "id": "b13", "text": "modern art" },
+    { "id": "b11", "text": "investing in stocks" },
+    { "id": "b2", "text": "doing their taxes" },
+    { "id": "b8", "text": "fancy wine" },
+    { "id": "b5", "text": "bitcoin and crypto" },
+    { "id": "b14", "text": "lol everything" },
+    { "id": "b12", "text": "how stocks work" },
+    { "id": "b3", "text": "tax forms" },
+    { "id": "b9", "text": "wine snobbery" },
+    { "id": "b6", "text": "how cryptocurrency works" },
+    { "id": "b15", "text": "the meaning of life haha" }
+  ],
+  "gold": {
+    "groups": {
+      "Taxes": ["b1", "b2", "b3"],
+      "Cryptocurrency": ["b4", "b5", "b6"],
+      "Wine": ["b7", "b8", "b9"],
+      "The Stock Market": ["b10", "b11", "b12"]
+    },
+    "unassigned": ["b13", "b14", "b15"]
+  }
+}

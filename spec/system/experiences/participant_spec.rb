@@ -27,15 +27,17 @@ RSpec.describe "Participating in an Experience", type: :system do
       sign_in(admin)
     end
 
-    it "pre-populates data from previous experiences" do
+    it "pre-populates the name but requires a fresh avatar in each experience" do
       using_session(:participant) do
         register_participant(
           code: experience.code_slug,
           name: "Alice",
           email: "alice@example.com",
-          experience_name: experience.name
+          experience_name: experience.name,
+          draw_avatar: false
         )
 
+        # Draw an avatar in the first experience.
         draw_and_submit_avatar
 
         # Visit the join page for a new experience, while still having an
@@ -52,10 +54,13 @@ RSpec.describe "Participating in an Experience", type: :system do
 
         click_button "Register"
 
-        visit "/experiences/#{experience2.code_slug}/avatar"
-
-        # Canvas is pre-populated with the previous avatar, so Submit is enabled
-        expect(page).to have_button("Save")
+        # Regression: the avatar does NOT carry over between experiences. The
+        # participant is gated and must draw a fresh avatar before doing
+        # anything — the canvas starts empty so Submit is disabled.
+        expect(page).to have_text("Draw your avatar to continue", wait: 10)
+        expect(page).to have_current_path("/experiences/#{experience2.code_slug}/avatar")
+        expect(page).to have_button("Submit", disabled: true)
+        expect(page).to have_no_button("Save")
       end
     end
   end

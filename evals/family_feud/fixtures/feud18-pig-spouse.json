@@ -1,0 +1,142 @@
+{
+  "id": "feud18-pig-spouse",
+  "season": "S18",
+  "question": "Name something your spouse does like a pig.",
+  "difficulty_tags": ["paraphrase", "near_miss", "off_topic", "singleton"],
+  "board": [
+    {
+      "label": "Snores",
+      "points": 39
+    },
+    {
+      "label": "Eats Messily",
+      "points": 27
+    },
+    {
+      "label": "Farts",
+      "points": 13
+    },
+    {
+      "label": "Leaves a Mess",
+      "points": 11
+    }
+  ],
+  "raw_responses": [
+    {
+      "id": "feud18-pig-spouse-16",
+      "text": "leaves stuff lying around"
+    },
+    {
+      "id": "feud18-pig-spouse-20",
+      "text": "bacon is so tasty"
+    },
+    {
+      "id": "feud18-pig-spouse-15",
+      "text": "never cleans up after himself"
+    },
+    {
+      "id": "feud18-pig-spouse-10",
+      "text": "eats like a slob"
+    },
+    {
+      "id": "feud18-pig-spouse-5",
+      "text": "saws logs all night"
+    },
+    {
+      "id": "feud18-pig-spouse-21",
+      "text": "oink oink"
+    },
+    {
+      "id": "feud18-pig-spouse-13",
+      "text": "passes gas all day"
+    },
+    {
+      "id": "feud18-pig-spouse-4",
+      "text": "snores loudly"
+    },
+    {
+      "id": "feud18-pig-spouse-12",
+      "text": "rips loud farts"
+    },
+    {
+      "id": "feud18-pig-spouse-8",
+      "text": "chews with his mouth open"
+    },
+    {
+      "id": "feud18-pig-spouse-6",
+      "text": "eats like a slob"
+    },
+    {
+      "id": "feud18-pig-spouse-19",
+      "text": "i love my husband lol"
+    },
+    {
+      "id": "feud18-pig-spouse-11",
+      "text": "farts constantly"
+    },
+    {
+      "id": "feud18-pig-spouse-14",
+      "text": "leaves clothes everywhere"
+    },
+    {
+      "id": "feud18-pig-spouse-17",
+      "text": "wallows in self pity"
+    },
+    {
+      "id": "feud18-pig-spouse-2",
+      "text": "snoring"
+    },
+    {
+      "id": "feud18-pig-spouse-7",
+      "text": "messy eater"
+    },
+    {
+      "id": "feud18-pig-spouse-18",
+      "text": "rolls around in the mud"
+    },
+    {
+      "id": "feud18-pig-spouse-3",
+      "text": "he snores so loud"
+    },
+    {
+      "id": "feud18-pig-spouse-1",
+      "text": "saws logs all night"
+    },
+    {
+      "id": "feud18-pig-spouse-0",
+      "text": "snores loudly"
+    },
+    {
+      "id": "feud18-pig-spouse-9",
+      "text": "gets food everywhere"
+    }
+  ],
+  "gold": {
+    "groups": {
+      "Leaves a Mess": ["feud18-pig-spouse-16", "feud18-pig-spouse-15", "feud18-pig-spouse-14"],
+      "Eats Messily": [
+        "feud18-pig-spouse-10",
+        "feud18-pig-spouse-8",
+        "feud18-pig-spouse-6",
+        "feud18-pig-spouse-7",
+        "feud18-pig-spouse-9"
+      ],
+      "Snores": [
+        "feud18-pig-spouse-5",
+        "feud18-pig-spouse-4",
+        "feud18-pig-spouse-2",
+        "feud18-pig-spouse-3",
+        "feud18-pig-spouse-1",
+        "feud18-pig-spouse-0"
+      ],
+      "Farts": ["feud18-pig-spouse-13", "feud18-pig-spouse-12", "feud18-pig-spouse-11"]
+    },
+    "unassigned": [
+      "feud18-pig-spouse-20",
+      "feud18-pig-spouse-21",
+      "feud18-pig-spouse-19",
+      "feud18-pig-spouse-17",
+      "feud18-pig-spouse-18"
+    ]
+  }
+}

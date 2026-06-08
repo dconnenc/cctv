@@ -1,0 +1,27 @@
+{
+  "id": "feud20-fatman",
+  "season": "S20",
+  "question": "If there were a superhero called Fatman, tell me something he probably couldn't do like Superman.",
+  "target_n": 24,
+  "difficulty_tags": ["paraphrase", "near_miss", "off_topic", "singleton"],
+  "groups": [
+    {
+      "label": "Fly",
+      "weight": 79,
+      "variants": ["fly", "fly through the air", "take off and fly", "soar in the sky"]
+    },
+    {
+      "label": "Leap Tall Buildings",
+      "weight": 5,
+      "variants": ["leap tall buildings", "jump over a building", "leap a building in one bound"]
+    },
+    { "label": "Run Fast", "weight": 4, "variants": ["run fast", "run quickly", "sprint", "run"] },
+    {
+      "label": "Fit His Suit",
+      "weight": 4,
+      "variants": ["fit in the tight suit", "squeeze into spandex", "wear the costume"]
+    }
+  ],
+  "singletons": ["see his own feet", "fit through a door"],
+  "junk": ["fatman lol", "superman is better", "hahaha"]
+}

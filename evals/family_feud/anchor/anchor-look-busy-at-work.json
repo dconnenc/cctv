@@ -1,0 +1,39 @@
+{
+  "id": "anchor-look-busy-at-work",
+  "season": "anchor",
+  "question": "Name something you do when you're trying to look busy at work.",
+  "difficulty_tags": ["paraphrase", "near_miss", "off_topic", "singleton"],
+  "board": [
+    { "label": "Type Randomly", "points": 4 },
+    { "label": "Walk Around with Papers", "points": 3 },
+    { "label": "Stare at the Screen", "points": 3 },
+    { "label": "Fake Phone Calls", "points": 3 }
+  ],
+  "raw_responses": [
+    { "id": "c8", "text": "stare at my monitor" },
+    { "id": "c1", "text": "pretend to type" },
+    { "id": "c11", "text": "pretend to be on a call" },
+    { "id": "c5", "text": "carry papers around" },
+    { "id": "c14", "text": "drink coffee slowly" },
+    { "id": "c2", "text": "bang on the keyboard" },
+    { "id": "c9", "text": "look serious at the screen" },
+    { "id": "c12", "text": "fake a phone call" },
+    { "id": "c6", "text": "walk around holding a folder" },
+    { "id": "c15", "text": "idk lol" },
+    { "id": "c3", "text": "type nonsense" },
+    { "id": "c10", "text": "frown at my computer" },
+    { "id": "c13", "text": "talk into the phone" },
+    { "id": "c7", "text": "pace with documents" },
+    { "id": "c4", "text": "type fast on the keyboard" },
+    { "id": "c16", "text": "i actually do work haha" }
+  ],
+  "gold": {
+    "groups": {
+      "Type Randomly": ["c1", "c2", "c3", "c4"],
+      "Walk Around with Papers": ["c5", "c6", "c7"],
+      "Stare at the Screen": ["c8", "c9", "c10"],
+      "Fake Phone Calls": ["c11", "c12", "c13"]
+    },
+    "unassigned": ["c14", "c15", "c16"]
+  }
+}

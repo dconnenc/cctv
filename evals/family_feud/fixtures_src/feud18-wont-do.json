@@ -1,0 +1,27 @@
+{
+  "id": "feud18-wont-do",
+  "season": "S18",
+  "question": "Name something you still won't do in front of your husband.",
+  "target_n": 26,
+  "difficulty_tags": ["paraphrase", "near_miss", "off_topic", "singleton"],
+  "groups": [
+    {
+      "label": "Use the Bathroom",
+      "weight": 37,
+      "variants": ["poop", "take a dump", "go number two", "use the toilet"]
+    },
+    { "label": "Fart", "weight": 15, "variants": ["fart", "pass gas", "rip one", "let one go"] },
+    {
+      "label": "Get Undressed",
+      "weight": 14,
+      "variants": ["change clothes", "get fully undressed", "take all my clothes off"]
+    },
+    {
+      "label": "Put On Makeup",
+      "weight": 13,
+      "variants": ["put on makeup", "do my makeup", "apply my makeup"]
+    }
+  ],
+  "singletons": ["cry", "pick my nose"],
+  "junk": ["my husband is gross too", "tmi lol", "none of your business"]
+}

@@ -1,0 +1,41 @@
+{
+  "id": "feud18-pig-spouse",
+  "season": "S18",
+  "question": "Name something your spouse does like a pig.",
+  "target_n": 22,
+  "difficulty_tags": ["paraphrase", "near_miss", "off_topic", "singleton"],
+  "groups": [
+    {
+      "label": "Snores",
+      "weight": 39,
+      "variants": ["snores loudly", "saws logs all night", "snoring", "he snores so loud"]
+    },
+    {
+      "label": "Eats Messily",
+      "weight": 27,
+      "variants": [
+        "eats like a slob",
+        "messy eater",
+        "chews with his mouth open",
+        "gets food everywhere"
+      ]
+    },
+    {
+      "label": "Farts",
+      "weight": 13,
+      "variants": ["farts constantly", "rips loud farts", "passes gas all day", "tooting nonstop"]
+    },
+    {
+      "label": "Leaves a Mess",
+      "weight": 11,
+      "variants": [
+        "leaves clothes everywhere",
+        "never cleans up after himself",
+        "leaves stuff lying around",
+        "messy and disorganized"
+      ]
+    }
+  ],
+  "singletons": ["wallows in self pity", "rolls around in the mud"],
+  "junk": ["i love my husband lol", "bacon is so tasty", "oink oink"]
+}

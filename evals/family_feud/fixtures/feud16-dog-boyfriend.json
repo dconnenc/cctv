@@ -1,0 +1,134 @@
+{
+  "id": "feud16-dog-boyfriend",
+  "season": "S16",
+  "question": "Name something your dog does to let you know he doesn't like your new boyfriend.",
+  "difficulty_tags": ["paraphrase", "near_miss", "off_topic", "singleton"],
+  "board": [
+    {
+      "label": "Growls or Barks",
+      "points": 50
+    },
+    {
+      "label": "Bites Him",
+      "points": 28
+    },
+    {
+      "label": "Pees on Him",
+      "points": 14
+    }
+  ],
+  "raw_responses": [
+    {
+      "id": "feud16-dog-boyfriend-17",
+      "text": "dogs are smart"
+    },
+    {
+      "id": "feud16-dog-boyfriend-1",
+      "text": "barks at him"
+    },
+    {
+      "id": "feud16-dog-boyfriend-12",
+      "text": "pees on him"
+    },
+    {
+      "id": "feud16-dog-boyfriend-18",
+      "text": "good boy"
+    },
+    {
+      "id": "feud16-dog-boyfriend-14",
+      "text": "poops on his stuff"
+    },
+    {
+      "id": "feud16-dog-boyfriend-2",
+      "text": "snarls at him"
+    },
+    {
+      "id": "feud16-dog-boyfriend-19",
+      "text": "woof woof"
+    },
+    {
+      "id": "feud16-dog-boyfriend-3",
+      "text": "growling and barking"
+    },
+    {
+      "id": "feud16-dog-boyfriend-13",
+      "text": "marks him"
+    },
+    {
+      "id": "feud16-dog-boyfriend-16",
+      "text": "whines"
+    },
+    {
+      "id": "feud16-dog-boyfriend-0",
+      "text": "growls at him"
+    },
+    {
+      "id": "feud16-dog-boyfriend-6",
+      "text": "snarls at him"
+    },
+    {
+      "id": "feud16-dog-boyfriend-8",
+      "text": "nips at him"
+    },
+    {
+      "id": "feud16-dog-boyfriend-7",
+      "text": "bites him"
+    },
+    {
+      "id": "feud16-dog-boyfriend-5",
+      "text": "barks at him"
+    },
+    {
+      "id": "feud16-dog-boyfriend-15",
+      "text": "ignores him completely"
+    },
+    {
+      "id": "feud16-dog-boyfriend-4",
+      "text": "growls at him"
+    },
+    {
+      "id": "feud16-dog-boyfriend-11",
+      "text": "bites him"
+    },
+    {
+      "id": "feud16-dog-boyfriend-10",
+      "text": "chomps on him"
+    },
+    {
+      "id": "feud16-dog-boyfriend-9",
+      "text": "tries to bite him"
+    }
+  ],
+  "gold": {
+    "groups": {
+      "Growls or Barks": [
+        "feud16-dog-boyfriend-1",
+        "feud16-dog-boyfriend-2",
+        "feud16-dog-boyfriend-3",
+        "feud16-dog-boyfriend-0",
+        "feud16-dog-boyfriend-6",
+        "feud16-dog-boyfriend-5",
+        "feud16-dog-boyfriend-4"
+      ],
+      "Pees on Him": [
+        "feud16-dog-boyfriend-12",
+        "feud16-dog-boyfriend-14",
+        "feud16-dog-boyfriend-13"
+      ],
+      "Bites Him": [
+        "feud16-dog-boyfriend-8",
+        "feud16-dog-boyfriend-7",
+        "feud16-dog-boyfriend-11",
+        "feud16-dog-boyfriend-10",
+        "feud16-dog-boyfriend-9"
+      ]
+    },
+    "unassigned": [
+      "feud16-dog-boyfriend-17",
+      "feud16-dog-boyfriend-18",
+      "feud16-dog-boyfriend-19",
+      "feud16-dog-boyfriend-16",
+      "feud16-dog-boyfriend-15"
+    ]
+  }
+}

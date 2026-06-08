@@ -203,4 +203,29 @@ RSpec.describe Experience, type: :model do
       expect(Experience.find_by_slug('nonexistent')).to be_nil
     end
   end
+
+  describe "#register_user" do
+    let(:experience) { create(:experience, creator: creator) }
+    let(:user) { create(:user) }
+
+    it "creates a participant with an empty avatar so they are prompted to draw" do
+      participant = experience.register_user(user, name: "Test")
+
+      expect(participant.avatar).to eq({})
+    end
+
+    it "does not inherit the avatar from a prior experience" do
+      previous_experience = create(:experience, creator: creator)
+      create(
+        :experience_participant,
+        :with_avatar,
+        experience: previous_experience,
+        user: user
+      )
+
+      participant = experience.register_user(user, name: "Test")
+
+      expect(participant.avatar).to eq({})
+    end
+  end
 end
