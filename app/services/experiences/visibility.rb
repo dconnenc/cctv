@@ -590,6 +590,8 @@ module Experiences
         if mod_or_host?(participant_role)
           response[:aggregate]     = submissions.any? ? calculate_poll_aggregate(submissions) : {}
           response[:all_responses] = submissions.map { |s| submission_payload(s) }
+        else
+          response[:aggregate] = nil
         end
 
         response

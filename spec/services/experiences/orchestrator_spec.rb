@@ -448,13 +448,12 @@ RSpec.describe Experiences::Orchestrator do
         )
       end
 
-      it "opens only the parent; child question blocks retain their status" do
-        children_status_before = block.child_blocks.map(&:status)
+      it "opens the parent and all child question blocks atomically" do
         subject
 
         expect(block.reload.status).to eq("open")
         expect(block.child_blocks.count).to eq(2)
-        expect(block.child_blocks.map(&:status)).to eq(children_status_before)
+        expect(block.child_blocks.map(&:status)).to all(eq("open"))
       end
     end
   end
