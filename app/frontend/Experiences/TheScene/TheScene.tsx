@@ -456,7 +456,7 @@ function ManageView({ block }: { block: TheSceneBlock }) {
         )}
         {phase === 'winner_reveal' && (
           <>
-            <Button onClick={() => forceNextScene(block.id)}>Skip wait → next scene</Button>
+            <Button onClick={() => forceNextScene(block.id)}>Next scene</Button>
             <Button variant="secondary" onClick={() => endScene(block.id)}>
               End block
             </Button>

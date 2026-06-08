@@ -1033,7 +1033,6 @@ module Experiences
     # The Scene -------------------------------------------------------------
 
     SCENE_PHASES = %w[idle collecting winner_reveal ended].freeze
-    WINNER_REVEAL_DELAY_SECONDS = 15
 
     def start_the_scene!(block:)
       guard_the_scene!(block)
@@ -1070,9 +1069,6 @@ module Experiences
         scene_stamp = updated["scene_started_at"]
         block.update!(payload: updated, status: :open)
       end
-
-      TheSceneAdvanceAfterRevealJob.set(wait: WINNER_REVEAL_DELAY_SECONDS.seconds)
-        .perform_later(block.id, scene_stamp)
 
       block
     end
