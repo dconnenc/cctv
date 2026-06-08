@@ -78,10 +78,6 @@ export default function CreateMinigameBalloonPump({
           </>
         )}
       </p>
-      <p style={{ fontSize: '0.85rem', opacity: 0.8 }}>
-        A segment is required — set it under "Additional Details". Only participants in that segment
-        will play.
-      </p>
     </div>
   );
 }

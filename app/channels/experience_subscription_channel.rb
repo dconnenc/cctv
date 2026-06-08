@@ -229,8 +229,8 @@ class ExperienceSubscriptionChannel < ApplicationCable::Channel
       )
 
       participant_summary = {
-        id: @participant.id,
-        user_id: @participant.user_id,
+        id: @participant.id.to_s,
+        user_id: @participant.user_id.to_s,
         name: @participant.name,
         email: @participant.user.email,
         role: @participant.role,
@@ -259,8 +259,8 @@ class ExperienceSubscriptionChannel < ApplicationCable::Channel
 
   def send_updated_experience_state
     participant_summary = {
-      id: @participant.id,
-      user_id: @participant.user_id,
+      id: @participant.id.to_s,
+      user_id: @participant.user_id.to_s,
       name: @participant.name,
       email: @participant.user.email,
       role: @participant.role,

@@ -92,10 +92,6 @@ export default function CreateMinigameArithmetic({
         value={data.leaderboard_size || ''}
         onChange={handleNumberChange('leaderboard_size')}
       />
-      <p style={{ fontSize: '0.85rem', opacity: 0.8 }}>
-        A segment is required — set it under "Additional Details". Only participants in that segment
-        will see and play the minigame.
-      </p>
     </div>
   );
 }
