@@ -805,7 +805,7 @@ module Experiences
       block
     end
 
-    def conclude_guess_who_poll!(block:)
+    def conclude_guess_who_poll!(block:, force: false)
       guard_guess_who!(block)
 
       transaction do
@@ -834,6 +834,11 @@ module Experiences
           experience_participant_id: mystery_participant.id
         )
         mystery_answer = Array(mystery_submission&.answer&.dig("selectedOptions")).first
+
+        if mystery_answer.nil? && !force
+          raise Experiences::MysteryNotRespondedError,
+            "The mystery participant has not responded to this poll. Concluding now will eliminate everyone who answered."
+        end
 
         active_participant_ids = active_candidates.map { |uid| participant_by_user_id[uid]&.id }.compact
         submissions_by_participant_id = ExperiencePollSubmission

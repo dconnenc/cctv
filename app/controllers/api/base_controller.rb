@@ -99,6 +99,12 @@ class Api::BaseController < ApplicationController
   def with_experience_orchestration
     begin
       yield
+    rescue Experiences::MysteryNotRespondedError => e
+      render json: {
+        success: false,
+        missing_mystery: true,
+        error: e.message,
+      }, status: :unprocessable_entity
     rescue Experiences::InvalidTransitionError => e
       render json: {
         success: false,

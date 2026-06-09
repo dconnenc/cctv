@@ -155,7 +155,19 @@ function ContestantPanel({
             <span>
               Poll responses: {responded} / {total}
             </span>
-            <Button onClick={() => concludePoll(block.id)} disabled={isLoading}>
+            <Button
+              onClick={async () => {
+                const result = await concludePoll(block.id);
+                if (result?.missing_mystery) {
+                  const confirmed = window.confirm(
+                    result.error +
+                      '\n\nForce conclude anyway? All participants who answered will be eliminated.',
+                  );
+                  if (confirmed) concludePoll(block.id, true);
+                }
+              }}
+              disabled={isLoading}
+            >
               Conclude poll
             </Button>
           </>

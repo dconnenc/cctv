@@ -7,6 +7,7 @@ import { GuessWhoMonitorView } from '@cctv/types';
 interface DispatchResult {
   success: boolean;
   error?: string;
+  missing_mystery?: boolean;
 }
 
 export function useGuessWhoControls() {
@@ -33,8 +34,8 @@ export function useGuessWhoControls() {
         const data = await res.json();
         if (!res.ok || data?.success === false) {
           const msg = data?.error || `Failed to ${path}`;
-          setError(msg);
-          return { success: false, error: msg };
+          if (!data?.missing_mystery) setError(msg);
+          return { success: false, error: msg, missing_mystery: data?.missing_mystery ?? false };
         }
         return { success: true };
       } catch (e: unknown) {
@@ -80,7 +81,8 @@ export function useGuessWhoControls() {
       send(blockId, 'monitor_view', jsonBody({ view })),
     dispatchPoll: (blockId: string, contestantIndex: 0 | 1) =>
       send(blockId, 'dispatch_poll', jsonBody({ contestant_index: contestantIndex })),
-    concludePoll: (blockId: string) => send(blockId, 'conclude_poll'),
+    concludePoll: (blockId: string, force = false) =>
+      send(blockId, 'conclude_poll', force ? jsonBody({ force: true }) : {}),
     reveal: (blockId: string) => send(blockId, 'reveal'),
     isLoading,
     error,

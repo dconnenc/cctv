@@ -691,7 +691,7 @@ class Api::ExperienceBlocksController < Api::BaseController
     with_experience_orchestration do
       Experiences::Orchestrator.new(
         experience: @experience, actor: @user
-      ).conclude_guess_who_poll!(block: @block)
+      ).conclude_guess_who_poll!(block: @block, force: params[:force] == "true")
 
       Experiences::Broadcaster.new(@experience).broadcast_experience_update
 
