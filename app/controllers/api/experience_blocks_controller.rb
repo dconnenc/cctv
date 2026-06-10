@@ -2,11 +2,12 @@ class Api::ExperienceBlocksController < Api::BaseController
   MANAGEMENT_ACTIONS = %i[
     create update destroy reorder set_column open close hide detach_from_parent clear_buzzer_responses
     add_bucket rename_bucket delete_bucket assign_answer auto_categorize update_ai_context update_question_ai_context
-    start_playing reveal_bucket show_x set_theme_music next_question restart_playing
+    start_playing reveal_bucket show_x set_theme_music restart_theme_music next_question restart_playing
     restart_categorizing restart_everything
     start_guess_who reroll_guess_who_mystery curate_guess_who_clues
     advance_guess_who_clue set_guess_who_monitor_view
     dispatch_guess_who_poll conclude_guess_who_poll reveal_guess_who
+    set_guess_who_theme_music restart_guess_who_theme_music
     start_minigame_arithmetic end_minigame_arithmetic restart_minigame_arithmetic
     start_minigame_balloon_pump end_minigame_balloon_pump restart_minigame_balloon_pump
     start_the_scene end_the_scene force_next_the_scene update_the_scene_performers
@@ -538,6 +539,19 @@ class Api::ExperienceBlocksController < Api::BaseController
     end
   end
 
+  # POST /api/experiences/:experience_id/blocks/:id/family_feud/theme_music/restart
+  def restart_theme_music
+    with_experience_orchestration do
+      Experiences::Orchestrator.new(
+        experience: @experience, actor: @user
+      ).restart_family_feud_theme_music!(block: @block)
+
+      Experiences::Broadcaster.new(@experience).broadcast_experience_update
+
+      render json: { success: true }, status: 200
+    end
+  end
+
   # POST /api/experiences/:experience_id/blocks/:id/family_feud/next_question
   def next_question
     with_experience_orchestration do
@@ -819,6 +833,35 @@ class Api::ExperienceBlocksController < Api::BaseController
       Experiences::Orchestrator.new(
         experience: @experience, actor: @user
       ).reveal_guess_who!(block: @block)
+
+      Experiences::Broadcaster.new(@experience).broadcast_experience_update
+
+      render json: { success: true }, status: 200
+    end
+  end
+
+  # POST /api/experiences/:experience_id/blocks/:id/guess_who/theme_music
+  def set_guess_who_theme_music
+    with_experience_orchestration do
+      Experiences::Orchestrator.new(
+        experience: @experience, actor: @user
+      ).set_guess_who_theme_music!(
+        block: @block,
+        playing: ActiveModel::Type::Boolean.new.cast(params[:playing])
+      )
+
+      Experiences::Broadcaster.new(@experience).broadcast_experience_update
+
+      render json: { success: true }, status: 200
+    end
+  end
+
+  # POST /api/experiences/:experience_id/blocks/:id/guess_who/theme_music/restart
+  def restart_guess_who_theme_music
+    with_experience_orchestration do
+      Experiences::Orchestrator.new(
+        experience: @experience, actor: @user
+      ).restart_guess_who_theme_music!(block: @block)
 
       Experiences::Broadcaster.new(@experience).broadcast_experience_update
 

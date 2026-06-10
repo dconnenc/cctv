@@ -134,6 +134,44 @@ RSpec.describe Experiences::Orchestrator do
     end
   end
 
+  describe "#set_guess_who_theme_music!" do
+    before { orchestrator.start_guess_who!(block: guess_who_block) }
+
+    it "toggles theme_music_playing on and off" do
+      orchestrator.set_guess_who_theme_music!(block: guess_who_block, playing: true)
+      expect(guess_who_block.reload.payload["theme_music_playing"]).to be(true)
+
+      orchestrator.set_guess_who_theme_music!(block: guess_who_block, playing: false)
+      expect(guess_who_block.reload.payload["theme_music_playing"]).to be(false)
+    end
+
+    it "raises when the block is not a Guess Who" do
+      expect {
+        orchestrator.set_guess_who_theme_music!(block: question_block, playing: true)
+      }.to raise_error(ArgumentError)
+    end
+  end
+
+  describe "#restart_guess_who_theme_music!" do
+    before { orchestrator.start_guess_who!(block: guess_who_block) }
+
+    it "forces playing on and bumps the restart count each call" do
+      orchestrator.restart_guess_who_theme_music!(block: guess_who_block)
+      payload = guess_who_block.reload.payload
+      expect(payload["theme_music_playing"]).to be(true)
+      expect(payload["theme_music_restart_count"]).to eq(1)
+
+      orchestrator.restart_guess_who_theme_music!(block: guess_who_block)
+      expect(guess_who_block.reload.payload["theme_music_restart_count"]).to eq(2)
+    end
+
+    it "raises when the block is not a Guess Who" do
+      expect {
+        orchestrator.restart_guess_who_theme_music!(block: question_block)
+      }.to raise_error(ArgumentError)
+    end
+  end
+
   describe "#dispatch_guess_who_poll! and #conclude_guess_who_poll!" do
     before { orchestrator.start_guess_who!(block: guess_who_block) }
 

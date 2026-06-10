@@ -24,6 +24,7 @@ import {
 } from '@cctv/types';
 
 import FamilyFeudManager from '../../Block/FamilyFeudManager/FamilyFeudManager';
+import GuessWhoManager from '../../Block/GuessWhoManager/GuessWhoManager';
 import BlockPreview from '../BlockPreview/BlockPreview';
 import ContextView from '../ContextView/ContextView';
 import BlockResponsesList from './BlockResponsesList';
@@ -246,6 +247,12 @@ export default function BlockDetailPanel({
         {selectedBlock.kind === BlockKind.FAMILY_FEUD && (
           <div className="mb-6">
             <FamilyFeudManager block={selectedBlock} />
+          </div>
+        )}
+
+        {selectedBlock.kind === BlockKind.GUESS_WHO && (
+          <div className="mb-6">
+            <GuessWhoManager block={selectedBlock} />
           </div>
         )}
 
