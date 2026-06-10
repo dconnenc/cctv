@@ -27,6 +27,7 @@ import FamilyFeudManager from '../../Block/FamilyFeudManager/FamilyFeudManager';
 import BlockPreview from '../BlockPreview/BlockPreview';
 import ContextView from '../ContextView/ContextView';
 import BlockResponsesList from './BlockResponsesList';
+import MinigameControls from './MinigameControls';
 
 function getStatusColor(status: string) {
   switch (status) {
@@ -153,6 +154,7 @@ export default function BlockDetailPanel({
               </span>
             </Button>
           )}
+          <MinigameControls block={selectedBlock} />
           {confirmingDelete ? (
             <>
               <Button

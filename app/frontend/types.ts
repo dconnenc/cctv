@@ -762,7 +762,6 @@ export const WebSocketMessageTypes = {
   CONFIRM_SUBSCRIPTION: 'confirm_subscription',
   PING: 'ping',
   FAMILY_FEUD_UPDATED: 'family_feud_updated',
-  BALLOON_PUMP_LEADER_UPDATED: 'balloon_pump_leader_updated',
   SUBMISSION_STATE: 'submission_state',
 } as const;
 
@@ -846,15 +845,6 @@ export interface FamilyFeudUpdatedMessage
   data: FamilyFeudDispatchPayload;
 }
 
-export interface BalloonPumpLeaderUpdatedMessage {
-  type: 'balloon_pump_leader_updated';
-  block_id: string;
-  leader_fill: number;
-  target_units: number;
-  leader_participant_id: string | null;
-  timestamp: number;
-}
-
 export type SubmissionState = Record<
   string,
   {
@@ -887,7 +877,6 @@ export type WebSocketMessage =
   | ConfirmSubscriptionMessage
   | PingMessage
   | FamilyFeudUpdatedMessage
-  | BalloonPumpLeaderUpdatedMessage
   | SubmissionStateMessage;
 
 export interface DrawingUpdateMessage {

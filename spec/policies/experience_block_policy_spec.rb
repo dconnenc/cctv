@@ -189,5 +189,43 @@ RSpec.describe ExperienceBlockPolicy do
     end
   end
 
+  describe "#submit_minigame_arithmetic_response?" do
+    let(:block) do
+      create(:experience_block, experience: experience, kind: "minigame_arithmetic", status: "open")
+    end
 
+    context "when user is nil" do
+      let(:user) { nil }
+
+      it "returns false" do
+        expect(subject.submit_minigame_arithmetic_response?).to be false
+      end
+    end
+
+    context "when user is not a participant" do
+      it "returns false" do
+        expect(subject.submit_minigame_arithmetic_response?).to be false
+      end
+    end
+
+    context "when user is a participant" do
+      before do
+        create(:experience_participant, user: user, experience: experience, role: :audience)
+      end
+
+      it "returns true while the block is open" do
+        expect(subject.submit_minigame_arithmetic_response?).to be true
+      end
+
+      context "and the block has closed (round ended)" do
+        let(:block) do
+          create(:experience_block, experience: experience, kind: "minigame_arithmetic", status: "closed")
+        end
+
+        it "still returns true so a buzzer-beater answer records instead of 403ing" do
+          expect(subject.submit_minigame_arithmetic_response?).to be true
+        end
+      end
+    end
+  end
 end

@@ -3,14 +3,32 @@
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
-  gap: 1rem;
-  padding: 1rem;
-  min-height: 70vh;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  // Fit within the viewport area the layout leaves around the navigation chrome
+  // so the pump never spills under the (desktop) top nav.
+  height: calc(100dvh - var(--nav-h) - calc(var(--space-sm) * 2));
+  box-sizing: border-box;
+  overflow: hidden;
   user-select: none;
   touch-action: none;
 }
 
+@media (max-width: 768px) {
+  // Mobile hides the top nav but shows a fixed bottom tab bar; reserve its
+  // height (plus safe-area) so the pump stays fully above it.
+  .root {
+    height: calc(
+      100dvh - var(--nav-h) - var(--bottom-nav-h) - env(safe-area-inset-bottom) - calc(
+          var(--space-sm) * 2
+        )
+    );
+  }
+}
+
 .header {
+  position: relative;
+  z-index: 2;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -33,8 +51,9 @@
 
 .balloonStage {
   position: relative;
-  width: min(80vw, 320px);
-  height: 280px;
+  width: min(60vw, 240px);
+  height: clamp(120px, 24dvh, 240px);
+  flex: 0 0 auto;
   display: flex;
   align-items: flex-end;
   justify-content: center;
@@ -54,11 +73,14 @@
 
 .pumpStage {
   position: relative;
-  width: min(85vw, 320px);
-  height: 360px;
+  width: min(70vw, 280px);
+  flex: 1 1 auto;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: flex-start;
+  overflow: hidden;
 }
 
 .pumpCanvas {
@@ -113,23 +135,6 @@
   text-align: center;
 }
 
-.monitorBalloonStage {
-  position: relative;
-  width: min(60vw, 600px);
-  height: 60vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.monitorPercent {
-  font-family: var(--font-display);
-  font-size: 4rem;
-  letter-spacing: 0.05em;
-  color: var(--phosphor);
-  text-shadow: var(--tv-glow);
-}
-
 // Podium
 
 .podium {
@@ -178,13 +183,9 @@
 .podiumAvatar {
   width: 7rem;
   height: 7rem;
-  border-radius: 50%;
-  background: var(--card);
-  border: 3px solid var(--phosphor-glow-medium);
   display: flex;
   align-items: center;
   justify-content: center;
-  overflow: hidden;
 }
 
 .podiumPlatform {
@@ -224,11 +225,6 @@
   font-family: var(--font-body);
   font-size: 0.95rem;
   opacity: 0.85;
-}
-
-.manageActions {
-  display: flex;
-  gap: 0.5rem;
 }
 
 .liveResults {

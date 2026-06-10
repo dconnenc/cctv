@@ -248,6 +248,8 @@ export default function Pump({ onStrokeUnits, pumpUnits, disabled = false }: Pum
         width: '100%',
         maxWidth: PUMP_WIDTH,
         height: 'auto',
+        // Leave room for the hint line below within the pump stage's bounded height.
+        maxHeight: 'calc(100% - 1.75rem)',
         aspectRatio: `${PUMP_WIDTH} / ${PUMP_HEIGHT}`,
         cursor: disabled ? 'default' : 'grab',
       }}

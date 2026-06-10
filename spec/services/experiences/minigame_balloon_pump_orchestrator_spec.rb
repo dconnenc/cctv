@@ -89,7 +89,7 @@ RSpec.describe Experiences::Orchestrator, "minigame balloon pump" do
 
       block.reload
       expect(block.payload["ended_at"]).to be_present
-      expect(block.status).to eq("closed")
+      expect(block.status).to eq("open")
       expect(block.payload["winner_participant_ids"]).to eq([player_a.id])
       expect(outcome[:winners].map(&:id)).to eq([player_a.id])
     end
@@ -141,11 +141,11 @@ RSpec.describe Experiences::Orchestrator, "minigame balloon pump" do
 
     before { orchestrator.start_minigame_balloon_pump!(block: block) }
 
-    it "stamps ended_at and closes" do
+    it "stamps ended_at and keeps the block open so the monitor can show the podium" do
       orchestrator.end_minigame_balloon_pump!(block: block)
       block.reload
       expect(block.payload["ended_at"]).to be_present
-      expect(block.status).to eq("closed")
+      expect(block.status).to eq("open")
     end
 
     it "is idempotent" do
@@ -153,6 +153,42 @@ RSpec.describe Experiences::Orchestrator, "minigame balloon pump" do
       first = block.reload.payload["ended_at"]
       orchestrator.end_minigame_balloon_pump!(block: block)
       expect(block.reload.payload["ended_at"]).to eq(first)
+    end
+  end
+
+  describe "#restart_minigame_balloon_pump!" do
+    let(:block) do
+      orchestrator.add_block!(
+        kind: ExperienceBlock::MINIGAME_BALLOON_PUMP,
+        payload: { "target_units" => 50 }
+      )
+    end
+
+    let(:player_a_orchestrator) { described_class.new(actor: player_a.user, experience: experience) }
+
+    before do
+      orchestrator.start_minigame_balloon_pump!(block: block)
+      player_a_orchestrator.submit_balloon_pump_update!(block: block, fill_amount: 50)
+    end
+
+    it "clears game state and results so it can be started again" do
+      orchestrator.restart_minigame_balloon_pump!(block: block)
+      block.reload
+
+      expect(block.payload["started_at"]).to be_nil
+      expect(block.payload["ended_at"]).to be_nil
+      expect(block.payload["winner_participant_ids"]).to eq([])
+      expect(block.payload["leader_fill"]).to eq(0)
+      expect(block.payload["leader_participant_id"]).to be_nil
+      expect(block.experience_minigame_balloon_results.count).to eq(0)
+    end
+
+    it "leaves the block in a startable state" do
+      orchestrator.restart_minigame_balloon_pump!(block: block)
+      orchestrator.start_minigame_balloon_pump!(block: block.reload)
+
+      expect(block.reload.payload["started_at"]).to be_present
+      expect(block.payload["ended_at"]).to be_nil
     end
   end
 end
