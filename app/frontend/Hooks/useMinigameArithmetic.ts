@@ -2,7 +2,6 @@ import { useCallback, useState } from 'react';
 
 import { useAdminAuth } from '@cctv/contexts/AdminAuthContext';
 import { useExperience } from '@cctv/contexts/ExperienceContext';
-import { useExperienceState } from '@cctv/contexts/ExperienceStateContext';
 
 interface ActionResult {
   success: boolean;
@@ -12,12 +11,10 @@ interface ActionResult {
 export function useMinigameArithmetic() {
   const { code, experienceFetch } = useExperience();
   const { adminFetch } = useAdminAuth();
-  const { setSubmissionState } = useExperienceState();
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const buildAdminUrl = useCallback(
-    (blockId: string, action: 'start' | 'end') =>
+    (blockId: string, action: 'start' | 'end' | 'restart') =>
       `/api/experiences/${encodeURIComponent(code ?? '')}/blocks/${encodeURIComponent(blockId)}/minigame/arithmetic/${action}`,
     [code],
   );
@@ -60,44 +57,37 @@ export function useMinigameArithmetic() {
     [code, adminFetch, buildAdminUrl],
   );
 
-  const submitAnswer = useCallback(
-    async (blockId: string, questionIndex: number, answer: string): Promise<ActionResult> => {
+  const restart = useCallback(
+    async (blockId: string): Promise<ActionResult> => {
       if (!code) return { success: false, error: 'Missing experience code' };
-      setIsSubmitting(true);
       setError(null);
-      try {
-        const res = await experienceFetch(buildResponseUrl(blockId), {
-          method: 'POST',
-          body: JSON.stringify({ question_index: questionIndex, answer }),
-        });
-        const data = await res.json();
-        if (!res.ok || !data?.success) {
-          const msg = data?.error || 'Failed to submit answer';
-          setError(msg);
-          return { success: false, error: msg };
-        }
-        setSubmissionState((prev) => ({
-          ...prev,
-          [blockId]: {
-            ...prev[blockId],
-            current_question: data.current_question ?? null,
-            score: data.score,
-          },
-        }));
-        return { success: true };
-      } catch (e: unknown) {
-        const msg =
-          e instanceof Error && e.message === 'Authentication expired'
-            ? 'Authentication expired'
-            : 'Connection error. Please try again.';
+      const res = await adminFetch(buildAdminUrl(blockId, 'restart'), { method: 'POST' });
+      const data = await res.json();
+      if (!res.ok || !data?.success) {
+        const msg = data?.error || 'Failed to restart minigame';
         setError(msg);
         return { success: false, error: msg };
-      } finally {
-        setIsSubmitting(false);
       }
+      return { success: true };
     },
-    [code, experienceFetch, buildResponseUrl, setSubmissionState],
+    [code, adminFetch, buildAdminUrl],
   );
 
-  return { start, end, submitAnswer, isSubmitting, error };
+  // Fire-and-forget: the round runs entirely client-side, so answers are
+  // recorded best-effort for the leaderboard. We never await or surface errors
+  // here — a slow or closed-block response must not block or interrupt play.
+  const recordAnswer = useCallback(
+    (blockId: string, questionIndex: number, answer: string): void => {
+      if (!code) return;
+      void experienceFetch(buildResponseUrl(blockId), {
+        method: 'POST',
+        body: JSON.stringify({ question_index: questionIndex, answer }),
+      }).catch(() => {
+        // Best-effort; the player's local game continues regardless.
+      });
+    },
+    [code, experienceFetch, buildResponseUrl],
+  );
+
+  return { start, end, restart, recordAnswer, error };
 }

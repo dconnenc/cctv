@@ -92,6 +92,7 @@ Rails.application.routes.draw do
           post 'family_feud/reveal_bucket', action: :reveal_bucket
           post 'family_feud/show_x', action: :show_x
           post 'family_feud/theme_music', action: :set_theme_music
+          post 'family_feud/theme_music/restart', action: :restart_theme_music
           post 'family_feud/next_question', action: :next_question
           post 'family_feud/restart_playing', action: :restart_playing
           post 'family_feud/restart_categorizing', action: :restart_categorizing
@@ -105,13 +106,17 @@ Rails.application.routes.draw do
           post 'guess_who/dispatch_poll', action: :dispatch_guess_who_poll
           post 'guess_who/conclude_poll', action: :conclude_guess_who_poll
           post 'guess_who/reveal', action: :reveal_guess_who
+          post 'guess_who/theme_music', action: :set_guess_who_theme_music
+          post 'guess_who/theme_music/restart', action: :restart_guess_who_theme_music
 
           post 'minigame/arithmetic/start', action: :start_minigame_arithmetic
           post 'minigame/arithmetic/end', action: :end_minigame_arithmetic
+          post 'minigame/arithmetic/restart', action: :restart_minigame_arithmetic
           post 'minigame/arithmetic/responses', action: :submit_minigame_arithmetic_response
 
           post 'minigame/balloon_pump/start', action: :start_minigame_balloon_pump
           post 'minigame/balloon_pump/end', action: :end_minigame_balloon_pump
+          post 'minigame/balloon_pump/restart', action: :restart_minigame_balloon_pump
           post 'minigame/balloon_pump/pump', action: :submit_minigame_balloon_pump_update
 
           post 'the_scene/start', action: :start_the_scene

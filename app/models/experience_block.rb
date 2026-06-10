@@ -14,6 +14,19 @@ class ExperienceBlock < ApplicationRecord
     THE_SCENE = "the_scene"
   ]
 
+  # Sound effects are intrinsic to a block kind, not customized per block, so
+  # they are derived from the kind at read time rather than persisted.
+  SOUNDS_BY_KIND = {
+    FAMILY_FEUD => { "on_show_x" => "buzzer_error", "theme" => "family_feud_theme" },
+    GUESS_WHO => {
+      "on_dispatch_poll" => "buzzer_error",
+      "on_conclude_poll" => "buzzer_error",
+      "on_reveal"        => "buzzer_error",
+      "theme"            => "guess_who_theme"
+    },
+    THE_SCENE => { "on_buzzer_press" => "buzzer_error" }
+  }.freeze
+
   belongs_to :experience
   belongs_to :parent_block,
     class_name: "ExperienceBlock",
@@ -70,6 +83,10 @@ class ExperienceBlock < ApplicationRecord
   scope :parent_blocks, -> { where(parent_block_id: nil) }
   scope :child_blocks, -> { where.not(parent_block_id: nil) }
   scope :ordered, -> { order(position: :asc) }
+
+  def sounds
+    SOUNDS_BY_KIND.fetch(kind, {})
+  end
 
   def depth
     return 0 if children.empty?

@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 
-import { useMonitorSound } from '@cctv/sounds';
+import { useLoopingMonitorSound, useMonitorSound } from '@cctv/sounds';
 import { GuessWhoBlock, GuessWhoContestant } from '@cctv/types';
 
 import Avatar from './Avatar';
@@ -12,6 +12,7 @@ import styles from './GuessWho.module.scss';
 
 interface GuessWhoMonitorProps {
   block: GuessWhoBlock;
+  viewContext?: 'participant' | 'monitor' | 'manage';
 }
 
 function ContestantHeader({ contestant }: { contestant: GuessWhoContestant }) {
@@ -87,7 +88,7 @@ function BoardWithPoll({
   );
 }
 
-export default function GuessWhoMonitor({ block }: GuessWhoMonitorProps) {
+export default function GuessWhoMonitor({ block, viewContext = 'monitor' }: GuessWhoMonitorProps) {
   const { payload, sounds } = block;
   const view = payload.monitor_view ?? 'idle';
   const contestants = payload.contestants ?? [];
@@ -98,9 +99,15 @@ export default function GuessWhoMonitor({ block }: GuessWhoMonitorProps) {
     prevActivePollIdRef.current = payload.active_poll_block_id ?? null;
   });
 
-  useMonitorSound(sounds?.on_dispatch_poll, !!payload.active_poll_block_id, 'monitor');
-  useMonitorSound(sounds?.on_conclude_poll, justConcludedPoll, 'monitor');
-  useMonitorSound(sounds?.on_reveal, view === 'reveal', 'monitor');
+  useMonitorSound(sounds?.on_dispatch_poll, !!payload.active_poll_block_id, viewContext);
+  useMonitorSound(sounds?.on_conclude_poll, justConcludedPoll, viewContext);
+  useMonitorSound(sounds?.on_reveal, view === 'reveal', viewContext);
+  useLoopingMonitorSound(
+    sounds?.theme,
+    payload.theme_music_playing ?? false,
+    viewContext,
+    payload.theme_music_restart_count,
+  );
 
   if (!payload.started || contestants.length < 2) {
     return (

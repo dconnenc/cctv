@@ -480,34 +480,62 @@ RSpec.describe Experiences::Orchestrator do
       end
 
       context "when the mystery participant has not responded" do
-        context "without force" do
-          it "raises MysteryNotRespondedError" do
-            expect {
-              orchestrator.conclude_guess_who_poll!(block: guess_who_block)
-            }.to raise_error(Experiences::MysteryNotRespondedError)
-          end
+        before do
+          ExperiencePollSubmission.create!(
+            experience_block_id: poll_id,
+            experience_participant: candidates_by_user_id[candidate_ids.first],
+            answer: { "selectedOptions" => ["True"] }
+          )
+          orchestrator.conclude_guess_who_poll!(block: guess_who_block)
         end
 
-        context "with force: true" do
-          before do
-            ExperiencePollSubmission.create!(
-              experience_block_id: poll_id,
-              experience_participant: candidates_by_user_id[candidate_ids.first],
-              answer: { "selectedOptions" => ["True"] }
-            )
-            orchestrator.conclude_guess_who_poll!(block: guess_who_block, force: true)
-          end
+        let(:contestant_payload) { guess_who_block.reload.payload["contestants"][0] }
 
-          let(:contestant_payload) { guess_who_block.reload.payload["contestants"][0] }
-
-          it "clears the active poll" do
-            expect(guess_who_block.reload.payload["active_poll_block_id"]).to be_nil
-          end
-
-          it "does not eliminate any candidates" do
-            expect(contestant_payload["eliminated_user_ids"]).to be_empty
-          end
+        it "clears the active poll" do
+          expect(guess_who_block.reload.payload["active_poll_block_id"]).to be_nil
         end
+
+        it "does not eliminate any candidates (no mystery answer to compare against)" do
+          expect(contestant_payload["eliminated_user_ids"]).to be_empty
+        end
+      end
+    end
+
+    describe "#set_guess_who_theme_music!" do
+      before { orchestrator.start_guess_who!(block: guess_who_block) }
+
+      it "toggles theme_music_playing on and off" do
+        orchestrator.set_guess_who_theme_music!(block: guess_who_block, playing: true)
+        expect(guess_who_block.reload.payload["theme_music_playing"]).to be(true)
+
+        orchestrator.set_guess_who_theme_music!(block: guess_who_block, playing: false)
+        expect(guess_who_block.reload.payload["theme_music_playing"]).to be(false)
+      end
+
+      it "raises when the block is not a Guess Who" do
+        expect {
+          orchestrator.set_guess_who_theme_music!(block: question_block, playing: true)
+        }.to raise_error(ArgumentError)
+      end
+    end
+
+    describe "#restart_guess_who_theme_music!" do
+      before { orchestrator.start_guess_who!(block: guess_who_block) }
+
+      it "forces playing on and increments restart count each call" do
+        orchestrator.restart_guess_who_theme_music!(block: guess_who_block)
+        payload = guess_who_block.reload.payload
+        expect(payload["theme_music_playing"]).to be(true)
+        expect(payload["theme_music_restart_count"]).to eq(1)
+
+        orchestrator.restart_guess_who_theme_music!(block: guess_who_block)
+        expect(guess_who_block.reload.payload["theme_music_restart_count"]).to eq(2)
+      end
+
+      it "raises when the block is not a Guess Who" do
+        expect {
+          orchestrator.restart_guess_who_theme_music!(block: question_block)
+        }.to raise_error(ArgumentError)
       end
     end
 

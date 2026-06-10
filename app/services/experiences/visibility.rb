@@ -537,12 +537,7 @@ module Experiences
     def shape_minigame_arithmetic_payload(block, participant_role, view_context)
       payload = block.payload.deep_dup || {}
 
-      privileged =
-        view_context == :admin ||
-        (view_context == :participant && mod_or_host?(participant_role))
-
-      ended  = payload["ended_at"].present?
-      started = payload["started_at"].present?
+      ended = payload["ended_at"].present?
 
       shaped = {
         "variant"          => payload["variant"],
@@ -553,9 +548,9 @@ module Experiences
         "ended_at"         => payload["ended_at"]
       }
 
-      if privileged
-        shaped["questions"] = payload["questions"]
-      end
+      # Participants run the timed round entirely client-side, so everyone
+      # receives the questions (we are not gating on cheating for this).
+      shaped["questions"] = payload["questions"]
 
       if ended
         size = payload["leaderboard_size"].to_i

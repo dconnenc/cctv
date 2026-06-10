@@ -15,7 +15,6 @@ import {
   FamilyFeudActionType,
 } from '@cctv/pages/Block/FamilyFeudManager/familyFeudReducer';
 import {
-  BalloonPumpLeaderUpdatedMessage,
   ExperienceChannelMessage,
   FamilyFeudUpdatedMessage,
   SubmissionStateMessage,
@@ -162,7 +161,7 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
     setSubmissionState,
     impersonatedParticipantId,
   } = useExperienceState();
-  const { getFamilyFeudDispatch, getBalloonPumpListener } = useDispatchRegistry();
+  const { getFamilyFeudDispatch } = useDispatchRegistry();
   const lobbyDrawingDispatch = useLobbyDrawingDispatch();
 
   const [wsConnected, setWsConnected] = useState(false);
@@ -300,16 +299,6 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
             dispatch({ type: actionType, payload: data } as FamilyFeudAction);
           }
         }
-      } else if (wsMessage.type === WebSocketMessageTypes.BALLOON_PUMP_LEADER_UPDATED) {
-        const bpMsg = wsMessage as BalloonPumpLeaderUpdatedMessage;
-        const listener = getBalloonPumpListener(bpMsg.block_id);
-        if (listener) {
-          listener({
-            leader_fill: bpMsg.leader_fill,
-            target_units: bpMsg.target_units,
-            leader_participant_id: bpMsg.leader_participant_id,
-          });
-        }
       } else if (target === 'main' && wsMessage.type === WebSocketMessageTypes.SUBMISSION_STATE) {
         const ssMsg = wsMessage as SubmissionStateMessage;
         setSubmissionState(ssMsg.submissions);
@@ -325,7 +314,6 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
       setWsReady,
       setSubmissionState,
       getFamilyFeudDispatch,
-      getBalloonPumpListener,
       lobbyDrawingDispatch,
       reconnectParticipantWs,
     ],

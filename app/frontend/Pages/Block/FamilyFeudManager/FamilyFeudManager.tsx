@@ -48,6 +48,7 @@ import {
   Pause,
   Play,
   Plus,
+  RotateCcw,
   Sparkles,
   Trash2,
 } from 'lucide-react';
@@ -367,6 +368,25 @@ export default function FamilyFeudManager({ block }: FamilyFeudManagerProps) {
     }
   }, [code, block.id, isThemePlaying]);
 
+  const handleRestartThemeMusic = useCallback(async () => {
+    if (!code) return;
+    setTogglingTheme(true);
+    try {
+      const response = await fetch(
+        `/api/experiences/${code}/blocks/${block.id}/family_feud/theme_music/restart`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+        },
+      );
+      if (!response.ok) throw new Error('Failed to restart theme music');
+    } catch (error) {
+      console.error('Error restarting theme music:', error);
+    } finally {
+      setTogglingTheme(false);
+    }
+  }, [code, block.id]);
+
   const handleRevealBucket = useCallback(
     async (questionIndex: number, bucketIndex: number) => {
       if (!code) return;
@@ -468,15 +488,27 @@ export default function FamilyFeudManager({ block }: FamilyFeudManagerProps) {
   }, [code, block.id]);
 
   const themeMusicButton = (
-    <Button
-      variant="outline"
-      size="sm"
-      onClick={handleToggleThemeMusic}
-      disabled={togglingTheme}
-      icon={isThemePlaying ? <Pause size={16} /> : <Music size={16} />}
-    >
-      {isThemePlaying ? 'Pause Theme' : 'Play Theme'}
-    </Button>
+    <div className={styles.themeMusicControls}>
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={handleToggleThemeMusic}
+        disabled={togglingTheme}
+        icon={isThemePlaying ? <Pause size={16} /> : <Music size={16} />}
+      >
+        {isThemePlaying ? 'Pause Theme' : 'Play Theme'}
+      </Button>
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={handleRestartThemeMusic}
+        disabled={togglingTheme}
+        icon={<RotateCcw size={16} />}
+        hideLabel
+      >
+        Restart Theme
+      </Button>
+    </div>
   );
 
   if (childQuestions.length === 0) {

@@ -16,12 +16,18 @@ export default function FamilyFeud({
   title,
   game_state,
   theme_music_playing,
+  theme_music_restart_count,
   contained,
   sounds,
   viewContext,
 }: FamilyFeudProps) {
   useMonitorSound(sounds?.on_show_x, game_state?.show_x ?? false, viewContext);
-  useLoopingMonitorSound(sounds?.theme, theme_music_playing ?? false, viewContext);
+  useLoopingMonitorSound(
+    sounds?.theme,
+    theme_music_playing ?? false,
+    viewContext,
+    theme_music_restart_count,
+  );
 
   if (!game_state || game_state.phase === 'gathering') {
     return (
