@@ -746,6 +746,40 @@ RSpec.describe Experiences::Orchestrator do
         expect(block.child_blocks.map(&:status)).to all(eq("open"))
       end
     end
+
+    context "when opening a guess who block" do
+      let!(:block) do
+        create(:experience_block, kind: ExperienceBlock::GUESS_WHO, experience: experience, status: :hidden)
+      end
+
+      let!(:child_poll) do
+        create(:experience_block, experience: experience, kind: ExperienceBlock::POLL, status: :closed, parent_block_id: block.id)
+      end
+
+      it "opens the parent only, leaving child polls unaffected" do
+        subject
+
+        expect(block.reload.status).to eq("open")
+        expect(child_poll.reload.status).to eq("closed")
+      end
+    end
+
+    context "when opening a guess who child poll block" do
+      let!(:block) do
+        create(:experience_block, kind: ExperienceBlock::GUESS_WHO, experience: experience, status: :hidden)
+      end
+
+      let!(:child_poll) do
+        create(:experience_block, experience: experience, kind: ExperienceBlock::POLL, status: :closed, parent_block_id: block.id)
+      end
+
+      it "opens the parent and all children atomically" do
+        described_class.new(actor: user, experience: experience).open_block!(block: child_poll)
+
+        expect(block.reload.status).to eq("open")
+        expect(child_poll.reload.status).to eq("open")
+      end
+    end
   end
 
   describe "#close_block!" do
@@ -794,6 +828,50 @@ RSpec.describe Experiences::Orchestrator do
         expect(block.child_blocks.map(&:status)).to all(eq("closed"))
       end
     end
+
+    context "when closing a guess who parent block" do
+      let!(:block) do
+        create(:experience_block, kind: ExperienceBlock::GUESS_WHO, experience: experience, status: :open)
+      end
+
+      let!(:child_poll_1) do
+        create(:experience_block, experience: experience, kind: ExperienceBlock::POLL, status: :open, parent_block_id: block.id)
+      end
+
+      let!(:child_poll_2) do
+        create(:experience_block, experience: experience, kind: ExperienceBlock::POLL, status: :closed, parent_block_id: block.id)
+      end
+
+      it "closes the parent and all child polls atomically" do
+        subject
+
+        expect(block.reload.status).to eq("closed")
+        expect(child_poll_1.reload.status).to eq("closed")
+        expect(child_poll_2.reload.status).to eq("closed")
+      end
+    end
+
+    context "when closing a guess who child poll block" do
+      let!(:block) do
+        create(:experience_block, kind: ExperienceBlock::GUESS_WHO, experience: experience, status: :open)
+      end
+
+      let!(:child_poll_1) do
+        create(:experience_block, experience: experience, kind: ExperienceBlock::POLL, status: :open, parent_block_id: block.id)
+      end
+
+      let!(:child_poll_2) do
+        create(:experience_block, experience: experience, kind: ExperienceBlock::POLL, status: :open, parent_block_id: block.id)
+      end
+
+      it "closes the parent and all siblings atomically" do
+        described_class.new(actor: user, experience: experience).close_block!(block: child_poll_1)
+
+        expect(block.reload.status).to eq("closed")
+        expect(child_poll_1.reload.status).to eq("closed")
+        expect(child_poll_2.reload.status).to eq("closed")
+      end
+    end
   end
 
   describe "#hide_block!" do
@@ -840,6 +918,50 @@ RSpec.describe Experiences::Orchestrator do
 
         expect(block.reload.status).to eq("hidden")
         expect(block.child_blocks.map(&:status)).to all(eq("hidden"))
+      end
+    end
+
+    context "when hiding a guess who parent block" do
+      let!(:block) do
+        create(:experience_block, kind: ExperienceBlock::GUESS_WHO, experience: experience, status: :open)
+      end
+
+      let!(:child_poll_1) do
+        create(:experience_block, experience: experience, kind: ExperienceBlock::POLL, status: :open, parent_block_id: block.id)
+      end
+
+      let!(:child_poll_2) do
+        create(:experience_block, experience: experience, kind: ExperienceBlock::POLL, status: :closed, parent_block_id: block.id)
+      end
+
+      it "hides the parent and all child polls atomically" do
+        subject
+
+        expect(block.reload.status).to eq("hidden")
+        expect(child_poll_1.reload.status).to eq("hidden")
+        expect(child_poll_2.reload.status).to eq("hidden")
+      end
+    end
+
+    context "when hiding a guess who child poll block" do
+      let!(:block) do
+        create(:experience_block, kind: ExperienceBlock::GUESS_WHO, experience: experience, status: :open)
+      end
+
+      let!(:child_poll_1) do
+        create(:experience_block, experience: experience, kind: ExperienceBlock::POLL, status: :open, parent_block_id: block.id)
+      end
+
+      let!(:child_poll_2) do
+        create(:experience_block, experience: experience, kind: ExperienceBlock::POLL, status: :open, parent_block_id: block.id)
+      end
+
+      it "hides the parent and all siblings atomically" do
+        described_class.new(actor: user, experience: experience).hide_block!(block: child_poll_1)
+
+        expect(block.reload.status).to eq("hidden")
+        expect(child_poll_1.reload.status).to eq("hidden")
+        expect(child_poll_2.reload.status).to eq("hidden")
       end
     end
   end

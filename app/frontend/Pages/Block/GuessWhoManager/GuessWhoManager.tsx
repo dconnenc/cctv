@@ -1,7 +1,6 @@
 import { useMemo } from 'react';
 
 import { useExperience } from '@cctv/contexts/ExperienceContext';
-import { DialogDescription, DialogTitle } from '@cctv/core';
 import { Button } from '@cctv/core/Button/Button';
 import { useGuessWhoControls } from '@cctv/hooks/useGuessWhoControls';
 import { GuessWhoBlock, GuessWhoContestant, GuessWhoMonitorView } from '@cctv/types';
@@ -64,7 +63,7 @@ function ContestantPanel({
   };
 
   return (
-    <section className={styles.contestantPanel}>
+    <section className={styles.contestantPanel} aria-label={`Contestant ${index + 1}`}>
       <header className={styles.contestantHeader}>
         <div>
           <span className={styles.label}>Contestant {index + 1}</span>
@@ -155,19 +154,7 @@ function ContestantPanel({
             <span>
               Poll responses: {responded} / {total}
             </span>
-            <Button
-              onClick={async () => {
-                const result = await concludePoll(block.id);
-                if (result?.missing_mystery) {
-                  const confirmed = window.confirm(
-                    result.error +
-                      '\n\nForce conclude anyway? All participants who answered will be eliminated.',
-                  );
-                  if (confirmed) concludePoll(block.id, true);
-                }
-              }}
-              disabled={isLoading}
-            >
+            <Button onClick={() => concludePoll(block.id)} disabled={isLoading}>
               Conclude poll
             </Button>
           </>
@@ -211,8 +198,7 @@ export default function GuessWhoManager({ block }: GuessWhoManagerProps) {
 
   return (
     <div className={styles.root}>
-      <DialogTitle className={styles.title}>Guess Who</DialogTitle>
-      <DialogDescription className="sr-only">Manage the Guess Who comedy show.</DialogDescription>
+      <h2 className={styles.title}>Guess Who</h2>
 
       <section className={styles.section}>
         <h3>Contestants segment</h3>
@@ -237,7 +223,7 @@ export default function GuessWhoManager({ block }: GuessWhoManagerProps) {
 
       {started && (
         <>
-          <section className={styles.section}>
+          <section className={styles.section} aria-label="Monitor view">
             <h3>Monitor view</h3>
             <div className={styles.monitorToggle}>
               {MONITOR_VIEWS.map((v) => (
