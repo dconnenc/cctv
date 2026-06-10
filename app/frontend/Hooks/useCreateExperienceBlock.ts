@@ -29,7 +29,7 @@ export interface CreateExperienceBlockParams {
       | { kind: string; question: string; input_type: string };
   }>;
   questions?: Array<{
-    payload: Record<string, string>;
+    payload: Record<string, string | number | boolean>;
   }>;
 }
 

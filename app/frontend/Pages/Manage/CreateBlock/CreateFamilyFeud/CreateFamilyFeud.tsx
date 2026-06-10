@@ -1,7 +1,13 @@
-import { X } from 'lucide-react';
+import { Sparkles, X } from 'lucide-react';
 
 import { Button } from '@cctv/core/Button/Button';
 import { TextInput } from '@cctv/core/TextInput/TextInput';
+import {
+  DEFAULT_SYNTHETIC_COUNT,
+  MAX_SYNTHETIC_COUNT,
+  MIN_SYNTHETIC_COUNT,
+  clampSyntheticCount,
+} from '@cctv/pages/Block/FamilyFeudManager/synthetic';
 import {
   Block,
   BlockComponentProps,
@@ -25,7 +31,9 @@ export const validateFamilyFeud = (data: FamilyFeudData): string | null => {
     return 'Family Feud must have a title';
   }
 
-  const validQuestions = data.questions.filter((q) => q.question.trim());
+  // Synthetic questions may be created without a question string — it can be
+  // supplied later on the manage screen before generating answers.
+  const validQuestions = data.questions.filter((q) => q.synthetic || q.question.trim());
 
   if (validQuestions.length === 0) {
     return 'Family Feud must have at least one question';
@@ -41,7 +49,7 @@ export const canFamilyFeudOpenImmediately = (): boolean => {
 export const processFamilyFeudBeforeSubmit = (data: FamilyFeudData): FamilyFeudData => {
   return {
     ...data,
-    questions: data.questions.filter((q) => q.question.trim()),
+    questions: data.questions.filter((q) => q.synthetic || q.question.trim()),
   };
 };
 
@@ -57,29 +65,45 @@ export const familyFeudPayloadToFormData = (
   children?: Block[],
 ): FamilyFeudData => ({
   title: payload.title || '',
-  questions: (children || []).map((child) => ({
-    id: child.id,
-    question: (child.payload as QuestionPayload).question || '',
-  })),
+  questions: (children || []).map((child) => {
+    const childPayload = child.payload as QuestionPayload;
+    return {
+      id: child.id,
+      question: childPayload.question || '',
+      synthetic: childPayload.synthetic ?? false,
+      generateCount: childPayload.generate_count ?? DEFAULT_SYNTHETIC_COUNT,
+    };
+  }),
 });
 
-export const buildFamilyFeudQuestions = (data: FamilyFeudData) => {
+export const buildFamilyFeudQuestions = (
+  data: FamilyFeudData,
+): Array<{ payload: Record<string, string | number | boolean> }> => {
   return data.questions
-    .filter((q) => q.question.trim())
-    .map((q, index) => ({
-      payload: {
+    .filter((q) => q.synthetic || q.question.trim())
+    .map((q, index) => {
+      const payload: Record<string, string | number | boolean> = {
         question: q.question.trim(),
         formKey: `answer_${index}`,
         inputType: 'text',
-      },
-    }));
+      };
+
+      if (q.synthetic) {
+        payload.synthetic = true;
+        payload.generate_count = clampSyntheticCount(q.generateCount);
+      }
+
+      return { payload };
+    });
 };
 
 export default function CreateFamilyFeud({ data, onChange }: BlockComponentProps<FamilyFeudData>) {
-  const addQuestion = () => {
+  const addQuestion = (synthetic = false) => {
     const newQuestion = {
       id: Date.now().toString(),
       question: '',
+      synthetic,
+      generateCount: synthetic ? DEFAULT_SYNTHETIC_COUNT : undefined,
     };
     onChange?.({ questions: [...data.questions, newQuestion] });
   };
@@ -87,6 +111,12 @@ export default function CreateFamilyFeud({ data, onChange }: BlockComponentProps
   const updateQuestion = (index: number, question: string) => {
     const newQuestions = [...data.questions];
     newQuestions[index] = { ...newQuestions[index], question };
+    onChange?.({ questions: newQuestions });
+  };
+
+  const updateGenerateCount = (index: number, generateCount: number) => {
+    const newQuestions = [...data.questions];
+    newQuestions[index] = { ...newQuestions[index], generateCount };
     onChange?.({ questions: newQuestions });
   };
 
@@ -110,16 +140,40 @@ export default function CreateFamilyFeud({ data, onChange }: BlockComponentProps
       <div className={sharedStyles.sectionTitle}>Questions</div>
 
       {data.questions.map((question, index) => (
-        <div key={question.id} className={styles.questionItem}>
-          <div className={styles.questionNumber}>{index + 1}</div>
+        <div
+          key={question.id}
+          className={`${styles.questionItem} ${question.synthetic ? styles.syntheticItem : ''}`}
+        >
+          <div className={styles.questionNumber}>
+            {question.synthetic ? <Sparkles size={16} /> : index + 1}
+          </div>
           <div className={styles.questionField}>
+            {question.synthetic && (
+              <div className={styles.syntheticBadge}>
+                AI-generated — not shown to participants. The question can also be set later.
+              </div>
+            )}
             <TextInput
-              label={`Question ${index + 1}`}
+              label={
+                question.synthetic ? `Synthetic Question ${index + 1}` : `Question ${index + 1}`
+              }
               placeholder="Enter question"
               value={question.question}
               onChange={(e) => updateQuestion(index, e.target.value)}
-              required
+              required={!question.synthetic}
             />
+            {question.synthetic && (
+              <TextInput
+                type="number"
+                label="Answers to generate"
+                value={String(question.generateCount ?? DEFAULT_SYNTHETIC_COUNT)}
+                min={MIN_SYNTHETIC_COUNT}
+                max={MAX_SYNTHETIC_COUNT}
+                onChange={(e) =>
+                  updateGenerateCount(index, clampSyntheticCount(Number(e.target.value)))
+                }
+              />
+            )}
           </div>
           <Button
             variant="ghost"
@@ -132,9 +186,19 @@ export default function CreateFamilyFeud({ data, onChange }: BlockComponentProps
         </div>
       ))}
 
-      <Button variant="secondary" type="button" onClick={addQuestion}>
-        Add Question
-      </Button>
+      <div className={styles.addButtons}>
+        <Button variant="secondary" type="button" onClick={() => addQuestion(false)}>
+          Add Question
+        </Button>
+        <Button
+          variant="outline"
+          type="button"
+          onClick={() => addQuestion(true)}
+          icon={<Sparkles size={16} />}
+        >
+          Add Synthetic Question
+        </Button>
+      </div>
     </div>
   );
 }

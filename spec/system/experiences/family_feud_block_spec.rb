@@ -122,6 +122,64 @@ RSpec.describe "Family Feud Block", type: :system do
     end
   end
 
+  describe "synthetic (AI-generated) questions" do
+    before do
+      allow(AI::Client).to receive(:call).and_return(
+        { "answers" => ["carrot", "broccoli", "carrot", "potato", "broccoli"] }
+      )
+    end
+
+    it "generates answers from the agent, hides the question from participants, and categorizes like any other" do
+      sign_in(admin)
+      create_experience_and_go_to_manage(name: "AI Night", code: "ai-night")
+
+      queue_block(n: 1) do
+        select "Family Feud", from: "Kind"
+        fill_in "Title", with: "Name Something"
+        click_button "Add Question"
+        fill_in "Question 1", with: "Name a fruit"
+        click_button "Add Synthetic Question"
+        fill_in "Synthetic Question 2", with: "Name a vegetable"
+      end
+
+      start_experience
+
+      using_session(:participant) do
+        register_participant(
+          code: "ai-night",
+          name: "Alice",
+          email: "alice@example.com",
+          experience_name: "AI Night"
+        )
+        expect(page).to have_text("Waiting for the next activity...")
+      end
+
+      visit current_path
+      select_and_present(1, kind: "family.feud")
+
+      # Participant can answer the human question but never sees the synthetic one
+      using_session(:participant) do
+        expect(page).to have_field("Name a fruit")
+        expect(page).to have_no_field("Name a vegetable")
+      end
+
+      select_block(1, kind: "family.feud")
+
+      # The synthetic question is presented to the admin and can be dispatched to the agent
+      expect(page).to have_button("Expand Name a vegetable")
+      click_button "Expand Name a vegetable"
+
+      expect(page).to have_button("Generate Answers")
+      click_button "Generate Answers"
+
+      # Generated answers land in the answers column, ready to be categorized
+      expect(page).to have_text("Answers (5)")
+
+      # From here it behaves like any other question: buckets are available
+      expect(page).to have_button("Add Bucket")
+    end
+  end
+
   describe "editing a family feud block" do
     before do
       sign_in(admin)

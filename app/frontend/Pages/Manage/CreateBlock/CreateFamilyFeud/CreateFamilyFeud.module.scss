@@ -36,3 +36,24 @@
   padding: 0.5rem;
   min-width: auto;
 }
+
+.syntheticItem {
+  align-items: start;
+
+  .questionNumber {
+    margin-top: var(--space-sm);
+    background-color: var(--accent);
+  }
+}
+
+.syntheticBadge {
+  margin-bottom: var(--space-xs);
+  color: var(--muted-foreground);
+  font-size: var(--font-size-sm);
+}
+
+.addButtons {
+  display: flex;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
+}

@@ -3,6 +3,9 @@ module Experiences
     # A real Family Feud board shows at most 8 answers.
     MAX_FAMILY_FEUD_BUCKETS = 8
 
+    # Upper bound on AI-generated synthetic answers per question.
+    MAX_SYNTHETIC_ANSWERS = 200
+
     attr_reader :profile_changes
     def kick_participant!(participant)
       participant.destroy!
@@ -134,13 +137,13 @@ module Experiences
       if block.kind == ExperienceBlock::FAMILY_FEUD
         transaction do
           block.open!
-          block.child_blocks.update_all(status: :open)
+          open_family_feud_children!(block)
         end
       elsif block.parent_block_id.present? && block.parent_block&.kind == ExperienceBlock::FAMILY_FEUD
         parent = block.parent_block
         transaction do
           parent.open!
-          parent.child_blocks.update_all(status: :open)
+          open_family_feud_children!(parent)
         end
       else
         block.open!
@@ -404,7 +407,7 @@ module Experiences
         raise ::AI::Client::Error, "No answers to categorize" if submissions.empty?
 
         question_text = question_payload["question"] || "Question"
-        answers = submissions.map { |s| { id: s.id.to_s, text: s.answer.to_s } }
+        answers = submissions.map { |s| { id: s.id.to_s, text: submission_answer_text(s) } }
 
         parent_payload = question_block.parent_block&.payload || {}
 
@@ -438,6 +441,63 @@ module Experiences
 
         question_block.update!(payload: question_payload)
         question_payload["buckets"]
+      end
+    end
+
+    def generate_family_feud_synthetic_answers!(question_id:, question_text:, count:)
+      question_block = experience.experience_blocks.find(question_id)
+
+      unless question_block.synthetic_question?
+        raise ArgumentError, "Block is not a synthetic Family Feud question"
+      end
+
+      text = question_text.to_s.strip
+      raise ::AI::Client::Error, "A question is required to generate answers" if text.blank?
+
+      requested = count.to_i
+      requested = 1 if requested < 1
+      requested = MAX_SYNTHETIC_ANSWERS if requested > MAX_SYNTHETIC_ANSWERS
+
+      parent_payload = question_block.parent_block&.payload || {}
+      question_payload = question_block.payload || {}
+
+      prompt_builder = ::AI::Prompts::FamilyFeudAnswerGeneration.new(
+        question_text: text,
+        count: requested,
+        game_context: parent_payload["ai_context"],
+        question_context: question_payload["ai_context"]
+      )
+
+      result = ::AI::Client.call(
+        prompt: prompt_builder.prompt,
+        response_schema: prompt_builder.response_schema
+      )
+
+      generated = Array(result["answers"]).map { |a| a.to_s.strip }.reject(&:blank?).first(requested)
+      raise ::AI::Client::Error, "The agent returned no answers" if generated.empty?
+
+      transaction do
+        # Regenerating replaces any prior generated answers and resets this
+        # question's buckets so categorization starts from a clean board.
+        ExperienceQuestionSubmission.where(experience_block_id: question_block.id).delete_all
+
+        question_payload["question"] = text
+        question_payload["synthetic"] = true
+        question_payload["generate_count"] = requested
+        question_payload["buckets"] = []
+        question_block.update!(payload: question_payload)
+
+        now = Time.current.iso8601
+        submissions = generated.map do |answer_text|
+          ExperienceQuestionSubmission.create!(
+            experience_block: question_block,
+            experience_participant: nil,
+            source: ExperienceQuestionSubmission::AI_GENERATED_SOURCE,
+            answer: { "value" => answer_text, "submittedAt" => now }
+          )
+        end
+
+        submissions.map { |s| { "id" => s.id.to_s, "text" => submission_answer_text(s) } }
       end
     end
 
@@ -1360,6 +1420,24 @@ module Experiences
                     .first(MAX_FAMILY_FEUD_BUCKETS)
                     .to_set
       buckets.select.with_index { |_, i| keep.include?(i) }
+    end
+
+    # Opens a Family Feud parent's gather-able question children. Synthetic
+    # questions are never opened — their answers come from the agent, not
+    # participants, and they must stay hidden from the participant view.
+    def open_family_feud_children!(parent_block)
+      parent_block.child_blocks
+        .where("(payload->>'synthetic') IS DISTINCT FROM 'true'")
+        .update_all(status: :open)
+    end
+
+    # Question submissions store their answer as { "value" => ..., "submittedAt" => ... }.
+    # Extract the human-readable text for prompting and display.
+    def submission_answer_text(submission)
+      answer = submission.answer
+      return answer["value"].to_s if answer.is_a?(Hash)
+
+      answer.to_s
     end
 
     def guard_the_scene!(block)

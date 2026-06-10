@@ -383,7 +383,7 @@ export function CreateBlockProvider({
         open_immediately: boolean;
         add_to_playbill: boolean;
         playbill_mysterious: boolean;
-        questions?: Array<{ payload: Record<string, string> }>;
+        questions?: Array<{ payload: Record<string, string | boolean | number> }>;
       } = {
         kind: blockData.kind,
         payload,
