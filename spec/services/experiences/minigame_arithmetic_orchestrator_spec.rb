@@ -120,25 +120,27 @@ RSpec.describe Experiences::Orchestrator, "minigame arithmetic" do
       }.not_to change { ExperienceMinigameSubmission.where(experience_block_id: block.id, experience_participant: player).count }
     end
 
-    it "rejects submissions before start" do
+    it "ignores submissions before start without raising" do
       block.reload
       block.update!(payload: block.payload.merge("started_at" => nil))
 
-      expect {
-        player_orchestrator.submit_minigame_arithmetic_response!(
-          block: block, question_index: 0, answer: "1"
-        )
-      }.to raise_error(Experiences::InvalidTransitionError)
+      result = player_orchestrator.submit_minigame_arithmetic_response!(
+        block: block, question_index: 0, answer: "1"
+      )
+
+      expect(result).to be_nil
+      expect(ExperienceMinigameSubmission.where(experience_block_id: block.id).count).to eq(0)
     end
 
-    it "rejects submissions after end" do
+    it "ignores submissions after end without raising" do
       orchestrator.end_minigame_arithmetic!(block: block)
 
-      expect {
-        player_orchestrator.submit_minigame_arithmetic_response!(
-          block: block, question_index: 0, answer: "1"
-        )
-      }.to raise_error(Experiences::InvalidTransitionError)
+      result = player_orchestrator.submit_minigame_arithmetic_response!(
+        block: block, question_index: 0, answer: "1"
+      )
+
+      expect(result).to be_nil
+      expect(ExperienceMinigameSubmission.where(experience_block_id: block.id).count).to eq(0)
     end
   end
 
@@ -158,11 +160,11 @@ RSpec.describe Experiences::Orchestrator, "minigame arithmetic" do
       orchestrator.start_minigame_arithmetic!(block: block)
     end
 
-    it "stamps ended_at and closes the block" do
+    it "stamps ended_at but keeps the block open so the leaderboard stays on the monitor" do
       orchestrator.end_minigame_arithmetic!(block: block)
       block.reload
       expect(block.payload["ended_at"]).to be_present
-      expect(block.status).to eq("closed")
+      expect(block.status).to eq("open")
     end
 
     it "is idempotent" do
@@ -171,6 +173,51 @@ RSpec.describe Experiences::Orchestrator, "minigame arithmetic" do
 
       orchestrator.end_minigame_arithmetic!(block: block)
       expect(block.reload.payload["ended_at"]).to eq(first_ended_at)
+    end
+  end
+
+  describe "#restart_minigame_arithmetic!" do
+    let(:block) do
+      orchestrator.add_block!(
+        kind: ExperienceBlock::MINIGAME_ARITHMETIC,
+        payload: {
+          "duration_seconds" => 30,
+          "question_count"   => 3,
+          "leaderboard_size" => 5
+        }
+      )
+    end
+
+    let(:player_orchestrator) do
+      described_class.new(actor: player.user, experience: experience)
+    end
+
+    before do
+      orchestrator.start_minigame_arithmetic!(block: block)
+      player_orchestrator.submit_minigame_arithmetic_response!(
+        block: block, question_index: 0, answer: "1"
+      )
+      orchestrator.end_minigame_arithmetic!(block: block)
+    end
+
+    it "clears timestamps and submissions so it can be started again" do
+      orchestrator.restart_minigame_arithmetic!(block: block)
+      block.reload
+
+      expect(block.payload["started_at"]).to be_nil
+      expect(block.payload["ended_at"]).to be_nil
+      expect(ExperienceMinigameSubmission.where(experience_block_id: block.id).count).to eq(0)
+    end
+
+    it "leaves the block in a startable state" do
+      orchestrator.restart_minigame_arithmetic!(block: block)
+
+      expect {
+        orchestrator.start_minigame_arithmetic!(block: block.reload)
+      }.to have_enqueued_job(Minigames::EndArithmeticJob)
+
+      expect(block.reload.payload["started_at"]).to be_present
+      expect(block.payload["ended_at"]).to be_nil
     end
   end
 end

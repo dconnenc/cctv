@@ -324,13 +324,6 @@ class ExperienceSubscriptionChannel < ApplicationCable::Channel
       result[block.id.to_s][:own_vote_suggestion_id] = vote.improv_suggestion_id
     end
 
-    @experience.experience_blocks.where(kind: ExperienceBlock::MINIGAME_ARITHMETIC).each do |block|
-      result[block.id.to_s] = Minigames::ArithmeticProgress.for_participant(
-        block: block,
-        participant: participant
-      )
-    end
-
     ExperienceMinigameBalloonResult
       .where(experience_block_id: block_scope, experience_participant_id: participant.id)
       .each { |r| result[r.experience_block_id.to_s] = { fill_amount: r.fill_amount } }

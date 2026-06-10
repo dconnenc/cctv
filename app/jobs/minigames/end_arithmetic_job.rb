@@ -13,8 +13,10 @@ module Minigames
       return if payload["started_at"].blank?
       return if payload["started_at"] != expected_started_at_iso
 
+      # End the round but keep the block open so the monitor keeps showing it
+      # (now displaying the leaderboard). The admin closes the block when done.
       payload["ended_at"] = Time.current.iso8601
-      block.update!(payload: payload, status: :closed)
+      block.update!(payload: payload)
 
       Experiences::Broadcaster.new(block.experience).broadcast_experience_update
     end

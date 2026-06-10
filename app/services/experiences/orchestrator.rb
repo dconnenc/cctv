@@ -82,7 +82,6 @@ module Experiences
         payload["winner_participant_ids"]    = []
         payload["leader_fill"]               = 0
         payload["leader_participant_id"]     = nil
-        payload["leader_last_broadcast_at"]  = nil
       when ExperienceBlock::THE_SCENE
         leaderboard_size = payload["leaderboard_size"].to_i
         raise ArgumentError, "leaderboard_size must be positive" unless leaderboard_size.positive?
@@ -917,24 +916,44 @@ module Experiences
         payload = block.payload || {}
         return block if payload["ended_at"].present?
 
+        # Ends the round and reveals the leaderboard but keeps the block open so
+        # it stays on the monitor; the admin closes the block separately.
         payload["ended_at"] = Time.current.iso8601
-        block.update!(payload: payload, status: :closed)
+        block.update!(payload: payload)
       end
 
       block
     end
 
+    def restart_minigame_arithmetic!(block:)
+      raise ArgumentError, "Block is not an arithmetic minigame" unless block.kind == ExperienceBlock::MINIGAME_ARITHMETIC
+
+      transaction do
+        payload                = block.payload || {}
+        payload["started_at"]  = nil
+        payload["ended_at"]    = nil
+
+        block.experience_minigame_submissions.delete_all
+        block.update!(payload: payload)
+      end
+
+      block
+    end
+
+    # Answers are recorded best-effort: the round runs client-side and posts
+    # fire-and-forget, so out-of-window submissions are ignored (return nil)
+    # rather than raising — the client never blocks on or surfaces these.
     def submit_minigame_arithmetic_response!(block:, question_index:, answer:)
       raise ArgumentError, "Block is not an arithmetic minigame" unless block.kind == ExperienceBlock::MINIGAME_ARITHMETIC
 
       payload = block.payload || {}
-      raise Experiences::InvalidTransitionError, "Minigame has not started" if payload["started_at"].blank?
-      raise Experiences::InvalidTransitionError, "Minigame has ended"       if payload["ended_at"].present?
+      return nil if payload["started_at"].blank?
+      return nil if payload["ended_at"].present?
 
       questions = Array(payload["questions"])
       index     = question_index.to_i
       question  = questions[index]
-      raise ActiveRecord::RecordNotFound, "Question not found" unless question
+      return nil unless question
 
       submitted_text = answer.to_s.strip
       parsed         = Integer(submitted_text, exception: false)
@@ -967,7 +986,6 @@ module Experiences
         payload["winner_participant_ids"]    = []
         payload["leader_fill"]               = 0
         payload["leader_participant_id"]     = nil
-        payload["leader_last_broadcast_at"]  = nil
 
         block.experience_minigame_balloon_results.delete_all
         block.update!(payload: payload, status: :open)
@@ -984,7 +1002,25 @@ module Experiences
         return block if payload["ended_at"].present?
 
         payload["ended_at"] = Time.current.iso8601
-        block.update!(payload: payload, status: :closed)
+        block.update!(payload: payload)
+      end
+
+      block
+    end
+
+    def restart_minigame_balloon_pump!(block:)
+      raise ArgumentError, "Block is not a balloon pump minigame" unless block.kind == ExperienceBlock::MINIGAME_BALLOON_PUMP
+
+      transaction do
+        payload                              = block.payload || {}
+        payload["started_at"]                = nil
+        payload["ended_at"]                  = nil
+        payload["winner_participant_ids"]    = []
+        payload["leader_fill"]               = 0
+        payload["leader_participant_id"]     = nil
+
+        block.experience_minigame_balloon_results.delete_all
+        block.update!(payload: payload)
       end
 
       block
@@ -995,7 +1031,6 @@ module Experiences
     #
     # @return [Hash] :result — :accepted, :ignored
     #                :winners — array of ExperienceParticipant when game just ended
-    #                :leader_changed — true if the leader for monitor display moved
     def submit_balloon_pump_update!(block:, fill_amount:)
       raise ArgumentError, "Block is not a balloon pump minigame" unless block.kind == ExperienceBlock::MINIGAME_BALLOON_PUMP
 
@@ -1018,16 +1053,15 @@ module Experiences
       result.save!
 
       crossed_target = result.fill_amount >= target_units
-      leader_changed = false
       winners        = []
 
       if crossed_target
         winners = close_balloon_pump_with_winners!(block, target_units)
       else
-        leader_changed = update_balloon_pump_leader!(block, participant, result.fill_amount)
+        update_balloon_pump_leader!(block, participant, result.fill_amount)
       end
 
-      { result: :accepted, winners: winners, leader_changed: leader_changed }
+      { result: :accepted, winners: winners }
     end
 
     # The Scene -------------------------------------------------------------
@@ -1493,7 +1527,7 @@ module Experiences
         payload["leader_fill"]            = target_units
         payload["leader_participant_id"]  = winners.first&.id
 
-        block.update!(payload: payload, status: :closed)
+        block.update!(payload: payload)
         winners
       end
     end

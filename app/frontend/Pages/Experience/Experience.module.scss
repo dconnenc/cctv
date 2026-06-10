@@ -307,6 +307,16 @@
         )
     );
   }
+
+  // The mobile layout hides the top nav and shows a fixed bottom tab bar.
+  // Reserve its height here so centered block content is not dragged beneath it.
+  .activeExperience {
+    min-height: calc(
+      100dvh - var(--nav-h) - var(--bottom-nav-h) - env(safe-area-inset-bottom) - calc(
+          var(--space-sm) * 2
+        )
+    );
+  }
 }
 
 .topArea {

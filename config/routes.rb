@@ -108,10 +108,12 @@ Rails.application.routes.draw do
 
           post 'minigame/arithmetic/start', action: :start_minigame_arithmetic
           post 'minigame/arithmetic/end', action: :end_minigame_arithmetic
+          post 'minigame/arithmetic/restart', action: :restart_minigame_arithmetic
           post 'minigame/arithmetic/responses', action: :submit_minigame_arithmetic_response
 
           post 'minigame/balloon_pump/start', action: :start_minigame_balloon_pump
           post 'minigame/balloon_pump/end', action: :end_minigame_balloon_pump
+          post 'minigame/balloon_pump/restart', action: :restart_minigame_balloon_pump
           post 'minigame/balloon_pump/pump', action: :submit_minigame_balloon_pump_update
 
           post 'the_scene/start', action: :start_the_scene

@@ -3,3 +3,4 @@ export { SOUND_URLS } from './registry';
 export { play } from './play';
 export { useMonitorSound } from './useMonitorSound';
 export { useLoopingMonitorSound } from './useLoopingMonitorSound';
+export { useSoundEffect } from './useSoundEffect';

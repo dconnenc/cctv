@@ -1,10 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { useAdminAuth } from '@cctv/contexts/AdminAuthContext';
-import {
-  BalloonPumpLeaderUpdate,
-  useDispatchRegistry,
-} from '@cctv/contexts/DispatchRegistryContext';
 import { useExperience } from '@cctv/contexts/ExperienceContext';
 
 interface ActionResult {
@@ -24,7 +20,7 @@ export function useMinigameBalloonPump() {
   const inflightRef = useRef(false);
 
   const buildAdminUrl = useCallback(
-    (blockId: string, action: 'start' | 'end') =>
+    (blockId: string, action: 'start' | 'end' | 'restart') =>
       `/api/experiences/${encodeURIComponent(code ?? '')}/blocks/${encodeURIComponent(blockId)}/minigame/balloon_pump/${action}`,
     [code],
   );
@@ -59,6 +55,22 @@ export function useMinigameBalloonPump() {
       const data = await res.json();
       if (!res.ok || !data?.success) {
         const msg = data?.error || 'Failed to end minigame';
+        setError(msg);
+        return { success: false, error: msg };
+      }
+      return { success: true };
+    },
+    [code, adminFetch, buildAdminUrl],
+  );
+
+  const restart = useCallback(
+    async (blockId: string): Promise<ActionResult> => {
+      if (!code) return { success: false, error: 'Missing experience code' };
+      setError(null);
+      const res = await adminFetch(buildAdminUrl(blockId, 'restart'), { method: 'POST' });
+      const data = await res.json();
+      if (!res.ok || !data?.success) {
+        const msg = data?.error || 'Failed to restart minigame';
         setError(msg);
         return { success: false, error: msg };
       }
@@ -133,34 +145,5 @@ export function useMinigameBalloonPump() {
     };
   }, []);
 
-  return { start, end, submitPump, error };
-}
-
-export function useBalloonPumpLeader(
-  blockId: string,
-  initial: BalloonPumpLeaderUpdate,
-): BalloonPumpLeaderUpdate {
-  const { registerBalloonPumpListener, unregisterBalloonPumpListener } = useDispatchRegistry();
-  const [state, setState] = useState<BalloonPumpLeaderUpdate>(initial);
-  const initialRef = useRef(initial);
-
-  useEffect(() => {
-    if (
-      initial.leader_fill !== initialRef.current.leader_fill ||
-      initial.target_units !== initialRef.current.target_units ||
-      initial.leader_participant_id !== initialRef.current.leader_participant_id
-    ) {
-      initialRef.current = initial;
-      setState(initial);
-    }
-  }, [initial]);
-
-  useEffect(() => {
-    registerBalloonPumpListener(blockId, (update) => {
-      setState(update);
-    });
-    return () => unregisterBalloonPumpListener(blockId);
-  }, [blockId, registerBalloonPumpListener, unregisterBalloonPumpListener]);
-
-  return state;
+  return { start, end, restart, submitPump, error };
 }

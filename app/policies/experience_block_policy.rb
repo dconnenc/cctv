@@ -15,8 +15,13 @@ class ExperienceBlockPolicy < ApplicationPolicy
     user_allowed_to_interact_with_block?
   end
 
+  # The arithmetic round runs client-side and records answers best-effort; a
+  # late answer landing after the block has closed must not 403. Any participant
+  # in the experience may record an answer regardless of block status.
   def submit_minigame_arithmetic_response?
-    user_allowed_to_interact_with_block?
+    return false unless user
+
+    participant?
   end
 
   def submit_minigame_balloon_pump_update?

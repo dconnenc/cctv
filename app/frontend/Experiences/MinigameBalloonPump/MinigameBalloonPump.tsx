@@ -4,8 +4,8 @@ import { Layer, Line, Stage } from 'react-konva';
 
 import { useExperience } from '@cctv/contexts/ExperienceContext';
 import { useExperienceState } from '@cctv/contexts/ExperienceStateContext';
-import { Button } from '@cctv/core/Button/Button';
-import { useBalloonPumpLeader, useMinigameBalloonPump } from '@cctv/hooks/useMinigameBalloonPump';
+import { useMinigameBalloonPump } from '@cctv/hooks/useMinigameBalloonPump';
+import { useSoundEffect } from '@cctv/sounds';
 import { MinigameBalloonPumpBlock, MinigameBalloonPumpPodiumEntry } from '@cctv/types';
 
 import Balloon from './Balloon';
@@ -17,6 +17,9 @@ interface Props {
   block: MinigameBalloonPumpBlock;
   viewContext?: 'participant' | 'monitor' | 'manage';
 }
+
+// The participant balloon grows to roughly fill the screen at full inflation.
+const PARTICIPANT_BALLOON_MAX_SCALE = 3.2;
 
 export default function MinigameBalloonPump({ block, viewContext = 'participant' }: Props) {
   switch (viewContext) {
@@ -59,7 +62,13 @@ function ParticipantView({ block }: { block: MinigameBalloonPumpBlock }) {
   };
 
   const fillRatio = target_units > 0 ? Math.min(1, localFill / target_units) : 0;
-  const popped = (ended_at && fillRatio >= 0.999) || false;
+  // Burst the moment this player fills up — don't wait for the server to
+  // confirm the game ended, which adds a visible round-trip lag.
+  const reachedTarget = fillRatio >= 0.999;
+  const popped = reachedTarget;
+
+  // Pop sound plays from the player's own device the moment their balloon bursts.
+  useSoundEffect('balloon_pop', popped);
 
   const youWon = useMemo(() => {
     if (!ended_at || !participant) return false;
@@ -74,14 +83,19 @@ function ParticipantView({ block }: { block: MinigameBalloonPumpBlock }) {
     );
   }
 
-  if (ended_at) {
+  if (ended_at || reachedTarget) {
     return (
       <div className={styles.root}>
         <div className={styles.balloonStage}>
-          <Balloon fillRatio={fillRatio} popped={popped} size={220} />
+          <Balloon
+            fillRatio={fillRatio}
+            popped={popped}
+            size={220}
+            maxScale={PARTICIPANT_BALLOON_MAX_SCALE}
+          />
         </div>
         <p className={styles.endedBanner}>
-          {youWon ? 'BURST! You did it.' : 'Game over — see the monitor.'}
+          {reachedTarget || youWon ? 'BURST! You did it.' : 'Game over — see the monitor.'}
         </p>
       </div>
     );
@@ -96,7 +110,7 @@ function ParticipantView({ block }: { block: MinigameBalloonPumpBlock }) {
         <span className={styles.targetLabel}>{Math.round(fillRatio * 100)}% inflated</span>
       </div>
       <div className={styles.balloonStage}>
-        <Balloon fillRatio={fillRatio} size={220} />
+        <Balloon fillRatio={fillRatio} size={220} maxScale={PARTICIPANT_BALLOON_MAX_SCALE} />
       </div>
       <div className={styles.pumpStage}>
         <Pump pumpUnits={localFill} onStrokeUnits={handlePumpUnits} disabled={fillRatio >= 1} />
@@ -107,26 +121,7 @@ function ParticipantView({ block }: { block: MinigameBalloonPumpBlock }) {
 }
 
 function MonitorView({ block }: { block: MinigameBalloonPumpBlock }) {
-  const { target_units, leader_fill, leader_participant_id, started_at, ended_at, podium } =
-    block.payload;
-
-  const leader = useBalloonPumpLeader(block.id, {
-    leader_fill,
-    target_units,
-    leader_participant_id,
-  });
-
-  const [popping, setPopping] = useState(false);
-
-  useEffect(() => {
-    if (ended_at && !popping) {
-      setPopping(true);
-      const t = window.setTimeout(() => setPopping(false), 1600);
-      return () => window.clearTimeout(t);
-    }
-  }, [ended_at, popping]);
-
-  const fillRatio = target_units > 0 ? Math.min(1, leader.leader_fill / target_units) : 0;
+  const { started_at, ended_at, podium } = block.payload;
 
   if (!started_at) {
     return (
@@ -147,17 +142,12 @@ function MonitorView({ block }: { block: MinigameBalloonPumpBlock }) {
 
   return (
     <div className={styles.monitorRoot}>
-      <p className={styles.monitorTitle}>Closest to popping</p>
-      <div className={styles.monitorBalloonStage}>
-        <Balloon fillRatio={fillRatio} popped={popping} size={420} />
-      </div>
-      <p className={styles.monitorPercent}>{Math.round(fillRatio * 100)}%</p>
+      <p className={styles.monitorTitle}>Pump to fill your balloon!</p>
     </div>
   );
 }
 
 function ManageView({ block }: { block: MinigameBalloonPumpBlock }) {
-  const { start, end } = useMinigameBalloonPump();
   const { target_units, started_at, ended_at, leader_fill, live_results } = block.payload;
   const status = !started_at ? 'queued' : ended_at ? 'ended' : 'running';
 
@@ -171,15 +161,6 @@ function ManageView({ block }: { block: MinigameBalloonPumpBlock }) {
         Leader fill: {leader_fill ?? 0} (
         {target_units > 0 ? Math.round(((leader_fill ?? 0) / target_units) * 100) : 0}%)
       </p>
-
-      <div className={styles.manageActions}>
-        {status === 'queued' && <Button onClick={() => start(block.id)}>Start minigame</Button>}
-        {status === 'running' && (
-          <Button variant="secondary" onClick={() => end(block.id)}>
-            End early
-          </Button>
-        )}
-      </div>
 
       {live_results && live_results.length > 0 && (
         <div className={styles.liveResults}>

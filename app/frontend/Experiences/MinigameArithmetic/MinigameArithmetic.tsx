@@ -1,6 +1,5 @@
 import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 
-import { useExperienceState } from '@cctv/contexts/ExperienceStateContext';
 import { Button } from '@cctv/core/Button/Button';
 import { useMinigameArithmetic } from '@cctv/hooks/useMinigameArithmetic';
 import { MinigameArithmeticBlock } from '@cctv/types';
@@ -50,20 +49,26 @@ export default function MinigameArithmetic({
 }
 
 function ParticipantView({ block }: { block: MinigameArithmeticBlock }) {
-  const { submitAnswer, isSubmitting } = useMinigameArithmetic();
-  const { submissionState } = useExperienceState();
-  const { duration_seconds, started_at, ended_at, leaderboard } = block.payload;
-  const blockProgress = submissionState[block.id];
-  const current_question = blockProgress?.current_question ?? null;
-  const score = blockProgress?.score ?? { correct: 0, completed: 0 };
+  const { recordAnswer } = useMinigameArithmetic();
+  const { duration_seconds, started_at, ended_at, leaderboard, questions } = block.payload;
   const remaining = useCountdown(started_at, duration_seconds, ended_at);
   const inputRef = useRef<HTMLInputElement>(null);
+  const [index, setIndex] = useState(0);
+  const [correct, setCorrect] = useState(0);
   const [value, setValue] = useState('');
+
+  // The round is played entirely client-side; reset local progress whenever it
+  // (re)starts so a restart returns the player to the first question.
+  useEffect(() => {
+    setIndex(0);
+    setCorrect(0);
+    setValue('');
+  }, [started_at]);
 
   useEffect(() => {
     setValue('');
     inputRef.current?.focus();
-  }, [current_question?.index]);
+  }, [index]);
 
   if (ended_at && leaderboard) {
     return <Leaderboard block={block} />;
@@ -77,32 +82,41 @@ function ParticipantView({ block }: { block: MinigameArithmeticBlock }) {
     );
   }
 
-  if (!current_question) {
+  const current = questions?.[index];
+  const timeUp = remaining <= 0;
+
+  if (!current || timeUp) {
     return (
       <div className={styles.root}>
-        <p className={styles.timer}>{formatSeconds(remaining)}</p>
+        <p className={styles.timer}>{formatSeconds(Math.max(0, remaining))}</p>
         <p className={styles.score}>
-          {score?.correct ?? 0} / {score?.completed ?? 0}
+          {correct} / {index}
         </p>
-        <p className={styles.waiting}>All questions answered. Hold tight!</p>
+        <p className={styles.waiting}>
+          {timeUp ? "Time's up!" : 'All questions answered. Hold tight!'}
+        </p>
       </div>
     );
   }
 
-  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (isSubmitting) return;
-    await submitAnswer(block.id, current_question.index, value);
+    if (Number.parseInt(value, 10) === current.answer) {
+      setCorrect((c) => c + 1);
+    }
+    // Best-effort record for the server-side leaderboard; never awaited.
+    recordAnswer(block.id, current.index, value);
+    setIndex((i) => i + 1);
   };
 
   return (
     <div className={styles.root}>
       <p className={styles.timer}>{formatSeconds(remaining)}</p>
       <p className={styles.score}>
-        {score?.correct ?? 0} / {score?.completed ?? 0}
+        {correct} / {index}
       </p>
-      <p className={styles.prompt}>{current_question.prompt} = ?</p>
-      <form onSubmit={handleSubmit}>
+      <p className={styles.prompt}>{current.prompt} = ?</p>
+      <form onSubmit={handleSubmit} className={styles.answerForm}>
         <input
           ref={inputRef}
           className={styles.input}
@@ -111,9 +125,11 @@ function ParticipantView({ block }: { block: MinigameArithmeticBlock }) {
           autoComplete="off"
           value={value}
           onChange={(e) => setValue(e.target.value)}
-          disabled={isSubmitting}
           aria-label="Your answer"
         />
+        <Button type="submit" size="lg">
+          Submit
+        </Button>
       </form>
     </div>
   );
@@ -145,7 +161,6 @@ function MonitorView({ block }: { block: MinigameArithmeticBlock }) {
 }
 
 function ManageView({ block }: { block: MinigameArithmeticBlock }) {
-  const { start, end } = useMinigameArithmetic();
   const { started_at, ended_at, duration_seconds, question_count, questions, leaderboard } =
     block.payload;
   const remaining = useCountdown(started_at, duration_seconds, ended_at);
@@ -166,15 +181,6 @@ function ManageView({ block }: { block: MinigameArithmeticBlock }) {
         Questions: {question_count} • Players answering: {playerCount} • Total submissions:{' '}
         {submissionTotal} ({correctTotal} correct)
       </p>
-
-      <div className={styles.manageActions}>
-        {status === 'queued' && <Button onClick={() => start(block.id)}>Start minigame</Button>}
-        {status === 'running' && (
-          <Button variant="secondary" onClick={() => end(block.id)}>
-            End early
-          </Button>
-        )}
-      </div>
 
       {questions && (
         <div className={styles.questionPreview}>

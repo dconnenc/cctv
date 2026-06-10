@@ -1,20 +1,21 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 
 interface BalloonProps {
   fillRatio: number;
   popped?: boolean;
   size?: number;
   color?: string;
+  maxScale?: number;
 }
 
 const MIN_SCALE = 0.35;
-const MAX_SCALE = 1.05;
 
 export default function Balloon({
   fillRatio,
   popped = false,
   size = 240,
   color = '#ff4911',
+  maxScale = 1.05,
 }: BalloonProps) {
   const lastFillRef = useRef(0);
   const wobbleRef = useRef(0);
@@ -27,18 +28,23 @@ export default function Balloon({
     lastFillRef.current = fillRatio;
   }, [fillRatio]);
 
-  const eased = MIN_SCALE + (MAX_SCALE - MIN_SCALE) * Math.min(1, fillRatio);
+  const eased = MIN_SCALE + (maxScale - MIN_SCALE) * Math.min(1, fillRatio);
   const wobbleAge = Date.now() - wobbleRef.current;
   const wobble = wobbleAge < 400 ? Math.sin(wobbleAge / 28) * (1 - wobbleAge / 400) * 0.04 : 0;
   const scaleX = eased * (1 + wobble);
   const scaleY = eased * (1 - wobble * 0.6);
 
   if (popped) {
-    return <PoppedBalloon size={size} color={color} />;
+    return <PoppedBalloon size={size} color={color} scale={maxScale} />;
   }
 
   return (
-    <svg width={size} height={size} viewBox="-100 -100 200 200" style={{ overflow: 'visible' }}>
+    <svg
+      width={size}
+      height={size}
+      viewBox="-100 -100 200 200"
+      style={{ overflow: 'visible', maxWidth: '100%', maxHeight: '100%', pointerEvents: 'none' }}
+    >
       <defs>
         <radialGradient id="balloonGrad" cx="-0.2" cy="-0.3" r="1">
           <stop offset="0%" stopColor={lighten(color, 0.45)} />
@@ -64,25 +70,61 @@ export default function Balloon({
   );
 }
 
-function PoppedBalloon({ size, color }: { size: number; color: string }) {
+function PoppedBalloon({
+  size,
+  color,
+  scale = 1,
+}: {
+  size: number;
+  color: string;
+  scale?: number;
+}) {
+  const svgRef = useRef<SVGSVGElement>(null);
+
+  // Generate the shards once so re-renders (e.g. ended_at arriving after a
+  // local pop) don't reshuffle them mid-animation.
+  const shards = useMemo(
+    () =>
+      [...Array(14)].map((_, i) => {
+        const angle = (i / 14) * Math.PI * 2 + Math.random() * 0.3;
+        const dist = 60 + Math.random() * 40;
+        const x = Math.cos(angle) * dist;
+        const y = Math.sin(angle) * dist;
+        const dx = Math.random() * 12 - 6;
+        const dy = Math.random() * 12 - 6;
+        return `M ${x.toFixed(1)} ${y.toFixed(1)} l ${dx.toFixed(1)} ${dy.toFixed(1)}`;
+      }),
+    [],
+  );
+
+  // Burst outward from the balloon's center and fade — the rising edge of
+  // `popped` mounts this component, so the animation fires exactly on the pop.
+  useEffect(() => {
+    const el = svgRef.current;
+    if (!el) return;
+    const animation = el.animate(
+      [
+        { transform: 'scale(0.35)', opacity: 1 },
+        { transform: 'scale(0.7)', opacity: 1, offset: 0.35 },
+        { transform: 'scale(1.3)', opacity: 0 },
+      ],
+      { duration: 600, easing: 'cubic-bezier(0.2, 0.75, 0.3, 1)', fill: 'forwards' },
+    );
+    return () => animation.cancel();
+  }, []);
+
   return (
-    <svg width={size} height={size} viewBox="-100 -100 200 200">
-      <g>
-        {[...Array(14)].map((_, i) => {
-          const angle = (i / 14) * Math.PI * 2 + Math.random() * 0.3;
-          const dist = 60 + Math.random() * 40;
-          const x = Math.cos(angle) * dist;
-          const y = Math.sin(angle) * dist;
-          return (
-            <path
-              key={i}
-              d={`M ${x.toFixed(1)} ${y.toFixed(1)} l ${(Math.random() * 12 - 6).toFixed(1)} ${(Math.random() * 12 - 6).toFixed(1)}`}
-              stroke={color}
-              strokeWidth="3"
-              strokeLinecap="round"
-            />
-          );
-        })}
+    <svg
+      ref={svgRef}
+      width={size}
+      height={size}
+      viewBox="-100 -100 200 200"
+      style={{ overflow: 'visible', maxWidth: '100%', maxHeight: '100%', pointerEvents: 'none' }}
+    >
+      <g transform={`scale(${scale})`}>
+        {shards.map((d, i) => (
+          <path key={i} d={d} stroke={color} strokeWidth="3" strokeLinecap="round" />
+        ))}
       </g>
     </svg>
   );

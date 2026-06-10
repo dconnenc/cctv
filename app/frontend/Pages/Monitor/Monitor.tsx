@@ -1,5 +1,6 @@
 import { useExperience } from '@cctv/contexts/ExperienceContext';
 import ExperienceBlockContainer from '@cctv/experiences/ExperienceBlockContainer/ExperienceBlockContainer';
+import { BlockKind } from '@cctv/types';
 
 import QRCodeDisplay from '../Manage/QRCodeDisplay/QRCodeDisplay';
 import LobbyAvatars from './LobbyAvatars';
@@ -42,9 +43,14 @@ export default function Monitor() {
   const showProgramBlock = !!currentBlock;
   const showParticipantNotification = !showProgramBlock && !!monitorView.participant_block_active;
 
+  const showingBalloonPodium =
+    currentBlock?.kind === BlockKind.MINIGAME_BALLOON_PUMP &&
+    !!currentBlock.payload.ended_at &&
+    (currentBlock.payload.podium?.length ?? 0) > 0;
+
   return (
     <section className={styles.root}>
-      <LobbyAvatars />
+      {!showingBalloonPodium && <LobbyAvatars />}
       {showProgramBlock ? (
         <div className={styles.blockContainer}>
           <ExperienceBlockContainer block={currentBlock} disabled viewContext="monitor" />
