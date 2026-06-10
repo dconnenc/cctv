@@ -11,9 +11,10 @@ type ViewContext = 'participant' | 'monitor' | 'manage';
 // or when called with an undefined key.
 //
 // `restartToken` lets the host restart the track from the beginning: whenever it
-// changes the element seeks to 0 and plays. The first value seen is treated as a
-// baseline and does not trigger a restart, so reconnecting to the monitor
-// mid-track does not jump playback.
+// changes the element seeks to 0, and resumes from there only if `playing` is
+// true. The first value seen is treated as a baseline and does not trigger a
+// restart, so reconnecting to the monitor mid-track does not jump playback.
+// Playback never starts on its own — it only begins when `playing` is true.
 export function useLoopingMonitorSound(
   key: SoundKey | undefined,
   playing: boolean,
@@ -52,6 +53,13 @@ export function useLoopingMonitorSound(
     if (prevRestartTokenRef.current === restartToken) return;
     prevRestartTokenRef.current = restartToken;
 
+    // Only ever start playback when the host has the theme playing. A restart
+    // while paused seeks to the beginning but must not unpause the track.
+    if (!playing) {
+      if (audioRef.current) audioRef.current.currentTime = 0;
+      return;
+    }
+
     if (!audioRef.current) {
       const audio = new Audio(SOUND_URLS[key]);
       audio.loop = true;
@@ -64,7 +72,7 @@ export function useLoopingMonitorSound(
       // Restart is always triggered by a host action, so a rejection here only
       // happens during dev reloads — same as the toggle effect above.
     });
-  }, [restartToken, key, viewContext]);
+  }, [restartToken, key, viewContext, playing]);
 
   useEffect(() => {
     return () => {
