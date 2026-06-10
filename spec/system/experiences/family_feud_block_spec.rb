@@ -133,13 +133,15 @@ RSpec.describe "Family Feud Block", type: :system do
       sign_in(admin)
       create_experience_and_go_to_manage(name: "AI Night", code: "ai-night")
 
+      # A synthetic question takes no question text or count at creation —
+      # those are configured on the manage screen.
       queue_block(n: 1) do
         select "Family Feud", from: "Kind"
         fill_in "Title", with: "Name Something"
         click_button "Add Question"
         fill_in "Question 1", with: "Name a fruit"
         click_button "Add Synthetic Question"
-        fill_in "Synthetic Question 2", with: "Name a vegetable"
+        expect(page).to have_text("Synthetic Question 2")
       end
 
       start_experience
@@ -156,24 +158,27 @@ RSpec.describe "Family Feud Block", type: :system do
 
       visit current_path
       select_and_present(1, kind: "family.feud")
-
-      # Participant can answer the human question but never sees the synthetic one
-      using_session(:participant) do
-        expect(page).to have_field("Name a fruit")
-        expect(page).to have_no_field("Name a vegetable")
-      end
-
       select_block(1, kind: "family.feud")
 
-      # The synthetic question is presented to the admin and can be dispatched to the agent
-      expect(page).to have_button("Expand Name a vegetable")
-      click_button "Expand Name a vegetable"
+      # The synthetic question carries no text yet; set the question + count and
+      # dispatch it to the agent from the manage screen.
+      expect(page).to have_button("Expand Synthetic Question")
+      click_button "Expand Synthetic Question"
+
+      fill_in "Question", with: "Name a vegetable"
+      fill_in "Answers", with: "5"
 
       expect(page).to have_button("Generate Answers")
       click_button "Generate Answers"
 
       # Generated answers land in the answers column, ready to be categorized
       expect(page).to have_text("Answers (5)")
+
+      # Participant can answer the human question but never sees the synthetic one
+      using_session(:participant) do
+        expect(page).to have_field("Name a fruit")
+        expect(page).to have_no_field("Name a vegetable")
+      end
 
       # From here it behaves like any other question: buckets are available
       expect(page).to have_button("Add Bucket")

@@ -46,8 +46,13 @@
   }
 }
 
+.syntheticLabel {
+  font-weight: var(--font-weight-bold);
+  font-size: var(--font-size-sm);
+}
+
 .syntheticBadge {
-  margin-bottom: var(--space-xs);
+  margin-top: var(--space-xs);
   color: var(--muted-foreground);
   font-size: var(--font-size-sm);
 }

@@ -113,7 +113,9 @@ export default function FamilyFeudManager({ block }: FamilyFeudManagerProps) {
   const [autoCategorizing, setAutoCategorizing] = useState<string | null>(null);
   const [generatingQuestion, setGeneratingQuestion] = useState<string | null>(null);
   const [syntheticQuestionTexts, setSyntheticQuestionTexts] = useState<Record<string, string>>({});
-  const [syntheticCounts, setSyntheticCounts] = useState<Record<string, number>>({});
+  // Held as raw strings so the input can be cleared/edited freely; clamped to a
+  // valid count only when answers are generated.
+  const [syntheticCounts, setSyntheticCounts] = useState<Record<string, string>>({});
 
   const [collapsedQuestions, setCollapsedQuestions] = useState<Set<string>>(new Set());
   const [collapsedBuckets, setCollapsedBuckets] = useState<Set<string>>(new Set());
@@ -189,13 +191,15 @@ export default function FamilyFeudManager({ block }: FamilyFeudManagerProps) {
 
     const contextMap: Record<string, string> = {};
     const syntheticTextMap: Record<string, string> = {};
-    const syntheticCountMap: Record<string, number> = {};
+    const syntheticCountMap: Record<string, string> = {};
     childQuestions.forEach((childBlock: Block) => {
       const childPayload = childBlock.payload as FamilyFeudChildPayload | undefined;
       contextMap[childBlock.id] = childPayload?.ai_context ?? '';
       if (childPayload?.synthetic) {
         syntheticTextMap[childBlock.id] = childPayload.question ?? '';
-        syntheticCountMap[childBlock.id] = childPayload.generate_count ?? DEFAULT_SYNTHETIC_COUNT;
+        syntheticCountMap[childBlock.id] = String(
+          childPayload.generate_count ?? DEFAULT_SYNTHETIC_COUNT,
+        );
       }
     });
     setQuestionAiContexts(contextMap);
@@ -315,7 +319,7 @@ export default function FamilyFeudManager({ block }: FamilyFeudManagerProps) {
     async (questionId: string) => {
       const questionText = (syntheticQuestionTexts[questionId] ?? '').trim();
       if (!questionText) return;
-      const count = clampSyntheticCount(syntheticCounts[questionId]);
+      const count = clampSyntheticCount(Number(syntheticCounts[questionId]));
 
       setGeneratingQuestion(questionId);
       try {
@@ -678,7 +682,7 @@ export default function FamilyFeudManager({ block }: FamilyFeudManagerProps) {
                   <SyntheticGenerationPanel
                     question={question}
                     questionText={syntheticQuestionTexts[question.questionId] ?? ''}
-                    count={syntheticCounts[question.questionId] ?? DEFAULT_SYNTHETIC_COUNT}
+                    count={syntheticCounts[question.questionId] ?? String(DEFAULT_SYNTHETIC_COUNT)}
                     isGenerating={generatingQuestion === question.questionId}
                     onQuestionTextChange={(value) =>
                       setSyntheticQuestionTexts((prev) => ({
@@ -748,10 +752,10 @@ export const SyntheticGenerationPanel = ({
 }: {
   question: QuestionWithBuckets;
   questionText: string;
-  count: number;
+  count: string;
   isGenerating: boolean;
   onQuestionTextChange: (value: string) => void;
-  onCountChange: (value: number) => void;
+  onCountChange: (value: string) => void;
   onGenerate: () => void;
 }) => {
   const hasAnswers =
@@ -779,10 +783,10 @@ export const SyntheticGenerationPanel = ({
           <TextInput
             type="number"
             label="Answers"
-            value={String(count)}
+            value={count}
             min={MIN_SYNTHETIC_COUNT}
             max={MAX_SYNTHETIC_COUNT}
-            onChange={(e) => onCountChange(clampSyntheticCount(Number(e.target.value)))}
+            onChange={(e) => onCountChange(e.target.value)}
           />
         </div>
         <Button variant="primary" size="sm" onClick={onGenerate} disabled={!canGenerate}>

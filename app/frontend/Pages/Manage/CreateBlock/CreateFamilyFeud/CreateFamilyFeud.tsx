@@ -3,12 +3,6 @@ import { Sparkles, X } from 'lucide-react';
 import { Button } from '@cctv/core/Button/Button';
 import { TextInput } from '@cctv/core/TextInput/TextInput';
 import {
-  DEFAULT_SYNTHETIC_COUNT,
-  MAX_SYNTHETIC_COUNT,
-  MIN_SYNTHETIC_COUNT,
-  clampSyntheticCount,
-} from '@cctv/pages/Block/FamilyFeudManager/synthetic';
-import {
   Block,
   BlockComponentProps,
   FamilyFeudData,
@@ -71,7 +65,6 @@ export const familyFeudPayloadToFormData = (
       id: child.id,
       question: childPayload.question || '',
       synthetic: childPayload.synthetic ?? false,
-      generateCount: childPayload.generate_count ?? DEFAULT_SYNTHETIC_COUNT,
     };
   }),
 });
@@ -88,9 +81,10 @@ export const buildFamilyFeudQuestions = (
         inputType: 'text',
       };
 
+      // Synthetic questions carry no question text or count at creation — both
+      // are supplied on the manage screen before dispatching to the agent.
       if (q.synthetic) {
         payload.synthetic = true;
-        payload.generate_count = clampSyntheticCount(q.generateCount);
       }
 
       return { payload };
@@ -103,7 +97,6 @@ export default function CreateFamilyFeud({ data, onChange }: BlockComponentProps
       id: Date.now().toString(),
       question: '',
       synthetic,
-      generateCount: synthetic ? DEFAULT_SYNTHETIC_COUNT : undefined,
     };
     onChange?.({ questions: [...data.questions, newQuestion] });
   };
@@ -111,12 +104,6 @@ export default function CreateFamilyFeud({ data, onChange }: BlockComponentProps
   const updateQuestion = (index: number, question: string) => {
     const newQuestions = [...data.questions];
     newQuestions[index] = { ...newQuestions[index], question };
-    onChange?.({ questions: newQuestions });
-  };
-
-  const updateGenerateCount = (index: number, generateCount: number) => {
-    const newQuestions = [...data.questions];
-    newQuestions[index] = { ...newQuestions[index], generateCount };
     onChange?.({ questions: newQuestions });
   };
 
@@ -139,52 +126,51 @@ export default function CreateFamilyFeud({ data, onChange }: BlockComponentProps
 
       <div className={sharedStyles.sectionTitle}>Questions</div>
 
-      {data.questions.map((question, index) => (
-        <div
-          key={question.id}
-          className={`${styles.questionItem} ${question.synthetic ? styles.syntheticItem : ''}`}
-        >
-          <div className={styles.questionNumber}>
-            {question.synthetic ? <Sparkles size={16} /> : index + 1}
-          </div>
-          <div className={styles.questionField}>
-            {question.synthetic && (
+      {data.questions.map((question, index) =>
+        question.synthetic ? (
+          <div key={question.id} className={`${styles.questionItem} ${styles.syntheticItem}`}>
+            <div className={styles.questionNumber}>
+              <Sparkles size={16} />
+            </div>
+            <div className={styles.questionField}>
+              <div className={styles.syntheticLabel}>Synthetic Question {index + 1}</div>
               <div className={styles.syntheticBadge}>
-                AI-generated — not shown to participants. The question can also be set later.
+                AI-generated — the question and number of answers are set on the manage screen. Not
+                shown to participants.
               </div>
-            )}
-            <TextInput
-              label={
-                question.synthetic ? `Synthetic Question ${index + 1}` : `Question ${index + 1}`
-              }
-              placeholder="Enter question"
-              value={question.question}
-              onChange={(e) => updateQuestion(index, e.target.value)}
-              required={!question.synthetic}
-            />
-            {question.synthetic && (
-              <TextInput
-                type="number"
-                label="Answers to generate"
-                value={String(question.generateCount ?? DEFAULT_SYNTHETIC_COUNT)}
-                min={MIN_SYNTHETIC_COUNT}
-                max={MAX_SYNTHETIC_COUNT}
-                onChange={(e) =>
-                  updateGenerateCount(index, clampSyntheticCount(Number(e.target.value)))
-                }
-              />
-            )}
+            </div>
+            <Button
+              variant="ghost"
+              type="button"
+              onClick={() => removeQuestion(index)}
+              className={styles.removeButton}
+            >
+              <X size={16} />
+            </Button>
           </div>
-          <Button
-            variant="ghost"
-            type="button"
-            onClick={() => removeQuestion(index)}
-            className={styles.removeButton}
-          >
-            <X size={16} />
-          </Button>
-        </div>
-      ))}
+        ) : (
+          <div key={question.id} className={styles.questionItem}>
+            <div className={styles.questionNumber}>{index + 1}</div>
+            <div className={styles.questionField}>
+              <TextInput
+                label={`Question ${index + 1}`}
+                placeholder="Enter question"
+                value={question.question}
+                onChange={(e) => updateQuestion(index, e.target.value)}
+                required
+              />
+            </div>
+            <Button
+              variant="ghost"
+              type="button"
+              onClick={() => removeQuestion(index)}
+              className={styles.removeButton}
+            >
+              <X size={16} />
+            </Button>
+          </div>
+        ),
+      )}
 
       <div className={styles.addButtons}>
         <Button variant="secondary" type="button" onClick={() => addQuestion(false)}>

@@ -53,7 +53,7 @@ export const Empty: Story = {
   args: {
     question: baseQuestion,
     questionText: '',
-    count: DEFAULT_SYNTHETIC_COUNT,
+    count: String(DEFAULT_SYNTHETIC_COUNT),
     isGenerating: false,
   },
 };
@@ -63,7 +63,7 @@ export const ReadyToGenerate: Story = {
   args: {
     question: baseQuestion,
     questionText: 'Name a vegetable',
-    count: DEFAULT_SYNTHETIC_COUNT,
+    count: String(DEFAULT_SYNTHETIC_COUNT),
     isGenerating: false,
   },
 };
@@ -73,7 +73,7 @@ export const Generating: Story = {
   args: {
     question: baseQuestion,
     questionText: 'Name a vegetable',
-    count: DEFAULT_SYNTHETIC_COUNT,
+    count: String(DEFAULT_SYNTHETIC_COUNT),
     isGenerating: true,
   },
 };
@@ -83,7 +83,7 @@ export const HasAnswers: Story = {
   args: {
     question: answeredQuestion,
     questionText: 'Name a vegetable',
-    count: DEFAULT_SYNTHETIC_COUNT,
+    count: String(DEFAULT_SYNTHETIC_COUNT),
     isGenerating: false,
   },
 };

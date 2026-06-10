@@ -1033,7 +1033,6 @@ export interface FamilyFeudData {
     id: string;
     question: string;
     synthetic?: boolean;
-    generateCount?: number;
   }>;
 }
 
