@@ -1,7 +1,8 @@
 import { useMemo } from 'react';
 
+import { Music, Pause, RotateCcw } from 'lucide-react';
+
 import { useExperience } from '@cctv/contexts/ExperienceContext';
-import { DialogDescription, DialogTitle } from '@cctv/core';
 import { Button } from '@cctv/core/Button/Button';
 import { useGuessWhoControls } from '@cctv/hooks/useGuessWhoControls';
 import { GuessWhoBlock, GuessWhoContestant, GuessWhoMonitorView } from '@cctv/types';
@@ -180,7 +181,8 @@ function ContestantPanel({
 
 export default function GuessWhoManager({ block }: GuessWhoManagerProps) {
   const { experience } = useExperience();
-  const { start, setMonitorView, reveal, isLoading } = useGuessWhoControls();
+  const { start, setMonitorView, reveal, setThemeMusic, restartThemeMusic, isLoading } =
+    useGuessWhoControls();
 
   const contestantSegment = useMemo(
     () => experience?.segments?.find((s) => s.id === block.payload.contestant_segment_id),
@@ -196,11 +198,38 @@ export default function GuessWhoManager({ block }: GuessWhoManagerProps) {
   const started = block.payload.started ?? false;
   const contestants = block.payload.contestants ?? [];
   const currentView = block.payload.monitor_view ?? 'idle';
+  const themePlaying = block.payload.theme_music_playing ?? false;
+
+  const themeMusicControls = (
+    <div className={styles.themeMusicControls}>
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={() => setThemeMusic(block.id, !themePlaying)}
+        disabled={isLoading}
+        icon={themePlaying ? <Pause size={16} /> : <Music size={16} />}
+      >
+        {themePlaying ? 'Pause Theme' : 'Play Theme'}
+      </Button>
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={() => restartThemeMusic(block.id)}
+        disabled={isLoading}
+        icon={<RotateCcw size={16} />}
+        hideLabel
+      >
+        Restart Theme
+      </Button>
+    </div>
+  );
 
   return (
     <div className={styles.root}>
-      <DialogTitle className={styles.title}>Guess Who</DialogTitle>
-      <DialogDescription className="sr-only">Manage the Guess Who comedy show.</DialogDescription>
+      <div className={styles.titleRow}>
+        <h2 className={styles.title}>Guess Who</h2>
+        {themeMusicControls}
+      </div>
 
       <section className={styles.section}>
         <h3>Contestants segment</h3>

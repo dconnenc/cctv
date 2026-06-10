@@ -144,6 +144,18 @@ export const MonitorNotStarted: Story = {
   args: { block: buildBlock({ started: false, contestants: [] }) },
 };
 
+// Monitor-only: the theme track loops while `theme_music_playing` is true.
+// Toggling the control off in the Storybook controls panel pauses it.
+export const MonitorThemeMusicPlaying: Story = {
+  args: {
+    block: {
+      ...buildBlock({ monitor_view: 'idle', theme_music_playing: true }),
+      sounds: { theme: 'guess_who_theme' },
+    },
+    viewContext: 'monitor',
+  },
+};
+
 export const ParticipantWaiting: StoryObj<typeof GuessWhoParticipant> = {
   render: (args) => <GuessWhoParticipant {...args} />,
   args: { block: buildBlock({ active_poll: null, active_poll_block_id: null }) },

@@ -82,6 +82,9 @@ export function useGuessWhoControls() {
       send(blockId, 'dispatch_poll', jsonBody({ contestant_index: contestantIndex })),
     concludePoll: (blockId: string) => send(blockId, 'conclude_poll'),
     reveal: (blockId: string) => send(blockId, 'reveal'),
+    setThemeMusic: (blockId: string, playing: boolean) =>
+      send(blockId, 'theme_music', jsonBody({ playing })),
+    restartThemeMusic: (blockId: string) => send(blockId, 'theme_music/restart'),
     isLoading,
     error,
   };

@@ -554,6 +554,17 @@ module Experiences
       end
     end
 
+    def restart_family_feud_theme_music!(block:)
+      transaction do
+        current_payload = block.payload || {}
+        current_payload["theme_music_playing"] = true
+        current_payload["theme_music_restart_count"] = (current_payload["theme_music_restart_count"] || 0) + 1
+        block.update!(payload: current_payload)
+
+        block
+      end
+    end
+
     def next_family_feud_question!(block:)
       transaction do
         current_payload = block.payload || {}
@@ -877,6 +888,27 @@ module Experiences
         payload = block.payload.deep_dup
         payload["revealed"] = true
         payload["monitor_view"] = "reveal"
+        block.update!(payload: payload)
+      end
+      block
+    end
+
+    def set_guess_who_theme_music!(block:, playing:)
+      guard_guess_who!(block)
+      transaction do
+        payload = block.payload.deep_dup
+        payload["theme_music_playing"] = playing
+        block.update!(payload: payload)
+      end
+      block
+    end
+
+    def restart_guess_who_theme_music!(block:)
+      guard_guess_who!(block)
+      transaction do
+        payload = block.payload.deep_dup
+        payload["theme_music_playing"] = true
+        payload["theme_music_restart_count"] = (payload["theme_music_restart_count"] || 0) + 1
         block.update!(payload: payload)
       end
       block
@@ -1295,7 +1327,6 @@ module Experiences
           kind: kind,
           status: status,
           payload: payload.except(:questions),
-          sounds: default_sounds_for(kind),
           visible_to_roles: visible_to_roles,
           target_user_ids: target_user_ids,
           position: max_position + 1,
@@ -1366,23 +1397,6 @@ module Experiences
 
       payload["prompt_participant_ids"] = prompt_ids
       payload["buzzer_participant_id"]  = buzzer_id
-    end
-
-    def default_sounds_for(kind)
-      case kind.to_s
-      when ExperienceBlock::FAMILY_FEUD
-        { "on_show_x" => "buzzer_error", "theme" => "family_feud_theme" }
-      when ExperienceBlock::GUESS_WHO
-        {
-          "on_dispatch_poll" => "buzzer_error",
-          "on_conclude_poll" => "buzzer_error",
-          "on_reveal"        => "buzzer_error"
-        }
-      when ExperienceBlock::THE_SCENE
-        { "on_buzzer_press" => "buzzer_error" }
-      else
-        {}
-      end
     end
 
     def guard_guess_who!(block)

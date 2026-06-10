@@ -98,6 +98,7 @@ export interface FamilyFeudPayload {
   };
   game_state?: FamilyFeudGameState;
   theme_music_playing?: boolean;
+  theme_music_restart_count?: number;
 }
 
 export interface PhotoUploadPayload {
@@ -161,6 +162,8 @@ export interface GuessWhoPayload {
   monitor_view: GuessWhoMonitorView;
   started?: boolean;
   revealed?: boolean;
+  theme_music_playing?: boolean;
+  theme_music_restart_count?: number;
   active_poll_block_id?: string | null;
   active_poll_contestant_index?: 0 | 1 | null;
   active_poll?: GuessWhoActivePoll | null;
