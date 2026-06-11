@@ -13,6 +13,15 @@ interface AutoCategorizeResult {
   buckets: AutoCategorizeBucket[];
 }
 
+interface GeneratedAnswer {
+  id: string;
+  text: string;
+}
+
+interface GenerateSyntheticAnswersResult {
+  answers: GeneratedAnswer[];
+}
+
 export function useFamilyFeudBuckets(blockId?: string, dispatch?: (action: any) => void) {
   const { code, registerFamilyFeudDispatch, unregisterFamilyFeudDispatch } = useExperience();
   const { adminFetch } = useAdminAuth();
@@ -257,12 +266,60 @@ export function useFamilyFeudBuckets(blockId?: string, dispatch?: (action: any) 
     [code, adminFetch],
   );
 
+  const generateSyntheticAnswers = useCallback(
+    async (
+      blockId: string,
+      questionId: string,
+      questionText: string,
+      count: number,
+    ): Promise<GenerateSyntheticAnswersResult | null> => {
+      if (!code) {
+        setError('Missing experience code');
+        return null;
+      }
+      setIsLoading(true);
+      setError(null);
+
+      const url = `/api/experiences/${encodeURIComponent(code)}/blocks/${encodeURIComponent(blockId)}/family_feud/generate_synthetic_answers`;
+
+      try {
+        const res = await adminFetch(url, {
+          method: 'POST',
+          body: JSON.stringify({
+            question_id: questionId,
+            question_text: questionText,
+            count,
+          }),
+        });
+
+        const data = await res.json();
+        if (!res.ok || data?.success === false) {
+          const msg = data?.error || 'Failed to generate answers';
+          setError(msg);
+          return null;
+        }
+        return data.data as GenerateSyntheticAnswersResult;
+      } catch (e: unknown) {
+        const msg =
+          e instanceof Error && e.message === 'Authentication expired'
+            ? 'Authentication expired'
+            : 'Connection error. Please try again.';
+        setError(msg);
+        return null;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [code, adminFetch],
+  );
+
   return {
     addBucket,
     renameBucket,
     deleteBucket,
     assignAnswer,
     autoCategorize,
+    generateSyntheticAnswers,
     updateAiContext,
     updateQuestionAiContext,
     isLoading,

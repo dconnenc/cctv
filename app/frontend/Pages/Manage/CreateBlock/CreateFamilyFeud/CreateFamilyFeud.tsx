@@ -1,4 +1,4 @@
-import { X } from 'lucide-react';
+import { Sparkles, X } from 'lucide-react';
 
 import { Button } from '@cctv/core/Button/Button';
 import { TextInput } from '@cctv/core/TextInput/TextInput';
@@ -25,7 +25,9 @@ export const validateFamilyFeud = (data: FamilyFeudData): string | null => {
     return 'Family Feud must have a title';
   }
 
-  const validQuestions = data.questions.filter((q) => q.question.trim());
+  // Synthetic questions may be created without a question string — it can be
+  // supplied later on the manage screen before generating answers.
+  const validQuestions = data.questions.filter((q) => q.synthetic || q.question.trim());
 
   if (validQuestions.length === 0) {
     return 'Family Feud must have at least one question';
@@ -41,7 +43,7 @@ export const canFamilyFeudOpenImmediately = (): boolean => {
 export const processFamilyFeudBeforeSubmit = (data: FamilyFeudData): FamilyFeudData => {
   return {
     ...data,
-    questions: data.questions.filter((q) => q.question.trim()),
+    questions: data.questions.filter((q) => q.synthetic || q.question.trim()),
   };
 };
 
@@ -57,29 +59,44 @@ export const familyFeudPayloadToFormData = (
   children?: Block[],
 ): FamilyFeudData => ({
   title: payload.title || '',
-  questions: (children || []).map((child) => ({
-    id: child.id,
-    question: (child.payload as QuestionPayload).question || '',
-  })),
+  questions: (children || []).map((child) => {
+    const childPayload = child.payload as QuestionPayload;
+    return {
+      id: child.id,
+      question: childPayload.question || '',
+      synthetic: childPayload.synthetic ?? false,
+    };
+  }),
 });
 
-export const buildFamilyFeudQuestions = (data: FamilyFeudData) => {
+export const buildFamilyFeudQuestions = (
+  data: FamilyFeudData,
+): Array<{ payload: Record<string, string | number | boolean> }> => {
   return data.questions
-    .filter((q) => q.question.trim())
-    .map((q, index) => ({
-      payload: {
+    .filter((q) => q.synthetic || q.question.trim())
+    .map((q, index) => {
+      const payload: Record<string, string | number | boolean> = {
         question: q.question.trim(),
         formKey: `answer_${index}`,
         inputType: 'text',
-      },
-    }));
+      };
+
+      // Synthetic questions carry no question text or count at creation — both
+      // are supplied on the manage screen before dispatching to the agent.
+      if (q.synthetic) {
+        payload.synthetic = true;
+      }
+
+      return { payload };
+    });
 };
 
 export default function CreateFamilyFeud({ data, onChange }: BlockComponentProps<FamilyFeudData>) {
-  const addQuestion = () => {
+  const addQuestion = (synthetic = false) => {
     const newQuestion = {
       id: Date.now().toString(),
       question: '',
+      synthetic,
     };
     onChange?.({ questions: [...data.questions, newQuestion] });
   };
@@ -109,32 +126,65 @@ export default function CreateFamilyFeud({ data, onChange }: BlockComponentProps
 
       <div className={sharedStyles.sectionTitle}>Questions</div>
 
-      {data.questions.map((question, index) => (
-        <div key={question.id} className={styles.questionItem}>
-          <div className={styles.questionNumber}>{index + 1}</div>
-          <div className={styles.questionField}>
-            <TextInput
-              label={`Question ${index + 1}`}
-              placeholder="Enter question"
-              value={question.question}
-              onChange={(e) => updateQuestion(index, e.target.value)}
-              required
-            />
+      {data.questions.map((question, index) =>
+        question.synthetic ? (
+          <div key={question.id} className={`${styles.questionItem} ${styles.syntheticItem}`}>
+            <div className={styles.questionNumber}>
+              <Sparkles size={16} />
+            </div>
+            <div className={styles.questionField}>
+              <div className={styles.syntheticLabel}>Synthetic Question {index + 1}</div>
+              <div className={styles.syntheticBadge}>
+                AI-generated — the question and number of answers are set on the manage screen. Not
+                shown to participants.
+              </div>
+            </div>
+            <Button
+              variant="ghost"
+              type="button"
+              onClick={() => removeQuestion(index)}
+              className={styles.removeButton}
+            >
+              <X size={16} />
+            </Button>
           </div>
-          <Button
-            variant="ghost"
-            type="button"
-            onClick={() => removeQuestion(index)}
-            className={styles.removeButton}
-          >
-            <X size={16} />
-          </Button>
-        </div>
-      ))}
+        ) : (
+          <div key={question.id} className={styles.questionItem}>
+            <div className={styles.questionNumber}>{index + 1}</div>
+            <div className={styles.questionField}>
+              <TextInput
+                label={`Question ${index + 1}`}
+                placeholder="Enter question"
+                value={question.question}
+                onChange={(e) => updateQuestion(index, e.target.value)}
+                required
+              />
+            </div>
+            <Button
+              variant="ghost"
+              type="button"
+              onClick={() => removeQuestion(index)}
+              className={styles.removeButton}
+            >
+              <X size={16} />
+            </Button>
+          </div>
+        ),
+      )}
 
-      <Button variant="secondary" type="button" onClick={addQuestion}>
-        Add Question
-      </Button>
+      <div className={styles.addButtons}>
+        <Button variant="secondary" type="button" onClick={() => addQuestion(false)}>
+          Add Question
+        </Button>
+        <Button
+          variant="outline"
+          type="button"
+          onClick={() => addQuestion(true)}
+          icon={<Sparkles size={16} />}
+        >
+          Add Synthetic Question
+        </Button>
+      </div>
     </div>
   );
 }

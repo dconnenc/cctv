@@ -59,6 +59,8 @@ export interface QuestionPayload {
   formKey: string;
   inputType?: 'text' | 'number' | 'email' | 'password' | 'tel';
   ai_context?: string;
+  synthetic?: boolean;
+  generate_count?: number;
 }
 
 export interface AnnouncementPayload {
@@ -622,7 +624,7 @@ export interface CreateBlockPayload {
   add_to_playbill?: boolean;
   playbill_mysterious?: boolean;
   questions?: Array<{
-    payload: Record<string, string>;
+    payload: Record<string, string | number | boolean>;
   }>;
 }
 
@@ -1027,7 +1029,11 @@ export interface AnnouncementData {
 
 export interface FamilyFeudData {
   title: string;
-  questions: Array<{ id: string; question: string }>;
+  questions: Array<{
+    id: string;
+    question: string;
+    synthetic?: boolean;
+  }>;
 }
 
 export interface PhotoUploadData {

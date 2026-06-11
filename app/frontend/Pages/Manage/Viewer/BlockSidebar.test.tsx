@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { act, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { BlockKind } from '@cctv/types';
 import type { Block, BlockStatus } from '@cctv/types';
 
 import BlockSidebar from './BlockSidebar';
@@ -171,6 +172,27 @@ describe('BlockSidebar — handleDragEnd', () => {
       expect(items[0]).toHaveAttribute('data-block-id', 'block-b');
       expect(items[1]).toHaveAttribute('data-block-id', 'block-c');
       expect(items[2]).toHaveAttribute('data-block-id', 'block-a');
+    });
+  });
+
+  describe('synthetic question label', () => {
+    it('labels a synthetic question distinctly from a normal question', () => {
+      const blocks = [
+        makeBlock('q-normal', {
+          kind: BlockKind.QUESTION,
+          parent_block_id: 'ff',
+          payload: { question: 'Name a fruit', formKey: 'answer_0' },
+        }),
+        makeBlock('q-synthetic', {
+          kind: BlockKind.QUESTION,
+          parent_block_id: 'ff',
+          payload: { question: '', formKey: 'answer_1', synthetic: true },
+        }),
+      ];
+      render(<BlockSidebar {...defaultProps} blocks={blocks} />);
+
+      expect(screen.getByText('Synthetic Question')).toBeInTheDocument();
+      expect(screen.getByText('Question')).toBeInTheDocument();
     });
   });
 });

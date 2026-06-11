@@ -220,6 +220,11 @@
   flex-shrink: 0;
 }
 
+.syntheticIcon {
+  color: hsl(var(--accent));
+  flex-shrink: 0;
+}
+
 .responseCount {
   margin-left: 1.5rem;
   font-size: 0.75rem;

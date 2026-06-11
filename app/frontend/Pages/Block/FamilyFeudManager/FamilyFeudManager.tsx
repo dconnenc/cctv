@@ -51,10 +51,12 @@ import {
   RotateCcw,
   Sparkles,
   Trash2,
+  Wand2,
 } from 'lucide-react';
 
 import { useExperience } from '@cctv/contexts/ExperienceContext';
 import { Button } from '@cctv/core';
+import { TextInput } from '@cctv/core/TextInput/TextInput';
 import { useFamilyFeudBuckets } from '@cctv/hooks/useFamilyFeudBuckets';
 import { useScrollFade } from '@cctv/hooks/useScrollFade';
 import { Block, BlockKind, BlockResponse } from '@cctv/types';
@@ -66,21 +68,32 @@ import {
   QuestionWithBuckets,
   familyFeudReducer,
 } from './familyFeudReducer';
+import {
+  DEFAULT_SYNTHETIC_COUNT,
+  MAX_SYNTHETIC_COUNT,
+  MIN_SYNTHETIC_COUNT,
+  clampSyntheticCount,
+} from './synthetic';
 
 import styles from './FamilyFeudManager.module.scss';
 
 interface FamilyFeudChildPayload {
   question?: string;
   ai_context?: string;
+  synthetic?: boolean;
+  generate_count?: number;
   buckets?: Array<{ id: string; name: string; answer_ids?: string[] }>;
 }
 
 interface FamilyFeudManagerProps {
   block: Block;
   onBucketOperation?: (action: FamilyFeudAction) => void;
+  // When set, that question starts expanded (others collapsed) — used when the
+  // manager is opened by selecting a specific (e.g. synthetic) child question.
+  focusQuestionId?: string;
 }
 
-export default function FamilyFeudManager({ block }: FamilyFeudManagerProps) {
+export default function FamilyFeudManager({ block, focusQuestionId }: FamilyFeudManagerProps) {
   const { code } = useExperience();
   const [questionsState, dispatch] = useReducer(familyFeudReducer, []);
   const {
@@ -89,6 +102,7 @@ export default function FamilyFeudManager({ block }: FamilyFeudManagerProps) {
     deleteBucket,
     assignAnswer,
     autoCategorize,
+    generateSyntheticAnswers,
     updateAiContext,
     updateQuestionAiContext,
   } = useFamilyFeudBuckets(block.id, dispatch);
@@ -100,6 +114,11 @@ export default function FamilyFeudManager({ block }: FamilyFeudManagerProps) {
   const [startingPlaying, setStartingPlaying] = useState(false);
   const [togglingTheme, setTogglingTheme] = useState(false);
   const [autoCategorizing, setAutoCategorizing] = useState<string | null>(null);
+  const [generatingQuestion, setGeneratingQuestion] = useState<string | null>(null);
+  const [syntheticQuestionTexts, setSyntheticQuestionTexts] = useState<Record<string, string>>({});
+  // Held as raw strings so the input can be cleared/edited freely; clamped to a
+  // valid count only when answers are generated.
+  const [syntheticCounts, setSyntheticCounts] = useState<Record<string, string>>({});
 
   const [collapsedQuestions, setCollapsedQuestions] = useState<Set<string>>(new Set());
   const [collapsedBuckets, setCollapsedBuckets] = useState<Set<string>>(new Set());
@@ -153,28 +172,44 @@ export default function FamilyFeudManager({ block }: FamilyFeudManagerProps) {
       );
       const unassignedAnswers = allAnswers.filter((a) => !assignedAnswerIds.has(a.id));
 
+      const isSynthetic = childPayload?.synthetic ?? false;
+
       return {
         questionId: childBlock.id,
-        questionText: childPayload?.question ?? 'Question',
+        questionText: childPayload?.question ?? (isSynthetic ? '' : 'Question'),
         buckets: savedBuckets,
         unassignedAnswers,
+        synthetic: isSynthetic,
+        generateCount: childPayload?.generate_count ?? DEFAULT_SYNTHETIC_COUNT,
       };
     });
 
     dispatch({ type: FamilyFeudActionType.INIT, payload: newQuestionsState });
 
     // Initialize collapsed state: collapse all questions and all buckets by default
+    // (except a focused question, which starts expanded).
     const allQuestionIds = new Set(childQuestions.map((q: Block) => q.id));
+    if (focusQuestionId) allQuestionIds.delete(focusQuestionId);
     const allBucketIds = new Set(newQuestionsState.flatMap((q) => q.buckets.map((b) => b.id)));
     setCollapsedQuestions(allQuestionIds);
     setCollapsedBuckets(allBucketIds);
 
     const contextMap: Record<string, string> = {};
+    const syntheticTextMap: Record<string, string> = {};
+    const syntheticCountMap: Record<string, string> = {};
     childQuestions.forEach((childBlock: Block) => {
       const childPayload = childBlock.payload as FamilyFeudChildPayload | undefined;
       contextMap[childBlock.id] = childPayload?.ai_context ?? '';
+      if (childPayload?.synthetic) {
+        syntheticTextMap[childBlock.id] = childPayload.question ?? '';
+        syntheticCountMap[childBlock.id] = String(
+          childPayload.generate_count ?? DEFAULT_SYNTHETIC_COUNT,
+        );
+      }
     });
     setQuestionAiContexts(contextMap);
+    setSyntheticQuestionTexts(syntheticTextMap);
+    setSyntheticCounts(syntheticCountMap);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -283,6 +318,40 @@ export default function FamilyFeudManager({ block }: FamilyFeudManagerProps) {
       }
     },
     [autoCategorize, block.id, questionsState],
+  );
+
+  const handleGenerateSyntheticAnswers = useCallback(
+    async (questionId: string) => {
+      const questionText = (syntheticQuestionTexts[questionId] ?? '').trim();
+      if (!questionText) return;
+      const count = clampSyntheticCount(Number(syntheticCounts[questionId]));
+
+      setGeneratingQuestion(questionId);
+      try {
+        const result = await generateSyntheticAnswers(block.id, questionId, questionText, count);
+        if (!result?.answers) return;
+
+        const generatedAnswers = result.answers.map((a) => ({
+          id: a.id,
+          text: a.text,
+          participantId: '',
+          userName: 'AI',
+          questionId,
+        }));
+
+        // Regenerating replaces prior answers and clears this question's buckets.
+        const updatedQuestions = questionsState.map((q) =>
+          q.questionId === questionId
+            ? { ...q, questionText, buckets: [], unassignedAnswers: generatedAnswers }
+            : q,
+        );
+
+        dispatch({ type: FamilyFeudActionType.INIT, payload: updatedQuestions });
+      } finally {
+        setGeneratingQuestion(null);
+      }
+    },
+    [block.id, generateSyntheticAnswers, questionsState, syntheticQuestionTexts, syntheticCounts],
   );
 
   const handleDragEnd = useCallback(
@@ -590,6 +659,10 @@ export default function FamilyFeudManager({ block }: FamilyFeudManagerProps) {
 
       {questionsState.map((question) => {
         const isQuestionCollapsed = collapsedQuestions.has(question.questionId);
+        const questionLabel =
+          question.synthetic && !question.questionText
+            ? 'Synthetic Question'
+            : question.questionText;
         return (
           <div key={question.questionId} className={styles.questionContainer}>
             <button
@@ -597,13 +670,12 @@ export default function FamilyFeudManager({ block }: FamilyFeudManagerProps) {
               onClick={() => toggleQuestion(question.questionId)}
               aria-expanded={!isQuestionCollapsed}
               aria-label={
-                isQuestionCollapsed
-                  ? `Expand ${question.questionText}`
-                  : `Collapse ${question.questionText}`
+                isQuestionCollapsed ? `Expand ${questionLabel}` : `Collapse ${questionLabel}`
               }
             >
               {isQuestionCollapsed ? <ChevronRight size={20} /> : <ChevronDown size={20} />}
-              <h3 className={styles.questionTitle}>{question.questionText}</h3>
+              {question.synthetic && <Wand2 size={16} className={styles.syntheticIcon} />}
+              <h3 className={styles.questionTitle}>{questionLabel}</h3>
               <span className={styles.questionCount}>
                 ({question.unassignedAnswers.length} unassigned, {question.buckets.length} buckets)
               </span>
@@ -611,6 +683,24 @@ export default function FamilyFeudManager({ block }: FamilyFeudManagerProps) {
 
             {!isQuestionCollapsed && (
               <div className={styles.questionContent}>
+                {question.synthetic && (
+                  <SyntheticGenerationPanel
+                    question={question}
+                    questionText={syntheticQuestionTexts[question.questionId] ?? ''}
+                    count={syntheticCounts[question.questionId] ?? String(DEFAULT_SYNTHETIC_COUNT)}
+                    isGenerating={generatingQuestion === question.questionId}
+                    onQuestionTextChange={(value) =>
+                      setSyntheticQuestionTexts((prev) => ({
+                        ...prev,
+                        [question.questionId]: value,
+                      }))
+                    }
+                    onCountChange={(value) =>
+                      setSyntheticCounts((prev) => ({ ...prev, [question.questionId]: value }))
+                    }
+                    onGenerate={() => handleGenerateSyntheticAnswers(question.questionId)}
+                  />
+                )}
                 <div className={styles.questionAiContext}>
                   <label className={styles.aiContextLabel}>
                     Question context
@@ -655,6 +745,69 @@ export default function FamilyFeudManager({ block }: FamilyFeudManagerProps) {
     </div>
   );
 }
+
+export const SyntheticGenerationPanel = ({
+  question,
+  questionText,
+  count,
+  isGenerating,
+  onQuestionTextChange,
+  onCountChange,
+  onGenerate,
+}: {
+  question: QuestionWithBuckets;
+  questionText: string;
+  count: string;
+  isGenerating: boolean;
+  onQuestionTextChange: (value: string) => void;
+  onCountChange: (value: string) => void;
+  onGenerate: () => void;
+}) => {
+  const hasAnswers =
+    question.unassignedAnswers.length > 0 || question.buckets.some((b) => b.answers.length > 0);
+  const canGenerate = questionText.trim().length > 0 && !isGenerating;
+
+  return (
+    <div className={styles.syntheticPanel}>
+      <div className={styles.syntheticPanelHeader}>
+        <Wand2 size={16} />
+        <span>AI-generated answers</span>
+        <span className={styles.aiContextHint}>
+          {' '}
+          — Dispatch this question to the agent. Not shown to participants.
+        </span>
+      </div>
+      <div className={styles.syntheticPanelFields}>
+        <TextInput
+          label="Question"
+          placeholder="Enter the question to send to the agent"
+          value={questionText}
+          onChange={(e) => onQuestionTextChange(e.target.value)}
+        />
+        <div className={styles.syntheticPanelCount}>
+          <TextInput
+            type="number"
+            label="Answers"
+            value={count}
+            min={MIN_SYNTHETIC_COUNT}
+            max={MAX_SYNTHETIC_COUNT}
+            onChange={(e) => onCountChange(e.target.value)}
+          />
+        </div>
+        <Button variant="primary" size="sm" onClick={onGenerate} disabled={!canGenerate}>
+          {isGenerating ? (
+            <Loader2 size={16} className={styles.spinner} />
+          ) : hasAnswers ? (
+            <RotateCcw size={16} />
+          ) : (
+            <Wand2 size={16} />
+          )}
+          {isGenerating ? 'Generating...' : hasAnswers ? 'Reroll' : 'Generate Answers'}
+        </Button>
+      </div>
+    </div>
+  );
+};
 
 const BucketsColumn = ({
   question,

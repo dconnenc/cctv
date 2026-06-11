@@ -1,7 +1,7 @@
 class Api::ExperienceBlocksController < Api::BaseController
   MANAGEMENT_ACTIONS = %i[
     create update destroy reorder set_column open close hide detach_from_parent clear_buzzer_responses
-    add_bucket rename_bucket delete_bucket assign_answer auto_categorize update_ai_context update_question_ai_context
+    add_bucket rename_bucket delete_bucket assign_answer auto_categorize generate_synthetic_answers update_ai_context update_question_ai_context
     start_playing reveal_bucket show_x set_theme_music restart_theme_music next_question restart_playing
     restart_categorizing restart_everything
     start_guess_who reroll_guess_who_mystery curate_guess_who_clues
@@ -316,6 +316,23 @@ class Api::ExperienceBlocksController < Api::BaseController
       Experiences::Broadcaster.new(@experience).broadcast_experience_update
 
       render json: { success: true, data: { buckets: buckets } }, status: 200
+    end
+  end
+
+  # POST /api/experiences/:experience_id/blocks/:id/family_feud/generate_synthetic_answers
+  def generate_synthetic_answers
+    with_experience_orchestration do
+      answers = Experiences::Orchestrator.new(
+        experience: @experience, actor: @user
+      ).generate_family_feud_synthetic_answers!(
+        question_id: params[:question_id],
+        question_text: params[:question_text],
+        count: params[:count]
+      )
+
+      Experiences::Broadcaster.new(@experience).broadcast_experience_update
+
+      render json: { success: true, data: { answers: answers } }, status: 200
     end
   end
 
