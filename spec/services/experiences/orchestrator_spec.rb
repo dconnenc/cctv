@@ -845,6 +845,34 @@ RSpec.describe Experiences::Orchestrator do
         expect(block.child_blocks.map(&:status)).to all(eq("closed"))
       end
     end
+
+    context "when answers are bucketed" do
+      let(:participant) do
+        ExperienceParticipant.find_by(experience_id: experience.id, user_id: user.id) ||
+          create(:experience_participant, user: user, experience: experience)
+      end
+
+      before do
+        child = block.child_blocks.first
+        submission = create(
+          :experience_question_submission,
+          experience_block: child,
+          experience_participant: participant,
+          answer: { "value" => "PB&J sandwich" }
+        )
+        child.update!(payload: child.payload.merge("buckets" => [
+          { "id" => "b1", "name" => "Sandwiches", "answer_ids" => [submission.id.to_s] }
+        ]))
+      end
+
+      it "snapshots the verbatim answer text into each bucket" do
+        subject
+
+        bucket = block.reload.payload.dig("game_state", "questions", 0, "buckets", 0)
+        expect(bucket["bucket_name"]).to eq("Sandwiches")
+        expect(bucket["answers"]).to eq([{ "id" => bucket["answers"].first["id"], "text" => "PB&J sandwich" }])
+      end
+    end
   end
 
   describe "#open_block!" do
