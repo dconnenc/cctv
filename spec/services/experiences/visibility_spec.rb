@@ -30,6 +30,26 @@ RSpec.describe Experiences::Visibility do
     it "does not include next_block" do
       expect(result).not_to have_key(:next_block)
     end
+
+    it "includes each participant's committed avatar" do
+      participant = create(
+        :experience_participant,
+        experience: experience,
+        role: :audience,
+        avatar: { "strokes" => [{ "points" => [1, 2, 3, 4], "color" => "#ff0000", "width" => 4 }] }
+      )
+
+      entry = result[:participants].find { |p| p[:id] == participant.id.to_s }
+      expect(entry[:avatar]).to eq("strokes" => [{ "points" => [1, 2, 3, 4], "color" => "#ff0000", "width" => 4 }])
+    end
+
+    it "serializes a nil avatar for participants who have not drawn one" do
+      participant = create(:experience_participant, experience: experience, role: :audience)
+
+      entry = result[:participants].find { |p| p[:id] == participant.id.to_s }
+      expect(entry).to have_key(:avatar)
+      expect(entry[:avatar]).to be_nil
+    end
   end
 
   describe ".for_monitor" do

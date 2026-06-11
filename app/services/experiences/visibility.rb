@@ -755,6 +755,7 @@ module Experiences
           segments:      p.segment_names,
           joined_at:     p.joined_at,
           fingerprint:   p.fingerprint,
+          avatar:        p.avatar.presence,
           created_at:    p.created_at,
           updated_at:    p.updated_at
         }

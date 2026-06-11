@@ -11,6 +11,11 @@ interface BoardGridProps {
   contestant: GuessWhoContestant;
 }
 
+// Four rows of eight fit comfortably on the monitor. When there are more
+// candidates than that, the final tile becomes an "and N more" overflow marker.
+const MAX_TILES = 32;
+const AVATAR_SIZE = 48;
+
 export default function BoardGrid({ contestant }: BoardGridProps) {
   const { monitorView, experience } = useExperience();
   const exp = monitorView ?? experience;
@@ -27,20 +32,21 @@ export default function BoardGrid({ contestant }: BoardGridProps) {
   const eliminated = new Set(contestant.eliminated_user_ids);
   const unanswered = new Set(contestant.unanswered_user_ids);
 
+  const remainingIds = contestant.board_candidate_ids.filter((uid) => !eliminated.has(uid));
+  const hasOverflow = remainingIds.length > MAX_TILES;
+  const visibleIds = hasOverflow ? remainingIds.slice(0, MAX_TILES - 1) : remainingIds;
+  const overflowCount = remainingIds.length - visibleIds.length;
+
   return (
     <div className={styles.board}>
-      {contestant.board_candidate_ids.map((uid) => {
+      {visibleIds.map((uid) => {
         const p = participantsByUserId.get(uid);
-        const isEliminated = eliminated.has(uid);
         const isUnanswered = unanswered.has(uid);
 
         return (
-          <div
-            key={uid}
-            className={`${styles.boardCell} ${isEliminated ? styles.boardCellEliminated : ''}`}
-          >
+          <div key={uid} className={styles.boardCell}>
             <div className={styles.boardAvatarWrap}>
-              <Avatar strokes={p?.avatar?.strokes ?? null} size={96} />
+              <Avatar strokes={p?.avatar?.strokes ?? null} size={AVATAR_SIZE} />
               {isUnanswered && (
                 <span className={styles.shameBadge} aria-label="Did not respond">
                   ?
@@ -51,6 +57,11 @@ export default function BoardGrid({ contestant }: BoardGridProps) {
           </div>
         );
       })}
+      {hasOverflow && (
+        <div className={`${styles.boardCell} ${styles.boardCellMore}`}>
+          and {overflowCount} more {overflowCount === 1 ? 'user' : 'users'}…
+        </div>
+      )}
     </div>
   );
 }
