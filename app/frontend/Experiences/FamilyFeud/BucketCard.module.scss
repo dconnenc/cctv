@@ -76,8 +76,79 @@
   text-align: right;
 }
 
+.expandable {
+  padding: 0;
+}
+
+.toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  width: 100%;
+  padding: var(--space-sm);
+  background: none;
+  border: none;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+}
+
+.chevron {
+  flex-shrink: 0;
+  color: hsl(var(--muted-foreground));
+  transition: transform 0.2s ease;
+}
+
+.chevronOpen {
+  transform: rotate(180deg);
+}
+
+.answers {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  margin: 0;
+  padding: 0 var(--space-sm) var(--space-sm);
+  list-style: none;
+  animation: drawerOpen 0.2s ease;
+}
+
+.answer {
+  padding: var(--space-xs) var(--space-sm);
+  background: hsl(var(--input));
+  border-radius: var(--radius);
+  color: hsl(var(--foreground));
+  font-size: 16px;
+}
+
+.answerEmpty {
+  padding: var(--space-xs) var(--space-sm);
+  color: hsl(var(--muted-foreground));
+  font-size: 16px;
+}
+
+@keyframes drawerOpen {
+  0% {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .card.revealed {
+    animation: none;
+  }
+
+  .chevron {
+    transition: none;
+  }
+
+  .answers {
     animation: none;
   }
 }

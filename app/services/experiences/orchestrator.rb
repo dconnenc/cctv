@@ -539,6 +539,9 @@ module Experiences
           submissions = ExperienceQuestionSubmission.where(experience_block_id: child_block.id)
           total_answers = submissions.count
           submission_ids = submissions.pluck(:id).map(&:to_s)
+          answer_texts = submissions.each_with_object({}) do |submission, memo|
+            memo[submission.id.to_s] = submission_answer_text(submission)
+          end
 
           question_buckets = buckets.map do |bucket|
             question_answer_ids = (bucket["answer_ids"] || []) & submission_ids
@@ -549,7 +552,8 @@ module Experiences
               "bucket_id" => bucket["id"],
               "bucket_name" => bucket["name"],
               "percentage" => percentage,
-              "revealed" => false
+              "revealed" => false,
+              "answers" => question_answer_ids.map { |id| { "id" => id, "text" => answer_texts[id] } }
             }
           end
 

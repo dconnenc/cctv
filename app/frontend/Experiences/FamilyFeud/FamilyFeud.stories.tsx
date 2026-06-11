@@ -88,3 +88,106 @@ export const ThemeMusicPlaying: Story = {
     sounds: { theme: 'family_feud_theme' },
   },
 };
+
+// Participant view while buckets are still being revealed on the monitor. The
+// cards are not yet tappable — the drawers stay locked until every bucket for
+// the current question is revealed.
+export const ParticipantLocked: Story = {
+  args: {
+    title: 'Family Feud',
+    viewContext: 'participant',
+    game_state: {
+      phase: 'playing',
+      current_question_index: 0,
+      show_x: false,
+      questions: [
+        {
+          question_id: 'q1',
+          question_text: 'Name something you bring to a picnic',
+          buckets: [
+            {
+              bucket_id: 'b1',
+              bucket_name: 'Sandwiches',
+              percentage: 35,
+              revealed: true,
+              answers: [
+                { id: 'a1', text: 'PB&J' },
+                { id: 'a2', text: 'turkey sub' },
+              ],
+            },
+            {
+              bucket_id: 'b2',
+              bucket_name: 'Drinks',
+              percentage: 25,
+              revealed: false,
+              answers: [],
+            },
+            {
+              bucket_id: 'b3',
+              bucket_name: 'Blanket',
+              percentage: 20,
+              revealed: false,
+              answers: [],
+            },
+          ],
+        },
+      ],
+    },
+  },
+};
+
+// Participant view once the whole board is revealed. Each card becomes a toggle;
+// tapping one opens its answers drawer and closes any other open card. Answers
+// are shown verbatim, including near-duplicates from the crowd.
+export const ParticipantExpandable: Story = {
+  args: {
+    title: 'Family Feud',
+    viewContext: 'participant',
+    game_state: {
+      phase: 'playing',
+      current_question_index: 0,
+      show_x: false,
+      questions: [
+        {
+          question_id: 'q1',
+          question_text: 'Name something you bring to a picnic',
+          buckets: [
+            {
+              bucket_id: 'b1',
+              bucket_name: 'Sandwiches',
+              percentage: 35,
+              revealed: true,
+              answers: [
+                { id: 'a1', text: 'PB&J' },
+                { id: 'a2', text: 'turkey sub' },
+                { id: 'a3', text: 'a sandwich' },
+                { id: 'a4', text: 'Sandwiches' },
+              ],
+            },
+            {
+              bucket_id: 'b2',
+              bucket_name: 'Drinks',
+              percentage: 25,
+              revealed: true,
+              answers: [
+                { id: 'a5', text: 'soda' },
+                { id: 'a6', text: 'lemonade' },
+                { id: 'a7', text: 'water bottles' },
+              ],
+            },
+            {
+              bucket_id: 'b3',
+              bucket_name: 'Blanket',
+              percentage: 20,
+              revealed: true,
+              answers: [
+                { id: 'a8', text: 'a blanket' },
+                { id: 'a9', text: 'picnic blanket' },
+              ],
+            },
+          ],
+        },
+      ],
+    },
+  },
+};
