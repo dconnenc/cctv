@@ -10,6 +10,12 @@
   width: 100%;
 }
 
+// TODO: these tokens are referenced here but not defined in the global token
+// sheets (app/frontend/styles.css / tailwind.css), so they silently fall back
+// to inherited/default values. Define them globally (suggested values):
+//   --color-text-inverse: hsl(var(--primary-foreground));
+//   --font-weight-bold: 700;
+//   --font-size-sm: 0.875rem;
 .questionNumber {
   display: flex;
   align-items: center;
