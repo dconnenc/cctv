@@ -14,8 +14,8 @@ module AI
         uri = URI("#{API_BASE}/#{model}:generateContent?key=#{api_key}")
         http = Net::HTTP.new(uri.host, uri.port)
         http.use_ssl = true
-        http.open_timeout = 28
-        http.read_timeout = 28
+        http.open_timeout = 10
+        http.read_timeout = 55
 
         request = Net::HTTP::Post.new(uri)
         request["Content-Type"] = "application/json"
@@ -45,7 +45,8 @@ module AI
           contents: [{ parts: [{ text: prompt }] }],
           generationConfig: {
             responseMimeType: "application/json",
-            temperature: temperature
+            temperature: temperature,
+            thinkingConfig: { thinkingBudget: 0 }
           }
         }
 
