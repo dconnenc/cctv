@@ -149,18 +149,17 @@ export const mockAnnouncementBlock: Block = {
 export const mockPlaybill: PlaybillSection[] = [
   {
     id: 's1',
-    title: 'Welcome',
-    body: 'Thank you for joining us for an evening of interactive comedy.',
+    performer_id: 'performer-1',
+    title: 'Alex Rivers',
+    body: 'Comedian and improviser based in Chicago.',
+    image_url: undefined,
   },
   {
     id: 's2',
-    title: 'The Cast',
-    body: 'Tonight featuring our all-star improv ensemble. Audience participation required!',
-  },
-  {
-    id: 's3',
-    title: 'After the Show',
-    body: 'Join us at the bar for drinks and conversation. Tips appreciated!',
+    performer_id: 'performer-2',
+    title: 'Sam Torres',
+    body: 'Character actor with a background in sketch comedy.',
+    image_url: undefined,
   },
 ];
 

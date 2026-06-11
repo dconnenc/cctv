@@ -366,12 +366,10 @@ export type ApiPayload =
 
 export interface PlaybillSection {
   id: string;
+  performer_id: string;
   title: string;
   body: string;
-  image_signed_id?: string;
   image_url?: string;
-  image_width?: number;
-  image_height?: number;
 }
 
 // ===== ENTITY TYPES =====

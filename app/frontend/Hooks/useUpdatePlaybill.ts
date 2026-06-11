@@ -2,7 +2,11 @@ import { useCallback, useState } from 'react';
 
 import { useExperience } from '@cctv/contexts';
 import { useAdminAuth } from '@cctv/contexts/AdminAuthContext';
-import { PlaybillSection } from '@cctv/types';
+
+interface PlaybillEntry {
+  id: string;
+  performer_id: string;
+}
 
 export function useUpdatePlaybill() {
   const { code } = useExperience();
@@ -11,7 +15,7 @@ export function useUpdatePlaybill() {
   const [error, setError] = useState<string | null>(null);
 
   const updatePlaybill = useCallback(
-    async (playbill: PlaybillSection[], playbill_enabled?: boolean) => {
+    async (playbill: PlaybillEntry[], playbill_enabled?: boolean) => {
       if (!code) {
         setError('Missing experience code');
         return { success: false, error: 'Missing experience code' } as const;

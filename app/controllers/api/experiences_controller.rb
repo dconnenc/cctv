@@ -143,16 +143,6 @@ class Api::ExperiencesController < Api::BaseController
     @experience.playbill_enabled = params[:playbill_enabled] unless params[:playbill_enabled].nil?
 
     if @experience.save
-      (params[:playbill] || []).each do |section|
-        next unless section[:image_signed_id].present?
-
-        blob = ActiveStorage::Blob.find_signed(section[:image_signed_id])
-        next unless blob
-        next if @experience.attachments.where(blob_id: blob.id).exists?
-
-        @experience.attachments.attach(blob)
-      end
-
       Experiences::Broadcaster.new(@experience).broadcast_experience_update
       render json: { success: true }
     else

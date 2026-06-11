@@ -162,12 +162,8 @@ class Experience < ApplicationRecord
         next
       end
 
-      unless section["title"].is_a?(String) && section["body"].is_a?(String)
-        errors.add(:playbill, "section #{i} must have title and body strings")
-      end
-
-      if section.key?("image_signed_id") && !section["image_signed_id"].is_a?(String)
-        errors.add(:playbill, "section #{i} image_signed_id must be a string")
+      unless section["performer_id"].is_a?(String) && section["performer_id"].present?
+        errors.add(:playbill, "section #{i} must have a performer_id string")
       end
     end
   end
