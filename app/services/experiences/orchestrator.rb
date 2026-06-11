@@ -116,12 +116,12 @@ module Experiences
     end
 
     def close_block!(block:)
-      if block.kind == ExperienceBlock::FAMILY_FEUD
+      if block.kind == ExperienceBlock::FAMILY_FEUD || block.kind == ExperienceBlock::GUESS_WHO
         transaction do
           block.close!
           block.child_blocks.update_all(status: :closed)
         end
-      elsif block.parent_block_id.present? && block.parent_block&.kind == ExperienceBlock::FAMILY_FEUD
+      elsif block.parent_block_id.present? && block.parent_block&.kind.in?([ExperienceBlock::FAMILY_FEUD, ExperienceBlock::GUESS_WHO])
         parent = block.parent_block
         transaction do
           parent.close!
@@ -139,7 +139,9 @@ module Experiences
           block.open!
           open_family_feud_children!(block)
         end
-      elsif block.parent_block_id.present? && block.parent_block&.kind == ExperienceBlock::FAMILY_FEUD
+      elsif block.kind == ExperienceBlock::GUESS_WHO
+        block.open!
+      elsif block.parent_block_id.present? && block.parent_block&.kind.in?([ExperienceBlock::FAMILY_FEUD, ExperienceBlock::GUESS_WHO])
         parent = block.parent_block
         transaction do
           parent.open!
@@ -152,12 +154,12 @@ module Experiences
     end
 
     def hide_block!(block:)
-      if block.kind == ExperienceBlock::FAMILY_FEUD
+      if block.kind == ExperienceBlock::FAMILY_FEUD || block.kind == ExperienceBlock::GUESS_WHO
         transaction do
           block.hide!
           block.child_blocks.update_all(status: :hidden)
         end
-      elsif block.parent_block_id.present? && block.parent_block&.kind == ExperienceBlock::FAMILY_FEUD
+      elsif block.parent_block_id.present? && block.parent_block&.kind.in?([ExperienceBlock::FAMILY_FEUD, ExperienceBlock::GUESS_WHO])
         parent = block.parent_block
         transaction do
           parent.hide!
@@ -1592,7 +1594,7 @@ module Experiences
         "mystery_user_id" => mystery_user_id,
         "clues" => clues,
         "current_clue_index" => 0,
-        "board_candidate_ids" => board_candidate_ids - [mystery_user_id],
+        "board_candidate_ids" => board_candidate_ids,
         "eliminated_user_ids" => [],
         "unanswered_user_ids" => []
       }
