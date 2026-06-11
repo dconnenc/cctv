@@ -220,7 +220,7 @@ RSpec.describe "Guess Who Block", type: :system do
       expect(page).to have_text("Eliminated: 0")
     end
 
-    # ── Contestant 2: board, poll with elimination, verify eliminated gets no next poll ──
+    # ── Contestant 2: board, poll with elimination, verify eliminated still sees next poll ──
     mystery_2_name = within("[aria-label='Contestant 2']") do
       find("span", text: /Mystery/i).find(:xpath, "../strong").text
     end
@@ -271,17 +271,13 @@ RSpec.describe "Guess Who Block", type: :system do
       expect(page).to have_text("Eliminated: 1")
     end
 
-    # Dispatch a second poll — eliminated participant should see "Watch the monitor"
+    # Dispatch a second poll — eliminated participant still sees the poll
     within("[aria-label='Contestant 2']") do
       click_button "Dispatch T/F poll"
       expect(page).to have_button("Conclude poll")
     end
 
-    using_session(eliminated_2_session) do
-      expect(page).to have_text("Watch the monitor")
-    end
-
-    # Remaining participants submit and poll concludes
+    # All pool participants (including eliminated) see and can submit the poll
     using_session(mystery_2_session) do
       expect(page).to have_button("True", disabled: false)
       click_button "True"
@@ -294,8 +290,14 @@ RSpec.describe "Guess Who Block", type: :system do
       expect(page).to have_text("You answered:")
     end
 
+    using_session(eliminated_2_session) do
+      expect(page).to have_button("True", disabled: false)
+      click_button "True"
+      expect(page).to have_text("You answered:")
+    end
+
     within("[aria-label='Contestant 2']") do
-      expect(page).to have_text("Poll responses: 2")
+      expect(page).to have_text("Poll responses: 3")
       expect(page).to have_button("Conclude poll", disabled: false)
       click_button "Conclude poll"
       expect(page).to have_button("Dispatch T/F poll")

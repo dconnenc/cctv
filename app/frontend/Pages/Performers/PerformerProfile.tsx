@@ -1,10 +1,12 @@
+import { useCallback, useRef } from 'react';
+
 import { Link, useParams } from 'react-router-dom';
 
-import { Edit2 } from 'lucide-react';
+import { Camera, Edit2 } from 'lucide-react';
 
 import { useUser } from '@cctv/contexts';
 import { Button, Panel } from '@cctv/core';
-import { useFollowPerformer, usePerformer } from '@cctv/hooks';
+import { useFollowPerformer, usePerformer, useUploadPerformerPhoto } from '@cctv/hooks';
 import { formatEventTime } from '@cctv/utils/calendar';
 
 import styles from './Performers.module.scss';
@@ -21,8 +23,10 @@ const dateParts = (iso: string) => {
 export default function PerformerProfile() {
   const { slug } = useParams<{ slug: string }>();
   const { performer, isLoading, refetch } = usePerformer(slug ?? '');
-  const { user } = useUser();
+  const { user, isAdmin } = useUser();
   const { follow, unfollow, isLoading: followLoading } = useFollowPerformer();
+  const { uploadPhoto, isUploading, progress } = useUploadPerformerPhoto();
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const isOwner = !!performer?.editable_by_current_user;
 
@@ -35,6 +39,15 @@ export default function PerformerProfile() {
     }
     refetch();
   };
+
+  const handlePhotoFileSelect = useCallback(
+    async (file: File) => {
+      if (!performer) return;
+      const result = await uploadPhoto(file, performer.slug);
+      if (result) refetch();
+    },
+    [performer, uploadPhoto, refetch],
+  );
 
   if (isLoading) {
     return (
@@ -57,21 +70,48 @@ export default function PerformerProfile() {
       <div className={styles.profileContainer}>
         <Panel className={styles.profilePanel}>
           <header className={styles.hero}>
-            {performer.photo_url ? (
-              <img
-                src={performer.photo_url}
-                alt={performer.name}
-                className={styles.heroPhoto}
-                width={140}
-                height={140}
-              />
-            ) : (
-              <div className={styles.heroPhoto} aria-hidden>
-                <span className={styles.heroPhotoInitial}>
-                  {performer.name.charAt(0).toUpperCase()}
-                </span>
-              </div>
-            )}
+            <div
+              className={`${styles.heroPhotoWrapper}${isAdmin ? ` ${styles.heroPhotoWrapperEditable}` : ''}`}
+              onClick={isAdmin ? () => fileInputRef.current?.click() : undefined}
+              role={isAdmin ? 'button' : undefined}
+              aria-label={isAdmin ? 'Upload performer photo' : undefined}
+            >
+              {performer.photo_url ? (
+                <img
+                  src={performer.photo_url}
+                  alt={performer.name}
+                  className={styles.heroPhoto}
+                  width={140}
+                  height={140}
+                />
+              ) : (
+                <div className={styles.heroPhoto} aria-hidden>
+                  <span className={styles.heroPhotoInitial}>
+                    {performer.name.charAt(0).toUpperCase()}
+                  </span>
+                </div>
+              )}
+              {isAdmin && (
+                <div className={styles.heroPhotoOverlay} aria-hidden>
+                  {isUploading ? (
+                    <span className={styles.heroPhotoOverlayText}>{progress}%</span>
+                  ) : (
+                    <Camera size={20} />
+                  )}
+                </div>
+              )}
+            </div>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              style={{ display: 'none' }}
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) handlePhotoFileSelect(file);
+                e.target.value = '';
+              }}
+            />
             <div className={styles.heroIdentity}>
               <span className={styles.heroEyebrow}>Performer</span>
               <h1 className={styles.heroName}>{performer.name}</h1>

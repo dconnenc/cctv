@@ -122,6 +122,72 @@ RSpec.describe "Family Feud Block", type: :system do
     end
   end
 
+  describe "participant answer drawers during playing" do
+    it "lets participants expand a fully-revealed bucket to see the verbatim answers" do
+      sign_in(admin)
+      create_experience_and_go_to_manage(name: "Drawer Night", code: "drawer-night")
+
+      queue_block(n: 1) do
+        select "Family Feud", from: "Kind"
+        fill_in "Title", with: "Name Something"
+        click_button "Add Question"
+        fill_in "Enter question", with: "Name a fruit"
+      end
+
+      start_experience
+
+      using_session(:participant) do
+        register_participant(
+          code: "drawer-night",
+          name: "Alice",
+          email: "alice@example.com",
+          experience_name: "Drawer Night"
+        )
+        expect(page).to have_text("Waiting for the next activity...")
+      end
+
+      visit current_path
+      select_and_present(1, kind: "family.feud")
+
+      using_session(:participant) do
+        expect(page).to have_field("Name a fruit")
+        fill_in "Name a fruit", with: "Banana"
+        expect(page).to have_button("Submit", disabled: false)
+        click_button "Submit"
+        expect(page).to have_text("Name Something")
+      end
+
+      # Drag-and-drop categorization is unreliable in browser tests, so the
+      # answer is assigned to a bucket directly before the board is snapshotted
+      # for playing.
+      question_block = ExperienceBlock.where(kind: ExperienceBlock::QUESTION).last
+      submission = ExperienceQuestionSubmission.last
+      question_block.update!(
+        payload: question_block.payload.merge(
+          "buckets" => [{ "id" => "b1", "name" => "Fruits", "answer_ids" => [submission.id.to_s] }]
+        )
+      )
+
+      select_block(1, kind: "family.feud")
+      expect(page).to have_button("Start Playing")
+      click_button "Start Playing"
+
+      # Reveal the only bucket — the board is now fully revealed.
+      expect(page).to have_button("Reveal Fruits")
+      click_button "Reveal Fruits"
+      expect(page).to have_button("Revealed Fruits", disabled: :all)
+
+      using_session(:participant) do
+        # The revealed card becomes a toggle that opens the verbatim answers.
+        expect(page).to have_button("Show answers for Fruits")
+        expect(page).to have_no_text("Banana")
+
+        click_button "Show answers for Fruits"
+        expect(page).to have_text("Banana")
+      end
+    end
+  end
+
   describe "synthetic (AI-generated) questions" do
     before do
       allow(AI::Client).to receive(:call).and_return(

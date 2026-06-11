@@ -68,11 +68,17 @@ export interface AnnouncementPayload {
   show_on_monitor?: boolean;
 }
 
+export interface FamilyFeudAnswer {
+  id: string;
+  text: string;
+}
+
 export interface FamilyFeudBucket {
   bucket_id: string;
   bucket_name: string;
   percentage: number;
   revealed: boolean;
+  answers?: FamilyFeudAnswer[];
 }
 
 export interface FamilyFeudQuestion {

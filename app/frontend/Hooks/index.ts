@@ -44,3 +44,4 @@ export { useFollowPerformer } from './useFollowPerformer';
 export { useMinigameArithmetic } from './useMinigameArithmetic';
 export { useMinigameBalloonPump } from './useMinigameBalloonPump';
 export { useTheScene } from './useTheScene';
+export { useUploadPerformerPhoto } from './useUploadPerformerPhoto';
