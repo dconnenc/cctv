@@ -141,7 +141,7 @@ RSpec.describe "Family Feud Block", type: :system do
         click_button "Add Question"
         fill_in "Question 1", with: "Name a fruit"
         click_button "Add Synthetic Question"
-        expect(page).to have_text("Synthetic Question 2")
+        expect(page).to have_text(/synthetic question 2/i)
       end
 
       start_experience
@@ -182,6 +182,12 @@ RSpec.describe "Family Feud Block", type: :system do
 
       # From here it behaves like any other question: buckets are available
       expect(page).to have_button("Add Bucket")
+
+      # Selecting the synthetic question directly from the sidebar opens the
+      # generation manager (focused on it), not a read-only monitor preview.
+      select_block(3, kind: "question")
+      expect(page).to have_button("Reroll")
+      expect(page).to have_no_text("Monitor Preview")
     end
   end
 

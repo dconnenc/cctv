@@ -88,9 +88,12 @@ interface FamilyFeudChildPayload {
 interface FamilyFeudManagerProps {
   block: Block;
   onBucketOperation?: (action: FamilyFeudAction) => void;
+  // When set, that question starts expanded (others collapsed) — used when the
+  // manager is opened by selecting a specific (e.g. synthetic) child question.
+  focusQuestionId?: string;
 }
 
-export default function FamilyFeudManager({ block }: FamilyFeudManagerProps) {
+export default function FamilyFeudManager({ block, focusQuestionId }: FamilyFeudManagerProps) {
   const { code } = useExperience();
   const [questionsState, dispatch] = useReducer(familyFeudReducer, []);
   const {
@@ -184,7 +187,9 @@ export default function FamilyFeudManager({ block }: FamilyFeudManagerProps) {
     dispatch({ type: FamilyFeudActionType.INIT, payload: newQuestionsState });
 
     // Initialize collapsed state: collapse all questions and all buckets by default
+    // (except a focused question, which starts expanded).
     const allQuestionIds = new Set(childQuestions.map((q: Block) => q.id));
+    if (focusQuestionId) allQuestionIds.delete(focusQuestionId);
     const allBucketIds = new Set(newQuestionsState.flatMap((q) => q.buckets.map((b) => b.id)));
     setCollapsedQuestions(allQuestionIds);
     setCollapsedBuckets(allBucketIds);

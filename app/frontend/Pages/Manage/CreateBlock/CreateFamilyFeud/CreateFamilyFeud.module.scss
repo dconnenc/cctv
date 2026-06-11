@@ -41,20 +41,25 @@
   align-items: start;
 
   .questionNumber {
-    margin-top: var(--space-sm);
-    background-color: var(--accent);
+    margin-top: var(--space-xs);
+    background-color: var(--color-accent);
   }
 }
 
+// Match the TextInput label treatment used by the other questions.
 .syntheticLabel {
-  font-weight: var(--font-weight-bold);
-  font-size: var(--font-size-sm);
+  font-family: var(--font-ui);
+  font-size: 20px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-foreground);
 }
 
 .syntheticBadge {
   margin-top: var(--space-xs);
-  color: var(--muted-foreground);
-  font-size: var(--font-size-sm);
+  color: var(--color-muted-foreground);
+  font-size: 0.8125rem;
 }
 
 .addButtons {

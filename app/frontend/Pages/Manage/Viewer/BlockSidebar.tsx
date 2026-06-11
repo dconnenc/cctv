@@ -2,12 +2,15 @@ import { useEffect, useMemo, useState } from 'react';
 
 import { DragDropContext, Draggable, type DropResult, Droppable } from '@hello-pangea/dnd';
 import classNames from 'classnames';
-import { ChevronLeft, ChevronRight, GripVertical, Link2, Plus } from 'lucide-react';
+import { ChevronLeft, ChevronRight, GripVertical, Link2, Plus, Sparkles } from 'lucide-react';
 
 import { Button } from '@cctv/core/Button/Button';
-import { BLOCK_KIND_LABELS, Block } from '@cctv/types';
+import { BLOCK_KIND_LABELS, Block, BlockKind, QuestionPayload } from '@cctv/types';
 
 import styles from './BlockSidebar.module.scss';
+
+const isSyntheticQuestion = (block: Block): boolean =>
+  block.kind === BlockKind.QUESTION && Boolean((block.payload as QuestionPayload)?.synthetic);
 
 interface BlockSidebarProps {
   blocks: Block[];
@@ -182,8 +185,17 @@ export default function BlockSidebar({
                                 <span className={styles.blockIndex}>{index + 1}</span>
                                 <span className={styles.statusDot} data-status={block.status} />
                                 <span className={styles.blockKind}>
-                                  {BLOCK_KIND_LABELS[block.kind]}
+                                  {isSyntheticQuestion(block)
+                                    ? 'Synthetic Question'
+                                    : BLOCK_KIND_LABELS[block.kind]}
                                 </span>
+                                {isSyntheticQuestion(block) && (
+                                  <Sparkles
+                                    size={12}
+                                    className={styles.syntheticIcon}
+                                    aria-hidden="true"
+                                  />
+                                )}
                                 {block.status === 'open' && (
                                   <span className={styles.liveBadge}>Live</span>
                                 )}
