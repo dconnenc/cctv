@@ -1,6 +1,12 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
-import { BlockKind, GuessWhoBlock, GuessWhoClue, GuessWhoContestant } from '@cctv/types';
+import {
+  BlockKind,
+  ExperienceParticipant,
+  GuessWhoBlock,
+  GuessWhoClue,
+  GuessWhoContestant,
+} from '@cctv/types';
 
 import { ExperienceSeeder } from '../../../../.storybook/ExperienceSeeder';
 import { lobbyExperience, mockParticipants } from '../../../../.storybook/fixtures';
@@ -60,6 +66,91 @@ const contestant2: GuessWhoContestant = {
   mystery: { user_id: 'u4', name: 'Diana', avatar: mockParticipants[3].avatar },
 };
 
+// A 50-strong board: names include some long ones to exercise label wrapping,
+// and avatars cycle through the mock fixtures so every cell renders a drawing.
+// More than MAX_TILES (32) so the board fills four rows of eight and the final
+// tile collapses into an "and N more users…" overflow marker.
+const boardNames = [
+  'Alice',
+  'Bob',
+  'Charlie',
+  'Diana',
+  'Maximilian Featherstonehaugh',
+  'Eve',
+  'Frank',
+  'Grace',
+  'Henrietta-Wilhelmina',
+  'Ivan',
+  'Jada',
+  'Konstantinos Papadopoulos',
+  'Lin',
+  'Mateo',
+  'Nadia',
+  'Oluwaseun Adebayo-Johnson',
+  'Priya',
+  'Quincy',
+  'Rosalind',
+  'Sven',
+  'Tatiana',
+  'Umberto',
+  'Valentina Rodríguez-García',
+  'Wendell',
+  'Xiomara',
+  'Yusuf',
+  'Zara',
+  'Bartholomew',
+  'Clementine',
+  'Desmond',
+  'Esmeralda',
+  'Fitzgerald',
+  'Gwendolyn',
+  'Hieronymus',
+  'Isadora',
+  'Jeremiah',
+  'Anastasia Vasilievna Romanova',
+  'Lakshmi',
+  'Montgomery',
+  'Genevieve',
+  'Nikolai',
+  'Ophelia',
+  'Percival',
+  'Rosalind-Marie',
+  'Sebastián',
+  'Theodora',
+  'Ulrich',
+  'Vivienne',
+  'Wolfgang',
+  'Ximena',
+];
+
+const boardParticipants: ExperienceParticipant[] = boardNames.map((name, i) => {
+  const src = mockParticipants[i % mockParticipants.length];
+  return {
+    ...src,
+    id: `bp${i + 1}`,
+    user_id: `b${i + 1}`,
+    name,
+    role: 'player',
+  };
+});
+
+const bigBoardExperience = {
+  ...lobbyExperience,
+  hosts: [boardParticipants[0]],
+  participants: boardParticipants,
+};
+
+const bigBoardContestant: GuessWhoContestant = {
+  ...contestant1,
+  contestant_user_id: 'b1',
+  contestant: { user_id: 'b1', name: boardNames[0], avatar: boardParticipants[0].avatar },
+  mystery_user_id: 'b2',
+  mystery: { user_id: 'b2', name: boardNames[1], avatar: boardParticipants[1].avatar },
+  board_candidate_ids: boardParticipants.map((p) => p.user_id),
+  eliminated_user_ids: ['b5', 'b12', 'b23', 'b29'],
+  unanswered_user_ids: ['b8', 'b16'],
+};
+
 function buildBlock(overrides: Partial<GuessWhoBlock['payload']> = {}): GuessWhoBlock {
   return {
     id: 'gw1',
@@ -85,11 +176,14 @@ const meta: Meta<typeof GuessWhoMonitor> = {
   component: GuessWhoMonitor,
   tags: ['autodocs'],
   decorators: [
-    (Story) => (
-      <ExperienceSeeder experience={lobbyExperience} monitorView={lobbyExperience}>
-        <Story />
-      </ExperienceSeeder>
-    ),
+    (Story, context) => {
+      const experience = context.parameters.seedExperience ?? lobbyExperience;
+      return (
+        <ExperienceSeeder experience={experience} monitorView={experience}>
+          <Story />
+        </ExperienceSeeder>
+      );
+    },
   ],
 };
 export default meta;
@@ -128,6 +222,16 @@ export const MonitorBoardWithActivePoll: Story = {
       active_poll_contestant_index: 0,
       active_poll_response_count: 7,
       active_poll_total_participants: 12,
+    }),
+  },
+};
+
+export const MonitorBoardManyParticipants: Story = {
+  parameters: { seedExperience: bigBoardExperience },
+  args: {
+    block: buildBlock({
+      monitor_view: 'c1_board',
+      contestants: [bigBoardContestant, contestant2],
     }),
   },
 };
