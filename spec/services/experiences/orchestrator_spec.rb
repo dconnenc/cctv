@@ -336,9 +336,10 @@ RSpec.describe Experiences::Orchestrator do
           end
         end
 
-        it "excludes the mystery person from board_candidate_ids" do
+        it "includes all pool members (including the mystery) in board_candidate_ids" do
+          pool_user_ids = [pool_member_c, pool_member_d, pool_member_e].map(&:user_id)
           guess_who_block.reload.payload["contestants"].each do |c|
-            expect(c["board_candidate_ids"]).not_to include(c["mystery_user_id"])
+            expect(c["board_candidate_ids"]).to match_array(pool_user_ids)
           end
         end
       end
@@ -440,9 +441,10 @@ RSpec.describe Experiences::Orchestrator do
       end
 
       context "when the mystery participant has responded" do
-        let(:matched_uid) { candidate_ids.first }
-        let(:differed_uid) { candidate_ids.last }
-        let(:non_responding_uids) { candidate_ids - [matched_uid, differed_uid] }
+        let(:non_mystery_candidate_ids) { candidate_ids - [mystery_user_id] }
+        let(:matched_uid) { non_mystery_candidate_ids.first }
+        let(:differed_uid) { non_mystery_candidate_ids.last }
+        let(:non_responding_uids) { non_mystery_candidate_ids - [matched_uid, differed_uid] }
 
         before do
           ExperiencePollSubmission.create!(
