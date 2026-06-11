@@ -186,8 +186,28 @@
   }
 }
 
-.heroPhoto {
+.heroPhotoWrapper {
   grid-area: photo;
+  position: relative;
+  width: 140px;
+  height: 140px;
+  flex-shrink: 0;
+
+  @media (max-width: 480px) {
+    width: 96px;
+    height: 96px;
+  }
+}
+
+.heroPhotoWrapperEditable {
+  cursor: pointer;
+
+  &:hover .heroPhotoOverlay {
+    opacity: 1;
+  }
+}
+
+.heroPhoto {
   width: 140px;
   height: 140px;
   border-radius: 999px;
@@ -203,6 +223,26 @@
     width: 96px;
     height: 96px;
   }
+}
+
+.heroPhotoOverlay {
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  background: hsl(var(--foreground) / 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: hsl(var(--background));
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.heroPhotoOverlayText {
+  font-family: var(--font-ui);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
 }
 
 .heroPhotoInitial {

@@ -12,10 +12,10 @@ class PerformerPolicy < ApplicationPolicy
   end
 
   def update?
-    user.present? && record.user_id == user.id
+    user.present? && (user.admin? || user.superadmin? || record.user_id == user.id)
   end
 
   def destroy?
-    user.present? && record.user_id == user.id
+    user.present? && (user.admin? || user.superadmin? || record.user_id == user.id)
   end
 end

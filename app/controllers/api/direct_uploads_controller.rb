@@ -1,5 +1,6 @@
 class Api::DirectUploadsController < ActiveStorage::DirectUploadsController
   skip_forgery_protection
+  include Passwordless::ControllerHelpers
 
   before_action :authenticate_jwt
   before_action :validate_upload_params
@@ -9,14 +10,20 @@ class Api::DirectUploadsController < ActiveStorage::DirectUploadsController
   def authenticate_jwt
     token = request.headers["Authorization"]&.to_s&.match(/\ABearer\s+(.+)\z/i)&.captures&.first
 
-    unless token
+    if token
+      Experiences::AuthService.decode!(token)
+    elsif session_admin?
+      # Session-authenticated admin, allow
+    else
       render json: { error: "Missing authorization token" }, status: :unauthorized
-      return
     end
-
-    Experiences::AuthService.decode!(token)
   rescue Experiences::AuthService::TokenInvalid, Experiences::AuthService::TokenExpired
     render json: { error: "Invalid or expired token" }, status: :unauthorized
+  end
+
+  def session_admin?
+    user = authenticate_by_session(User)
+    user&.admin? || user&.superadmin?
   end
 
   def validate_upload_params
