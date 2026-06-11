@@ -104,7 +104,23 @@ module Experiences
         .includes(
           :experience_segments,
           :parents,
-          children: [:experience_segments, :children, :parents]
+          :experience_poll_submissions,
+          :experience_question_submissions,
+          :experience_minigame_submissions,
+          :experience_minigame_balloon_results,
+          :experience_buzzer_submissions,
+          experience_photo_upload_submissions: { photo_attachment: :blob },
+          children: [
+            :experience_segments,
+            :children,
+            :parents,
+            :experience_poll_submissions,
+            :experience_question_submissions,
+            :experience_minigame_submissions,
+            :experience_minigame_balloon_results,
+            :experience_buzzer_submissions,
+            experience_photo_upload_submissions: { photo_attachment: :blob }
+          ]
         )
         .order(position: :asc)
         .to_a
