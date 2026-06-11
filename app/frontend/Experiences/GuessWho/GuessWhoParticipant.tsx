@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { useExperienceState } from '@cctv/contexts/ExperienceStateContext';
 import { Button } from '@cctv/core/Button/Button';
@@ -11,19 +11,25 @@ interface GuessWhoParticipantProps {
   block: GuessWhoBlock;
 }
 
+const WATCH_MONITOR = (
+  <div className={styles.root}>
+    <h2 className={styles.title}>Guess Who?</h2>
+    <p className={styles.empty}>Watch the monitor — a poll will appear here when it's time.</p>
+  </div>
+);
+
 export default function GuessWhoParticipant({ block }: GuessWhoParticipantProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { submitPollResponse, error } = useSubmitPollResponse();
   const { submissionState } = useExperienceState();
   const activePoll = block.payload.active_poll;
 
+  useEffect(() => {
+    setIsSubmitting(false);
+  }, [activePoll?.id]);
+
   if (!activePoll) {
-    return (
-      <div className={styles.root}>
-        <h2 className={styles.title}>Guess Who?</h2>
-        <p className={styles.empty}>Watch the monitor — a poll will appear here when it's time.</p>
-      </div>
-    );
+    return WATCH_MONITOR;
   }
 
   const submission = submissionState[activePoll.id];

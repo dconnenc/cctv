@@ -44,6 +44,13 @@ class Api::ExperienceSegmentsController < Api::BaseController
   # POST /api/experiences/:experience_id/segments/:id/assign
   def assign
     with_experience_orchestration do
+      affected = @experience.experience_participants
+        .where(id: assign_params[:participant_ids])
+        .includes(:experience_segments)
+      old_fingerprints = affected.map do |p|
+        { participant: p, old_fingerprint: Experiences::Broadcaster.visibility_fingerprint(@experience, p) }
+      end
+
       if assign_params[:assign_action] == 'remove'
         orchestrator.remove_participants!(
           segment_id: params[:id],
@@ -57,7 +64,9 @@ class Api::ExperienceSegmentsController < Api::BaseController
       end
 
       @experience.reload
-      Experiences::Broadcaster.new(@experience).broadcast_experience_update
+      Experiences::Broadcaster.new(@experience).broadcast_experience_update(
+        profile_changes: old_fingerprints
+      )
 
       render json: { success: true }
     end

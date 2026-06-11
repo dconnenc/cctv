@@ -46,16 +46,17 @@ module Experiences
     end
 
     def for_participant(participant)
-      visible = participant_visible_blocks(participant)
-      role    = participant.role
+      visible  = participant_visible_blocks(participant)
+      role     = participant.role
+      segments = participant.experience_segments.map(&:name)
 
       if host_or_moderator?(role)
-        blocks = visible.map { |b| serialize_block(b, participant_role: role, view_context: :participant) }
+        blocks = visible.map { |b| serialize_block(b, participant_role: role, view_context: :participant, segments: segments) }
       else
         current = resolve_participant_block(visible)
         if current
           family = resolve_ff_family(current)
-          blocks = family.map { |b| serialize_block(b, participant_role: role, view_context: :participant) }
+          blocks = family.map { |b| serialize_block(b, participant_role: role, view_context: :participant, segments: segments) }
         else
           blocks = []
         end
@@ -68,12 +69,12 @@ module Experiences
       visible = profile_visible_blocks(role: role, segments: segments, user_id: user_id)
 
       if host_or_moderator?(role)
-        blocks = visible.map { |b| serialize_block(b, participant_role: role, view_context: :participant) }
+        blocks = visible.map { |b| serialize_block(b, participant_role: role, view_context: :participant, segments: segments) }
       else
         current = resolve_participant_block(visible)
         if current
           family = resolve_ff_family(current)
-          blocks = family.map { |b| serialize_block(b, participant_role: role, view_context: :participant) }
+          blocks = family.map { |b| serialize_block(b, participant_role: role, view_context: :participant, segments: segments) }
         else
           blocks = []
         end
@@ -259,13 +260,13 @@ module Experiences
 
     # --- Block serialization ---
 
-    def serialize_block(block, participant_role:, depth: 0, view_context: :admin)
+    def serialize_block(block, participant_role:, depth: 0, view_context: :admin, segments: nil)
       {
         id:                  block.id,
         kind:                block.kind,
         status:              block.status,
         parent_block_id:     block.parent_block_id,
-        payload:             shape_payload(block, participant_role, view_context),
+        payload:             shape_payload(block, participant_role, view_context, segments: segments),
         sounds:              block.sounds,
         position:            block.position,
         add_to_playbill:     block.add_to_playbill,
@@ -276,10 +277,10 @@ module Experiences
         .merge(dag_metadata(block, participant_role, depth))
     end
 
-    def shape_payload(block, participant_role, view_context)
+    def shape_payload(block, participant_role, view_context, segments: nil)
       case block.kind
       when ExperienceBlock::GUESS_WHO
-        shape_guess_who_payload(block, participant_role, view_context)
+        shape_guess_who_payload(block, participant_role, view_context, segments: segments)
       when ExperienceBlock::MINIGAME_ARITHMETIC
         shape_minigame_arithmetic_payload(block, participant_role, view_context)
       when ExperienceBlock::MINIGAME_BALLOON_PUMP
@@ -460,7 +461,7 @@ module Experiences
       [gold, silver, bronze].compact.flatten.compact
     end
 
-    def shape_guess_who_payload(block, participant_role, view_context)
+    def shape_guess_who_payload(block, participant_role, view_context, segments: nil)
       payload = block.payload.deep_dup || {}
       contestants = Array(payload["contestants"])
 
@@ -495,7 +496,14 @@ module Experiences
 
       payload["active_poll_response_count"] = guess_who_active_poll_response_count(payload)
       payload["active_poll_total_participants"] = guess_who_active_poll_total(payload)
-      payload["active_poll"] = guess_who_active_poll_for(payload) if payload["active_poll_block_id"].present?
+
+      contestant_segment = @experience.experience_segments.find_by(id: payload["contestant_segment_id"])
+      is_contestant_profile = view_context == :participant &&
+        contestant_segment.present? &&
+        Array(segments).include?(contestant_segment.name)
+      unless is_contestant_profile
+        payload["active_poll"] = guess_who_active_poll_for(payload) if payload["active_poll_block_id"].present?
+      end
 
       payload
     end
@@ -521,9 +529,16 @@ module Experiences
       poll_id = payload["active_poll_block_id"]
       return 0 if poll_id.blank?
 
-      @experience.experience_participants
-        .where.not(role: %w[host moderator])
-        .count
+      segment_id = payload["segment_id"]
+      contestants_user_ids = Array(payload["contestants"]).map { |c| c["contestant_user_id"] }.compact
+
+      participants = @experience.experience_participants.where.not(role: %w[host moderator])
+
+      if segment_id.present?
+        participants = participants.joins(:experience_segments).where(experience_segments: { id: segment_id })
+      end
+
+      participants.where.not(user_id: contestants_user_ids).count
     end
 
     def shape_minigame_arithmetic_payload(block, participant_role, view_context)

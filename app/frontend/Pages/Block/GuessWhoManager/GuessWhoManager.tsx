@@ -65,7 +65,7 @@ function ContestantPanel({
   };
 
   return (
-    <section className={styles.contestantPanel}>
+    <section className={styles.contestantPanel} aria-label={`Contestant ${index + 1}`}>
       <header className={styles.contestantHeader}>
         <div>
           <span className={styles.label}>Contestant {index + 1}</span>
@@ -254,7 +254,7 @@ export default function GuessWhoManager({ block }: GuessWhoManagerProps) {
 
       {started && (
         <>
-          <section className={styles.section}>
+          <section className={styles.section} aria-label="Monitor view">
             <h3>Monitor view</h3>
             <div className={styles.monitorToggle}>
               {MONITOR_VIEWS.map((v) => (

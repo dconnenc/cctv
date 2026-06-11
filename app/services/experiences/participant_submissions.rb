@@ -23,8 +23,10 @@ module Experiences
     private
 
     def poll_entries(participant_id, block_ids, blocks_by_id)
-      ExperiencePollSubmission.where(experience_block_id: block_ids, experience_participant_id: participant_id).map do |s|
+      ExperiencePollSubmission.where(experience_block_id: block_ids, experience_participant_id: participant_id).filter_map do |s|
         block = blocks_by_id[s.experience_block_id]
+        next if block.parent_block&.kind == ExperienceBlock::GUESS_WHO
+
         options = Array(block.payload&.dig("options"))
         selected = Array(s.answer&.dig("selectedOptions"))
         labels = selected.map { |sel| option_label(options, sel) }.compact
