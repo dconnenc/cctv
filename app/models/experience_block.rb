@@ -19,10 +19,7 @@ class ExperienceBlock < ApplicationRecord
   SOUNDS_BY_KIND = {
     FAMILY_FEUD => { "on_show_x" => "buzzer_error", "theme" => "family_feud_theme" },
     GUESS_WHO => {
-      "on_dispatch_poll" => "buzzer_error",
-      "on_conclude_poll" => "buzzer_error",
-      "on_reveal"        => "buzzer_error",
-      "theme"            => "guess_who_theme"
+      "theme" => "guess_who_theme"
     },
     THE_SCENE => { "on_buzzer_press" => "buzzer_error" }
   }.freeze
