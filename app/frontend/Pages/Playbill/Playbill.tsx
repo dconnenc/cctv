@@ -127,8 +127,6 @@ function PerformersTab() {
                 alt={renderNameTemplate(section.title, participant) || `Performer ${index + 1}`}
                 loading="lazy"
                 decoding="async"
-                width={section.image_width}
-                height={section.image_height}
               />
             </div>
           )}

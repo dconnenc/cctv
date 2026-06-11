@@ -137,7 +137,9 @@ RSpec.describe Api::ExperiencesController, type: :controller do
   end
 
   describe "PATCH #update_playbill" do
-    let(:playbill) { [{ "title" => "Act 1", "body" => "Content" }] }
+    let(:performer_user) { create(:user) }
+    let(:performer) { Performer.create!(user: performer_user, name: "Alex Rivers") }
+    let(:playbill) { [{ "id" => "section-1", "performer_id" => performer.id }] }
 
     subject do
       patch(
