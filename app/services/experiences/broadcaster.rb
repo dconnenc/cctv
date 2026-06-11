@@ -11,11 +11,19 @@ class Experiences::Broadcaster
     "experience_#{experience.id}_profile_#{fingerprint}"
   end
 
-  def self.visibility_fingerprint(experience, participant)
+  def self.visibility_fingerprint(experience, participant, targeted_block_data: nil)
     segments     = participant.experience_segments.map(&:name).sort
-    targeted_ids = experience.experience_blocks
-      .where("? = ANY(target_user_ids)", participant.user_id)
-      .order(:id).pluck(:id)
+    targeted_ids = if targeted_block_data
+      user_id_str = participant.user_id.to_s
+      targeted_block_data
+        .select { |_, user_ids| user_ids.map(&:to_s).include?(user_id_str) }
+        .map(&:first)
+        .sort
+    else
+      experience.experience_blocks
+        .where("? = ANY(target_user_ids)", participant.user_id)
+        .order(:id).pluck(:id)
+    end
     Digest::SHA1.hexdigest([participant.role, segments.join(","), targeted_ids.join(",")].join(":"))
   end
 
@@ -31,8 +39,12 @@ class Experiences::Broadcaster
       "[Broadcaster] Broadcasting to experience #{experience.code}"
     )
 
+    targeted_block_data = experience.experience_blocks
+      .where("target_user_ids IS NOT NULL AND cardinality(target_user_ids) > 0")
+      .pluck(:id, :target_user_ids)
+
     experience.experience_participants.includes(:user, :experience_segments)
-      .group_by { |p| self.class.visibility_fingerprint(experience, p) }
+      .group_by { |p| self.class.visibility_fingerprint(experience, p, targeted_block_data: targeted_block_data) }
       .each do |fingerprint, participants|
         rep = participants.first
         broadcast_to_profile(

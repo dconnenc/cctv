@@ -100,7 +100,30 @@ module Experiences
     private
 
     def admin_visible_blocks
-      @experience.experience_blocks.order(position: :asc).to_a
+      @experience.experience_blocks
+        .includes(
+          :experience_segments,
+          :parents,
+          :experience_poll_submissions,
+          :experience_question_submissions,
+          :experience_minigame_submissions,
+          :experience_minigame_balloon_results,
+          :experience_buzzer_submissions,
+          experience_photo_upload_submissions: { photo_attachment: :blob },
+          children: [
+            :experience_segments,
+            :children,
+            :parents,
+            :experience_poll_submissions,
+            :experience_question_submissions,
+            :experience_minigame_submissions,
+            :experience_minigame_balloon_results,
+            :experience_buzzer_submissions,
+            experience_photo_upload_submissions: { photo_attachment: :blob }
+          ]
+        )
+        .order(position: :asc)
+        .to_a
     end
 
     def monitor_visible_blocks
@@ -716,7 +739,7 @@ module Experiences
 
     def experience_payload(blocks:, **extra)
       base_url     = Rails.application.config.app_base_url
-      participants = @experience.experience_participants.includes(:user).to_a
+      participants = @experience.experience_participants.includes(:user, :experience_segments).to_a
 
       result = {
         id:               @experience.id,

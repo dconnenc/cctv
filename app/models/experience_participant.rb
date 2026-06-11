@@ -22,6 +22,6 @@ class ExperienceParticipant < ApplicationRecord
   }
 
   def segment_names
-    experience_segments.pluck(:name)
+    experience_segments.map(&:name)
   end
 end
