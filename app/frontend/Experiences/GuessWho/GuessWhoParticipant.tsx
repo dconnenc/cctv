@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 
-import { useExperience } from '@cctv/contexts/ExperienceContext';
 import { useExperienceState } from '@cctv/contexts/ExperienceStateContext';
 import { Button } from '@cctv/core/Button/Button';
 import { useSubmitPollResponse } from '@cctv/hooks/useSubmitPollResponse';
@@ -23,18 +22,13 @@ export default function GuessWhoParticipant({ block }: GuessWhoParticipantProps)
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { submitPollResponse, error } = useSubmitPollResponse();
   const { submissionState } = useExperienceState();
-  const { participant } = useExperience();
   const activePoll = block.payload.active_poll;
 
   useEffect(() => {
     setIsSubmitting(false);
   }, [activePoll?.id]);
 
-  const myUserId = participant?.user_id;
-  const isEliminated =
-    !!myUserId && block.payload.contestants.some((c) => c.eliminated_user_ids.includes(myUserId));
-
-  if (!activePoll || isEliminated) {
+  if (!activePoll) {
     return WATCH_MONITOR;
   }
 
