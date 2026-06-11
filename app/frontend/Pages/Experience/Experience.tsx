@@ -207,7 +207,6 @@ export default function Experience() {
             {experience && (
               <div className={styles.experienceInfo}>
                 <h2 className={styles.experienceName}>{experience.name}</h2>
-                <p className={styles.experienceStatus}>Status: {experience.status}</p>
               </div>
             )}
 
