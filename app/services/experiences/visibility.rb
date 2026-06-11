@@ -346,7 +346,7 @@ module Experiences
         .to_a
 
       user_ids = participants.map(&:user_id)
-      performers_by_user_id = Performer.where(user_id: user_ids).index_by(&:user_id)
+      performers_by_user_id = Performer.includes(photo_attachment: :blob).where(user_id: user_ids).index_by(&:user_id)
 
       participants.map do |p|
         performer = performers_by_user_id[p.user_id]
@@ -807,22 +807,24 @@ module Experiences
     def serialize_playbill
       return [] unless @experience.playbill.is_a?(Array)
 
-      @experience.playbill.map do |section|
-        resolved = section.dup
-        if section["image_signed_id"].present?
-          blob = ActiveStorage::Blob.find_signed(section["image_signed_id"])
-          if blob
-            resolved["image_url"] = ActiveStorageUrlService.blob_url(blob)
-            blob.analyze unless blob.analyzed?
-            width = blob.metadata["width"]
-            height = blob.metadata["height"]
-            resolved["image_width"] = width if width.is_a?(Integer) && width.positive?
-            resolved["image_height"] = height if height.is_a?(Integer) && height.positive?
-          else
-            resolved["image_url"] = nil
-          end
-        end
-        resolved
+      performer_ids = @experience.playbill.filter_map { |s| s["performer_id"].presence }.uniq
+      return [] if performer_ids.empty?
+
+      performers_by_id = Performer.includes(photo_attachment: :blob)
+        .where(id: performer_ids)
+        .index_by { |p| p.id.to_s }
+
+      @experience.playbill.filter_map do |section|
+        performer = performers_by_id[section["performer_id"].to_s]
+        next unless performer
+
+        {
+          "id"           => section["id"],
+          "performer_id" => performer.id.to_s,
+          "title"        => performer.name,
+          "body"         => performer.bio.to_s,
+          "image_url"    => performer.photo_url
+        }
       end
     end
 

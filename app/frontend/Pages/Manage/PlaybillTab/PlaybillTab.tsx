@@ -1,20 +1,21 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
-import { ArrowDown, ArrowUp, ImagePlus, Plus, Trash2, X } from 'lucide-react';
+import { ArrowDown, ArrowUp, Trash2 } from 'lucide-react';
 
 import { Switch } from '@cctv/core';
-import { Button, TextInput } from '@cctv/core';
-import { useDirectUpload, useUpdatePlaybill } from '@cctv/hooks';
-import { PlaybillSection } from '@cctv/types';
+import { Button } from '@cctv/core';
+import { usePerformers, useUpdatePlaybill } from '@cctv/hooks';
+import { Performer, PlaybillSection } from '@cctv/types';
 
 import styles from './PlaybillTab.module.scss';
 
 function generateId(): string {
-  return crypto.randomUUID();
+  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
 }
 
-function makeEmptySection(): PlaybillSection {
-  return { id: generateId(), title: '', body: '' };
+interface PlaybillEntry {
+  id: string;
+  performer_id: string;
 }
 
 interface PlaybillTabProps {
@@ -23,35 +24,39 @@ interface PlaybillTabProps {
 }
 
 export default function PlaybillTab({ playbill, playbillEnabled }: PlaybillTabProps) {
-  const [sections, setSections] = useState<PlaybillSection[]>(playbill);
+  const [entries, setEntries] = useState<PlaybillEntry[]>(() =>
+    playbill.map((s) => ({ id: s.id, performer_id: s.performer_id })),
+  );
   const [enabled, setEnabled] = useState(playbillEnabled);
   const { updatePlaybill, isLoading, error } = useUpdatePlaybill();
-  const { upload: directUpload, isUploading, progress, error: uploadError } = useDirectUpload();
-  const [uploadingSectionId, setUploadingSectionId] = useState<string | null>(null);
-  const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
+  const { performers, isLoading: performersLoading } = usePerformers();
 
   useEffect(() => {
-    setSections(playbill);
+    setEntries(playbill.map((s) => ({ id: s.id, performer_id: s.performer_id })));
   }, [playbill]);
 
   useEffect(() => {
     setEnabled(playbillEnabled);
   }, [playbillEnabled]);
 
-  const isDirty =
-    JSON.stringify(sections) !== JSON.stringify(playbill) || enabled !== playbillEnabled;
+  const addedPerformerIds = new Set(entries.map((e) => e.performer_id));
+  const availablePerformers = performers.filter((p) => !addedPerformerIds.has(p.id));
 
-  const handleAdd = useCallback(() => {
-    setSections((prev) => [...prev, makeEmptySection()]);
+  const originalEntries = playbill.map((s) => ({ id: s.id, performer_id: s.performer_id }));
+  const isDirty =
+    JSON.stringify(entries) !== JSON.stringify(originalEntries) || enabled !== playbillEnabled;
+
+  const handleAdd = useCallback((performer: Performer) => {
+    setEntries((prev) => [...prev, { id: generateId(), performer_id: performer.id }]);
   }, []);
 
   const handleRemove = useCallback((id: string) => {
-    setSections((prev) => prev.filter((s) => s.id !== id));
+    setEntries((prev) => prev.filter((e) => e.id !== id));
   }, []);
 
   const handleMoveUp = useCallback((index: number) => {
     if (index === 0) return;
-    setSections((prev) => {
+    setEntries((prev) => {
       const next = [...prev];
       [next[index - 1], next[index]] = [next[index], next[index - 1]];
       return next;
@@ -59,7 +64,7 @@ export default function PlaybillTab({ playbill, playbillEnabled }: PlaybillTabPr
   }, []);
 
   const handleMoveDown = useCallback((index: number) => {
-    setSections((prev) => {
+    setEntries((prev) => {
       if (index >= prev.length - 1) return prev;
       const next = [...prev];
       [next[index], next[index + 1]] = [next[index + 1], next[index]];
@@ -67,167 +72,118 @@ export default function PlaybillTab({ playbill, playbillEnabled }: PlaybillTabPr
     });
   }, []);
 
-  const handleChange = useCallback((id: string, field: keyof PlaybillSection, value: string) => {
-    setSections((prev) => prev.map((s) => (s.id === id ? { ...s, [field]: value } : s)));
-  }, []);
-
-  const handleImageUpload = useCallback(
-    async (sectionId: string, file: File) => {
-      setUploadingSectionId(sectionId);
-      try {
-        const { signedId } = await directUpload(file);
-        setSections((prev) =>
-          prev.map((s) =>
-            s.id === sectionId
-              ? { ...s, image_signed_id: signedId, image_url: URL.createObjectURL(file) }
-              : s,
-          ),
-        );
-      } finally {
-        setUploadingSectionId(null);
-      }
-    },
-    [directUpload],
-  );
-
-  const handleRemoveImage = useCallback((sectionId: string) => {
-    setSections((prev) =>
-      prev.map((s) =>
-        s.id === sectionId ? { ...s, image_signed_id: undefined, image_url: undefined } : s,
-      ),
-    );
-  }, []);
-
   const handleSave = useCallback(async () => {
-    const payload = sections.map(({ image_url: _url, ...rest }) => rest);
-    await updatePlaybill(payload, enabled);
-  }, [updatePlaybill, sections, enabled]);
+    await updatePlaybill(entries, enabled);
+  }, [updatePlaybill, entries, enabled]);
+
+  const performerById = new Map(performers.map((p) => [p.id, p]));
 
   return (
     <div className={styles.container}>
       <div className={styles.header}>
-        <span className={styles.headerTitle}>Playbill Sections</span>
-        <div className="flex items-center gap-3">
-          <label className="flex items-center gap-2 text-sm text-[hsl(var(--muted-foreground))]">
-            <Switch checked={enabled} onCheckedChange={setEnabled} />
-            <span>{enabled ? 'Visible' : 'Hidden'}</span>
-          </label>
-          <Button onClick={handleAdd}>
-            <Plus size={14} />
-            <span>Add Section</span>
-          </Button>
-        </div>
+        <span className={styles.headerTitle}>Playbill Performers</span>
+        <label className="flex items-center gap-2 text-sm text-[hsl(var(--muted-foreground))]">
+          <Switch checked={enabled} onCheckedChange={setEnabled} />
+          <span>{enabled ? 'Visible' : 'Hidden'}</span>
+        </label>
       </div>
 
-      {sections.length === 0 && (
-        <div className={styles.empty}>No playbill sections yet. Click "Add Section" to start.</div>
+      {entries.length === 0 ? (
+        <div className={styles.empty}>No performers added yet.</div>
+      ) : (
+        <div className={styles.addedList}>
+          {entries.map((entry, index) => {
+            const performer = performerById.get(entry.performer_id);
+            return (
+              <div key={entry.id} className={styles.addedRow}>
+                <div className={styles.addedRowInfo}>
+                  {performer?.photo_url ? (
+                    <img
+                      src={performer.photo_url}
+                      alt={performer.name}
+                      className={styles.addedRowPhoto}
+                    />
+                  ) : (
+                    <div className={styles.addedRowPhotoPlaceholder}>
+                      {(performer?.name ?? '?').charAt(0).toUpperCase()}
+                    </div>
+                  )}
+                  <span className={styles.addedRowName}>
+                    {performer?.name ?? entry.performer_id}
+                  </span>
+                </div>
+                <div className={styles.addedRowActions}>
+                  <Button
+                    variant="ghost"
+                    size="lg"
+                    icon={<ArrowUp size={14} />}
+                    hideLabel
+                    onClick={() => handleMoveUp(index)}
+                    disabled={index === 0}
+                    title="Move up"
+                  >
+                    Move up
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="lg"
+                    icon={<ArrowDown size={14} />}
+                    hideLabel
+                    onClick={() => handleMoveDown(index)}
+                    disabled={index === entries.length - 1}
+                    title="Move down"
+                  >
+                    Move down
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="lg"
+                    icon={<Trash2 size={14} />}
+                    hideLabel
+                    onClick={() => handleRemove(entry.id)}
+                    title="Remove"
+                  >
+                    Remove
+                  </Button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
       )}
 
-      {sections.map((section, index) => (
-        <div key={section.id} className={styles.card}>
-          <div className={styles.cardHeader}>
-            <div className={styles.cardActions}>
-              <Button
-                variant="ghost"
-                size="lg"
-                icon={<ArrowUp size={14} />}
-                hideLabel
-                onClick={() => handleMoveUp(index)}
-                disabled={index === 0}
-                title="Move section up"
-              >
-                Move section {index + 1} up
-              </Button>
-              <Button
-                variant="ghost"
-                size="lg"
-                icon={<ArrowDown size={14} />}
-                hideLabel
-                onClick={() => handleMoveDown(index)}
-                disabled={index === sections.length - 1}
-                title="Move section down"
-              >
-                Move section {index + 1} down
-              </Button>
-              <Button
-                variant="ghost"
-                size="lg"
-                icon={<Trash2 size={14} />}
-                hideLabel
-                onClick={() => handleRemove(section.id)}
-                title="Remove section"
-              >
-                Remove section {index + 1}
-              </Button>
-            </div>
-          </div>
-
-          <div className={styles.fieldGroup}>
-            <TextInput
-              label="Title"
-              value={section.title}
-              onChange={(e) => handleChange(section.id, 'title', e.target.value)}
-              placeholder="Section title"
-            />
-            <textarea
-              className={styles.textarea}
-              value={section.body}
-              onChange={(e) => handleChange(section.id, 'body', e.target.value)}
-              placeholder="Section body text"
-            />
-
-            <div className={styles.imageField}>
-              <span className={styles.imageLabel}>Image (optional)</span>
-              {section.image_url ? (
-                <div className={styles.imagePreviewWrapper}>
-                  <img src={section.image_url} alt="Section" className={styles.imagePreview} />
-                  <button
-                    className={styles.imageRemoveBtn}
-                    onClick={() => handleRemoveImage(section.id)}
-                    title="Remove image"
-                    aria-label="Remove image"
-                  >
-                    <X size={14} />
-                  </button>
-                </div>
-              ) : (
-                <Button
-                  variant="outline"
-                  icon={<ImagePlus size={16} />}
-                  onClick={() => fileInputRefs.current[section.id]?.click()}
-                  disabled={isUploading && uploadingSectionId === section.id}
-                  style={{ borderStyle: 'dashed', color: 'hsl(var(--muted-foreground))' }}
-                >
-                  {isUploading && uploadingSectionId === section.id
-                    ? `Uploading... ${progress}%`
-                    : 'Upload image'}
+      {!performersLoading && availablePerformers.length > 0 && (
+        <div className={styles.availableSection}>
+          <span className={styles.availableLabel}>Add performers</span>
+          <div className={styles.availableList}>
+            {availablePerformers.map((performer) => (
+              <div key={performer.id} className={styles.availableRow}>
+                {performer.photo_url ? (
+                  <img
+                    src={performer.photo_url}
+                    alt={performer.name}
+                    className={styles.addedRowPhoto}
+                  />
+                ) : (
+                  <div className={styles.addedRowPhotoPlaceholder}>
+                    {performer.name.charAt(0).toUpperCase()}
+                  </div>
+                )}
+                <span className={styles.addedRowName}>{performer.name}</span>
+                <Button size="sm" variant="secondary" onClick={() => handleAdd(performer)}>
+                  Add
                 </Button>
-              )}
-              <input
-                ref={(el) => {
-                  fileInputRefs.current[section.id] = el;
-                }}
-                type="file"
-                accept="image/*"
-                style={{ display: 'none' }}
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (file) handleImageUpload(section.id, file);
-                  e.target.value = '';
-                }}
-              />
-            </div>
+              </div>
+            ))}
           </div>
         </div>
-      ))}
+      )}
 
       <div className={styles.footer}>
-        <div>
-          {(error || uploadError) && <span className="error-message">{error || uploadError}</span>}
-        </div>
+        <div>{error && <span className="error-message">{error}</span>}</div>
         {isDirty && (
           <Button onClick={handleSave} loading={isLoading} loadingText="Saving...">
-            Save Playbill
+            Save
           </Button>
         )}
       </div>
