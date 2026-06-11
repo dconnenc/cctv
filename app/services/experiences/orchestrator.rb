@@ -1516,7 +1516,7 @@ module Experiences
         "mystery_user_id" => mystery_user_id,
         "clues" => clues,
         "current_clue_index" => 0,
-        "board_candidate_ids" => board_candidate_ids - [mystery_user_id],
+        "board_candidate_ids" => board_candidate_ids,
         "eliminated_user_ids" => [],
         "unanswered_user_ids" => []
       }

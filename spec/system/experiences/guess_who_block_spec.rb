@@ -105,7 +105,6 @@ RSpec.describe "Guess Who Block", type: :system do
     end
 
     # ── Select GuessWho block — manager is inline ─────────────────────────────
-    guess_who_block = ExperienceBlock.find_by!(kind: :guess_who)
     select_block(2, kind: "guess_who")
     expect(page).to have_text(/contestants segment/i)
 
@@ -115,16 +114,12 @@ RSpec.describe "Guess Who Block", type: :system do
     expect(page).to have_text(/contestant 1/i)
     expect(page).to have_text(/contestant 2/i)
 
-    # Capture mystery assignments for deterministic elimination testing
-    guess_who_block.reload
-    mystery_1_uid = guess_who_block.payload.dig("contestants", 0, "mystery_user_id").to_s
-    session_map = {
-      User.find_by!(name: "Casey").id.to_s => :casey,
-      User.find_by!(name: "Dana").id.to_s  => :dana,
-      User.find_by!(name: "Ellis").id.to_s => :ellis,
-    }
-    mystery_1_session     = session_map[mystery_1_uid]
-    non_mystery_1_sessions = session_map.reject { |uid, _| uid == mystery_1_uid }.values
+    # Capture mystery assignments from the admin panel for deterministic elimination testing
+    mystery_1_name = within("[aria-label='Contestant 1']") do
+      find("span", text: /Mystery/i).find(:xpath, "../strong").text
+    end
+    mystery_1_session = { "Casey" => :casey, "Dana" => :dana, "Ellis" => :ellis }[mystery_1_name]
+    non_mystery_1_sessions = %i[casey dana ellis] - [mystery_1_session]
 
     # ── Monitor idle: both contestant headers visible ──────────────────────────
     using_session(:monitor) do
@@ -165,7 +160,6 @@ RSpec.describe "Guess Who Block", type: :system do
     end
 
     using_session(:monitor) do
-      # Board displays pool members (mystery excluded from board_candidate_ids)
       expect(page).to have_text(/Casey|Dana|Ellis/)
     end
 
@@ -185,7 +179,7 @@ RSpec.describe "Guess Who Block", type: :system do
 
     # Mystery submits True; one non-mystery submits True (survives); other submits False (eliminated)
     using_session(mystery_1_session) do
-      expect(page).to have_button("True")
+      expect(page).to have_button("True", disabled: false)
       click_button "True"
       expect(page).to have_text("You answered:")
     end
@@ -219,13 +213,21 @@ RSpec.describe "Guess Who Block", type: :system do
       expect(page).to have_text("Watch the monitor")
     end
 
-    # ── Reroll mystery for contestant 1 ───────────────────────────────────────
+    # ── Reroll mystery for contestant 1: resets their state ───────────────────
     within("[aria-label='Contestant 1']") do
       click_button "Reroll mystery"
       expect(page).to have_button("Reroll mystery", disabled: false)
+      expect(page).to have_text("Eliminated: 0")
     end
 
-    # ── Contestant 2: board, poll, and conclude ────────────────────────────────
+    # ── Contestant 2: board, poll with elimination, verify eliminated gets no next poll ──
+    mystery_2_name = within("[aria-label='Contestant 2']") do
+      find("span", text: /Mystery/i).find(:xpath, "../strong").text
+    end
+    mystery_2_session = { "Casey" => :casey, "Dana" => :dana, "Ellis" => :ellis }[mystery_2_name]
+    non_mystery_2_sessions = %i[casey dana ellis] - [mystery_2_session]
+    eliminated_2_session = non_mystery_2_sessions[1]
+
     within("[aria-label='Monitor view']") do
       click_button "C2 Board"
     end
@@ -239,27 +241,75 @@ RSpec.describe "Guess Who Block", type: :system do
       expect(page).to have_button("Conclude poll")
     end
 
-    # All pool members submit True for contestant 2 — no eliminations
-    %w[Casey Dana Ellis].each do |name|
-      using_session(name.downcase.to_sym) do
-        expect(page).to have_button("True")
-        click_button "True"
-        expect(page).to have_text("You answered:")
-      end
+    # Mystery and one non-mystery submit True; the other non-mystery submits False (eliminated)
+    using_session(mystery_2_session) do
+      expect(page).to have_button("True", disabled: false)
+      click_button "True"
+      expect(page).to have_text("You answered:")
+    end
+
+    using_session(non_mystery_2_sessions[0]) do
+      expect(page).to have_button("True", disabled: false)
+      click_button "True"
+      expect(page).to have_text("You answered:")
+    end
+
+    using_session(eliminated_2_session) do
+      expect(page).to have_button("False", disabled: false)
+      click_button "False"
+      expect(page).to have_text("You answered:")
     end
 
     within("[aria-label='Contestant 2']") do
+      expect(page).to have_text("Poll responses: 3")
+      expect(page).to have_button("Conclude poll", disabled: false)
+      click_button "Conclude poll"
+      expect(page).to have_button("Dispatch T/F poll")
+    end
+
+    within("[aria-label='Contestant 2']") do
+      expect(page).to have_text("Eliminated: 1")
+    end
+
+    # Dispatch a second poll — eliminated participant should see "Watch the monitor"
+    within("[aria-label='Contestant 2']") do
+      click_button "Dispatch T/F poll"
+      expect(page).to have_button("Conclude poll")
+    end
+
+    using_session(eliminated_2_session) do
+      expect(page).to have_text("Watch the monitor")
+    end
+
+    # Remaining participants submit and poll concludes
+    using_session(mystery_2_session) do
+      expect(page).to have_button("True", disabled: false)
+      click_button "True"
+      expect(page).to have_text("You answered:")
+    end
+
+    using_session(non_mystery_2_sessions[0]) do
+      expect(page).to have_button("True", disabled: false)
+      click_button "True"
+      expect(page).to have_text("You answered:")
+    end
+
+    within("[aria-label='Contestant 2']") do
+      expect(page).to have_text("Poll responses: 2")
       expect(page).to have_button("Conclude poll", disabled: false)
       click_button "Conclude poll"
       expect(page).to have_button("Dispatch T/F poll")
     end
 
     # ── Reveal ─────────────────────────────────────────────────────────────────
-    click_button "Reveal"
+    # "Reveal" also appears as a monitor-view toggle; scope to the action button
+    # outside the monitor section
+    find(:xpath, "//button[normalize-space()='Reveal'][not(ancestor::section[@aria-label='Monitor view'])]").click
+    wait_for_animation
 
     using_session(:monitor) do
       expect(page).to have_text("The Reveal")
-      expect(page).to have_text("The mystery participant was")
+      expect(page).to have_text(/the mystery participant was/i)
     end
   end
 end
