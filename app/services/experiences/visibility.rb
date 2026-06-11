@@ -101,7 +101,11 @@ module Experiences
 
     def admin_visible_blocks
       @experience.experience_blocks
-        .includes(:experience_segments, :children, :parents)
+        .includes(
+          :experience_segments,
+          :parents,
+          children: [:experience_segments, :children, :parents]
+        )
         .order(position: :asc)
         .to_a
     end
