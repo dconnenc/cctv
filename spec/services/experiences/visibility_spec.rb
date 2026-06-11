@@ -288,6 +288,18 @@ RSpec.describe Experiences::Visibility do
         expect(ids).to include(ff_block.id)
         expect(ids).not_to include(child.id)
       end
+
+      it "never surfaces a synthetic question to participants during gathering" do
+        synthetic = create(:experience_block, experience: experience, parent_block: ff_block, status: :open,
+                                               kind: ExperienceBlock::QUESTION, position: 2,
+                                               payload: { "question" => "AI only", "synthetic" => true })
+        create(:experience_block_link, parent_block: ff_block, child_block: synthetic)
+
+        result = described_class.for_participant(experience, participant)
+        ids = result[:blocks].map { |b| b[:id] }
+        expect(ids).to include(child.id)
+        expect(ids).not_to include(synthetic.id)
+      end
     end
   end
 

@@ -185,6 +185,7 @@ module Experiences
 
       visible_orphan_children = children
         .reject { |c| open_parent_ids.include?(c.parent_block_id) }
+        .reject(&:synthetic_question?)
         .select { |c| c.visible_by_status?(@experience) }
         .select { |c| c.visible_to?(role: role, segments: segments, user_id: user_id) }
 
@@ -202,17 +203,23 @@ module Experiences
 
     def resolve_ff_family(block)
       if block.kind == ExperienceBlock::FAMILY_FEUD && family_feud_gathering?(block)
-        [block] + block.child_blocks.order(position: :asc).to_a
+        [block] + gatherable_ff_children(block)
       elsif block.parent_block_id.present?
         parent = block.parent_block
         if parent&.kind == ExperienceBlock::FAMILY_FEUD
-          [parent] + parent.child_blocks.order(position: :asc).to_a
+          [parent] + gatherable_ff_children(parent)
         else
           [block]
         end
       else
         [block]
       end
+    end
+
+    # Family Feud children a participant can answer during gathering. Synthetic
+    # questions are AI-only and must never reach the participant view.
+    def gatherable_ff_children(parent)
+      parent.child_blocks.order(position: :asc).reject(&:synthetic_question?)
     end
 
     def resolve_monitor_entry(parent, children)

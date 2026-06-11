@@ -17,6 +17,8 @@ export interface QuestionWithBuckets {
   questionText: string;
   buckets: Bucket[];
   unassignedAnswers: Answer[];
+  synthetic?: boolean;
+  generateCount?: number;
 }
 
 export enum FamilyFeudActionType {

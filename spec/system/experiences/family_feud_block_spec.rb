@@ -122,6 +122,75 @@ RSpec.describe "Family Feud Block", type: :system do
     end
   end
 
+  describe "synthetic (AI-generated) questions" do
+    before do
+      allow(AI::Client).to receive(:call).and_return(
+        { "answers" => ["carrot", "broccoli", "carrot", "potato", "broccoli"] }
+      )
+    end
+
+    it "generates answers from the agent, hides the question from participants, and categorizes like any other" do
+      sign_in(admin)
+      create_experience_and_go_to_manage(name: "AI Night", code: "ai-night")
+
+      # A synthetic question takes no question text or count at creation —
+      # those are configured on the manage screen.
+      queue_block(n: 1) do
+        select "Family Feud", from: "Kind"
+        fill_in "Title", with: "Name Something"
+        click_button "Add Question"
+        fill_in "Question 1", with: "Name a fruit"
+        click_button "Add Synthetic Question"
+        expect(page).to have_text(/synthetic question 2/i)
+      end
+
+      start_experience
+
+      using_session(:participant) do
+        register_participant(
+          code: "ai-night",
+          name: "Alice",
+          email: "alice@example.com",
+          experience_name: "AI Night"
+        )
+        expect(page).to have_text("Waiting for the next activity...")
+      end
+
+      visit current_path
+      select_and_present(1, kind: "family.feud")
+      select_block(1, kind: "family.feud")
+
+      # The synthetic question carries no text yet; set the question + count and
+      # dispatch it to the agent from the manage screen.
+      expect(page).to have_button("Expand Synthetic Question")
+      click_button "Expand Synthetic Question"
+
+      fill_in "Question", with: "Name a vegetable"
+      fill_in "Answers", with: "5"
+
+      expect(page).to have_button("Generate Answers")
+      click_button "Generate Answers"
+
+      # Generated answers land in the answers column, ready to be categorized
+      expect(page).to have_text("Answers (5)")
+
+      # Participant can answer the human question but never sees the synthetic one
+      using_session(:participant) do
+        expect(page).to have_field("Name a fruit")
+        expect(page).to have_no_field("Name a vegetable")
+      end
+
+      # From here it behaves like any other question: buckets are available
+      expect(page).to have_button("Add Bucket")
+
+      # Selecting the synthetic question directly from the sidebar opens the
+      # generation manager (focused on it), not a read-only monitor preview.
+      select_block(3, kind: "question")
+      expect(page).to have_button("Reroll")
+      expect(page).to have_no_text("Monitor Preview")
+    end
+  end
+
   describe "editing a family feud block" do
     before do
       sign_in(admin)

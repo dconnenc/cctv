@@ -10,6 +10,12 @@
   width: 100%;
 }
 
+// TODO: these tokens are referenced here but not defined in the global token
+// sheets (app/frontend/styles.css / tailwind.css), so they silently fall back
+// to inherited/default values. Define them globally (suggested values):
+//   --color-text-inverse: hsl(var(--primary-foreground));
+//   --font-weight-bold: 700;
+//   --font-size-sm: 0.875rem;
 .questionNumber {
   display: flex;
   align-items: center;
@@ -35,4 +41,35 @@
 .removeButton {
   padding: 0.5rem;
   min-width: auto;
+}
+
+.syntheticItem {
+  align-items: start;
+
+  .questionNumber {
+    margin-top: var(--space-xs);
+    background-color: var(--color-accent);
+  }
+}
+
+// Match the TextInput label treatment used by the other questions.
+.syntheticLabel {
+  font-family: var(--font-ui);
+  font-size: 20px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-foreground);
+}
+
+.syntheticBadge {
+  margin-top: var(--space-xs);
+  color: var(--color-muted-foreground);
+  font-size: 0.8125rem;
+}
+
+.addButtons {
+  display: flex;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
 }

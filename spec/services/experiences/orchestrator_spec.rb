@@ -703,6 +703,103 @@ RSpec.describe Experiences::Orchestrator do
     end
   end
 
+  describe "#generate_family_feud_synthetic_answers!" do
+    let(:participant_role) { ExperienceParticipant.roles[:host] }
+    let!(:block) { create(:experience_block, :family_feud, experience: experience, question_count: 1) }
+    let(:question_block) { block.child_blocks.first }
+
+    let(:ai_response) { { "answers" => ["pizza", "tacos", "pizza", "sushi"] } }
+
+    before do
+      question_block.update!(payload: question_block.payload.merge("synthetic" => true, "question" => ""))
+      allow(AI::Client).to receive(:call).and_return(ai_response)
+    end
+
+    subject do
+      described_class.new(actor: user, experience: experience).generate_family_feud_synthetic_answers!(
+        question_id: question_block.id,
+        question_text: "Name a food",
+        count: 4
+      )
+    end
+
+    it "creates an AI-generated submission per answer with no participant" do
+      expect { subject }.to change { ExperienceQuestionSubmission.where(experience_block_id: question_block.id).count }.from(0).to(4)
+
+      submissions = ExperienceQuestionSubmission.where(experience_block_id: question_block.id)
+      expect(submissions.map(&:source).uniq).to eq([ExperienceQuestionSubmission::AI_GENERATED_SOURCE])
+      expect(submissions.map(&:experience_participant_id).uniq).to eq([nil])
+      expect(submissions.map { |s| s.answer["value"] }).to contain_exactly("pizza", "tacos", "pizza", "sushi")
+    end
+
+    it "persists the question text and returns the generated answers" do
+      result = subject
+      expect(question_block.reload.payload["question"]).to eq("Name a food")
+      expect(result.map { |a| a["text"] }).to contain_exactly("pizza", "tacos", "pizza", "sushi")
+    end
+
+    it "replaces prior answers and resets buckets when regenerating (reroll)" do
+      old = create(:experience_question_submission, experience_block: question_block, experience_participant: participant, answer: { "value" => "stale" })
+      question_block.update!(payload: question_block.payload.merge("buckets" => [{ "id" => "b1", "name" => "Old", "answer_ids" => [old.id.to_s] }]))
+
+      subject
+
+      expect(ExperienceQuestionSubmission.where(id: old.id)).to be_empty
+      expect(question_block.reload.payload["buckets"]).to eq([])
+      expect(ExperienceQuestionSubmission.where(experience_block_id: question_block.id).count).to eq(4)
+    end
+
+    it "passes game and question context to the generation prompt" do
+      block.update!(payload: block.payload.merge("ai_context" => "Food festival"))
+      question_block.update!(payload: question_block.payload.merge("ai_context" => "Street food only"))
+
+      prompt_builder = instance_double(AI::Prompts::FamilyFeudAnswerGeneration, prompt: "p", response_schema: {})
+      expect(AI::Prompts::FamilyFeudAnswerGeneration).to receive(:new).with(
+        question_text: "Name a food",
+        count: 4,
+        game_context: "Food festival",
+        question_context: "Street food only"
+      ).and_return(prompt_builder)
+
+      subject
+    end
+
+    it "caps the requested count at MAX_SYNTHETIC_ANSWERS" do
+      prompt_builder = instance_double(AI::Prompts::FamilyFeudAnswerGeneration, prompt: "p", response_schema: {})
+      expect(AI::Prompts::FamilyFeudAnswerGeneration).to receive(:new).with(
+        hash_including(count: Experiences::Orchestrator::MAX_SYNTHETIC_ANSWERS)
+      ).and_return(prompt_builder)
+
+      described_class.new(actor: user, experience: experience).generate_family_feud_synthetic_answers!(
+        question_id: question_block.id,
+        question_text: "Name a food",
+        count: 5000
+      )
+    end
+
+    it "raises when the question text is blank" do
+      expect {
+        described_class.new(actor: user, experience: experience).generate_family_feud_synthetic_answers!(
+          question_id: question_block.id,
+          question_text: "  ",
+          count: 4
+        )
+      }.to raise_error(AI::Client::Error)
+    end
+
+    it "raises when the block is not a synthetic question" do
+      question_block.update!(payload: question_block.payload.merge("synthetic" => false))
+
+      expect {
+        described_class.new(actor: user, experience: experience).generate_family_feud_synthetic_answers!(
+          question_id: question_block.id,
+          question_text: "Name a food",
+          count: 4
+        )
+      }.to raise_error(ArgumentError)
+    end
+  end
+
   describe "#start_family_feud_playing!" do
     let(:participant_role) { ExperienceParticipant.roles[:host] }
     let!(:block) do

@@ -1,9 +1,14 @@
 class ExperienceQuestionSubmission < ApplicationRecord
+  AI_GENERATED_SOURCE = "ai_generated".freeze
+  PARTICIPANT_SOURCE = "participant".freeze
+
   belongs_to :experience_block
-  belongs_to :experience_participant
+  belongs_to :experience_participant, optional: true
 
   validates :answer, presence: true
   validate :block_is_question_type, on: :create
+
+  scope :ai_generated, -> { where(source: AI_GENERATED_SOURCE) }
 
   private
 
