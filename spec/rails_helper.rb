@@ -1,4 +1,5 @@
 require 'spec_helper'
+require 'sidekiq/embedded'
 ENV['RAILS_ENV'] ||= 'test'
 require_relative '../config/environment'
 require "capybara/cuprite"
@@ -45,6 +46,10 @@ rescue ActiveRecord::PendingMigrationError => e
   abort e.to_s.strip
 end
 RSpec.configure do |config|
+  config.before(:each) do
+    ActiveJob::Base.queue_adapter = :test
+  end
+
   # If you're not using ActiveRecord, or you'd prefer not to run each of your
   # examples within a transaction, remove the following line or assign false
   # instead of true.
@@ -64,12 +69,21 @@ Capybara.default_max_wait_time = 6
 Capybara.enable_aria_label = true
 
 RSpec.configure do |config|
+  sidekiq_embedded = nil
+
   config.before(:each, type: :system) do
+    sidekiq_embedded ||= Sidekiq::Embedded.new(Sidekiq.default_configuration).tap(&:run)
+    ActiveJob::Base.queue_adapter = :sidekiq
+
     driven_by :cuprite, screen_size: [1440, 900], options: {
       headless: ENV["HEADLESS"] != "false",
       process_timeout: 20,
       browser_options: { "force-prefers-reduced-motion" => nil }
     }
+  end
+
+  config.after(:suite) do
+    sidekiq_embedded&.stop
   end
 
   config.around(:each, type: :system) do |example|

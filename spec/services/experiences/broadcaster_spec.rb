@@ -106,7 +106,7 @@ RSpec.describe Experiences::Broadcaster do
     end
   end
 
-  describe "profile_changes: resubscribe notifications" do
+  describe "#broadcast_profile_changes" do
     let!(:participant) { create(:experience_participant, experience: experience) }
     let(:segment) { experience.experience_segments.create!(name: "Team A", color: "#FF0000", position: 0) }
 
@@ -114,7 +114,7 @@ RSpec.describe Experiences::Broadcaster do
       old_fingerprint = described_class.visibility_fingerprint(experience, participant)
       participant.experience_segments << segment
 
-      broadcaster.broadcast_experience_update(
+      broadcaster.broadcast_profile_changes(
         profile_changes: [{ participant: participant, old_fingerprint: old_fingerprint }]
       )
 
@@ -123,7 +123,6 @@ RSpec.describe Experiences::Broadcaster do
       expect(resubscribe_call).to be_present
       expect(resubscribe_call[:message][:type]).to eq("resubscribe_required")
     end
-
   end
 
 end
