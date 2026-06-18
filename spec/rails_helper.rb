@@ -1,5 +1,4 @@
 require 'spec_helper'
-require 'sidekiq/embedded'
 ENV['RAILS_ENV'] ||= 'test'
 require_relative '../config/environment'
 require "capybara/cuprite"
@@ -65,12 +64,25 @@ Capybara.default_max_wait_time = 6
 Capybara.enable_aria_label = true
 
 RSpec.configure do |config|
-  # Boot embedded Sidekiq once for the suite
+  # Boot embedded Sidekiq once for the suite. Embedded sidekiq shares the
+  # process. This is a slightly easier setup to maintain for testing, rather
+  # than independently managing a process outside of the main tests
   config.before(:suite) do
-    config = Sidekiq.default_configuration
-    config.default_capsule # ensure the default queue capsule is registered before starting
-    sidekiq = Sidekiq::Embedded.new(config)
+    # Mimic reading the config file and creating the queues in our embedded
+    # process
+    sidekiq_yml = YAML.load_file(
+      Rails.root.join("config/sidekiq.yml"), symbolize_names: true
+    )
+    sidekiq = Sidekiq.configure_embed do |cfg|
+      cfg.queues = sidekiq_yml[:queues]
+    end
+
     sidekiq.run
+
+    # Store the instance on RSpec's configuration so the after(:suite) hook
+    # below can reach it to call stop. Local variables don't survive between
+    # separate before/after suite blocks, so this is the idiomatic way to
+    # pass state across suite-level hooks.
     RSpec.configuration.add_setting :sidekiq_embedded
     RSpec.configuration.sidekiq_embedded = sidekiq
   end
@@ -80,9 +92,6 @@ RSpec.configure do |config|
   end
 
   config.before(:each, type: :system) do
-    sidekiq_threads = Thread.list.select { |t| t.name&.start_with?("sidekiq") }
-    puts "\n[SIDEKIQ DEBUG] worker threads: #{sidekiq_threads.map(&:name).inspect}"
-
     ActiveJob::Base.queue_adapter = :sidekiq
     driven_by :cuprite, screen_size: [1440, 900], options: {
       headless: ENV["HEADLESS"] != "false",
@@ -92,9 +101,18 @@ RSpec.configure do |config|
   end
 
   config.around(:each, type: :system) do |example|
-    # Disable transactional tests so worker threads can see committed data
+    # Disable transactional tests so worker threads can see committed data.
+    # Since rails 5+ this isn't needed for standard system tests as the
+    # connection management is patched to allow the same connection to be used,
+    # which means wrapping tests in a transaction works even for system tests.
+    #
+    # However, we run an embedded sidekiq process, which while sharing the
+    # process, has it's own connection pool. This setup is to have the system
+    # tests more closely represent the core pattern of the application when
+    # running in production
     self.use_transactional_tests = false
 
+    # See above, we need to manually clear the queue to avoid state leaking
     Sidekiq::Queue.all.each(&:clear)
 
     example.run
@@ -108,6 +126,8 @@ RSpec.configure do |config|
       *ActiveRecord::Base.connection.tables
         .reject { |t| %w[schema_migrations ar_internal_metadata].include?(t) }
     )
+
+    # Catch all, we clear pre run, may as well clear post as well
     Sidekiq::Queue.all.each(&:clear)
   end
 end
