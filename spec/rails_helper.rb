@@ -50,12 +50,8 @@ RSpec.configure do |config|
     ActiveJob::Base.queue_adapter = :test
   end
 
-  # If you're not using ActiveRecord, or you'd prefer not to run each of your
-  # examples within a transaction, remove the following line or assign false
-  # instead of true.
   config.use_transactional_fixtures = true
 
-  # Filter lines from Rails gems in backtraces.
   config.filter_rails_from_backtrace!
   config.include FactoryBot::Syntax::Methods
   config.include SystemHelpers, type: :system
@@ -69,12 +65,25 @@ Capybara.default_max_wait_time = 6
 Capybara.enable_aria_label = true
 
 RSpec.configure do |config|
-  sidekiq_embedded = nil
+  # Boot embedded Sidekiq once for the suite
+  config.before(:suite) do
+    config = Sidekiq.default_configuration
+    config.default_capsule # ensure the default queue capsule is registered before starting
+    sidekiq = Sidekiq::Embedded.new(config)
+    sidekiq.run
+    RSpec.configuration.add_setting :sidekiq_embedded
+    RSpec.configuration.sidekiq_embedded = sidekiq
+  end
+
+  config.after(:suite) do
+    RSpec.configuration.sidekiq_embedded&.stop
+  end
 
   config.before(:each, type: :system) do
-    sidekiq_embedded ||= Sidekiq::Embedded.new(Sidekiq.default_configuration).tap(&:run)
-    ActiveJob::Base.queue_adapter = :sidekiq
+    sidekiq_threads = Thread.list.select { |t| t.name&.start_with?("sidekiq") }
+    puts "\n[SIDEKIQ DEBUG] worker threads: #{sidekiq_threads.map(&:name).inspect}"
 
+    ActiveJob::Base.queue_adapter = :sidekiq
     driven_by :cuprite, screen_size: [1440, 900], options: {
       headless: ENV["HEADLESS"] != "false",
       process_timeout: 20,
@@ -82,15 +91,23 @@ RSpec.configure do |config|
     }
   end
 
-  config.after(:suite) do
-    sidekiq_embedded&.stop
-  end
-
   config.around(:each, type: :system) do |example|
+    # Disable transactional tests so worker threads can see committed data
+    self.use_transactional_tests = false
+
+    Sidekiq::Queue.all.each(&:clear)
+
     example.run
 
-    if ENV["CI"].present?
-      example.run if example.exception
-    end
+    # Retry on CI. Tests shouldn't be flakey, however github actions periodically
+    # seems to run into failure states that are hard to account for in code.
+    example.run if ENV["CI"].present? && example.exception
+
+    # Truncate instead of rollback since we disabled transactions
+    ActiveRecord::Base.connection.truncate_tables(
+      *ActiveRecord::Base.connection.tables
+        .reject { |t| %w[schema_migrations ar_internal_metadata].include?(t) }
+    )
+    Sidekiq::Queue.all.each(&:clear)
   end
 end
