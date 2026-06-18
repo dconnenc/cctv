@@ -68,6 +68,8 @@ RSpec.configure do |config|
   # process. This is a slightly easier setup to maintain for testing, rather
   # than independently managing a process outside of the main tests
   config.before(:suite) do
+    next unless RSpec.configuration.files_to_run.any? { |f| f.include?("spec/system") }
+
     # Mimic reading the config file and creating the queues in our embedded
     # process
     sidekiq_yml = YAML.load_file(
