@@ -18,7 +18,7 @@ module Minigames
       payload["ended_at"] = Time.current.iso8601
       block.update!(payload: payload)
 
-      Experiences::Broadcaster.new(block.experience).broadcast_experience_update
+      Experiences::Broadcaster.enqueue_update(block.experience)
     end
   end
 end

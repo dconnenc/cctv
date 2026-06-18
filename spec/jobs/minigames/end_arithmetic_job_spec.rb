@@ -14,7 +14,6 @@ RSpec.describe Minigames::EndArithmeticJob do
   end
 
   before do
-    allow_any_instance_of(Experiences::Broadcaster).to receive(:broadcast_experience_update)
     orchestrator.start_minigame_arithmetic!(block: block)
   end
 
@@ -31,9 +30,9 @@ RSpec.describe Minigames::EndArithmeticJob do
   end
 
   it "broadcasts the update so the leaderboard appears" do
-    expect_any_instance_of(Experiences::Broadcaster).to receive(:broadcast_experience_update)
-
-    described_class.perform_now(block.id, current_started_at)
+    expect {
+      described_class.perform_now(block.id, current_started_at)
+    }.to have_enqueued_job(Experiences::BroadcastUpdateJob).with(experience.id)
   end
 
   it "does nothing when the round was already ended" do
