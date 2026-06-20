@@ -62,6 +62,10 @@ export default defineConfig({
         fileURLToPath(new URL('.', import.meta.url)),
         'app/frontend/sounds',
       ),
+      '@cctv/analytics': path.resolve(
+        fileURLToPath(new URL('.', import.meta.url)),
+        'app/frontend/Analytics',
+      ),
     },
   },
 });

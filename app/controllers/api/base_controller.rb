@@ -10,6 +10,24 @@ class Api::BaseController < ApplicationController
   class UnauthorizedError < StandardError; end
   class NotFoundError < StandardError; end
 
+  # Expected control-flow errors that already map to a deliberate response.
+  # Everything else that escapes an action is an unexpected bug worth tracking.
+  # Matched by name (including ancestors) to avoid forcing autoload of the
+  # Experiences::* error constants at class-load time.
+  IGNORED_EXCEPTION_NAMES = %w[
+    Api::BaseController::UnauthorizedError
+    Api::BaseController::NotFoundError
+    ActionPolicy::Unauthorized
+    ActionController::ParameterMissing
+    ActiveRecord::RecordNotFound
+    ActiveRecord::RecordInvalid
+    Experiences::InvalidTransitionError
+    Experiences::MysteryNotRespondedError
+    Experiences::UnsafeEditError
+  ].freeze
+
+  around_action :report_unexpected_errors
+
   def authenticate_and_set_user_and_experience
     # JWT takes precedence over session auth when present
     # This allows simulating requests as different users while logged in as admin
@@ -123,5 +141,42 @@ class Api::BaseController < ApplicationController
         error: e.record.errors.full_messages.first,
       }, status: :unprocessable_entity
     end
+  end
+
+  # Reports genuinely unexpected exceptions to PostHog error tracking, then
+  # re-raises so existing rendering/rescue behavior is unchanged.
+  def report_unexpected_errors
+    yield
+  rescue StandardError => e
+    unless ignored_exception?(e)
+      Analytics::Tracker.capture_exception(
+        e,
+        distinct_id: @user&.id,
+        properties: {
+          controller: controller_name,
+          action: action_name,
+          path: request.path,
+          method: request.method,
+          experience_code: @experience&.code,
+        },
+      )
+    end
+    raise
+  end
+
+  def ignored_exception?(error)
+    error.class.ancestors.any? do |ancestor|
+      ancestor.respond_to?(:name) && IGNORED_EXCEPTION_NAMES.include?(ancestor.name)
+    end
+  end
+
+  # Captures a domain event for the authenticated user and current experience.
+  def track_event(event, properties = {})
+    Analytics::Tracker.capture(
+      distinct_id: @user&.id,
+      event: event,
+      properties: properties,
+      experience: @experience,
+    )
   end
 end
