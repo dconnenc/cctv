@@ -30,6 +30,13 @@ class Api::ExperiencesController < Api::BaseController
       if experience.save
         experience.ensure_default_segment!(name: params[:experience][:default_segment_name])
 
+        Analytics::Tracker.identify_experience(experience)
+        Analytics::Tracker.capture(
+          distinct_id: current_user.id,
+          event: Analytics::Events::EXPERIENCE_CREATED,
+          experience: experience,
+        )
+
         render json: {
           type: 'success',
           success: true,
@@ -68,6 +75,8 @@ class Api::ExperiencesController < Api::BaseController
 
       Experiences::Broadcaster.new(@experience).broadcast_experience_update
 
+      track_event(Analytics::Events::LOBBY_OPENED)
+
       render json: {
         success: true,
         data: @experience,
@@ -83,6 +92,8 @@ class Api::ExperiencesController < Api::BaseController
       ).start!
 
       Experiences::Broadcaster.new(@experience).broadcast_experience_update
+
+      track_event(Analytics::Events::EXPERIENCE_STARTED)
 
       render json: {
         success: true,
@@ -100,6 +111,8 @@ class Api::ExperiencesController < Api::BaseController
 
       Experiences::Broadcaster.new(@experience).broadcast_experience_update
 
+      track_event(Analytics::Events::EXPERIENCE_PAUSED)
+
       render json: {
         success: true,
         data: @experience,
@@ -115,6 +128,8 @@ class Api::ExperiencesController < Api::BaseController
       ).resume!
 
       Experiences::Broadcaster.new(@experience).broadcast_experience_update
+
+      track_event(Analytics::Events::EXPERIENCE_RESUMED)
 
       render json: {
         success: true,
@@ -275,6 +290,12 @@ class Api::ExperiencesController < Api::BaseController
       experience.register_user(user, name: register_params[:participant_name])
 
       Experiences::Broadcaster.new(experience).broadcast_experience_update
+
+      Analytics::Tracker.capture(
+        distinct_id: user.id,
+        event: Analytics::Events::PARTICIPANT_REGISTERED,
+        experience: experience,
+      )
     end
 
     render json: {

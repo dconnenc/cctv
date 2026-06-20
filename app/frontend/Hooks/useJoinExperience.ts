@@ -1,3 +1,4 @@
+import { AnalyticsEvent, capture } from '@cctv/analytics';
 import { JoinExperienceApiResponse } from '@cctv/types';
 import { qaLogger } from '@cctv/utils';
 
@@ -35,6 +36,10 @@ export function useJoinExperience() {
       case 'success':
         qaLogger(`User already registrated, redirecting to: ${response.url}`);
         sessionStorage.setItem('cctv_last_join_code', code.trim());
+        capture(AnalyticsEvent.ExperienceJoined, {
+          status: 'registered',
+          experience_name: response.experience_name,
+        });
         return {
           url: response.url,
           status: 'registered',
@@ -43,6 +48,10 @@ export function useJoinExperience() {
       case 'needs_registration':
         qaLogger(`User needs registration, redirecting to: ${response.url}`);
         sessionStorage.setItem('cctv_last_join_code', code.trim());
+        capture(AnalyticsEvent.ExperienceJoined, {
+          status: 'needs_registration',
+          experience_name: response.experience_name,
+        });
         return {
           url: response.url,
           status: 'needs_registration',
