@@ -98,6 +98,7 @@ interface CreateBlockProviderProps {
   participants: ParticipantSummary[];
   onClose: () => void;
   onEndCurrentBlock: () => Promise<void>;
+  initialKind?: BlockKind;
 }
 
 // NOTE: There are N number of branches for each block type. This is a good
@@ -108,6 +109,7 @@ export function CreateBlockProvider({
   participants,
   onClose,
   onEndCurrentBlock,
+  initialKind = BlockKind.POLL,
 }: CreateBlockProviderProps) {
   const getDefaultFormData = useCallback((blockKind: BlockKind): FormBlockData => {
     switch (blockKind) {
@@ -141,9 +143,7 @@ export function CreateBlockProvider({
     }
   }, []);
 
-  const [blockData, setBlockData] = useState<FormBlockData>(() =>
-    getDefaultFormData(BlockKind.POLL),
-  );
+  const [blockData, setBlockData] = useState<FormBlockData>(() => getDefaultFormData(initialKind));
 
   const { experience } = useExperience();
 

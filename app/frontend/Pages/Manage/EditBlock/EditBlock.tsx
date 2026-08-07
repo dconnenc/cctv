@@ -83,8 +83,7 @@ function EditBlockForm({ onClose, block }: EditBlockFormProps) {
         </div>
       )}
 
-      <BlockEditor />
-      {viewAdditionalDetails && <AdditionalDetails />}
+      <EditBlockFields />
 
       <div className={styles.actions}>
         <Button variant="secondary" onClick={onClose}>
@@ -101,6 +100,17 @@ function EditBlockForm({ onClose, block }: EditBlockFormProps) {
         </Button>
       </div>
     </div>
+  );
+}
+
+export function EditBlockFields() {
+  const { viewAdditionalDetails } = useEditBlockContext();
+
+  return (
+    <>
+      <BlockEditor />
+      {viewAdditionalDetails && <AdditionalDetails />}
+    </>
   );
 }
 
