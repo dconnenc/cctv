@@ -10,7 +10,20 @@ import type { Block, Experience } from '@cctv/types';
 
 import FocusMode from './FocusMode';
 
-const useExperienceMock = vi.fn();
+const { useExperienceMock, handlePresent, handleStopPresenting, closeBlock, navigate } = vi.hoisted(
+  () => ({
+    useExperienceMock: vi.fn(),
+    handlePresent: vi.fn(),
+    handleStopPresenting: vi.fn(),
+    closeBlock: vi.fn(),
+    navigate: vi.fn(),
+  }),
+);
+
+vi.mock('react-router-dom', async () => {
+  const actual = await vi.importActual<typeof import('react-router-dom')>('react-router-dom');
+  return { ...actual, useNavigate: () => navigate };
+});
 
 vi.mock('@cctv/contexts/ExperienceContext', () => ({
   useExperience: () => useExperienceMock(),
@@ -26,12 +39,21 @@ vi.mock('@cctv/contexts/AdminAuthContext', () => ({
   AdminAuthProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
 
+vi.mock('@cctv/hooks/useUpdateExperienceBlock', () => ({
+  useUpdateExperienceBlock: () => ({
+    updateExperienceBlock: vi.fn().mockResolvedValue({ success: true }),
+    isLoading: false,
+    error: null,
+    setError: vi.fn(),
+  }),
+}));
+
 vi.mock('@cctv/hooks/useBlockPresentation', () => ({
   useBlockPresentation: () => ({
-    handlePresent: vi.fn(),
-    handleStopPresenting: vi.fn(),
+    handlePresent,
+    handleStopPresenting,
     handlePlayNext: vi.fn(),
-    closeBlock: vi.fn(),
+    closeBlock,
     busyBlockId: undefined,
     statusError: null,
     setStatusError: vi.fn(),
@@ -77,6 +99,10 @@ function renderFocusMode() {
 describe('FocusMode', () => {
   beforeEach(() => {
     useExperienceMock.mockReset();
+    handlePresent.mockReset().mockResolvedValue(undefined);
+    handleStopPresenting.mockReset().mockResolvedValue(undefined);
+    closeBlock.mockReset().mockResolvedValue(undefined);
+    navigate.mockReset();
     localStorage.clear();
   });
 
@@ -201,5 +227,60 @@ describe('FocusMode', () => {
 
     expect(screen.getByRole('button', { name: /finish/i })).toBeInTheDocument();
     expect(screen.getByText('Live')).toBeInTheDocument();
+  });
+
+  it('closes the open block and returns to the activity list on Finish', async () => {
+    const user = userEvent.setup();
+    const open = block('open-1', BlockKind.POLL, 'open', { question: 'Live poll', options: [] });
+    setExperience([open]);
+    renderFocusMode();
+
+    await user.click(screen.getByRole('button', { name: /finish/i }));
+
+    expect(handleStopPresenting).toHaveBeenCalledTimes(1);
+    expect(handleStopPresenting).toHaveBeenCalledWith(open);
+    expect(screen.getByRole('heading', { name: 'Choose an activity' })).toBeInTheDocument();
+  });
+
+  it('puts a draft on the monitor when it is played from the editor', async () => {
+    const user = userEvent.setup();
+    const draft = block('draft-1', BlockKind.ANNOUNCEMENT, 'hidden', {
+      title: 'Welcome',
+      message: 'Phones out.',
+    });
+    setExperience([draft]);
+    renderFocusMode();
+
+    const draftSection = screen.getByRole('heading', { name: 'Drafts' }).parentElement!;
+    await user.click(within(draftSection).getByText('Welcome'));
+    await user.click(screen.getByRole('button', { name: /^play$/i }));
+
+    expect(handlePresent).toHaveBeenCalledTimes(1);
+    expect(handlePresent).toHaveBeenCalledWith(draft);
+  });
+
+  it('does not present anything when a draft is saved rather than played', async () => {
+    const user = userEvent.setup();
+    setExperience([
+      block('draft-1', BlockKind.ANNOUNCEMENT, 'hidden', {
+        title: 'Welcome',
+        message: 'Phones out.',
+      }),
+    ]);
+    renderFocusMode();
+
+    const draftSection = screen.getByRole('heading', { name: 'Drafts' }).parentElement!;
+    await user.click(within(draftSection).getByText('Welcome'));
+    await user.click(screen.getByRole('button', { name: /save as draft/i }));
+
+    expect(handlePresent).not.toHaveBeenCalled();
+    expect(screen.getByRole('heading', { name: 'Choose an activity' })).toBeInTheDocument();
+  });
+
+  it('remembers focus mode as the preferred manage view', () => {
+    setExperience([]);
+    renderFocusMode();
+
+    expect(localStorage.getItem('cctv_manage_mode')).toBe('focus');
   });
 });
