@@ -59,9 +59,7 @@ function CreateBlockForm({ onClose }: CreateBlockFormProps) {
         required
       />
 
-      <BlockEditor />
-      <SegmentSelector />
-      <PlaybillToggles />
+      <CreateBlockFields />
 
       <div className={styles.actions}>
         <Button variant="secondary" onClick={onClose}>
@@ -79,6 +77,16 @@ function CreateBlockForm({ onClose }: CreateBlockFormProps) {
         <Button onClick={() => submit('open')}>Play now</Button>
       </div>
     </div>
+  );
+}
+
+export function CreateBlockFields() {
+  return (
+    <>
+      <BlockEditor />
+      <SegmentSelector />
+      <PlaybillToggles />
+    </>
   );
 }
 
