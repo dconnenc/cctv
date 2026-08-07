@@ -3,8 +3,9 @@ import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { BlockKind } from '@cctv/types';
-import type { Block, ParticipantSummary } from '@cctv/types';
+import type { Block, ParticipantSummary, PollBlock } from '@cctv/types';
 
+import { pollBlock } from '../testFactories';
 import FocusEditor from './FocusEditor';
 
 const { createExperienceBlock, updateExperienceBlock } = vi.hoisted(() => ({
@@ -72,15 +73,12 @@ async function fillPoll(user: ReturnType<typeof userEvent.setup>) {
   await user.type(screen.getByLabelText('Option 2'), 'Stand-up');
 }
 
-function draftPoll(): Block {
-  return {
+function draftPoll(): PollBlock {
+  return pollBlock({
     id: 'draft-1',
-    kind: BlockKind.POLL,
-    status: 'hidden',
-    position: 0,
     payload: { question: 'Closing sketch?', options: ['The Bit', 'Cold Open'] },
     responses: { total: 0 },
-  } as Block;
+  });
 }
 
 describe('FocusEditor — creating', () => {

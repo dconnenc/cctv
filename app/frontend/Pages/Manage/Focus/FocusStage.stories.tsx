@@ -1,21 +1,17 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { fn } from '@storybook/test';
 
-import { Block, BlockKind } from '@cctv/types';
-
+import { pollBlock } from '../testFactories';
 import FocusStage from './FocusStage';
 
-const pollBlock = {
-  id: 'block-1',
-  kind: BlockKind.POLL,
+const livePoll = pollBlock({
   status: 'open',
-  position: 0,
   payload: {
     question: 'Which sketch should close the show?',
     options: ['The Bit', 'Cold Open', 'Musical Number'],
   },
   responses: { total: 0 },
-} as Block;
+});
 
 const meta: Meta<typeof FocusStage> = {
   title: 'Manage/Focus/FocusStage',
@@ -24,7 +20,7 @@ const meta: Meta<typeof FocusStage> = {
   args: {
     onFinish: fn(),
     isFinishing: false,
-    block: pollBlock,
+    block: livePoll,
   },
 };
 export default meta;
@@ -35,7 +31,7 @@ export const AwaitingResponses: Story = {};
 
 export const WithResponses: Story = {
   args: {
-    block: { ...pollBlock, responses: { total: 24 } } as Block,
+    block: { ...livePoll, responses: { total: 24 } },
   },
 };
 

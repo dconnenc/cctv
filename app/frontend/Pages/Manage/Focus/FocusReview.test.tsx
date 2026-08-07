@@ -2,9 +2,9 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 
-import { BlockKind } from '@cctv/types';
-import type { Block, ParticipantSummary } from '@cctv/types';
+import type { Block, PollBlock } from '@cctv/types';
 
+import { participant, pollBlock } from '../testFactories';
 import FocusReview from './FocusReview';
 
 vi.mock('../BlockPreview/BlockPreview', () => ({
@@ -12,18 +12,14 @@ vi.mock('../BlockPreview/BlockPreview', () => ({
 }));
 
 const participants = [
-  { id: 'p1', name: 'Nina' },
-  { id: 'p2', name: 'Marcus' },
-] as ParticipantSummary[];
+  participant({ id: 'p1', name: 'Nina' }),
+  participant({ id: 'p2', name: 'Marcus' }),
+];
 
-function closedPoll(overrides: Partial<Block['responses']> = {}): Block {
-  return {
-    id: 'block-1',
-    kind: BlockKind.POLL,
+function closedPoll(responses: PollBlock['responses'] = undefined): PollBlock {
+  return pollBlock({
     status: 'closed',
-    position: 0,
-    payload: { question: 'Best opener?', options: [] },
-    responses: {
+    responses: responses ?? {
       total: 2,
       all_responses: [
         {
@@ -39,9 +35,8 @@ function closedPoll(overrides: Partial<Block['responses']> = {}): Block {
           created_at: '2026-08-07T22:34:25Z',
         },
       ],
-      ...overrides,
     },
-  } as Block;
+  });
 }
 
 function renderReview(block: Block) {

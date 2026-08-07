@@ -4,9 +4,9 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { BlockKind } from '@cctv/types';
-import type { Block } from '@cctv/types';
+import type { Block, Experience } from '@cctv/types';
 
+import { experience, participant, pollBlock } from '../testFactories';
 import ManageDebugPage from './ManageDebugPage';
 import ManageParticipantsPage from './ManageParticipantsPage';
 import ManagePlaybillPage from './ManagePlaybillPage';
@@ -43,19 +43,15 @@ vi.mock('../Viewer/DebugPanel/DebugPanel', () => ({
   ),
 }));
 
-function setExperience(overrides: Record<string, unknown> = {}) {
+function setExperience(overrides: Partial<Experience> = {}) {
   useExperienceMock.mockReturnValue({
-    experience: {
-      id: 'exp-1',
-      code: 'FOCUSTEST',
-      hosts: [{ id: 'h1', name: 'Cam' }],
-      participants: [{ id: 'p1', name: 'Nina' }],
-      segments: [],
-      blocks: [],
+    experience: experience({
+      hosts: [participant({ id: 'h1', name: 'Cam', role: 'host' })],
+      participants: [participant({ id: 'p1', name: 'Nina' })],
       playbill: [],
       playbill_enabled: true,
       ...overrides,
-    },
+    }),
     code: 'FOCUSTEST',
     isLoading: false,
     wsReady: true,
@@ -90,8 +86,8 @@ describe('Manage subpages', () => {
   it('hands the open block to the debug panel', () => {
     setExperience({
       blocks: [
-        { id: 'closed-1', kind: BlockKind.POLL, status: 'closed', position: 0, payload: {} },
-        { id: 'open-1', kind: BlockKind.POLL, status: 'open', position: 1, payload: {} },
+        pollBlock({ id: 'closed-1', status: 'closed', position: 0 }),
+        pollBlock({ id: 'open-1', status: 'open', position: 1 }),
       ],
     });
     renderPage(<ManageDebugPage />);

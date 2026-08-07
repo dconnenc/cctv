@@ -6,8 +6,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ExperienceStateProvider } from '@cctv/contexts/ExperienceStateContext';
 import { BlockKind } from '@cctv/types';
-import type { Block, Experience } from '@cctv/types';
+import type { Block } from '@cctv/types';
 
+import { announcementBlock, experience, pollBlock, questionBlock } from '../testFactories';
 import FocusMode from './FocusMode';
 
 const { useExperienceMock, handlePresent, handleStopPresenting, closeBlock, navigate } = vi.hoisted(
@@ -60,26 +61,9 @@ vi.mock('@cctv/hooks/useBlockPresentation', () => ({
   }),
 }));
 
-function block(id: string, kind: BlockKind, status: Block['status'], payload = {}): Block {
-  return { id, kind, status, position: 0, payload } as Block;
-}
-
-function experienceWith(blocks: Block[]): Experience {
-  return {
-    id: 'exp-1',
-    name: 'Focus Mode Test',
-    code: 'FOCUSTEST',
-    status: 'lobby',
-    blocks,
-    hosts: [],
-    participants: [],
-    segments: [],
-  } as unknown as Experience;
-}
-
 function setExperience(blocks: Block[]) {
   useExperienceMock.mockReturnValue({
-    experience: experienceWith(blocks),
+    experience: experience({ blocks }),
     code: 'FOCUSTEST',
     isLoading: false,
     wsReady: true,
@@ -119,8 +103,8 @@ describe('FocusMode', () => {
 
   it('lists hidden blocks as drafts and excludes child blocks', () => {
     setExperience([
-      block('draft-1', BlockKind.POLL, 'hidden', { question: 'Closing sketch?' }),
-      { ...block('child-1', BlockKind.QUESTION, 'hidden'), parent_block_id: 'draft-1' } as Block,
+      pollBlock({ id: 'draft-1', payload: { question: 'Closing sketch?', options: [] } }),
+      questionBlock({ id: 'child-1', parent_block_id: 'draft-1' }),
     ]);
     renderFocusMode();
 
@@ -158,14 +142,20 @@ describe('FocusMode', () => {
   it('lists finished activities under History, newest first', async () => {
     const user = userEvent.setup();
     setExperience([
-      { ...block('past-1', BlockKind.POLL, 'closed', { question: 'First bit' }), position: 0 },
-      { ...block('past-2', BlockKind.QUESTION, 'closed', { question: 'Second bit' }), position: 1 },
-      { ...block('draft-1', BlockKind.BUZZER, 'hidden', { question: 'Draft bit' }), position: 2 },
-      {
-        ...block('child-1', BlockKind.QUESTION, 'closed'),
-        parent_block_id: 'past-1',
-        position: 3,
-      } as Block,
+      pollBlock({
+        id: 'past-1',
+        status: 'closed',
+        position: 0,
+        payload: { question: 'First bit', options: [] },
+      }),
+      questionBlock({
+        id: 'past-2',
+        status: 'closed',
+        position: 1,
+        payload: { question: 'Second bit', formKey: 'second' },
+      }),
+      announcementBlock({ id: 'draft-1', position: 2, payload: { message: 'Draft bit' } }),
+      questionBlock({ id: 'child-1', status: 'closed', position: 3, parent_block_id: 'past-1' }),
     ]);
     renderFocusMode();
 
@@ -179,7 +169,7 @@ describe('FocusMode', () => {
 
   it('shows an empty state when nothing has run', async () => {
     const user = userEvent.setup();
-    setExperience([block('draft-1', BlockKind.POLL, 'hidden')]);
+    setExperience([pollBlock({ id: 'draft-1' })]);
     renderFocusMode();
 
     await user.click(screen.getByRole('tab', { name: /history/i }));
@@ -190,10 +180,12 @@ describe('FocusMode', () => {
   it('opens a read-only review for a finished activity', async () => {
     const user = userEvent.setup();
     setExperience([
-      {
-        ...block('past-1', BlockKind.POLL, 'closed', { question: 'Closing sketch?', options: [] }),
+      pollBlock({
+        id: 'past-1',
+        status: 'closed',
+        payload: { question: 'Closing sketch?', options: [] },
         responses: { total: 12 },
-      } as Block,
+      }),
     ]);
     renderFocusMode();
 
@@ -208,7 +200,13 @@ describe('FocusMode', () => {
 
   it('returns to the History tab from a review', async () => {
     const user = userEvent.setup();
-    setExperience([block('past-1', BlockKind.POLL, 'closed', { question: 'Closing sketch?' })]);
+    setExperience([
+      pollBlock({
+        id: 'past-1',
+        status: 'closed',
+        payload: { question: 'Closing sketch?', options: [] },
+      }),
+    ]);
     renderFocusMode();
 
     await user.click(screen.getByRole('tab', { name: /history/i }));
@@ -221,7 +219,7 @@ describe('FocusMode', () => {
 
   it('starts on the live stage when a block is already open', () => {
     setExperience([
-      block('open-1', BlockKind.POLL, 'open', { question: 'Live poll', options: [] }),
+      pollBlock({ id: 'open-1', status: 'open', payload: { question: 'Live poll', options: [] } }),
     ]);
     renderFocusMode();
 
@@ -231,7 +229,11 @@ describe('FocusMode', () => {
 
   it('closes the open block and returns to the activity list on Finish', async () => {
     const user = userEvent.setup();
-    const open = block('open-1', BlockKind.POLL, 'open', { question: 'Live poll', options: [] });
+    const open = pollBlock({
+      id: 'open-1',
+      status: 'open',
+      payload: { question: 'Live poll', options: [] },
+    });
     setExperience([open]);
     renderFocusMode();
 
@@ -244,15 +246,12 @@ describe('FocusMode', () => {
 
   it('puts a draft on the monitor when it is played from the editor', async () => {
     const user = userEvent.setup();
-    const draft = block('draft-1', BlockKind.ANNOUNCEMENT, 'hidden', {
-      title: 'Welcome',
-      message: 'Phones out.',
-    });
+    const draft = announcementBlock({ id: 'draft-1', payload: { message: 'Phones out.' } });
     setExperience([draft]);
     renderFocusMode();
 
     const draftSection = screen.getByRole('heading', { name: 'Drafts' }).parentElement!;
-    await user.click(within(draftSection).getByText('Welcome'));
+    await user.click(within(draftSection).getByText('Phones out.'));
     await user.click(screen.getByRole('button', { name: /^play$/i }));
 
     expect(handlePresent).toHaveBeenCalledTimes(1);
@@ -261,16 +260,11 @@ describe('FocusMode', () => {
 
   it('does not present anything when a draft is saved rather than played', async () => {
     const user = userEvent.setup();
-    setExperience([
-      block('draft-1', BlockKind.ANNOUNCEMENT, 'hidden', {
-        title: 'Welcome',
-        message: 'Phones out.',
-      }),
-    ]);
+    setExperience([announcementBlock({ id: 'draft-1', payload: { message: 'Phones out.' } })]);
     renderFocusMode();
 
     const draftSection = screen.getByRole('heading', { name: 'Drafts' }).parentElement!;
-    await user.click(within(draftSection).getByText('Welcome'));
+    await user.click(within(draftSection).getByText('Phones out.'));
     await user.click(screen.getByRole('button', { name: /save as draft/i }));
 
     expect(handlePresent).not.toHaveBeenCalled();

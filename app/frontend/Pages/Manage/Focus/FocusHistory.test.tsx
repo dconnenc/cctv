@@ -2,20 +2,18 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 
-import { BlockKind } from '@cctv/types';
 import type { Block } from '@cctv/types';
 
+import { buzzerBlock, pollBlock, questionBlock } from '../testFactories';
 import FocusHistory from './FocusHistory';
 
-function past(id: string, kind: BlockKind, question: string, total: number): Block {
-  return {
+function pastPoll(id: string, question: string, total: number): Block {
+  return pollBlock({
     id,
-    kind,
     status: 'closed',
-    position: 0,
-    payload: { question },
+    payload: { question, options: [] },
     responses: { total },
-  } as Block;
+  });
 }
 
 describe('FocusHistory', () => {
@@ -23,8 +21,12 @@ describe('FocusHistory', () => {
     render(
       <FocusHistory
         blocks={[
-          past('b1', BlockKind.POLL, 'Best opener?', 4),
-          past('b2', BlockKind.QUESTION, 'Worst advice?', 0),
+          pastPoll('b1', 'Best opener?', 4),
+          questionBlock({
+            id: 'b2',
+            status: 'closed',
+            payload: { question: 'Worst advice?', formKey: 'advice' },
+          }),
         ]}
         onSelect={vi.fn()}
       />,
@@ -38,11 +40,7 @@ describe('FocusHistory', () => {
   it('pluralises the response count', () => {
     render(
       <FocusHistory
-        blocks={[
-          past('b1', BlockKind.POLL, 'Many', 4),
-          past('b2', BlockKind.POLL, 'One', 1),
-          past('b3', BlockKind.POLL, 'None', 0),
-        ]}
+        blocks={[pastPoll('b1', 'Many', 4), pastPoll('b2', 'One', 1), pastPoll('b3', 'None', 0)]}
         onSelect={vi.fn()}
       />,
     );
@@ -53,14 +51,7 @@ describe('FocusHistory', () => {
   });
 
   it('falls back to the kind label when a block has no text', () => {
-    const block = {
-      id: 'b1',
-      kind: BlockKind.BUZZER,
-      status: 'closed',
-      position: 0,
-      payload: {},
-      responses: { total: 0 },
-    } as Block;
+    const block = buzzerBlock({ status: 'closed', payload: {}, responses: { total: 0 } });
 
     render(<FocusHistory blocks={[block]} onSelect={vi.fn()} />);
 
@@ -70,7 +61,7 @@ describe('FocusHistory', () => {
   it('passes the chosen block to onSelect', async () => {
     const user = userEvent.setup();
     const onSelect = vi.fn();
-    const block = past('b1', BlockKind.POLL, 'Best opener?', 4);
+    const block = pastPoll('b1', 'Best opener?', 4);
 
     render(<FocusHistory blocks={[block]} onSelect={onSelect} />);
     await user.click(screen.getByText('Best opener?'));

@@ -1,20 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { fn } from '@storybook/test';
 
-import { Block, BlockKind } from '@cctv/types';
-
+import { buzzerBlock, familyFeudBlock, pollBlock, questionBlock } from '../testFactories';
 import FocusHistory from './FocusHistory';
-
-function past(id: string, kind: BlockKind, question: string, total: number): Block {
-  return {
-    id,
-    kind,
-    status: 'closed',
-    position: 0,
-    payload: { question },
-    responses: { total },
-  } as Block;
-}
 
 const meta: Meta<typeof FocusHistory> = {
   title: 'Manage/Focus/FocusHistory',
@@ -23,9 +11,24 @@ const meta: Meta<typeof FocusHistory> = {
   args: {
     onSelect: fn(),
     blocks: [
-      past('b3', BlockKind.FAMILY_FEUD, 'Name something you find in a green room', 41),
-      past('b2', BlockKind.POLL, 'Which sketch should close the show?', 24),
-      past('b1', BlockKind.QUESTION, 'What is the worst advice you have been given?', 8),
+      familyFeudBlock({
+        id: 'b3',
+        status: 'closed',
+        payload: { title: 'Name something you find in a green room' },
+        responses: { total: 41 },
+      }),
+      pollBlock({
+        id: 'b2',
+        status: 'closed',
+        payload: { question: 'Which sketch should close the show?', options: [] },
+        responses: { total: 24 },
+      }),
+      questionBlock({
+        id: 'b1',
+        status: 'closed',
+        payload: { question: 'What is the worst advice you have been given?', formKey: 'advice' },
+        responses: { total: 8 },
+      }),
     ],
   },
 };
@@ -37,7 +40,14 @@ export const WithPastActivities: Story = {};
 
 export const SingleResponse: Story = {
   args: {
-    blocks: [past('b1', BlockKind.BUZZER, 'First to buzz wins', 1)],
+    blocks: [
+      buzzerBlock({
+        id: 'b1',
+        status: 'closed',
+        payload: { prompt: 'First to buzz wins' },
+        responses: { total: 1 },
+      }),
+    ],
   },
 };
 

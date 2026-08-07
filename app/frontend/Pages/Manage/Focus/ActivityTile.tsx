@@ -33,20 +33,26 @@ export function ActivityTile({ kind, label, summary, isDraft, onClick }: Activit
 }
 
 export function blockSummary(block: Block): string {
-  const payload = block.payload as Record<string, unknown>;
-  const candidates = ['question', 'title', 'prompt', 'message', 'headline'];
-
-  for (const key of candidates) {
-    const value = payload[key];
-    if (typeof value === 'string' && value.trim()) return value.trim();
+  switch (block.kind) {
+    case BlockKind.POLL:
+    case BlockKind.QUESTION:
+      return block.payload.question.trim();
+    case BlockKind.ANNOUNCEMENT:
+      return block.payload.message.trim();
+    case BlockKind.FAMILY_FEUD:
+      return block.payload.title.trim();
+    case BlockKind.PHOTO_UPLOAD:
+      return block.payload.prompt.trim();
+    case BlockKind.BUZZER:
+      return (block.payload.prompt ?? block.payload.label ?? '').trim();
+    case BlockKind.GUESS_WHO:
+    case BlockKind.MINIGAME_ARITHMETIC:
+    case BlockKind.MINIGAME_BALLOON_PUMP:
+    case BlockKind.THE_SCENE:
+      return '';
+    default: {
+      const exhaustiveCheck: never = block;
+      return exhaustiveCheck;
+    }
   }
-
-  const questions = payload.questions;
-  if (Array.isArray(questions) && questions.length > 0) {
-    const first = questions[0] as Record<string, unknown>;
-    if (typeof first?.prompt === 'string') return first.prompt;
-    if (typeof first?.question === 'string') return first.question;
-  }
-
-  return '';
 }
