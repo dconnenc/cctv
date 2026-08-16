@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react';
 
+import { trackSubmissionFailed, trackSubmissionSucceeded } from '@cctv/analytics';
 import { useExperience } from '@cctv/contexts/ExperienceContext';
 import { useExperienceState } from '@cctv/contexts/ExperienceStateContext';
 
@@ -30,6 +31,7 @@ export function useSubmitBuzzerResponse() {
         if (!data?.success) {
           const msg = data?.error || 'Buzzer submission failed';
           setError(msg);
+          trackSubmissionFailed(blockId, 'buzzer', 'rejected', msg);
           return { success: false, error: msg };
         }
 
@@ -40,6 +42,8 @@ export function useSubmitBuzzerResponse() {
           }));
         }
 
+        trackSubmissionSucceeded(blockId, 'buzzer');
+
         return { success: true };
       } catch (e: unknown) {
         const msg =
@@ -47,6 +51,12 @@ export function useSubmitBuzzerResponse() {
             ? 'Authentication expired'
             : 'Connection error. Please try again.';
         setError(msg);
+        trackSubmissionFailed(
+          blockId,
+          'buzzer',
+          e instanceof Error && e.message === 'Authentication expired' ? 'auth_expired' : 'network',
+          msg,
+        );
         return { success: false, error: msg };
       } finally {
         setIsLoading(false);

@@ -11,6 +11,7 @@ import {
 
 import { useParams } from 'react-router-dom';
 
+import { instrumentedFetch } from '@cctv/analytics';
 import { useUser } from '@cctv/contexts/UserContext';
 import {
   getStoredAdminJWT,
@@ -115,7 +116,7 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
           'Content-Type': 'application/json',
           ...options.headers,
         };
-        return fetch(url, { ...options, headers });
+        return instrumentedFetch(url, { ...options, headers }, { source: 'admin' });
       };
 
       // No JWT client-side - attempt session refresh before giving up,

@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react';
 
+import { trackSubmissionFailed, trackSubmissionSucceeded } from '@cctv/analytics';
 import { useExperience } from '@cctv/contexts/ExperienceContext';
 import { useExperienceState } from '@cctv/contexts/ExperienceStateContext';
 import { qaLogger } from '@cctv/utils';
@@ -52,6 +53,7 @@ export function useSubmitPollResponse() {
         if (!data?.success) {
           const msg = data?.error || 'Poll submission failed';
           setError(msg);
+          trackSubmissionFailed(blockId, 'poll', 'rejected', msg);
           return { success: false, error: msg };
         }
 
@@ -62,6 +64,8 @@ export function useSubmitPollResponse() {
           }));
         }
 
+        trackSubmissionSucceeded(blockId, 'poll');
+
         qaLogger('Successfully submitted poll response');
         return { success: true };
       } catch (e: any) {
@@ -70,6 +74,12 @@ export function useSubmitPollResponse() {
             ? 'Authentication expired'
             : 'Connection error. Please try again.';
         setError(msg);
+        trackSubmissionFailed(
+          blockId,
+          'poll',
+          e?.message === 'Authentication expired' ? 'auth_expired' : 'network',
+          msg,
+        );
         return { success: false, error: msg };
       }
     },

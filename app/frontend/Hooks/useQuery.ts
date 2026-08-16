@@ -1,5 +1,7 @@
 import { useCallback, useRef, useState } from 'react';
 
+import { instrumentedFetch } from '@cctv/analytics';
+
 export function useQuery<T>({ url }: { url: string }) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string>();
@@ -14,7 +16,11 @@ export function useQuery<T>({ url }: { url: string }) {
       setIsLoading(true);
       setError(undefined);
       try {
-        const response = await fetch(url, { ...options, signal: controller.signal });
+        const response = await instrumentedFetch(
+          url,
+          { ...options, signal: controller.signal },
+          { source: 'public' },
+        );
         const data = (await response.json()) as T;
         if (!response.ok) {
           const msg =

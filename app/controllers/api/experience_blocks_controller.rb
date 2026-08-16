@@ -89,6 +89,8 @@ class Api::ExperienceBlocksController < Api::BaseController
       @experience.reload
       Experiences::Broadcaster.enqueue_update(@experience)
 
+      track_event(Analytics::Events::BLOCK_CREATED, block_id: block.id, block_kind: block.kind)
+
       render json: {
         success: true,
         data: block,
@@ -176,6 +178,8 @@ class Api::ExperienceBlocksController < Api::BaseController
 
       Experiences::Broadcaster.enqueue_update(@experience)
 
+      track_event(Analytics::Events::BLOCK_OPENED, block_id: block.id, block_kind: block.kind)
+
       render json: {
         success: true,
         data: block,
@@ -191,6 +195,8 @@ class Api::ExperienceBlocksController < Api::BaseController
       ).close_block!(block: @block)
 
       Experiences::Broadcaster.enqueue_update(@experience)
+
+      track_event(Analytics::Events::BLOCK_CLOSED, block_id: block.id, block_kind: block.kind)
 
       render json: {
         success: true,
@@ -239,6 +245,8 @@ class Api::ExperienceBlocksController < Api::BaseController
       )
       Experiences::Broadcaster.enqueue_update(@experience)
 
+      track_event(Analytics::Events::RESPONSE_SUBMITTED, block_id: @block.id, block_kind: @block.kind, response_kind: "poll")
+
       render json: { success: true, submission: { id: submission.id, answer: submission.answer } }, status: 200
     end
   end
@@ -272,6 +280,8 @@ class Api::ExperienceBlocksController < Api::BaseController
 
       Experiences::Broadcaster.enqueue_update(@experience)
 
+      track_event(Analytics::Events::RESPONSE_SUBMITTED, block_id: @block.id, block_kind: @block.kind, response_kind: "question")
+
       render json: { success: true, submission: { id: submission.id, answer: submission.answer } }, status: 200
     end
   end
@@ -287,6 +297,8 @@ class Api::ExperienceBlocksController < Api::BaseController
       )
 
       Experiences::Broadcaster.enqueue_update(@experience)
+
+      track_event(Analytics::Events::RESPONSE_SUBMITTED, block_id: @block.id, block_kind: @block.kind, response_kind: "buzzer")
 
       render json: { success: true, submission: { id: submission.id, answer: submission.answer } }, status: 200
     end
@@ -377,6 +389,8 @@ class Api::ExperienceBlocksController < Api::BaseController
       )
 
       Experiences::Broadcaster.enqueue_update(@experience)
+
+      track_event(Analytics::Events::RESPONSE_SUBMITTED, block_id: @block.id, block_kind: @block.kind, response_kind: "photo_upload")
 
       photo_url = submission.photo.attached? ? ActiveStorageUrlService.blob_url(submission.photo.blob) : nil
       render json: { success: true, submission: { id: submission.id, answer: submission.answer, photo_url: photo_url } }, status: 200
