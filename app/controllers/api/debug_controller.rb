@@ -26,7 +26,7 @@ class Api::DebugController < Api::BaseController
       }
     end
 
-    Experiences::Broadcaster.new(@experience).broadcast_experience_update
+    Experiences::Broadcaster.enqueue_update(@experience)
 
     render json: {
       success: true,

@@ -87,7 +87,7 @@ class Api::ExperienceBlocksController < Api::BaseController
       end
 
       @experience.reload
-      Experiences::Broadcaster.new(@experience).broadcast_experience_update
+      Experiences::Broadcaster.enqueue_update(@experience)
 
       render json: {
         success: true,
@@ -108,7 +108,7 @@ class Api::ExperienceBlocksController < Api::BaseController
         )
 
       @experience.reload
-      Experiences::Broadcaster.new(@experience).broadcast_experience_update
+      Experiences::Broadcaster.enqueue_update(@experience)
 
       render json: { success: true, data: block }, status: 200
     end
@@ -121,7 +121,7 @@ class Api::ExperienceBlocksController < Api::BaseController
         .delete_block!(params[:id])
 
       @experience.reload
-      Experiences::Broadcaster.new(@experience).broadcast_experience_update
+      Experiences::Broadcaster.enqueue_update(@experience)
 
       render json: { success: true }, status: 200
     end
@@ -138,7 +138,7 @@ class Api::ExperienceBlocksController < Api::BaseController
       )
 
       @experience.reload
-      Experiences::Broadcaster.new(@experience).broadcast_experience_update
+      Experiences::Broadcaster.enqueue_update(@experience)
 
       render json: {
         success: true,
@@ -158,7 +158,7 @@ class Api::ExperienceBlocksController < Api::BaseController
       )
 
       @experience.reload
-      Experiences::Broadcaster.new(@experience).broadcast_experience_update
+      Experiences::Broadcaster.enqueue_update(@experience)
 
       render json: {
         success: true,
@@ -174,7 +174,7 @@ class Api::ExperienceBlocksController < Api::BaseController
         experience: @experience, actor: @user
       ).open_block!(block: @block)
 
-      Experiences::Broadcaster.new(@experience).broadcast_experience_update
+      Experiences::Broadcaster.enqueue_update(@experience)
 
       render json: {
         success: true,
@@ -190,7 +190,7 @@ class Api::ExperienceBlocksController < Api::BaseController
         experience: @experience, actor: @user
       ).close_block!(block: @block)
 
-      Experiences::Broadcaster.new(@experience).broadcast_experience_update
+      Experiences::Broadcaster.enqueue_update(@experience)
 
       render json: {
         success: true,
@@ -206,7 +206,7 @@ class Api::ExperienceBlocksController < Api::BaseController
         experience: @experience, actor: @user
       ).hide_block!(block: @block)
 
-      Experiences::Broadcaster.new(@experience).broadcast_experience_update
+      Experiences::Broadcaster.enqueue_update(@experience)
 
       render json: {
         success: true,
@@ -222,7 +222,7 @@ class Api::ExperienceBlocksController < Api::BaseController
         experience: @experience, actor: @user
       ).detach_block_from_parent!(params[:id])
 
-      Experiences::Broadcaster.new(@experience).broadcast_experience_update
+      Experiences::Broadcaster.enqueue_update(@experience)
 
       render json: { success: true, data: block }, status: 200
     end
@@ -234,9 +234,10 @@ class Api::ExperienceBlocksController < Api::BaseController
       orchestrator = Experiences::Orchestrator.new(experience: @experience, actor: @user)
       submission = orchestrator.submit_poll_response!(block: @block, answer: params[:answer])
 
-      Experiences::Broadcaster.new(@experience).broadcast_experience_update(
+      Experiences::Broadcaster.new(@experience).broadcast_profile_changes(
         profile_changes: orchestrator.profile_changes
       )
+      Experiences::Broadcaster.enqueue_update(@experience)
 
       render json: { success: true, submission: { id: submission.id, answer: submission.answer } }, status: 200
     end
@@ -269,7 +270,7 @@ class Api::ExperienceBlocksController < Api::BaseController
         )
       end
 
-      Experiences::Broadcaster.new(@experience).broadcast_experience_update
+      Experiences::Broadcaster.enqueue_update(@experience)
 
       render json: { success: true, submission: { id: submission.id, answer: submission.answer } }, status: 200
     end
@@ -285,7 +286,7 @@ class Api::ExperienceBlocksController < Api::BaseController
         answer: params[:answer]
       )
 
-      Experiences::Broadcaster.new(@experience).broadcast_experience_update
+      Experiences::Broadcaster.enqueue_update(@experience)
 
       render json: { success: true, submission: { id: submission.id, answer: submission.answer } }, status: 200
     end
@@ -298,7 +299,7 @@ class Api::ExperienceBlocksController < Api::BaseController
         experience: @experience, actor: @user
       ).clear_buzzer_responses!(block: @block)
 
-      Experiences::Broadcaster.new(@experience).broadcast_experience_update
+      Experiences::Broadcaster.enqueue_update(@experience)
 
       render json: { success: true }, status: 200
     end
@@ -313,7 +314,7 @@ class Api::ExperienceBlocksController < Api::BaseController
         question_id: params[:question_id]
       )
 
-      Experiences::Broadcaster.new(@experience).broadcast_experience_update
+      Experiences::Broadcaster.enqueue_update(@experience)
 
       render json: { success: true, data: { buckets: buckets } }, status: 200
     end
@@ -330,7 +331,7 @@ class Api::ExperienceBlocksController < Api::BaseController
         count: params[:count]
       )
 
-      Experiences::Broadcaster.new(@experience).broadcast_experience_update
+      Experiences::Broadcaster.enqueue_update(@experience)
 
       render json: { success: true, data: { answers: answers } }, status: 200
     end
@@ -375,7 +376,7 @@ class Api::ExperienceBlocksController < Api::BaseController
         answer: params[:answer] || {}
       )
 
-      Experiences::Broadcaster.new(@experience).broadcast_experience_update
+      Experiences::Broadcaster.enqueue_update(@experience)
 
       photo_url = submission.photo.attached? ? ActiveStorageUrlService.blob_url(submission.photo.blob) : nil
       render json: { success: true, submission: { id: submission.id, answer: submission.answer, photo_url: photo_url } }, status: 200
@@ -392,15 +393,13 @@ class Api::ExperienceBlocksController < Api::BaseController
         name: params[:name] || "New Bucket"
       )
 
-      broadcaster = Experiences::Broadcaster.new(@experience)
-
-      broadcaster.broadcast_family_feud_update(
+      Experiences::Broadcaster.new(@experience).broadcast_family_feud_update(
         block_id: params[:id],
         operation: 'bucket_added',
         data: { questionId: params[:question_id], bucket: bucket }
       )
 
-      broadcaster.broadcast_experience_update
+      Experiences::Broadcaster.enqueue_update(@experience)
 
       render json: { success: true, data: { bucket: bucket } }, status: 200
     end
@@ -417,15 +416,13 @@ class Api::ExperienceBlocksController < Api::BaseController
         name: params[:name]
       )
 
-      broadcaster = Experiences::Broadcaster.new(@experience)
-
-      broadcaster.broadcast_family_feud_update(
+      Experiences::Broadcaster.new(@experience).broadcast_family_feud_update(
         block_id: params[:id],
         operation: 'bucket_renamed',
         data: { bucketId: params[:bucket_id], name: params[:name], questionId: params[:question_id] }
       )
 
-      broadcaster.broadcast_experience_update
+      Experiences::Broadcaster.enqueue_update(@experience)
 
       render json: { success: true }, status: 200
     end
@@ -441,15 +438,13 @@ class Api::ExperienceBlocksController < Api::BaseController
         bucket_id: params[:bucket_id]
       )
 
-      broadcaster = Experiences::Broadcaster.new(@experience)
-
-      broadcaster.broadcast_family_feud_update(
+      Experiences::Broadcaster.new(@experience).broadcast_family_feud_update(
         block_id: params[:id],
         operation: 'bucket_deleted',
         data: { bucketId: params[:bucket_id], questionId: params[:question_id] }
       )
 
-      broadcaster.broadcast_experience_update
+      Experiences::Broadcaster.enqueue_update(@experience)
 
       render json: { success: true }, status: 200
     end
@@ -466,9 +461,7 @@ class Api::ExperienceBlocksController < Api::BaseController
         bucket_id: params[:bucket_id]
       )
 
-      broadcaster = Experiences::Broadcaster.new(@experience)
-
-      broadcaster.broadcast_family_feud_update(
+      Experiences::Broadcaster.new(@experience).broadcast_family_feud_update(
         block_id: params[:id],
         operation: 'answer_assigned',
         data: {
@@ -478,7 +471,7 @@ class Api::ExperienceBlocksController < Api::BaseController
         }
       )
 
-      broadcaster.broadcast_experience_update
+      Experiences::Broadcaster.enqueue_update(@experience)
 
       render json: { success: true }, status: 200
     end
@@ -491,7 +484,7 @@ class Api::ExperienceBlocksController < Api::BaseController
         experience: @experience, actor: @user
       ).start_family_feud_playing!(block: @block)
 
-      Experiences::Broadcaster.new(@experience).broadcast_experience_update
+      Experiences::Broadcaster.enqueue_update(@experience)
 
       render json: { success: true, data: { block: block } }, status: 200
     end
@@ -508,7 +501,7 @@ class Api::ExperienceBlocksController < Api::BaseController
         bucket_index: params[:bucket_index].to_i
       )
 
-      Experiences::Broadcaster.new(@experience).broadcast_experience_update
+      Experiences::Broadcaster.enqueue_update(@experience)
 
       render json: { success: true }, status: 200
     end
@@ -521,20 +514,8 @@ class Api::ExperienceBlocksController < Api::BaseController
         experience: @experience, actor: @user
       ).show_family_feud_x!(block: @block)
 
-      Experiences::Broadcaster.new(@experience).broadcast_experience_update
-
-      Thread.new do
-        sleep 3
-        ActiveRecord::Base.connection_pool.with_connection do
-          block.reload
-          payload = block.payload || {}
-          if payload.dig("game_state", "show_x")
-            payload["game_state"]["show_x"] = false
-            block.update!(payload: payload)
-            Experiences::Broadcaster.new(@experience).broadcast_experience_update
-          end
-        end
-      end
+      Experiences::Broadcaster.enqueue_update(@experience)
+      Minigames::ClearShowXJob.set(wait: 3.seconds).perform_later(@block.id)
 
       render json: { success: true }, status: 200
     end
@@ -550,7 +531,7 @@ class Api::ExperienceBlocksController < Api::BaseController
         playing: ActiveModel::Type::Boolean.new.cast(params[:playing])
       )
 
-      Experiences::Broadcaster.new(@experience).broadcast_experience_update
+      Experiences::Broadcaster.enqueue_update(@experience)
 
       render json: { success: true }, status: 200
     end
@@ -563,7 +544,7 @@ class Api::ExperienceBlocksController < Api::BaseController
         experience: @experience, actor: @user
       ).restart_family_feud_theme_music!(block: @block)
 
-      Experiences::Broadcaster.new(@experience).broadcast_experience_update
+      Experiences::Broadcaster.enqueue_update(@experience)
 
       render json: { success: true }, status: 200
     end
@@ -576,7 +557,7 @@ class Api::ExperienceBlocksController < Api::BaseController
         experience: @experience, actor: @user
       ).next_family_feud_question!(block: @block)
 
-      Experiences::Broadcaster.new(@experience).broadcast_experience_update
+      Experiences::Broadcaster.enqueue_update(@experience)
 
       render json: { success: true }, status: 200
     end
@@ -589,7 +570,7 @@ class Api::ExperienceBlocksController < Api::BaseController
         experience: @experience, actor: @user
       ).restart_family_feud_playing!(block: @block)
 
-      Experiences::Broadcaster.new(@experience).broadcast_experience_update
+      Experiences::Broadcaster.enqueue_update(@experience)
 
       render json: { success: true }, status: 200
     end
@@ -602,7 +583,7 @@ class Api::ExperienceBlocksController < Api::BaseController
         experience: @experience, actor: @user
       ).restart_family_feud_categorizing!(block: @block)
 
-      Experiences::Broadcaster.new(@experience).broadcast_experience_update
+      Experiences::Broadcaster.enqueue_update(@experience)
 
       render json: { success: true }, status: 200
     end
@@ -615,7 +596,7 @@ class Api::ExperienceBlocksController < Api::BaseController
         experience: @experience, actor: @user
       ).restart_family_feud_everything!(block: @block)
 
-      Experiences::Broadcaster.new(@experience).broadcast_experience_update
+      Experiences::Broadcaster.enqueue_update(@experience)
 
       render json: { success: true }, status: 200
     end
@@ -628,7 +609,7 @@ class Api::ExperienceBlocksController < Api::BaseController
         experience: @experience, actor: @user
       ).start_guess_who!(block: @block)
 
-      Experiences::Broadcaster.new(@experience).broadcast_experience_update
+      Experiences::Broadcaster.enqueue_update(@experience)
 
       render json: { success: true }, status: 200
     end
@@ -644,7 +625,7 @@ class Api::ExperienceBlocksController < Api::BaseController
         contestant_index: params[:contestant_index]
       )
 
-      Experiences::Broadcaster.new(@experience).broadcast_experience_update
+      Experiences::Broadcaster.enqueue_update(@experience)
 
       render json: { success: true }, status: 200
     end
@@ -662,7 +643,7 @@ class Api::ExperienceBlocksController < Api::BaseController
         hidden_clue_ids: params[:hidden_clue_ids] || []
       )
 
-      Experiences::Broadcaster.new(@experience).broadcast_experience_update
+      Experiences::Broadcaster.enqueue_update(@experience)
 
       render json: { success: true }, status: 200
     end
@@ -679,7 +660,7 @@ class Api::ExperienceBlocksController < Api::BaseController
         direction: params[:direction]
       )
 
-      Experiences::Broadcaster.new(@experience).broadcast_experience_update
+      Experiences::Broadcaster.enqueue_update(@experience)
 
       render json: { success: true }, status: 200
     end
@@ -695,7 +676,7 @@ class Api::ExperienceBlocksController < Api::BaseController
         view: params[:view]
       )
 
-      Experiences::Broadcaster.new(@experience).broadcast_experience_update
+      Experiences::Broadcaster.enqueue_update(@experience)
 
       render json: { success: true }, status: 200
     end
@@ -711,7 +692,7 @@ class Api::ExperienceBlocksController < Api::BaseController
         contestant_index: params[:contestant_index]
       )
 
-      Experiences::Broadcaster.new(@experience).broadcast_experience_update
+      Experiences::Broadcaster.enqueue_update(@experience)
 
       render json: { success: true }, status: 200
     end
@@ -724,7 +705,7 @@ class Api::ExperienceBlocksController < Api::BaseController
         experience: @experience, actor: @user
       ).conclude_guess_who_poll!(block: @block)
 
-      Experiences::Broadcaster.new(@experience).broadcast_experience_update
+      Experiences::Broadcaster.enqueue_update(@experience)
 
       render json: { success: true }, status: 200
     end
@@ -737,7 +718,7 @@ class Api::ExperienceBlocksController < Api::BaseController
         experience: @experience, actor: @user
       ).start_minigame_arithmetic!(block: @block)
 
-      Experiences::Broadcaster.new(@experience).broadcast_experience_update
+      Experiences::Broadcaster.enqueue_update(@experience)
 
       render json: { success: true, data: block }, status: 200
     end
@@ -750,7 +731,7 @@ class Api::ExperienceBlocksController < Api::BaseController
         experience: @experience, actor: @user
       ).end_minigame_arithmetic!(block: @block)
 
-      Experiences::Broadcaster.new(@experience).broadcast_experience_update
+      Experiences::Broadcaster.enqueue_update(@experience)
 
       render json: { success: true, data: block }, status: 200
     end
@@ -763,7 +744,7 @@ class Api::ExperienceBlocksController < Api::BaseController
         experience: @experience, actor: @user
       ).restart_minigame_arithmetic!(block: @block)
 
-      Experiences::Broadcaster.new(@experience).broadcast_experience_update
+      Experiences::Broadcaster.enqueue_update(@experience)
 
       render json: { success: true, data: block }, status: 200
     end
@@ -794,7 +775,7 @@ class Api::ExperienceBlocksController < Api::BaseController
         experience: @experience, actor: @user
       ).start_minigame_balloon_pump!(block: @block)
 
-      Experiences::Broadcaster.new(@experience).broadcast_experience_update
+      Experiences::Broadcaster.enqueue_update(@experience)
 
       render json: { success: true, data: block }, status: 200
     end
@@ -807,7 +788,7 @@ class Api::ExperienceBlocksController < Api::BaseController
         experience: @experience, actor: @user
       ).end_minigame_balloon_pump!(block: @block)
 
-      Experiences::Broadcaster.new(@experience).broadcast_experience_update
+      Experiences::Broadcaster.enqueue_update(@experience)
 
       render json: { success: true, data: block }, status: 200
     end
@@ -820,7 +801,7 @@ class Api::ExperienceBlocksController < Api::BaseController
         experience: @experience, actor: @user
       ).restart_minigame_balloon_pump!(block: @block)
 
-      Experiences::Broadcaster.new(@experience).broadcast_experience_update
+      Experiences::Broadcaster.enqueue_update(@experience)
 
       render json: { success: true, data: block }, status: 200
     end
@@ -837,7 +818,7 @@ class Api::ExperienceBlocksController < Api::BaseController
       )
 
       if outcome[:winners]&.any?
-        Experiences::Broadcaster.new(@experience).broadcast_experience_update
+        Experiences::Broadcaster.enqueue_update(@experience)
       end
 
       render json: { success: true, result: outcome[:result] }, status: 200
@@ -851,7 +832,7 @@ class Api::ExperienceBlocksController < Api::BaseController
         experience: @experience, actor: @user
       ).reveal_guess_who!(block: @block)
 
-      Experiences::Broadcaster.new(@experience).broadcast_experience_update
+      Experiences::Broadcaster.enqueue_update(@experience)
 
       render json: { success: true }, status: 200
     end
@@ -867,7 +848,7 @@ class Api::ExperienceBlocksController < Api::BaseController
         playing: ActiveModel::Type::Boolean.new.cast(params[:playing])
       )
 
-      Experiences::Broadcaster.new(@experience).broadcast_experience_update
+      Experiences::Broadcaster.enqueue_update(@experience)
 
       render json: { success: true }, status: 200
     end
@@ -880,7 +861,7 @@ class Api::ExperienceBlocksController < Api::BaseController
         experience: @experience, actor: @user
       ).restart_guess_who_theme_music!(block: @block)
 
-      Experiences::Broadcaster.new(@experience).broadcast_experience_update
+      Experiences::Broadcaster.enqueue_update(@experience)
 
       render json: { success: true }, status: 200
     end
@@ -893,7 +874,7 @@ class Api::ExperienceBlocksController < Api::BaseController
         experience: @experience, actor: @user
       ).start_the_scene!(block: @block)
 
-      Experiences::Broadcaster.new(@experience).broadcast_experience_update
+      Experiences::Broadcaster.enqueue_update(@experience)
 
       render json: { success: true, data: block }, status: 200
     end
@@ -906,7 +887,7 @@ class Api::ExperienceBlocksController < Api::BaseController
         experience: @experience, actor: @user
       ).end_the_scene!(block: @block)
 
-      Experiences::Broadcaster.new(@experience).broadcast_experience_update
+      Experiences::Broadcaster.enqueue_update(@experience)
 
       render json: { success: true, data: block }, status: 200
     end
@@ -919,7 +900,7 @@ class Api::ExperienceBlocksController < Api::BaseController
         experience: @experience, actor: @user
       ).force_next_scene!(block: @block)
 
-      Experiences::Broadcaster.new(@experience).broadcast_experience_update
+      Experiences::Broadcaster.enqueue_update(@experience)
 
       render json: { success: true, data: block }, status: 200
     end
@@ -935,7 +916,7 @@ class Api::ExperienceBlocksController < Api::BaseController
         performer_participant_ids: Array(params[:performer_participant_ids])
       )
 
-      Experiences::Broadcaster.new(@experience).broadcast_experience_update
+      Experiences::Broadcaster.enqueue_update(@experience)
 
       render json: { success: true, data: block }, status: 200
     end
@@ -948,7 +929,7 @@ class Api::ExperienceBlocksController < Api::BaseController
         experience: @experience, actor: @user
       ).press_the_scene_buzzer!(block: @block)
 
-      Experiences::Broadcaster.new(@experience).broadcast_experience_update
+      Experiences::Broadcaster.enqueue_update(@experience)
 
       render json: { success: true }, status: 200
     end
@@ -961,7 +942,7 @@ class Api::ExperienceBlocksController < Api::BaseController
         experience: @experience, actor: @user
       ).clear_the_scene_top!(block: @block)
 
-      Experiences::Broadcaster.new(@experience).broadcast_experience_update
+      Experiences::Broadcaster.enqueue_update(@experience)
 
       render json: { success: true }, status: 200
     end
@@ -977,7 +958,7 @@ class Api::ExperienceBlocksController < Api::BaseController
         suggestion_id: params[:suggestion_id]
       )
 
-      Experiences::Broadcaster.new(@experience).broadcast_experience_update
+      Experiences::Broadcaster.enqueue_update(@experience)
 
       render json: { success: true }, status: 200
     end
@@ -990,7 +971,7 @@ class Api::ExperienceBlocksController < Api::BaseController
         experience: @experience, actor: @user
       ).clear_the_scene_all!(block: @block)
 
-      Experiences::Broadcaster.new(@experience).broadcast_experience_update
+      Experiences::Broadcaster.enqueue_update(@experience)
 
       render json: { success: true }, status: 200
     end
@@ -1006,7 +987,7 @@ class Api::ExperienceBlocksController < Api::BaseController
         text: params[:text]
       )
 
-      Experiences::Broadcaster.new(@experience).broadcast_experience_update
+      Experiences::Broadcaster.enqueue_update(@experience)
 
       render json: {
         success: true,
@@ -1025,7 +1006,7 @@ class Api::ExperienceBlocksController < Api::BaseController
         suggestion_id: params[:suggestion_id]
       )
 
-      Experiences::Broadcaster.new(@experience).broadcast_experience_update
+      Experiences::Broadcaster.enqueue_update(@experience)
 
       render json: {
         success: true,

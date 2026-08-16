@@ -40,5 +40,7 @@ module Cctv
     config.generators.system_tests = nil
 
     config.app_base_url = ENV.fetch('APP_BASE_URL', 'http://127.0.0.1:5200')
+
+    config.active_job.queue_adapter = :sidekiq
   end
 end

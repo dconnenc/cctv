@@ -45,12 +45,12 @@ rescue ActiveRecord::PendingMigrationError => e
   abort e.to_s.strip
 end
 RSpec.configure do |config|
-  # If you're not using ActiveRecord, or you'd prefer not to run each of your
-  # examples within a transaction, remove the following line or assign false
-  # instead of true.
+  config.before(:each) do
+    ActiveJob::Base.queue_adapter = :test
+  end
+
   config.use_transactional_fixtures = true
 
-  # Filter lines from Rails gems in backtraces.
   config.filter_rails_from_backtrace!
   config.include FactoryBot::Syntax::Methods
   config.include SystemHelpers, type: :system
@@ -64,7 +64,37 @@ Capybara.default_max_wait_time = 6
 Capybara.enable_aria_label = true
 
 RSpec.configure do |config|
+  # Boot embedded Sidekiq once for the suite. Embedded sidekiq shares the
+  # process. This is a slightly easier setup to maintain for testing, rather
+  # than independently managing a process outside of the main tests
+  config.before(:suite) do
+    RSpec.configuration.add_setting :sidekiq_embedded
+    next unless RSpec.configuration.files_to_run.any? { |f| f.include?("spec/system") }
+
+    # Mimic reading the config file and creating the queues in our embedded
+    # process
+    sidekiq_yml = YAML.load_file(
+      Rails.root.join("config/sidekiq.yml"), symbolize_names: true
+    )
+    sidekiq = Sidekiq.configure_embed do |cfg|
+      cfg.queues = sidekiq_yml[:queues]
+    end
+
+    sidekiq.run
+
+    # Store the instance on RSpec's configuration so the after(:suite) hook
+    # below can reach it to call stop. Local variables don't survive between
+    # separate before/after suite blocks, so this is the idiomatic way to
+    # pass state across suite-level hooks.
+    RSpec.configuration.sidekiq_embedded = sidekiq
+  end
+
+  config.after(:suite) do
+    RSpec.configuration.sidekiq_embedded&.stop
+  end
+
   config.before(:each, type: :system) do
+    ActiveJob::Base.queue_adapter = :sidekiq
     driven_by :cuprite, screen_size: [1440, 900], options: {
       headless: ENV["HEADLESS"] != "false",
       process_timeout: 20,
@@ -73,10 +103,33 @@ RSpec.configure do |config|
   end
 
   config.around(:each, type: :system) do |example|
+    # Disable transactional tests so worker threads can see committed data.
+    # Since rails 5+ this isn't needed for standard system tests as the
+    # connection management is patched to allow the same connection to be used,
+    # which means wrapping tests in a transaction works even for system tests.
+    #
+    # However, we run an embedded sidekiq process, which while sharing the
+    # process, has it's own connection pool. This setup is to have the system
+    # tests more closely represent the core pattern of the application when
+    # running in production
+    self.use_transactional_tests = false
+
+    # See above, we need to manually clear the queue to avoid state leaking
+    Sidekiq::Queue.all.each(&:clear)
+
     example.run
 
-    if ENV["CI"].present?
-      example.run if example.exception
-    end
+    # Retry on CI. Tests shouldn't be flakey, however github actions periodically
+    # seems to run into failure states that are hard to account for in code.
+    example.run if ENV["CI"].present? && example.exception
+
+    # Truncate instead of rollback since we disabled transactions
+    ActiveRecord::Base.connection.truncate_tables(
+      *ActiveRecord::Base.connection.tables
+        .reject { |t| %w[schema_migrations ar_internal_metadata].include?(t) }
+    )
+
+    # Catch all, we clear pre run, may as well clear post as well
+    Sidekiq::Queue.all.each(&:clear)
   end
 end
