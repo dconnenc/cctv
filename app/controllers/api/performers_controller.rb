@@ -46,6 +46,10 @@ class Api::PerformersController < Api::BaseController
 
     if performer.save
       performer.photo.attach(params[:photo]) if params[:photo].present?
+      Analytics::Tracker.capture(
+        distinct_id: current_user.id,
+        event: Analytics::Events::PERFORMER_PROFILE_CREATED,
+      )
 
       render json: {
         type: 'success',
@@ -108,6 +112,12 @@ class Api::PerformersController < Api::BaseController
     authorize! Follow, to: :create?
 
     follow = current_user.follows.find_or_create_by!(performer: performer)
+    if follow.previously_new_record?
+      Analytics::Tracker.capture(
+        distinct_id: current_user.id,
+        event: Analytics::Events::PERFORMER_FOLLOWED,
+      )
+    end
 
     render json: {
       type: 'success',
@@ -125,7 +135,14 @@ class Api::PerformersController < Api::BaseController
 
     authorize! Follow, to: :destroy?
 
-    current_user.follows.find_by(performer: performer)&.destroy
+    follow = current_user.follows.find_by(performer: performer)
+    if follow
+      follow.destroy
+      Analytics::Tracker.capture(
+        distinct_id: current_user.id,
+        event: Analytics::Events::PERFORMER_UNFOLLOWED,
+      )
+    end
 
     render json: {
       type: 'success',

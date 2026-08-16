@@ -21,7 +21,7 @@ module Analytics
       }
       attrs[:groups] = { EXPERIENCE_GROUP => experience.id } if experience
 
-      POSTHOG.capture(attrs)
+      PostHog.capture(attrs)
     rescue StandardError => e
       warn_failure("capture", e)
     end
@@ -29,7 +29,7 @@ module Analytics
     def identify(distinct_id:, properties: {})
       return if distinct_id.blank?
 
-      POSTHOG.identify(distinct_id: distinct_id, properties: properties)
+      PostHog.identify(distinct_id: distinct_id, properties: properties)
     rescue StandardError => e
       warn_failure("identify", e)
     end
@@ -37,7 +37,7 @@ module Analytics
     def identify_experience(experience)
       return if experience.blank?
 
-      POSTHOG.group_identify(
+      PostHog.group_identify(
         group_type: EXPERIENCE_GROUP,
         group_key: experience.id,
         properties: {
@@ -50,7 +50,7 @@ module Analytics
     end
 
     def capture_exception(exception, distinct_id: nil, properties: {})
-      POSTHOG.capture_exception(exception, distinct_id, properties)
+      PostHog.capture_exception(exception, distinct_id, properties)
     rescue StandardError => e
       warn_failure("capture_exception", e)
     end

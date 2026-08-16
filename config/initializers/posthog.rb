@@ -1,19 +1,22 @@
 require "posthog"
+require "posthog/rails"
 
-# Singleton PostHog client, reused for the life of the process (multiple
-# clients can drop events). When POSTHOG_KEY is absent the client is created in
-# a disabled state and every call becomes a no-op, so analytics is effectively
-# off in development and test without any branching at the call sites.
-POSTHOG = PostHog::Client.new(
-  api_key: ENV["POSTHOG_KEY"].to_s,
-  host: ENV.fetch("POSTHOG_HOST", "https://us.i.posthog.com"),
-  test_mode: Rails.env.test?,
-  silence_disabled_client_error: true,
-  on_error: ->(status, message) { Rails.logger.warn("[PostHog] #{status} - #{message}") },
-)
+posthog_api_key = ENV["POSTHOG_API_KEY"].presence
 
-at_exit do
-  POSTHOG.shutdown
-rescue StandardError
-  nil
+if posthog_api_key.present?
+  PostHog.init do |config|
+    config.api_key = posthog_api_key
+    config.host = ENV["POSTHOG_HOST"].presence
+  end
+
+  PostHog::Rails.configure do |config|
+    config.auto_capture_exceptions = true
+    config.report_rescued_exceptions = true
+    config.auto_instrument_active_job = true
+    config.capture_user_context = true
+    config.current_user_method = :current_user
+    config.user_id_method = :posthog_distinct_id
+  end
+elsif Rails.env.development?
+  raise "POSTHOG_API_KEY variable required by PostHog is missing or un-configured, this causes events to be silently missed. This error stops appearing once POSTHOG_API_KEY is configured"
 end

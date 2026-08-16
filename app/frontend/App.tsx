@@ -4,7 +4,7 @@ import { Outlet, Route, useLocation } from 'react-router-dom';
 
 import { MotionConfig } from 'motion/react';
 
-import { AnalyticsIdentity, ExperienceAnalytics } from '@cctv/analytics';
+import { AnalyticsIdentity, ExperienceAnalytics, RouteAnalytics } from '@cctv/analytics';
 import { RouteWink, TopNav } from '@cctv/components';
 import { ExperienceProvider } from '@cctv/contexts/ExperienceContext';
 import { UserProvider } from '@cctv/contexts/UserContext';
@@ -56,6 +56,7 @@ function App() {
   return (
     <UserProvider>
       <AnalyticsIdentity />
+      <RouteAnalytics />
       <MotionConfig reducedMotion="user">
         <div className={`app${booting ? ' app--booting' : ''}`}>
           {!currentRoute.pathname.includes('/monitor') &&

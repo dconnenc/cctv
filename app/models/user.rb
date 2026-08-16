@@ -23,6 +23,11 @@ class User < ApplicationRecord
 
   before_save { self.email = email.downcase.strip }
 
+  # Used by posthog-rails to associate automatically captured errors with this user.
+  def posthog_distinct_id
+    id.to_s
+  end
+
   def most_recent_participant_name
     experience_participants.order(created_at: :desc).first&.name
   end

@@ -89,6 +89,8 @@ class Api::ExperienceBlocksController < Api::BaseController
       @experience.reload
       Experiences::Broadcaster.new(@experience).broadcast_experience_update
 
+      track_event(Analytics::Events::BLOCK_CREATED, block_id: block.id, block_kind: block.kind)
+
       render json: {
         success: true,
         data: block,

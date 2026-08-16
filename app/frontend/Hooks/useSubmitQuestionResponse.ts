@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react';
 
+import { trackSubmissionFailed, trackSubmissionSucceeded } from '@cctv/analytics';
 import { useExperience } from '@cctv/contexts/ExperienceContext';
 import { useExperienceState } from '@cctv/contexts/ExperienceStateContext';
 import { qaLogger } from '@cctv/utils';
@@ -55,6 +56,7 @@ export function useSubmitQuestionResponse() {
         if (!data?.success) {
           const msg = data?.error || 'Question submission failed';
           setError(msg);
+          trackSubmissionFailed(blockId, 'question', 'rejected', msg);
           return { success: false, error: msg };
         }
 
@@ -65,6 +67,8 @@ export function useSubmitQuestionResponse() {
           }));
         }
 
+        trackSubmissionSucceeded(blockId, 'question');
+
         qaLogger('Successfully submitted question response');
         return { success: true };
       } catch (e: any) {
@@ -73,6 +77,12 @@ export function useSubmitQuestionResponse() {
             ? 'Authentication expired'
             : 'Connection error. Please try again.';
         setError(msg);
+        trackSubmissionFailed(
+          blockId,
+          'question',
+          e?.message === 'Authentication expired' ? 'auth_expired' : 'network',
+          msg,
+        );
         return { success: false, error: msg };
       }
     },

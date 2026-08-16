@@ -2,6 +2,7 @@ import { ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
 
 import { BookOpen, Bug, Columns3, Pause, Play, X } from 'lucide-react';
 
+import { trackManageAction } from '@cctv/analytics';
 import { useExperience } from '@cctv/contexts/ExperienceContext';
 import { Button, Drawer, DrawerBody, DrawerContent } from '@cctv/core';
 import { Pill } from '@cctv/core/Pill/Pill';
@@ -131,6 +132,7 @@ export default function ManageViewer() {
 
   const handleDetachBlock = useCallback(
     async (block: Block) => {
+      trackManageAction('detach_block', { block_id: block.id, block_kind: block.kind });
       setDetachingBlockId(block.id);
       await detachFromParent(block.id);
       setDetachingBlockId(undefined);
@@ -143,6 +145,7 @@ export default function ManageViewer() {
 
   const handleDeleteBlock = useCallback(
     async (block: Block) => {
+      trackManageAction('delete_block', { block_id: block.id, block_kind: block.kind });
       setDeletingBlockId(block.id);
       const result = await deleteBlock(block.id);
       setDeletingBlockId(undefined);
@@ -155,6 +158,7 @@ export default function ManageViewer() {
 
   const handleReorderBlock = useCallback(
     (blockId: string, newIndex: number) => {
+      trackManageAction('reorder_block', { block_id: blockId, new_index: newIndex });
       reorderBlock(blockId, newIndex);
     },
     [reorderBlock],
@@ -189,6 +193,10 @@ export default function ManageViewer() {
 
   const onPlayNext = useCallback(async () => {
     if (!selectedBlock) return;
+    trackManageAction('play_next', {
+      from_block_id: selectedBlock.id,
+      from_block_kind: selectedBlock.kind,
+    });
     const nextBlock = await handlePlayNext(selectedBlock, flattenedBlocks);
     if (nextBlock) setSelectedBlockId(nextBlock.id);
   }, [selectedBlock, flattenedBlocks, handlePlayNext]);

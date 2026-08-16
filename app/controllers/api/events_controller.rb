@@ -45,6 +45,12 @@ class Api::EventsController < Api::BaseController
 
     if event.save
       update_performers(event)
+      Analytics::Tracker.capture(
+        distinct_id: current_user.id,
+        event: Analytics::Events::EVENT_CREATED,
+        properties: { published: event.published? },
+        experience: event.experience,
+      )
 
       render json: {
         type: 'success',
@@ -69,6 +75,12 @@ class Api::EventsController < Api::BaseController
 
     if event.update(event_params)
       update_performers(event) if params[:performer_ids].present?
+      Analytics::Tracker.capture(
+        distinct_id: current_user.id,
+        event: Analytics::Events::EVENT_UPDATED,
+        properties: { published: event.published? },
+        experience: event.experience,
+      )
 
       render json: {
         type: 'success',
@@ -93,7 +105,15 @@ class Api::EventsController < Api::BaseController
 
     authorize! event, to: :destroy?
 
+    published = event.published?
+    experience = event.experience
     event.destroy!
+    Analytics::Tracker.capture(
+      distinct_id: current_user.id,
+      event: Analytics::Events::EVENT_DELETED,
+      properties: { published: published },
+      experience: experience,
+    )
 
     render json: { type: 'success', success: true, message: "Event deleted" }
   rescue ActiveRecord::RecordNotFound

@@ -2,9 +2,9 @@ require "rails_helper"
 
 RSpec.describe Analytics::Config do
   describe ".enabled?" do
-    it "is false in the test environment regardless of POSTHOG_KEY" do
+    it "is false in the test environment regardless of POSTHOG_API_KEY" do
       allow(ENV).to receive(:[]).and_call_original
-      allow(ENV).to receive(:[]).with("POSTHOG_KEY").and_return("phc_present")
+      allow(ENV).to receive(:[]).with("POSTHOG_API_KEY").and_return("phc_present")
 
       expect(described_class.enabled?).to be(false)
     end

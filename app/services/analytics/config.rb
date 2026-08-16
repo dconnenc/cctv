@@ -1,29 +1,28 @@
 module Analytics
-  # Single source of truth for whether analytics is active and what config the
-  # browser client needs. Read at request time (never cached) so a deploy can
-  # flip analytics on/off purely via environment variables.
   module Config
-    module_function
-
     DEFAULT_HOST = "https://us.i.posthog.com".freeze
 
+    module_function
+
     def enabled?
-      ENV["POSTHOG_KEY"].present? && !Rails.env.test?
+      ENV["POSTHOG_API_KEY"].present? && !Rails.env.test?
     end
 
     def key
-      ENV["POSTHOG_KEY"].presence
+      ENV["POSTHOG_API_KEY"].presence
     end
 
+    # Always resolves to a host. The browser config block is rejected client-side
+    # when `host` is missing, so returning nil here would silently disable all
+    # frontend analytics in any environment that sets a key but not a host.
     def host
-      ENV.fetch("POSTHOG_HOST", DEFAULT_HOST)
+      ENV.fetch("POSTHOG_HOST", DEFAULT_HOST).presence || DEFAULT_HOST
     end
 
     def session_replay?
       ActiveModel::Type::Boolean.new.cast(ENV["POSTHOG_SESSION_REPLAY"]) == true
     end
 
-    # Serialized into the page for the browser SDK to read on boot.
     def client_config
       {
         enabled: enabled?,

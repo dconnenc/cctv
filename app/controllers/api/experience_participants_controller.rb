@@ -12,6 +12,8 @@ class Api::ExperienceParticipantsController < Api::BaseController
 
       Experiences::Broadcaster.new(@experience).broadcast_experience_update
 
+      track_event(Analytics::Events::PARTICIPANT_KICKED)
+
       render json: { success: true }
     end
   end

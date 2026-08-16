@@ -2,6 +2,7 @@ import { ReactNode, createContext, useCallback, useContext, useMemo, useState } 
 
 import { useParams } from 'react-router-dom';
 
+import { instrumentedFetch } from '@cctv/analytics';
 import {
   getStoredParticipantJWT,
   removeStoredAdminJWT,
@@ -62,7 +63,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         ...options.headers,
       };
 
-      const response = await fetch(url, { ...options, headers });
+      const response = await instrumentedFetch(
+        url,
+        { ...options, headers },
+        { source: 'participant' },
+      );
 
       if (response.status === 401) {
         qaLogger('401 on participant JWT; clearing');

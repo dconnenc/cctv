@@ -11,6 +11,17 @@ import type { AnalyticsEventName } from './events';
  */
 let initialized = false;
 
+/**
+ * The monitor is a projected display with no user behind it. Nothing from that
+ * route belongs in analytics, so this drops every event — including autocaptured
+ * pageviews, clicks and web vitals — at the SDK boundary rather than relying on
+ * each call site to remember.
+ */
+export function isMonitorView(): boolean {
+  if (typeof window === 'undefined') return false;
+  return window.location.pathname.includes('/monitor');
+}
+
 export function initAnalytics(): void {
   if (initialized) return;
 
@@ -24,6 +35,7 @@ export function initAnalytics(): void {
     person_profiles: 'identified_only',
     capture_exceptions: true,
     disable_session_recording: !config.sessionReplay,
+    before_send: (event) => (isMonitorView() ? null : event),
   });
   posthog.register({ environment: config.environment });
   initialized = true;
@@ -51,6 +63,15 @@ export function identifyExperienceGroup(experienceId: string, properties?: Prope
 export function setPersonProperties(properties: Properties): void {
   if (!initialized) return;
   posthog.setPersonProperties(properties);
+}
+
+/**
+ * Attaches the current route pattern to every subsequent event, so any breakdown
+ * can be sliced by page without each call site passing it.
+ */
+export function registerRoute(pattern: string): void {
+  if (!initialized) return;
+  posthog.register({ route: pattern });
 }
 
 export function resetAnalytics(): void {
