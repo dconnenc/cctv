@@ -5,6 +5,10 @@ description: Use when writing or modifying system specs. Auto-invoke for any fil
 
 # System Specs (Capybara/Cuprite)
 
+## Config
+
+System specs must simulate a real environment where possible.
+
 ## Pre-Action Assertions
 
 Before any click or link interaction whose availability depends on async state,
