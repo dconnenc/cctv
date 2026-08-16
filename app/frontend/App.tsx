@@ -42,6 +42,12 @@ const BlockPage = lazy(() =>
 );
 const ManageCreateBlock = lazy(() => import('@cctv/pages/ManageCreateBlock/ManageCreateBlock'));
 const ManageViewer = lazy(() => import('@cctv/pages/Manage/Viewer/ManageViewer'));
+const FocusMode = lazy(() => import('@cctv/pages/Manage/Focus/FocusMode'));
+const ManageParticipantsPage = lazy(
+  () => import('@cctv/pages/Manage/Subpages/ManageParticipantsPage'),
+);
+const ManagePlaybillPage = lazy(() => import('@cctv/pages/Manage/Subpages/ManagePlaybillPage'));
+const ManageDebugPage = lazy(() => import('@cctv/pages/Manage/Subpages/ManageDebugPage'));
 const Timeline = lazy(() => import('@cctv/pages/Timeline/Timeline'));
 
 function App() {
@@ -111,6 +117,10 @@ function App() {
 
                     <Route element={<RequireExperienceHostOrAdmin />}>
                       <Route path="manage" element={<ManageViewer />} />
+                      <Route path="manage/focus" element={<FocusMode />} />
+                      <Route path="manage/participants" element={<ManageParticipantsPage />} />
+                      <Route path="manage/playbill" element={<ManagePlaybillPage />} />
+                      <Route path="manage/debug" element={<ManageDebugPage />} />
                       <Route path="manage/blocks/new" element={<ManageCreateBlock />} />
                       <Route path="manage/blocks/:blockId" element={<BlockPage />} />
                       <Route path="timeline" element={<Timeline />} />

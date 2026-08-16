@@ -11,7 +11,7 @@ class Api::ExperienceAvatarController < Api::BaseController
       participant = Experiences::Orchestrator.new(experience: @experience, actor: @user)
         .update_participant_avatar!(participant: @participant, strokes: params.dig(:avatar, :strokes))
 
-      Experiences::Broadcaster.new(@experience).broadcast_experience_update
+      Experiences::Broadcaster.enqueue_update(@experience)
 
       ActionCable.server.broadcast(
         Experiences::Broadcaster.monitor_stream_key(@experience),

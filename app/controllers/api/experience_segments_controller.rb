@@ -35,7 +35,7 @@ class Api::ExperienceSegmentsController < Api::BaseController
       orchestrator.destroy_segment!(segment_id: params[:id])
 
       @experience.reload
-      Experiences::Broadcaster.new(@experience).broadcast_experience_update
+      Experiences::Broadcaster.enqueue_update(@experience)
 
       render json: { success: true }
     end
@@ -64,9 +64,10 @@ class Api::ExperienceSegmentsController < Api::BaseController
       end
 
       @experience.reload
-      Experiences::Broadcaster.new(@experience).broadcast_experience_update(
+      Experiences::Broadcaster.new(@experience).broadcast_profile_changes(
         profile_changes: old_fingerprints
       )
+      Experiences::Broadcaster.enqueue_update(@experience)
 
       render json: { success: true }
     end
@@ -100,7 +101,7 @@ class Api::ExperienceSegmentsController < Api::BaseController
 
   def broadcast_and_render(segment)
     @experience.reload
-    Experiences::Broadcaster.new(@experience).broadcast_experience_update
+    Experiences::Broadcaster.enqueue_update(@experience)
 
     render json: {
       success: true,

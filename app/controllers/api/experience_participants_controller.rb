@@ -10,7 +10,7 @@ class Api::ExperienceParticipantsController < Api::BaseController
     with_experience_orchestration do
       Experiences::Orchestrator.new(experience: @experience, actor: @user).kick_participant!(@participant)
 
-      Experiences::Broadcaster.new(@experience).broadcast_experience_update
+      Experiences::Broadcaster.enqueue_update(@experience)
 
       track_event(Analytics::Events::PARTICIPANT_KICKED)
 

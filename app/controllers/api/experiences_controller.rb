@@ -73,7 +73,7 @@ class Api::ExperiencesController < Api::BaseController
         experience: @experience, actor: @user
       ).open_lobby!
 
-      Experiences::Broadcaster.new(@experience).broadcast_experience_update
+      Experiences::Broadcaster.enqueue_update(@experience)
 
       track_event(Analytics::Events::LOBBY_OPENED)
 
@@ -91,7 +91,7 @@ class Api::ExperiencesController < Api::BaseController
         experience: @experience, actor: @user
       ).start!
 
-      Experiences::Broadcaster.new(@experience).broadcast_experience_update
+      Experiences::Broadcaster.enqueue_update(@experience)
 
       track_event(Analytics::Events::EXPERIENCE_STARTED)
 
@@ -109,7 +109,7 @@ class Api::ExperiencesController < Api::BaseController
         experience: @experience, actor: @user
       ).pause!
 
-      Experiences::Broadcaster.new(@experience).broadcast_experience_update
+      Experiences::Broadcaster.enqueue_update(@experience)
 
       track_event(Analytics::Events::EXPERIENCE_PAUSED)
 
@@ -127,7 +127,7 @@ class Api::ExperiencesController < Api::BaseController
         experience: @experience, actor: @user
       ).resume!
 
-      Experiences::Broadcaster.new(@experience).broadcast_experience_update
+      Experiences::Broadcaster.enqueue_update(@experience)
 
       track_event(Analytics::Events::EXPERIENCE_RESUMED)
 
@@ -142,7 +142,7 @@ class Api::ExperiencesController < Api::BaseController
   def clear_avatars
     ExperienceParticipant.where(experience_id: @experience.id).update_all(avatar: {})
 
-    Experiences::Broadcaster.new(@experience).broadcast_experience_update
+    Experiences::Broadcaster.enqueue_update(@experience)
 
     ActionCable.server.broadcast(
       Experiences::Broadcaster.monitor_stream_key(@experience),
@@ -158,7 +158,7 @@ class Api::ExperiencesController < Api::BaseController
     @experience.playbill_enabled = params[:playbill_enabled] unless params[:playbill_enabled].nil?
 
     if @experience.save
-      Experiences::Broadcaster.new(@experience).broadcast_experience_update
+      Experiences::Broadcaster.enqueue_update(@experience)
       render json: { success: true }
     else
       render json: { success: false, error: @experience.errors.full_messages.to_sentence }, status: :unprocessable_entity
@@ -289,8 +289,8 @@ class Api::ExperiencesController < Api::BaseController
     unless experience.user_registered?(user)
       experience.register_user(user, name: register_params[:participant_name])
 
-      Experiences::Broadcaster.new(experience).broadcast_experience_update
-
+      Experiences::Broadcaster.enqueue_update(experience)
+      
       Analytics::Tracker.capture(
         distinct_id: user.id,
         event: Analytics::Events::PARTICIPANT_REGISTERED,

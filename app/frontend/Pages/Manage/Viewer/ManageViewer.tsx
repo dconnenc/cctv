@@ -1,6 +1,8 @@
-import { ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import { BookOpen, Bug, Columns3, Pause, Play, X } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+
+import { BookOpen, Bug, Columns3, Focus, X } from 'lucide-react';
 
 import { trackManageAction } from '@cctv/analytics';
 import { useExperience } from '@cctv/contexts/ExperienceContext';
@@ -17,63 +19,13 @@ import { Block, ParticipantSummary } from '@cctv/types';
 
 import CreateBlock from '../CreateBlock/CreateBlock';
 import EditBlock from '../EditBlock/EditBlock';
+import ExperienceActionButton from '../ExperienceActionButton';
+import { getManageMode, setManageMode } from '../Focus/useManageMode';
 import ParticipantsTab from '../ParticipantsTab/ParticipantsTab';
 import PlaybillTab from '../PlaybillTab/PlaybillTab';
 import BlockDetailPanel from './BlockDetailPanel';
 import BlockSidebar from './BlockSidebar';
 import DebugPanel from './DebugPanel/DebugPanel';
-
-function ExperienceActionButton() {
-  const { experience } = useExperience();
-  const { startExperience } = useExperienceStart();
-  const { pauseExperience } = useExperiencePause();
-  const { resumeExperience } = useExperienceResume();
-
-  if (!experience) return null;
-
-  const config = useMemo<{
-    onClick: () => void;
-    icon: ReactNode;
-    label: string;
-    variant?: 'primary' | 'secondary' | 'ghost';
-  } | null>(() => {
-    switch (experience.status) {
-      case 'draft':
-      case 'lobby':
-        return {
-          onClick: startExperience,
-          icon: <Play size={16} />,
-          label: 'Start',
-          variant: 'primary',
-        };
-      case 'live':
-        return {
-          onClick: pauseExperience,
-          icon: <Pause size={16} />,
-          label: 'Pause',
-          variant: 'secondary',
-        };
-      case 'paused':
-        return {
-          onClick: resumeExperience,
-          icon: <Play size={16} />,
-          label: 'Resume',
-          variant: 'primary',
-        };
-      default:
-        return null;
-    }
-  }, [startExperience, pauseExperience, resumeExperience, experience?.status]);
-
-  if (!config) return null;
-
-  return (
-    <Button title={config.label} variant={config.variant} onClick={config.onClick}>
-      {config.icon}
-      <span>{config.label}</span>
-    </Button>
-  );
-}
 
 export default function ManageViewer() {
   const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
@@ -102,8 +54,12 @@ export default function ManageViewer() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  const navigate = useNavigate();
+  const redirectedRef = useRef(false);
+
   const {
     experience,
+    code,
     error: experienceError,
     isLoading,
     wsReady,
@@ -125,6 +81,14 @@ export default function ManageViewer() {
     busyBlockId,
     statusError,
   } = useBlockPresentation();
+
+  useEffect(() => {
+    if (redirectedRef.current || !code) return;
+    redirectedRef.current = true;
+    if (getManageMode() === 'focus') {
+      navigate(`/experiences/${code}/manage/focus`, { replace: true });
+    }
+  }, [code, navigate]);
 
   const { reorder: reorderBlock } = useReorderBlock();
   const { detach: detachFromParent, error: detachError } = useDetachBlockFromParent();
@@ -251,6 +215,17 @@ export default function ManageViewer() {
             </div>
             <div className="flex items-center gap-2">
               <ExperienceActionButton />
+              <Button
+                onClick={() => {
+                  setManageMode('focus');
+                  navigate(`/experiences/${code}/manage/focus`);
+                }}
+                variant="secondary"
+                title="Focus mode"
+              >
+                <Focus size={16} />
+                <span>Focus</span>
+              </Button>
               <Button
                 to={`/experiences/${experience?.code}/timeline`}
                 variant="secondary"

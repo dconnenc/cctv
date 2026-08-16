@@ -27,14 +27,20 @@ class Experiences::Broadcaster
     Digest::SHA1.hexdigest([participant.role, segments.join(","), targeted_ids.join(",")].join(":"))
   end
 
-  def broadcast_experience_update(profile_changes: [])
+  def self.enqueue_update(experience)
+    Experiences::BroadcastUpdateJob.perform_later(experience.id)
+  end
+
+  def broadcast_profile_changes(profile_changes:)
     Array(profile_changes).each do |change|
       broadcast_resubscribe_if_profile_changed(
         participant: change[:participant],
         old_fingerprint: change[:old_fingerprint]
       )
     end
+  end
 
+  def broadcast_experience_update
     Rails.logger.info(
       "[Broadcaster] Broadcasting to experience #{experience.code}"
     )
