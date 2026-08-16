@@ -20,6 +20,7 @@ RSpec.describe "Segment visibility", type: :system do
       find("select[aria-label='Add segment']").select("Red")
     end
 
+    start_experience
     select_and_present(1, kind: "announcement")
 
     using_session(:participant) do
