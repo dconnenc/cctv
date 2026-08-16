@@ -14,15 +14,7 @@ import {
 import { useExperience } from '@cctv/contexts/ExperienceContext';
 import { Button } from '@cctv/core/Button/Button';
 import { SegmentBadge } from '@cctv/core/SegmentBadge/SegmentBadge';
-import {
-  AnnouncementPayload,
-  BLOCK_KIND_LABELS,
-  Block,
-  BlockKind,
-  Experience,
-  ParticipantSummary,
-  QuestionPayload,
-} from '@cctv/types';
+import { BLOCK_KIND_LABELS, Block, BlockKind, Experience, ParticipantSummary } from '@cctv/types';
 
 import FamilyFeudManager from '../../Block/FamilyFeudManager/FamilyFeudManager';
 import GuessWhoManager from '../../Block/GuessWhoManager/GuessWhoManager';
@@ -94,8 +86,7 @@ export default function BlockDetailPanel({
   // A synthetic question has no participant/monitor view; selecting it opens the
   // Family Feud manager (focused on that question) so it can be sent to the agent.
   const isSyntheticQuestion =
-    selectedBlock.kind === BlockKind.QUESTION &&
-    Boolean((selectedBlock.payload as QuestionPayload)?.synthetic);
+    selectedBlock.kind === BlockKind.QUESTION && Boolean(selectedBlock.payload.synthetic);
   const syntheticParentBlock = isSyntheticQuestion
     ? experience?.blocks?.find((b) => b.id === selectedBlock.parent_block_id)
     : undefined;
@@ -216,8 +207,7 @@ export default function BlockDetailPanel({
       {!syntheticParentBlock && (
         <div className="space-y-4">
           <div className="flex items-center gap-4">
-            <div
-              role="group"
+            <fieldset
               aria-label="Preview mode"
               className="inline-flex items-center gap-1 p-1 bg-[hsl(var(--muted))] rounded-lg"
             >
@@ -248,7 +238,7 @@ export default function BlockDetailPanel({
               >
                 Responses ({selectedBlock?.responses?.total ?? 0})
               </Button>
-            </div>
+            </fieldset>
 
             {viewMode === 'participant' && (
               <select
@@ -304,7 +294,7 @@ export default function BlockDetailPanel({
                   emptyMessage={
                     viewMode === 'monitor'
                       ? selectedBlock.kind === BlockKind.ANNOUNCEMENT &&
-                        (selectedBlock.payload as AnnouncementPayload).show_on_monitor === false
+                        selectedBlock.payload.show_on_monitor === false
                         ? 'This block is not shown on the monitor'
                         : 'No block on Monitor'
                       : 'No block for participant'
@@ -315,7 +305,7 @@ export default function BlockDetailPanel({
                 />
               ) : viewMode === 'monitor' &&
                 selectedBlock.kind === BlockKind.ANNOUNCEMENT &&
-                (selectedBlock.payload as AnnouncementPayload).show_on_monitor === false ? (
+                selectedBlock.payload.show_on_monitor === false ? (
                 <p className="text-sm text-[hsl(var(--muted-foreground))]">
                   This block is not shown on the monitor
                 </p>

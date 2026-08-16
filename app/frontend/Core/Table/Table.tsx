@@ -2,17 +2,33 @@ import { ReactNode, memo } from 'react';
 
 import styles from './Table.module.scss';
 
-export interface Column<T extends object> {
+type TextValuedKey<T> = {
+  [K in keyof T]-?: T[K] extends string | number | null | undefined ? K : never;
+}[keyof T] &
+  Extract<keyof T, string>;
+
+interface ColumnHeader {
   key: string;
   label: string;
   isHidden?: boolean;
-  Cell?: (value: T) => ReactNode;
 }
+
+export type Column<T extends object> =
+  | (ColumnHeader & { key: TextValuedKey<T>; Cell?: undefined })
+  | (ColumnHeader & { Cell: (value: T) => ReactNode });
 
 export interface TableProps<T extends object> {
   columns: Column<T>[];
   data: T[];
   emptyState?: ReactNode;
+  getRowKey?: (row: T) => string;
+}
+
+function cellContent<T extends object>(column: Column<T>, rowData: T): ReactNode {
+  if (column.Cell) return column.Cell(rowData);
+  const value = rowData[column.key];
+  if (value === null || value === undefined) return null;
+  return String(value);
 }
 
 function TableRow<T extends object>({
@@ -24,25 +40,30 @@ function TableRow<T extends object>({
   columns: Column<T>[];
   rowIndex: number;
 }) {
-  const row = columns.map(
-    (column) => column.Cell?.(rowData) ?? (rowData as T)[column.key as keyof T],
-  );
-  const rowKey = 'row-' + rowIndex;
   return (
     <tr aria-rowindex={rowIndex + 1}>
-      {row.map((cell, cellIndex) => (
-        <td key={rowKey + '-cell-' + cellIndex}>{cell as ReactNode}</td>
+      {columns.map((column) => (
+        <td key={column.key}>{cellContent(column, rowData)}</td>
       ))}
     </tr>
   );
 }
 
+// SAFETY: memo forwards the props object to TableRow untouched, so the runtime
+// contract is TableRow's own signature. React's MemoExoticComponent type erases
+// the `T extends object` parameter to its constraint; this restores it.
 const MemoizedTableRow = memo(TableRow) as typeof TableRow;
 
-export function Table<T extends object>({ columns, data, emptyState }: TableProps<T>) {
+export function Table<T extends object>({ columns, data, emptyState, getRowKey }: TableProps<T>) {
   if (!data?.length) {
     return <div className={styles.emptyState}>{emptyState}</div>;
   }
+
+  const rows = data.map((rowData, index) => ({
+    key: getRowKey?.(rowData) ?? `row-${index}`,
+    rowIndex: index,
+    rowData,
+  }));
 
   return (
     <div className={styles.tableWrap}>
@@ -50,22 +71,19 @@ export function Table<T extends object>({ columns, data, emptyState }: TableProp
         <thead>
           <tr>
             {columns.map((column) => (
-              <th
-                key={column.key as string}
-                aria-label={column.isHidden ? column.label : undefined}
-              >
+              <th key={column.key} aria-label={column.isHidden ? column.label : undefined}>
                 {column.isHidden ? null : column.label}
               </th>
             ))}
           </tr>
         </thead>
         <tbody>
-          {data.map((rowData, index) => (
+          {rows.map((row) => (
             <MemoizedTableRow
-              key={'row:' + index}
-              rowData={rowData}
+              key={row.key}
+              rowData={row.rowData}
               columns={columns}
-              rowIndex={index}
+              rowIndex={row.rowIndex}
             />
           ))}
         </tbody>

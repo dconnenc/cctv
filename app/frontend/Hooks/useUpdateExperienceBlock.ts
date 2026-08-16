@@ -40,7 +40,7 @@ export function useUpdateExperienceBlock() {
         return data;
       } catch (e: unknown) {
         const msg =
-          (e as Error)?.message === 'Authentication expired'
+          e instanceof Error && e.message === 'Authentication expired'
             ? 'Authentication expired'
             : 'Connection error. Please try again.';
         setError(msg);

@@ -47,7 +47,7 @@ describe('AnalyticsErrorBoundary', () => {
     expect(captureExceptionMock).toHaveBeenCalledTimes(1);
     const [error, properties] = captureExceptionMock.mock.calls[0];
     expect(error).toBeInstanceOf(Error);
-    expect((error as Error).message).toBe('kaboom');
+    expect(error.message).toBe('kaboom');
     expect(properties).toMatchObject({ source: 'react_error_boundary' });
   });
 

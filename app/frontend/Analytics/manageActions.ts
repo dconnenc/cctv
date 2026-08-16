@@ -1,3 +1,5 @@
+import type { Properties } from 'posthog-js';
+
 import { capture } from './client';
 import { AnalyticsEvent } from './events';
 
@@ -10,6 +12,6 @@ import { AnalyticsEvent } from './events';
  * impersonation switches, selecting a block in the program table — which would
  * otherwise leave gaps in that timeline.
  */
-export function trackManageAction(action: string, properties: Record<string, unknown> = {}): void {
+export function trackManageAction(action: string, properties: Properties = {}): void {
   capture(AnalyticsEvent.ManageAction, { action, ...properties });
 }

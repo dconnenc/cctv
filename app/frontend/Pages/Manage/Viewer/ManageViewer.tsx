@@ -36,12 +36,9 @@ export default function ManageViewer() {
   const [isPlaybillDialogOpen, setIsPlaybillDialogOpen] = useState(false);
   const [dismissedError, setDismissedError] = useState(false);
   const [viewMode, setViewMode] = useState<'monitor' | 'participant' | 'responses'>('monitor');
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
-    if (typeof window !== 'undefined') {
-      return window.innerWidth < 768;
-    }
-    return false;
-  });
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(
+    () => 'window' in globalThis && window.innerWidth < 768,
+  );
 
   useEffect(() => {
     const handleResize = () => {

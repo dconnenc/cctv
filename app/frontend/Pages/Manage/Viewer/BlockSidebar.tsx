@@ -1,16 +1,19 @@
-import { useEffect, useMemo, useState } from 'react';
+import { type MouseEvent, useEffect, useMemo, useState } from 'react';
 
 import { DragDropContext, Draggable, type DropResult, Droppable } from '@hello-pangea/dnd';
 import classNames from 'classnames';
 import { ChevronLeft, ChevronRight, GripVertical, Link2, Plus, Sparkles } from 'lucide-react';
 
 import { Button } from '@cctv/core/Button/Button';
-import { BLOCK_KIND_LABELS, Block, BlockKind, QuestionPayload } from '@cctv/types';
+import { BLOCK_KIND_LABELS, Block, BlockKind } from '@cctv/types';
 
 import styles from './BlockSidebar.module.scss';
 
 const isSyntheticQuestion = (block: Block): boolean =>
-  block.kind === BlockKind.QUESTION && Boolean((block.payload as QuestionPayload)?.synthetic);
+  block.kind === BlockKind.QUESTION && Boolean(block.payload.synthetic);
+
+const isDragHandleClick = (event: MouseEvent<HTMLButtonElement>): boolean =>
+  event.target instanceof Element && event.target.closest('[data-drag-handle]') !== null;
 
 interface BlockSidebarProps {
   blocks: Block[];
@@ -171,14 +174,17 @@ export default function BlockSidebar({
                                 [styles.hiddenBlock]: block.status === 'hidden',
                                 [styles.dragging]: snapshot.isDragging,
                               })}
-                              onClick={() => onSelectBlock(block.id)}
+                              onClick={(event) => {
+                                if (isDragHandleClick(event)) return;
+                                onSelectBlock(block.id);
+                              }}
                             >
                               <div className={styles.blockRow}>
                                 <span
                                   {...dragProvided.dragHandleProps}
                                   data-drag-handle
+                                  aria-label={`Reorder block ${index + 1}`}
                                   className={styles.dragHandle}
-                                  onClick={(e) => e.stopPropagation()}
                                 >
                                   <GripVertical size={14} />
                                 </span>

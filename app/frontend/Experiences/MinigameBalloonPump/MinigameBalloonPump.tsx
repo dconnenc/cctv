@@ -6,7 +6,11 @@ import { useExperience } from '@cctv/contexts/ExperienceContext';
 import { useExperienceState } from '@cctv/contexts/ExperienceStateContext';
 import { useMinigameBalloonPump } from '@cctv/hooks/useMinigameBalloonPump';
 import { useSoundEffect } from '@cctv/sounds';
-import { MinigameBalloonPumpBlock, MinigameBalloonPumpPodiumEntry } from '@cctv/types';
+import {
+  AvatarStroke,
+  MinigameBalloonPumpBlock,
+  MinigameBalloonPumpPodiumEntry,
+} from '@cctv/types';
 
 import Balloon from './Balloon';
 import Pump from './Pump';
@@ -216,6 +220,23 @@ const AVATAR_DRAW_SIZE = 320;
 const AVATAR_DISPLAY_SIZE = 112;
 const AVATAR_SCALE = AVATAR_DISPLAY_SIZE / AVATAR_DRAW_SIZE;
 
+interface IdentifiedStroke {
+  id: string;
+  stroke: AvatarStroke;
+}
+
+// Strokes carry no id, so identity comes from the drawn geometry plus an
+// occurrence counter that keeps repeated identical marks distinct.
+function identifyStrokes(strokes: AvatarStroke[]): IdentifiedStroke[] {
+  const occurrences = new Map<string, number>();
+  return strokes.map((stroke) => {
+    const drawn = `${stroke.color}:${stroke.width}:${stroke.points.join(',')}`;
+    const occurrence = occurrences.get(drawn) ?? 0;
+    occurrences.set(drawn, occurrence + 1);
+    return { id: `${drawn}#${occurrence}`, stroke };
+  });
+}
+
 function PodiumAvatar({ entry }: { entry: MinigameBalloonPumpPodiumEntry }) {
   const strokes = entry.avatar?.strokes ?? [];
   if (strokes.length === 0) {
@@ -225,12 +246,12 @@ function PodiumAvatar({ entry }: { entry: MinigameBalloonPumpPodiumEntry }) {
     <div className={styles.podiumAvatar}>
       <Stage width={AVATAR_DISPLAY_SIZE} height={AVATAR_DISPLAY_SIZE}>
         <Layer scaleX={AVATAR_SCALE} scaleY={AVATAR_SCALE}>
-          {strokes.map((s, i) => (
+          {identifyStrokes(strokes).map(({ id, stroke }) => (
             <Line
-              key={i}
-              points={s.points}
-              stroke={s.color}
-              strokeWidth={s.width}
+              key={id}
+              points={stroke.points}
+              stroke={stroke.color}
+              strokeWidth={stroke.width}
               lineCap="round"
             />
           ))}

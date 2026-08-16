@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import { Bug, ChevronDown, ChevronUp, Play, Users } from 'lucide-react';
 
@@ -46,6 +46,7 @@ export default function DebugPanel({ selectedBlock }: DebugPanelProps) {
   const [showParticipants, setShowParticipants] = useState(false);
   const [delayMs, setDelayMs] = useState(100);
   const [isOpeningBlocks, setIsOpeningBlocks] = useState(false);
+  const hasAutoFetchedJwts = useRef(false);
 
   const { experience, code } = useExperience();
   const { adminFetch } = useAdminAuth();
@@ -69,15 +70,15 @@ export default function DebugPanel({ selectedBlock }: DebugPanelProps) {
     error: simulateError,
   } = useSimulateResponses();
 
-  // Auto-fetch JWTs for existing participants when panel opens
+  // Auto-fetch JWTs for existing participants once, when the panel opens
   useEffect(() => {
-    if (existingParticipants.length > 0) {
-      const participantsWithoutJwts = existingParticipants.filter((p) => !p.jwt);
-      if (participantsWithoutJwts.length > 0) {
-        fetchJwtsForExisting();
-      }
+    if (hasAutoFetchedJwts.current) return;
+    hasAutoFetchedJwts.current = true;
+
+    if (existingParticipants.some((p) => !p.jwt)) {
+      fetchJwtsForExisting();
     }
-  }, []); // Only run on mount
+  }, [existingParticipants, fetchJwtsForExisting]);
 
   const handleCreateParticipants = async () => {
     await createParticipants(userCount);
@@ -98,6 +99,12 @@ export default function DebugPanel({ selectedBlock }: DebugPanelProps) {
   const ensureBlocksOpen = async (block: Block): Promise<boolean> => {
     if (!code || !adminFetch) return false;
 
+    const requestBlockStatus = (blockId: string, action: 'open' | 'close'): Promise<Response> =>
+      adminFetch(
+        `/api/experiences/${encodeURIComponent(code)}/blocks/${encodeURIComponent(blockId)}/${action}`,
+        { method: 'POST' },
+      );
+
     setIsOpeningBlocks(true);
 
     try {
@@ -107,11 +114,7 @@ export default function DebugPanel({ selectedBlock }: DebugPanelProps) {
       if (parentBlock) {
         // This is a child block - ensure parent is open first
         if (parentBlock.status !== 'open') {
-          // Open parent first
-          const parentRes = await adminFetch(
-            `/api/experiences/${encodeURIComponent(code)}/blocks/${encodeURIComponent(parentBlock.id)}/open`,
-            { method: 'POST' },
-          );
+          const parentRes = await requestBlockStatus(parentBlock.id, 'open');
           if (!parentRes.ok) {
             console.error('Failed to open parent block');
             return false;
@@ -121,19 +124,11 @@ export default function DebugPanel({ selectedBlock }: DebugPanelProps) {
         // Close any other open children of the same parent (only one child can be active)
         const openSiblings =
           parentBlock.children?.filter((c) => c.id !== block.id && c.status === 'open') || [];
-        for (const sibling of openSiblings) {
-          await adminFetch(
-            `/api/experiences/${encodeURIComponent(code)}/blocks/${encodeURIComponent(sibling.id)}/close`,
-            { method: 'POST' },
-          );
-        }
+        await Promise.all(openSiblings.map((sibling) => requestBlockStatus(sibling.id, 'close')));
 
         // Open the target child block
         if (block.status !== 'open') {
-          const res = await adminFetch(
-            `/api/experiences/${encodeURIComponent(code)}/blocks/${encodeURIComponent(block.id)}/open`,
-            { method: 'POST' },
-          );
+          const res = await requestBlockStatus(block.id, 'open');
           if (!res.ok) {
             console.error('Failed to open child block');
             return false;
@@ -149,31 +144,19 @@ export default function DebugPanel({ selectedBlock }: DebugPanelProps) {
             (b) => b.id !== block.id && b.status === 'open' && !b.parent_block_ids?.length,
           ) || [];
 
-        for (const otherParent of otherOpenParents) {
-          // Close children first
-          if (otherParent.children) {
-            for (const child of otherParent.children) {
-              if (child.status === 'open') {
-                await adminFetch(
-                  `/api/experiences/${encodeURIComponent(code)}/blocks/${encodeURIComponent(child.id)}/close`,
-                  { method: 'POST' },
-                );
-              }
-            }
-          }
-          // Close the parent
-          await adminFetch(
-            `/api/experiences/${encodeURIComponent(code)}/blocks/${encodeURIComponent(otherParent.id)}/close`,
-            { method: 'POST' },
-          );
-        }
+        await Promise.all(
+          otherOpenParents.map(async (otherParent) => {
+            // Close children first
+            const openChildren = otherParent.children?.filter((c) => c.status === 'open') || [];
+            await Promise.all(openChildren.map((child) => requestBlockStatus(child.id, 'close')));
+            // Close the parent
+            await requestBlockStatus(otherParent.id, 'close');
+          }),
+        );
 
         // Open the parent block
         if (block.status !== 'open') {
-          const res = await adminFetch(
-            `/api/experiences/${encodeURIComponent(code)}/blocks/${encodeURIComponent(block.id)}/open`,
-            { method: 'POST' },
-          );
+          const res = await requestBlockStatus(block.id, 'open');
           if (!res.ok) {
             console.error('Failed to open parent block');
             return false;
@@ -183,10 +166,7 @@ export default function DebugPanel({ selectedBlock }: DebugPanelProps) {
         // Open the first child
         const firstChild = block.children[0];
         if (firstChild && firstChild.status !== 'open') {
-          const res = await adminFetch(
-            `/api/experiences/${encodeURIComponent(code)}/blocks/${encodeURIComponent(firstChild.id)}/open`,
-            { method: 'POST' },
-          );
+          const res = await requestBlockStatus(firstChild.id, 'open');
           if (!res.ok) {
             console.error('Failed to open first child block');
             return false;
@@ -195,10 +175,7 @@ export default function DebugPanel({ selectedBlock }: DebugPanelProps) {
       } else {
         // Simple block with no parent/children - just open it
         if (block.status !== 'open') {
-          const res = await adminFetch(
-            `/api/experiences/${encodeURIComponent(code)}/blocks/${encodeURIComponent(block.id)}/open`,
-            { method: 'POST' },
-          );
+          const res = await requestBlockStatus(block.id, 'open');
           if (!res.ok) {
             console.error('Failed to open block');
             return false;

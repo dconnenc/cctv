@@ -20,13 +20,13 @@ export function getAnalyticsConfig(): AnalyticsConfig | null {
 }
 
 function readConfig(): AnalyticsConfig | null {
-  if (typeof document === 'undefined') return null;
+  if (!('document' in globalThis)) return null;
 
   const element = document.getElementById('analytics-config');
   if (!element?.textContent) return null;
 
   try {
-    const parsed = JSON.parse(element.textContent) as Partial<AnalyticsConfig>;
+    const parsed: Partial<AnalyticsConfig> = JSON.parse(element.textContent);
     if (!parsed.enabled || !parsed.key || !parsed.host) return null;
 
     return {

@@ -1,8 +1,18 @@
-import type { ParticipantSummary } from '@cctv/types';
+import type { JsonValue, ParticipantSummary } from '@cctv/types';
 
 export function getFormData<T>(form: HTMLFormElement): Partial<T> {
   const formData = new FormData(form);
+  // SAFETY: every key here is the `name` of a control the caller's own form rendered, and
+  // callers pass that form's field contract as T; Partial covers controls left unrendered.
   return Object.fromEntries(formData.entries()) as Partial<T>;
+}
+
+export function getFieldValue(form: HTMLFormElement, name: string): string {
+  const field = form.elements.namedItem(name);
+  if (field instanceof HTMLInputElement || field instanceof HTMLTextAreaElement) {
+    return field.value.trim();
+  }
+  return '';
 }
 
 export const TEMPLATE_NAME_FALLBACK = 'friend';
@@ -22,23 +32,9 @@ export function isNotNull<T>(value: T): value is NonNullable<T> {
   return value !== null && value !== undefined;
 }
 
-export function isNotEmpty<T>(value: T): value is NonNullable<T> {
-  if (value === null || value === undefined) return false;
-
-  if (value && typeof value === 'object') {
-    return Object.keys(value).length > 0;
-  }
-
-  return value !== '';
-}
-
 export function qaLogger(output: string) {
   try {
-    // ENV check in the future for non prod envs
-    // if (process.env.QA_LOGGING !== "true") return null
-    if (true) {
-      console.log(`[QA] - ${output}`);
-    }
+    console.log(`[QA] - ${output}`);
   } catch (error) {
     console.error('[QA Logger Error]:', error);
   }
@@ -52,13 +48,20 @@ export const capitalize = (s?: string | null) => (s ? s.charAt(0).toUpperCase() 
 const SESSION_CREATED_EXPERIENCES_KEY = 'created_experiences';
 export type CreatedExperience = { code: string; name: string };
 
+function readCreatedExperience(entry: JsonValue): CreatedExperience[] {
+  if (entry === null || Array.isArray(entry) || !(entry instanceof Object)) return [];
+  const { code, name } = entry;
+  if (!code || !name) return [];
+  return [{ code: String(code), name: String(name) }];
+}
+
 export function getSessionCreatedExperiences(): CreatedExperience[] {
   try {
     const raw = sessionStorage.getItem(SESSION_CREATED_EXPERIENCES_KEY);
     if (!raw) return [];
-    const parsed = JSON.parse(raw) as CreatedExperience[];
-    if (Array.isArray(parsed)) return parsed.filter((e) => e && e.code && e.name);
-    return [];
+    const parsed: JsonValue = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.flatMap(readCreatedExperience);
   } catch {
     return [];
   }

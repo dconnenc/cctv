@@ -13,11 +13,23 @@ beforeAll(() => {
   };
 });
 
-interface MockComponentProps {
+interface MockStageProps {
+  children?: ReactNode;
+  width?: number;
+  height?: number;
+}
+
+interface MockLayerProps {
+  children?: ReactNode;
+}
+
+interface MockGroupProps {
   children?: ReactNode;
   opacity?: number;
+}
+
+interface MockLineProps {
   stroke?: string;
-  [key: string]: unknown;
 }
 
 interface MockKonvaNode {
@@ -26,13 +38,20 @@ interface MockKonvaNode {
   batchDraw: () => void;
 }
 
-vi.mock('react-konva', () => {
-  const Stage = ({ children, ...props }: MockComponentProps) => (
-    <div data-testid="konva-stage" {...props}>
+function MockStage({ children, width, height }: MockStageProps) {
+  return (
+    <div data-testid="konva-stage" data-width={width} data-height={height}>
       {children}
     </div>
   );
-  const Layer = forwardRef(({ children }: MockComponentProps, ref: Ref<MockKonvaNode>) => {
+}
+
+function MockLine({ stroke }: MockLineProps) {
+  return <div data-testid="konva-line" data-stroke={stroke} />;
+}
+
+vi.mock('react-konva', () => {
+  const Layer = forwardRef(({ children }: MockLayerProps, ref: Ref<MockKonvaNode>) => {
     useImperativeHandle(ref, () => ({
       position: () => {},
       scale: () => {},
@@ -40,24 +59,19 @@ vi.mock('react-konva', () => {
     }));
     return <div data-testid="konva-layer">{children}</div>;
   });
-  const Group = forwardRef(
-    ({ children, opacity, ...props }: MockComponentProps, ref: Ref<MockKonvaNode>) => {
-      useImperativeHandle(ref, () => ({
-        position: () => {},
-        scale: () => {},
-        batchDraw: () => {},
-      }));
-      return (
-        <div data-testid="konva-group" data-opacity={opacity} {...props}>
-          {children}
-        </div>
-      );
-    },
-  );
-  const Line = ({ stroke, ...props }: MockComponentProps) => (
-    <div data-testid="konva-line" data-stroke={stroke} {...props} />
-  );
-  return { Stage, Layer, Group, Line };
+  const Group = forwardRef(({ children, opacity }: MockGroupProps, ref: Ref<MockKonvaNode>) => {
+    useImperativeHandle(ref, () => ({
+      position: () => {},
+      scale: () => {},
+      batchDraw: () => {},
+    }));
+    return (
+      <div data-testid="konva-group" data-opacity={opacity}>
+        {children}
+      </div>
+    );
+  });
+  return { Stage: MockStage, Layer, Group, Line: MockLine };
 });
 
 const mockMonitorView = vi.fn();

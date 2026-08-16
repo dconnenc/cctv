@@ -22,11 +22,11 @@ export function useBlockPresentation() {
       setStatusError(null);
 
       const openBlocks = experience?.blocks ?? [];
-      for (const openBlock of openBlocks) {
-        if (openBlock.id !== block.id && openBlock.status === 'open') {
-          await changeStatus(openBlock, 'closed');
-        }
-      }
+      await Promise.all(
+        openBlocks
+          .filter((openBlock) => openBlock.id !== block.id && openBlock.status === 'open')
+          .map((openBlock) => changeStatus(openBlock, 'closed')),
+      );
 
       if (block.status !== 'open') {
         await changeStatus(block, 'open');

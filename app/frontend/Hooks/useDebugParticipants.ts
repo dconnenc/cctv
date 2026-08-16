@@ -11,6 +11,12 @@ export interface DebugParticipant {
   jwt?: string;
 }
 
+interface DebugParticipantsResponse {
+  success?: boolean;
+  error?: string;
+  participants: DebugParticipant[];
+}
+
 export function useDebugParticipants() {
   const { code, experience } = useExperience();
   const { adminFetch } = useAdminAuth();
@@ -70,7 +76,7 @@ export function useDebugParticipants() {
           },
         );
 
-        const data = await res.json();
+        const data: DebugParticipantsResponse = await res.json();
 
         if (!res.ok || !data?.success) {
           const msg = data?.error || 'Failed to create debug participants';
@@ -78,7 +84,7 @@ export function useDebugParticipants() {
           return [];
         }
 
-        const newParticipants = data.participants as DebugParticipant[];
+        const newParticipants = data.participants;
         setCreatedParticipants((prev) => [...prev, ...newParticipants]);
 
         // Also store JWTs in the map so they persist when participants move to existingParticipants
@@ -136,7 +142,7 @@ export function useDebugParticipants() {
         },
       );
 
-      const data = await res.json();
+      const data: DebugParticipantsResponse = await res.json();
 
       if (!res.ok || !data?.success) {
         const msg = data?.error || 'Failed to fetch participant JWTs';
@@ -144,7 +150,7 @@ export function useDebugParticipants() {
         return;
       }
 
-      const participantsWithJwts = data.participants as DebugParticipant[];
+      const participantsWithJwts = data.participants;
       setParticipantJwts((prev) => {
         const newMap = new Map(prev);
         for (const p of participantsWithJwts) {

@@ -18,7 +18,7 @@ let initialized = false;
  * each call site to remember.
  */
 export function isMonitorView(): boolean {
-  if (typeof window === 'undefined') return false;
+  if (!('window' in globalThis)) return false;
   return window.location.pathname.includes('/monitor');
 }
 
@@ -79,7 +79,7 @@ export function resetAnalytics(): void {
   posthog.reset();
 }
 
-export function captureException(error: unknown, properties?: Properties): void {
+export function captureException(error: Error, properties?: Properties): void {
   if (!initialized) return;
   posthog.captureException(error, properties);
 }

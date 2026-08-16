@@ -5,9 +5,9 @@ import { TextInput } from '@cctv/core/TextInput/TextInput';
 import {
   Block,
   BlockComponentProps,
+  BlockKind,
   FamilyFeudData,
   FamilyFeudPayload,
-  QuestionPayload,
 } from '@cctv/types';
 
 import sharedStyles from '../CreateBlock.module.scss';
@@ -60,22 +60,29 @@ export const familyFeudPayloadToFormData = (
 ): FamilyFeudData => ({
   title: payload.title || '',
   questions: (children || []).map((child) => {
-    const childPayload = child.payload as QuestionPayload;
+    const childPayload = child.kind === BlockKind.QUESTION ? child.payload : null;
     return {
       id: child.id,
-      question: childPayload.question || '',
-      synthetic: childPayload.synthetic ?? false,
+      question: childPayload?.question || '',
+      synthetic: childPayload?.synthetic ?? false,
     };
   }),
 });
 
+export type FamilyFeudQuestionPayload = {
+  question: string;
+  formKey: string;
+  inputType: string;
+  synthetic?: boolean;
+};
+
 export const buildFamilyFeudQuestions = (
   data: FamilyFeudData,
-): Array<{ payload: Record<string, string | number | boolean> }> => {
+): Array<{ payload: FamilyFeudQuestionPayload }> => {
   return data.questions
     .filter((q) => q.synthetic || q.question.trim())
     .map((q, index) => {
-      const payload: Record<string, string | number | boolean> = {
+      const payload: FamilyFeudQuestionPayload = {
         question: q.question.trim(),
         formKey: `answer_${index}`,
         inputType: 'text',

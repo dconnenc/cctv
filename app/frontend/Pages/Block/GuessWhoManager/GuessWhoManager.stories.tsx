@@ -6,45 +6,47 @@ import { ExperienceSeeder } from '../../../../../.storybook/ExperienceSeeder';
 import { lobbyExperience, mockParticipants } from '../../../../../.storybook/fixtures';
 import GuessWhoManager from './GuessWhoManager';
 
-const sampleClues: GuessWhoClue[] = [
-  {
-    id: 'clue1',
-    prompt: 'How tall are you?',
-    answer: { text: '6\'2"' },
-    photo_url: null,
-    source_block_id: 'q1',
-    block_kind: BlockKind.QUESTION,
-    position: 0,
-    hidden: false,
-  },
-  {
-    id: 'clue2',
-    prompt: 'Favorite ice cream?',
-    answer: { text: 'Mint chip' },
-    photo_url: null,
-    source_block_id: 'q2',
-    block_kind: BlockKind.QUESTION,
-    position: 1,
-    hidden: false,
-  },
-  {
-    id: 'clue3',
-    prompt: 'What city were you born in?',
-    answer: { text: 'Detroit' },
-    photo_url: null,
-    source_block_id: 'q3',
-    block_kind: BlockKind.QUESTION,
-    position: 2,
-    hidden: true,
-  },
-];
+function buildClues(idPrefix: string): GuessWhoClue[] {
+  return [
+    {
+      id: `${idPrefix}-clue1`,
+      prompt: 'How tall are you?',
+      answer: { text: '6\'2"' },
+      photo_url: null,
+      source_block_id: 'q1',
+      block_kind: BlockKind.QUESTION,
+      position: 0,
+      hidden: false,
+    },
+    {
+      id: `${idPrefix}-clue2`,
+      prompt: 'Favorite ice cream?',
+      answer: { text: 'Mint chip' },
+      photo_url: null,
+      source_block_id: 'q2',
+      block_kind: BlockKind.QUESTION,
+      position: 1,
+      hidden: false,
+    },
+    {
+      id: `${idPrefix}-clue3`,
+      prompt: 'What city were you born in?',
+      answer: { text: 'Detroit' },
+      photo_url: null,
+      source_block_id: 'q3',
+      block_kind: BlockKind.QUESTION,
+      position: 2,
+      hidden: true,
+    },
+  ];
+}
 
 const contestant1: GuessWhoContestant = {
   contestant_user_id: 'u1',
   contestant: { user_id: 'u1', name: 'Alice', avatar: mockParticipants[0].avatar },
   mystery_user_id: 'u2',
   mystery: { user_id: 'u2', name: 'Bob', avatar: mockParticipants[1].avatar },
-  clues: sampleClues,
+  clues: buildClues('c1'),
   current_clue_index: 1,
   board_candidate_ids: ['u2', 'u3', 'u4'],
   eliminated_user_ids: ['u3'],
@@ -57,7 +59,7 @@ const contestant2: GuessWhoContestant = {
   contestant: { user_id: 'u3', name: 'Charlie', avatar: mockParticipants[2].avatar },
   mystery_user_id: 'u4',
   mystery: { user_id: 'u4', name: 'Diana', avatar: mockParticipants[3].avatar },
-  clues: sampleClues.map((c) => ({ ...c, id: `${c.id}-b` })),
+  clues: buildClues('c2'),
   current_clue_index: 0,
   eliminated_user_ids: [],
   unanswered_user_ids: ['u2'],

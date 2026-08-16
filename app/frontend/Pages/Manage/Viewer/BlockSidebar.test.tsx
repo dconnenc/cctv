@@ -1,15 +1,22 @@
 import type { ReactNode } from 'react';
 
+import type {
+  DraggableProvided,
+  DraggableStateSnapshot,
+  DropResult,
+  DroppableProvided,
+  DroppableStateSnapshot,
+} from '@hello-pangea/dnd';
 import { act, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { BlockKind } from '@cctv/types';
-import type { Block, BlockStatus } from '@cctv/types';
+import type { AnnouncementBlock } from '@cctv/types';
 
+import { announcementBlock, questionBlock } from '../testFactories';
 import BlockSidebar from './BlockSidebar';
 
 // Capture the onDragEnd callback so tests can invoke it directly
-let capturedOnDragEnd: ((result: unknown) => void) | null = null;
+let capturedOnDragEnd: ((result: DropResult) => void) | null = null;
 
 vi.mock('@hello-pangea/dnd', () => ({
   DragDropContext: ({
@@ -17,36 +24,62 @@ vi.mock('@hello-pangea/dnd', () => ({
     onDragEnd,
   }: {
     children: ReactNode;
-    onDragEnd: (result: unknown) => void;
+    onDragEnd: (result: DropResult) => void;
   }) => {
     capturedOnDragEnd = onDragEnd;
     return <>{children}</>;
   },
-  Droppable: ({ children }: { children: (provided: object, snapshot: object) => ReactNode }) =>
-    children(
-      { innerRef: () => {}, droppableProps: {}, placeholder: null },
-      { isDraggingOver: false },
-    ),
-  Draggable: ({ children }: { children: (provided: object, snapshot: object) => ReactNode }) =>
+  Droppable: ({
+    children,
+  }: {
+    children: (provided: DroppableProvided, snapshot: DroppableStateSnapshot) => ReactNode;
+  }) =>
     children(
       {
         innerRef: () => {},
-        draggableProps: { style: {} },
-        dragHandleProps: {},
+        droppableProps: {
+          'data-rfd-droppable-context-id': 'test-context',
+          'data-rfd-droppable-id': 'blocks',
+        },
+        placeholder: null,
       },
-      { isDragging: false },
+      {
+        isDraggingOver: false,
+        draggingOverWith: null,
+        draggingFromThisWith: null,
+        isUsingPlaceholder: false,
+      },
+    ),
+  Draggable: ({
+    children,
+  }: {
+    children: (provided: DraggableProvided, snapshot: DraggableStateSnapshot) => ReactNode;
+  }) =>
+    children(
+      {
+        innerRef: () => {},
+        draggableProps: {
+          style: {},
+          'data-rfd-draggable-context-id': 'test-context',
+          'data-rfd-draggable-id': 'test-draggable',
+        },
+        dragHandleProps: null,
+      },
+      {
+        isDragging: false,
+        isDropAnimating: false,
+        isClone: false,
+        dropAnimation: null,
+        draggingOver: null,
+        combineWith: null,
+        combineTargetFor: null,
+        mode: null,
+      },
     ),
 }));
 
-function makeBlock(id: string, overrides: Partial<Block> = {}): Block {
-  return {
-    id,
-    kind: 'announcement',
-    status: 'hidden' as BlockStatus,
-    position: 0,
-    payload: { message: id, show_on_monitor: false },
-    ...overrides,
-  } as Block;
+function makeBlock(id: string): AnnouncementBlock {
+  return announcementBlock({ id, payload: { message: id, show_on_monitor: false } });
 }
 
 const defaultProps = {
@@ -56,10 +89,10 @@ const defaultProps = {
   onSelectBlock: vi.fn(),
   onToggleSidebar: vi.fn(),
   onCreateBlock: vi.fn(),
-  onReorderBlock: vi.fn(),
+  onReorderBlock: vi.fn<(blockId: string, newIndex: number, parentBlockId?: string) => void>(),
 };
 
-function dropResult(overrides: object) {
+function dropResult(overrides: Partial<DropResult> = {}): DropResult {
   return {
     draggableId: 'block-a',
     source: { index: 0, droppableId: 'top-level' },
@@ -143,8 +176,7 @@ describe('BlockSidebar — handleDragEnd', () => {
       );
 
       expect(defaultProps.onReorderBlock).toHaveBeenCalledTimes(1);
-      const [, , parentArg] = (defaultProps.onReorderBlock as ReturnType<typeof vi.fn>).mock
-        .calls[0];
+      const [, , parentArg] = defaultProps.onReorderBlock.mock.calls[0];
       expect(parentArg).toBeUndefined();
     });
 
@@ -178,13 +210,13 @@ describe('BlockSidebar — handleDragEnd', () => {
   describe('synthetic question label', () => {
     it('labels a synthetic question distinctly from a normal question', () => {
       const blocks = [
-        makeBlock('q-normal', {
-          kind: BlockKind.QUESTION,
+        questionBlock({
+          id: 'q-normal',
           parent_block_id: 'ff',
           payload: { question: 'Name a fruit', formKey: 'answer_0' },
         }),
-        makeBlock('q-synthetic', {
-          kind: BlockKind.QUESTION,
+        questionBlock({
+          id: 'q-synthetic',
           parent_block_id: 'ff',
           payload: { question: '', formKey: 'answer_1', synthetic: true },
         }),

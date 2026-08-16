@@ -8,19 +8,21 @@ interface RevealProps {
   contestants: GuessWhoContestant[];
 }
 
+const FIREWORK_BURSTS = Array.from({ length: 12 }, (_, position) => ({
+  id: `burst-${position}`,
+  left: `${(position * 83) % 100}%`,
+  top: `${(position * 47) % 80}%`,
+  animationDelay: `${(position % 6) * 0.18}s`,
+}));
+
 function Fireworks() {
-  const burstCount = 12;
   return (
     <div className={styles.fireworks} aria-hidden>
-      {Array.from({ length: burstCount }).map((_, i) => (
+      {FIREWORK_BURSTS.map((burst) => (
         <span
-          key={i}
+          key={burst.id}
           className={styles.fireworkBurst}
-          style={{
-            left: `${(i * 83) % 100}%`,
-            top: `${(i * 47) % 80}%`,
-            animationDelay: `${(i % 6) * 0.18}s`,
-          }}
+          style={{ left: burst.left, top: burst.top, animationDelay: burst.animationDelay }}
         />
       ))}
     </div>
@@ -55,8 +57,8 @@ export default function Reveal({ contestants }: RevealProps) {
       <Fireworks />
       <h2 className={styles.title}>The Reveal</h2>
       <div className={styles.revealRow}>
-        {contestants.map((c, i) => (
-          <ContestantCard key={i} contestant={c} />
+        {contestants.map((c) => (
+          <ContestantCard key={c.contestant_user_id ?? 'unassigned'} contestant={c} />
         ))}
       </div>
     </div>

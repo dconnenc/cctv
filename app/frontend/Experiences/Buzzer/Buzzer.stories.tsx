@@ -1,13 +1,13 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
-import { BlockKind, BlockStatus, BuzzerBlock } from '@cctv/types';
+import { BlockKind, BuzzerBlock } from '@cctv/types';
 
 import Buzzer from './Buzzer';
 
 const baseBuzzerBlock: BuzzerBlock = {
   id: 'buzzer-1',
   kind: BlockKind.BUZZER,
-  status: 'open' as BlockStatus,
+  status: 'open',
   position: 0,
   payload: {
     prompt: 'Contestants be ready to buzz in!',

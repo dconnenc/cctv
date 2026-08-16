@@ -5,13 +5,30 @@ import { Layer, Line, Stage } from 'react-konva';
 import { useExperience } from '@cctv/contexts/ExperienceContext';
 import { useExperienceState } from '@cctv/contexts/ExperienceStateContext';
 import { useSubmitBuzzerResponse } from '@cctv/hooks/useSubmitBuzzerResponse';
-import { BuzzerBlock } from '@cctv/types';
+import { AvatarStroke, BuzzerBlock } from '@cctv/types';
 
 import styles from './Buzzer.module.scss';
 
 const DRAW_SIZE = 320;
 const AVATAR_DISPLAY_SIZE = 280;
 const AVATAR_SCALE = AVATAR_DISPLAY_SIZE / DRAW_SIZE;
+
+interface IdentifiedStroke {
+  id: string;
+  stroke: AvatarStroke;
+}
+
+// Strokes carry no id, so identity comes from the drawn geometry plus an
+// occurrence counter that keeps repeated identical marks distinct.
+function identifyStrokes(strokes: AvatarStroke[]): IdentifiedStroke[] {
+  const occurrences = new Map<string, number>();
+  return strokes.map((stroke) => {
+    const drawn = `${stroke.color}:${stroke.width}:${stroke.points.join(',')}`;
+    const occurrence = occurrences.get(drawn) ?? 0;
+    occurrences.set(drawn, occurrence + 1);
+    return { id: `${drawn}#${occurrence}`, stroke };
+  });
+}
 
 function playBuzzerSound() {
   try {
@@ -168,12 +185,12 @@ export default function Buzzer({ block, viewContext = 'participant' }: BuzzerPro
           <div className={styles.avatarWrap}>
             <Stage width={AVATAR_DISPLAY_SIZE} height={AVATAR_DISPLAY_SIZE}>
               <Layer scaleX={AVATAR_SCALE} scaleY={AVATAR_SCALE}>
-                {strokes.map((s, i) => (
+                {identifyStrokes(strokes).map(({ id, stroke }) => (
                   <Line
-                    key={i}
-                    points={s.points}
-                    stroke={s.color}
-                    strokeWidth={s.width}
+                    key={id}
+                    points={stroke.points}
+                    stroke={stroke.color}
+                    strokeWidth={stroke.width}
                     lineCap="round"
                   />
                 ))}

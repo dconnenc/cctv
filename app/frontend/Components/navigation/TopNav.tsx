@@ -61,7 +61,9 @@ export const TopNav = () => {
   useEffect(() => {
     if (!openDropdown) return;
     const onPointerDown = (e: PointerEvent) => {
-      if (!navRef.current?.contains(e.target as Node)) setOpenDropdown(null);
+      const target = e.target;
+      if (target instanceof Node && navRef.current?.contains(target)) return;
+      setOpenDropdown(null);
     };
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') setOpenDropdown(null);

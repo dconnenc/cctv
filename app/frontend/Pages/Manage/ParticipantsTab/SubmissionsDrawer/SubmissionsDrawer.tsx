@@ -18,7 +18,7 @@ function describeAnswer(entry: ParticipantSubmissionEntry): string {
   if (entry.answer?.buzzed_at) {
     return `Buzzed in at ${new Date(entry.answer.buzzed_at).toLocaleTimeString()}`;
   }
-  if (entry.answer?.raw && typeof entry.answer.raw === 'object') {
+  if (entry.answer?.raw instanceof Object) {
     return JSON.stringify(entry.answer.raw);
   }
   return '—';
@@ -45,8 +45,8 @@ export default function SubmissionsDrawer({ participant, onClose }: SubmissionsD
 
         {entries.length > 0 && (
           <ol className={styles.list}>
-            {entries.map((entry, index) => (
-              <li key={`${entry.block_id}-${entry.submitted_at}-${index}`} className={styles.item}>
+            {entries.map((entry) => (
+              <li key={`${entry.block_id}-${entry.submitted_at}`} className={styles.item}>
                 <div className={styles.itemHeader}>
                   <span className={styles.kind}>{BLOCK_KIND_LABELS[entry.block_kind]}</span>
                   <span className={styles.position}>Block #{entry.position + 1}</span>

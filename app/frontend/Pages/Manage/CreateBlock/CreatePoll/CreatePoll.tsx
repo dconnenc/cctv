@@ -1,3 +1,5 @@
+import { useEffect, useState } from 'react';
+
 import { useExperience } from '@cctv/contexts/ExperienceContext';
 import { Button } from '@cctv/core/Button/Button';
 import { Dropdown } from '@cctv/core/Dropdown/Dropdown';
@@ -84,15 +86,34 @@ export const processPollBeforeSubmit = (
   return data;
 };
 
+function createOptionKey(): string {
+  return crypto.randomUUID();
+}
+
 export default function CreatePoll({ data, onChange }: BlockComponentProps<PollData>) {
   const { experience } = useExperience();
   const definedSegments = experience?.segments || [];
+  const [optionKeys, setOptionKeys] = useState(() => data.options.map(() => createOptionKey()));
+
+  useEffect(() => {
+    setOptionKeys((prev) => {
+      if (prev.length === data.options.length) return prev;
+      if (prev.length < data.options.length) {
+        return [
+          ...prev,
+          ...Array.from({ length: data.options.length - prev.length }, () => createOptionKey()),
+        ];
+      }
+      return prev.slice(0, data.options.length);
+    });
+  }, [data.options.length]);
 
   const updateData = (updates: Partial<PollData>) => {
     onChange?.(updates);
   };
 
   const addOption = () => {
+    setOptionKeys((prev) => [...prev, createOptionKey()]);
     const newOptions = [...data.options, ''];
     onChange?.({ options: newOptions });
   };
@@ -102,6 +123,7 @@ export default function CreatePoll({ data, onChange }: BlockComponentProps<PollD
       return; // Don't remove if only 2 options left
     }
 
+    setOptionKeys((prev) => prev.filter((_, i) => i !== index));
     const removedOption = data.options[index];
     const newOptions = data.options.filter((_, i) => i !== index);
 
@@ -157,15 +179,14 @@ export default function CreatePoll({ data, onChange }: BlockComponentProps<PollD
           ]}
           required
           value={data.pollType}
-          onChange={(value) => updateData({ pollType: value as 'single' | 'multiple' })}
+          onChange={(pollType) => updateData({ pollType })}
         />
       </div>
       <div className={sharedStyles.column}>
         <div className={styles.list}>
           {data.options.map((option, index) => (
-            <div className={styles.item} key={index}>
+            <div className={styles.item} key={optionKeys[index]}>
               <TextInput
-                key={index}
                 label={`Option ${index + 1}`}
                 placeholder={`Option ${index + 1}`}
                 value={option}

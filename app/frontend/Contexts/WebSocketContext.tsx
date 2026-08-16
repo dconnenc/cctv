@@ -16,10 +16,9 @@ import {
   FamilyFeudActionType,
 } from '@cctv/pages/Block/FamilyFeudManager/familyFeudReducer';
 import {
+  DrawingUpdateMessage,
   ExperienceChannelMessage,
-  FamilyFeudUpdatedMessage,
-  SubmissionStateMessage,
-  WebSocketMessage,
+  JsonObject,
   WebSocketMessageTypes,
   isDrawingUpdateMessage,
   isExperiencePayloadMessage,
@@ -32,20 +31,42 @@ import { useDispatchRegistry } from './DispatchRegistryContext';
 import { useExperienceState } from './ExperienceStateContext';
 import { DrawingAction, useLobbyDrawingDispatch } from './LobbyDrawingContext';
 
-const ACTION_TYPE_MAP: Record<string, FamilyFeudActionType> = {
-  bucket_added: FamilyFeudActionType.BUCKET_ADDED,
-  bucket_renamed: FamilyFeudActionType.BUCKET_RENAMED,
-  bucket_deleted: FamilyFeudActionType.BUCKET_DELETED,
-  answer_assigned: FamilyFeudActionType.ANSWER_ASSIGNED,
-  answer_received: FamilyFeudActionType.ANSWER_RECEIVED,
-  question_added: FamilyFeudActionType.QUESTION_ADDED,
-  question_deleted: FamilyFeudActionType.QUESTION_DELETED,
-};
+const ACTION_TYPE_MAP = new Map<string, FamilyFeudActionType>([
+  ['bucket_added', FamilyFeudActionType.BUCKET_ADDED],
+  ['bucket_renamed', FamilyFeudActionType.BUCKET_RENAMED],
+  ['bucket_deleted', FamilyFeudActionType.BUCKET_DELETED],
+  ['answer_assigned', FamilyFeudActionType.ANSWER_ASSIGNED],
+  ['answer_received', FamilyFeudActionType.ANSWER_RECEIVED],
+  ['question_added', FamilyFeudActionType.QUESTION_ADDED],
+  ['question_deleted', FamilyFeudActionType.QUESTION_DELETED],
+]);
+
+const DRAWING_OPERATIONS: ReadonlySet<string> = new Set<DrawingAction['operation']>([
+  'clear_all',
+  'avatar_committed',
+  'canvas_cleared',
+  'stroke_started',
+  'stroke_points_appended',
+  'stroke_ended',
+  'stroke_undone',
+  'canvas_clear_undone',
+]);
+
+const CHANNEL_MESSAGE_TYPES: ReadonlySet<string> = new Set<ExperienceChannelMessage['type']>([
+  ...Object.values(WebSocketMessageTypes),
+  'drawing_update',
+]);
+
+/** ActionCable envelope: protocol frames carry `type`, broadcasts carry `message`. */
+interface ChannelFrame {
+  type?: string;
+  message?: ExperienceChannelMessage;
+}
 
 interface WebSocketConfig {
   label: string;
-  identifier: Record<string, string>;
-  onMessage: (msg: { type?: string; message?: unknown }) => void;
+  identifier: Record<string, string | undefined>;
+  onMessage: (frame: ChannelFrame) => void;
   onConnect?: () => void;
   onError?: () => void;
   onClose?: (event: CloseEvent) => void;
@@ -73,7 +94,7 @@ function createWebSocketConnection(
 
   let rejected = false;
 
-  ws.onopen = () => {
+  const onOpen = () => {
     qaLogger(`[${config.label}] WebSocket connected`);
     // Only a reconnect is interesting — the first connect is just startup. This
     // pairs with `websocket disconnected` to show how long participants spent
@@ -95,18 +116,18 @@ function createWebSocketConnection(
     );
   };
 
-  ws.onmessage = (event) => {
-    const message = JSON.parse(event.data);
-    if (message.type === 'reject_subscription') rejected = true;
-    config.onMessage(message);
+  const onMessage = (event: MessageEvent) => {
+    const frame: ChannelFrame = JSON.parse(event.data);
+    if (frame.type === 'reject_subscription') rejected = true;
+    config.onMessage(frame);
   };
 
-  ws.onerror = () => {
+  const onError = () => {
     qaLogger(`[${config.label}] WebSocket error`);
     config.onError?.();
   };
 
-  ws.onclose = (event) => {
+  const onClose = (event: CloseEvent) => {
     qaLogger(`[${config.label}] WebSocket closed${event.code ? `. Code: ${event.code}` : ''}`);
     config.onClose?.(event);
 
@@ -133,19 +154,31 @@ function createWebSocketConnection(
       );
     }
   };
+
+  ws.addEventListener('open', onOpen);
+  ws.addEventListener('message', onMessage);
+  ws.addEventListener('error', onError);
+  ws.addEventListener('close', onClose);
 }
 
-function parseChannelMessage(raw: { type?: string; message?: unknown }): WebSocketMessage | null {
+function isChannelMessage(
+  payload: ChannelFrame | ExperienceChannelMessage,
+): payload is ExperienceChannelMessage {
+  return payload.type !== undefined && CHANNEL_MESSAGE_TYPES.has(payload.type);
+}
+
+function isDrawingAction(
+  message: DrawingUpdateMessage,
+): message is DrawingUpdateMessage & DrawingAction {
+  return DRAWING_OPERATIONS.has(message.operation);
+}
+
+function parseChannelMessage(raw: ChannelFrame): ExperienceChannelMessage | null {
   if (raw.type === 'ping' || raw.type === 'welcome') return null;
   if (raw.type === 'confirm_subscription' || raw.type === 'reject_subscription') return null;
 
   const payload = raw.message ?? raw;
-  if (!payload || typeof payload !== 'object') return null;
-
-  const wsMessage = payload as WebSocketMessage;
-  if (!wsMessage.type) return null;
-
-  return wsMessage;
+  return isChannelMessage(payload) ? payload : null;
 }
 
 export interface WebSocketContextType {
@@ -154,7 +187,7 @@ export interface WebSocketContextType {
   reconnecting: boolean;
   experiencePerform: (
     action: string,
-    payload?: Record<string, unknown>,
+    payload?: JsonObject,
     target?: 'primary' | 'monitor' | 'impersonation',
   ) => void;
 }
@@ -228,11 +261,7 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const handleExperienceMessage = useCallback(
-    (
-      raw: { type?: string; message?: unknown },
-      label: string,
-      target: 'main' | 'monitor' | 'impersonation',
-    ) => {
+    (raw: ChannelFrame, label: string, target: 'main' | 'monitor' | 'impersonation') => {
       if (raw.type === 'ping' || raw.type === 'welcome') return;
 
       if (raw.type === 'confirm_subscription') {
@@ -245,18 +274,13 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
       }
 
       if (target === 'monitor') {
-        const wsMessage = parseChannelMessage(raw);
-        if (!wsMessage) return;
-
-        const channelMsg = wsMessage as ExperienceChannelMessage;
+        const channelMsg = parseChannelMessage(raw);
+        if (!channelMsg) return;
 
         if (isDrawingUpdateMessage(channelMsg)) {
-          lobbyDrawingDispatch({
-            type: 'drawing_update',
-            participant_id: channelMsg.participant_id,
-            operation: channelMsg.operation,
-            data: channelMsg.data,
-          } as DrawingAction);
+          if (isDrawingAction(channelMsg)) {
+            lobbyDrawingDispatch(channelMsg);
+          }
         } else if (isExperiencePayloadMessage(channelMsg)) {
           qaLogger(`[${label}] Processing: ${channelMsg.type}`);
           if (channelMsg.experience) {
@@ -270,7 +294,7 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
       }
 
       const wsMessage = parseChannelMessage(raw);
-      if (!wsMessage) return;
+      if (!wsMessage || isDrawingUpdateMessage(wsMessage)) return;
 
       if (wsMessage.type === WebSocketMessageTypes.RESUBSCRIBE_REQUIRED && target === 'main') {
         reconnectParticipantWs();
@@ -303,20 +327,22 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
         target === 'main' &&
         wsMessage.type === WebSocketMessageTypes.FAMILY_FEUD_UPDATED
       ) {
-        const ffMsg = wsMessage as FamilyFeudUpdatedMessage;
-        qaLogger(`[${label}] Processing family_feud_updated: ${ffMsg.operation}`);
-        const { block_id, operation, data } = ffMsg;
+        const { block_id, operation, data } = wsMessage;
+        qaLogger(`[${label}] Processing family_feud_updated: ${operation}`);
 
         const dispatch = getFamilyFeudDispatch(block_id);
         if (dispatch) {
-          const actionType = ACTION_TYPE_MAP[operation];
+          const actionType = ACTION_TYPE_MAP.get(operation);
           if (actionType) {
+            // SAFETY: ACTION_TYPE_MAP.get returned a value, so `operation` is one of the seven
+            // family_feud operations, and WebsocketMessageService.family_feud_updated pairs each
+            // of those operations with the payload its FamilyFeudAction variant declares. Only
+            // that correlation is asserted; both values come from the same broadcast.
             dispatch({ type: actionType, payload: data } as FamilyFeudAction);
           }
         }
       } else if (target === 'main' && wsMessage.type === WebSocketMessageTypes.SUBMISSION_STATE) {
-        const ssMsg = wsMessage as SubmissionStateMessage;
-        setSubmissionState(ssMsg.submissions);
+        setSubmissionState(wsMessage.submissions);
       }
     },
     [
@@ -360,7 +386,7 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
           identifier: {
             channel: 'ExperienceSubscriptionChannel',
             code,
-            ...((adminJWT ?? jwt) ? { token: adminJWT ?? jwt } : {}),
+            token: (adminJWT ?? jwt) || undefined,
           },
           onMessage: (msg) => handleMessageRef.current(msg, 'ADMIN WS', 'main'),
           onConnect: () => {
@@ -378,7 +404,7 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
         mainDisposeRef,
       );
 
-      const monitorId: Record<string, string> = {
+      const monitorId = {
         channel: 'ExperienceSubscriptionChannel',
         code,
         view_type: 'monitor',
@@ -396,7 +422,7 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
     } else if (isMonitorPage) {
       qaLogger('[WS SETUP] MONITOR PAGE - Creating monitor websocket');
 
-      const monitorId: Record<string, string> = {
+      const monitorId = {
         channel: 'ExperienceSubscriptionChannel',
         code,
         view_type: 'monitor',
@@ -486,7 +512,7 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
       const impersonationId = {
         channel: 'ExperienceSubscriptionChannel',
         code,
-        ...((adminJWT ?? jwt) ? { token: adminJWT ?? jwt } : {}),
+        token: (adminJWT ?? jwt) || undefined,
         as_participant_id: impersonatedParticipantId,
       };
       createWebSocketConnection(
@@ -516,7 +542,7 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
   const experiencePerform = useCallback(
     (
       action: string,
-      payload?: Record<string, unknown>,
+      payload?: JsonObject,
       target: 'primary' | 'monitor' | 'impersonation' = 'primary',
     ) => {
       const frames = {
@@ -526,7 +552,7 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
       } as const;
       const f = frames[target];
       if (!f.sock || !f.id) return;
-      const data = JSON.stringify({ action, ...(payload || {}) });
+      const data = JSON.stringify({ action, ...payload });
       f.sock.send(JSON.stringify({ command: 'message', identifier: f.id, data }));
     },
     [],

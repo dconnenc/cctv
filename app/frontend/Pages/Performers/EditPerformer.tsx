@@ -4,6 +4,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 
 import { Button, ImageUpload, Panel, TextInput } from '@cctv/core';
 import { usePerformer } from '@cctv/hooks';
+import { getFieldValue } from '@cctv/utils';
 
 import styles from './Performers.module.scss';
 
@@ -40,8 +41,8 @@ export default function EditPerformer() {
     const form = e.currentTarget;
     const formData = new FormData();
 
-    const name = (form.elements.namedItem('name') as HTMLInputElement).value.trim();
-    const bio = (form.elements.namedItem('bio') as HTMLTextAreaElement).value.trim();
+    const name = getFieldValue(form, 'name');
+    const bio = getFieldValue(form, 'bio');
 
     if (!name) {
       setError('Name is required');
@@ -107,7 +108,7 @@ export default function EditPerformer() {
             </div>
             <ImageUpload
               label="Profile Photo"
-              shape="circle"
+              previewGeometry="circle"
               previewSize="6rem"
               imageUrl={displayedImageUrl}
               onFileSelected={handleFileSelected}

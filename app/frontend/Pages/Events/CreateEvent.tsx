@@ -4,9 +4,13 @@ import { useNavigate } from 'react-router-dom';
 
 import { Button, NaturalDatePicker, Panel, Switch, TextInput } from '@cctv/core';
 import { usePerformers } from '@cctv/hooks';
+import { getFieldValue } from '@cctv/utils';
 import { combineDateAndTime } from '@cctv/utils/calendar';
 
 import styles from './CreateEvent.module.scss';
+
+const PERFORMERS_LABEL_ID = 'create-event-performers-label';
+const PUBLISHED_SWITCH_ID = 'create-event-published';
 
 export default function CreateEvent() {
   const navigate = useNavigate();
@@ -31,8 +35,7 @@ export default function CreateEvent() {
     setError(undefined);
 
     const form = e.currentTarget;
-    const getValue = (name: string) =>
-      (form.elements.namedItem(name) as HTMLInputElement)?.value?.trim() ?? '';
+    const getValue = (name: string) => getFieldValue(form, name);
 
     const title = getValue('title');
 
@@ -49,7 +52,7 @@ export default function CreateEvent() {
       return;
     }
 
-    const body: Record<string, any> = {
+    const body = {
       title,
       description: getValue('description') || null,
       starts_at: combineDateAndTime(startDate, startTime),
@@ -138,8 +141,10 @@ export default function CreateEvent() {
             />
 
             {performers.length > 0 && (
-              <div className={styles.field}>
-                <label className={styles.label}>Performers</label>
+              <fieldset className={styles.field} aria-labelledby={PERFORMERS_LABEL_ID}>
+                <span className={styles.label} id={PERFORMERS_LABEL_ID}>
+                  Performers
+                </span>
                 <div className={styles.performerPicker}>
                   {performers.map((p) => {
                     const isSelected = selectedPerformers.includes(p.id);
@@ -156,11 +161,11 @@ export default function CreateEvent() {
                     );
                   })}
                 </div>
-              </div>
+              </fieldset>
             )}
 
-            <label className={styles.checkLabel}>
-              <Switch checked={published} onCheckedChange={setPublished} />
+            <label className={styles.checkLabel} htmlFor={PUBLISHED_SWITCH_ID}>
+              <Switch id={PUBLISHED_SWITCH_ID} checked={published} onCheckedChange={setPublished} />
               Publish immediately
             </label>
 

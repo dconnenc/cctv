@@ -1,3 +1,5 @@
+import type { Properties } from 'posthog-js';
+
 import { capture } from './client';
 import { AnalyticsEvent } from './events';
 import { apiPathPattern } from './routes';
@@ -17,7 +19,7 @@ export async function instrumentedFetch(
   init: RequestInit = {},
   context: { source: string },
 ): Promise<Response> {
-  const url = typeof input === 'string' ? input : input.toString();
+  const url = String(input);
   const path = apiPathPattern(url);
   const method = (init.method ?? 'GET').toUpperCase();
   const startedAt = performance.now();
@@ -26,14 +28,19 @@ export async function instrumentedFetch(
     const response = await fetch(input, init);
     const durationMs = Math.round(performance.now() - startedAt);
 
-    capture(response.ok ? AnalyticsEvent.ApiRequestCompleted : AnalyticsEvent.ApiRequestFailed, {
+    const properties: Properties = {
       path,
       method,
       status: response.status,
       duration_ms: durationMs,
       source: context.source,
-      ...(response.ok ? {} : { failure_kind: 'http_status' }),
-    });
+    };
+    if (!response.ok) properties.failure_kind = 'http_status';
+
+    capture(
+      response.ok ? AnalyticsEvent.ApiRequestCompleted : AnalyticsEvent.ApiRequestFailed,
+      properties,
+    );
 
     return response;
   } catch (error) {

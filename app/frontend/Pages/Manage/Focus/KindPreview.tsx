@@ -14,7 +14,7 @@ function Bars({ widths, filled }: { widths: string[]; filled: number }) {
     <div className={styles.barRow}>
       {widths.map((width, index) => (
         <div
-          key={width + index}
+          key={width}
           className={classNames(styles.bar, index === filled && styles.barFilled)}
           style={{ width }}
         />
@@ -26,8 +26,8 @@ function Bars({ widths, filled }: { widths: string[]; filled: number }) {
 function Lines({ widths }: { widths: string[] }) {
   return (
     <div className={styles.barRow}>
-      {widths.map((width, index) => (
-        <div key={width + index} className={styles.line} style={{ width }} />
+      {widths.map((width) => (
+        <div key={width} className={styles.line} style={{ width }} />
       ))}
     </div>
   );

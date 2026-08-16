@@ -14,8 +14,26 @@ interface AvatarProps {
 // edges when fitted.
 const PADDING_RATIO = 0.1;
 
+interface IdentifiedStroke {
+  id: string;
+  stroke: AvatarStroke;
+}
+
+// Strokes carry no id, so identity comes from the drawn geometry plus an
+// occurrence counter that keeps repeated identical marks distinct.
+function identifyStrokes(strokes: AvatarStroke[]): IdentifiedStroke[] {
+  const occurrences = new Map<string, number>();
+  return strokes.map((stroke) => {
+    const drawn = `${stroke.color}:${stroke.width}:${stroke.points.join(',')}`;
+    const occurrence = occurrences.get(drawn) ?? 0;
+    occurrences.set(drawn, occurrence + 1);
+    return { id: `${drawn}#${occurrence}`, stroke };
+  });
+}
+
 export default function Avatar({ strokes, size = 96, className }: AvatarProps) {
   const list = useMemo(() => strokes ?? [], [strokes]);
+  const identified = useMemo(() => identifyStrokes(list), [list]);
 
   // Fit the drawing to its own bounding box so it fills the avatar area instead
   // of floating tiny in a corner of the 400x400 drawing space.
@@ -78,12 +96,12 @@ export default function Avatar({ strokes, size = 96, className }: AvatarProps) {
     <div className={className} style={{ width: size, height: size }}>
       <Stage width={size} height={size}>
         <Layer x={fit.offsetX} y={fit.offsetY} scaleX={fit.scale} scaleY={fit.scale}>
-          {list.map((s, i) => (
+          {identified.map(({ id, stroke }) => (
             <Line
-              key={i}
-              points={s.points}
-              stroke={s.color}
-              strokeWidth={s.width}
+              key={id}
+              points={stroke.points}
+              stroke={stroke.color}
+              strokeWidth={stroke.width}
               lineCap="round"
               lineJoin="round"
             />

@@ -182,10 +182,10 @@ RSpec.describe "The Scene Block", type: :system do
 
     # ── Buzzer press (two-step: break glass → press) ───────────────────────────
     using_session(buzzer_session) do
-      expect(page).to have_css('[role="button"][aria-label="BREAK GLASS"]')
-      find('[role="button"][aria-label="BREAK GLASS"]').click
-      expect(page).to have_css('[role="button"][aria-label="PRESS"]', wait: 8)
-      find('[role="button"][aria-label="PRESS"]').click
+      expect(page).to have_css('button[aria-label="BREAK GLASS"]')
+      find('button[aria-label="BREAK GLASS"]').click
+      expect(page).to have_css('button[aria-label="PRESS"]', wait: 8)
+      find('button[aria-label="PRESS"]').click
       expect(page).to have_text("Scene ended!")
     end
 

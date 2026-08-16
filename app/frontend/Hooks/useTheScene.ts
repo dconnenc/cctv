@@ -9,6 +9,10 @@ interface ActionResult {
   error?: string;
 }
 
+interface ScenePerformersUpdate {
+  performer_participant_ids: string[];
+}
+
 export function useTheScene() {
   const { code, experienceFetch } = useExperience();
   const { adminFetch } = useAdminAuth();
@@ -27,7 +31,7 @@ export function useTheScene() {
       method: 'POST' | 'PATCH',
       blockId: string,
       path: string,
-      body?: object,
+      body?: ScenePerformersUpdate,
     ): Promise<ActionResult> => {
       if (!code) return { success: false, error: 'Missing experience code' };
       setError(null);

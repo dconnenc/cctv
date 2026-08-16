@@ -7,21 +7,27 @@ import { AvatarStroke } from '@cctv/types';
 
 import styles from './DrawingCanvas.module.scss';
 
+/** A stroke as it is serialised onto the drawing websocket channel. */
+type SerializedStroke = { [K in keyof AvatarStroke]: AvatarStroke[K] };
+
+/** Live drawing operations relayed to the monitor while a participant draws. */
+export type DrawingCanvasEvent =
+  | { operation: 'stroke_started'; data: { points: number[]; color: string; width: number } }
+  | { operation: 'stroke_points_appended'; data: { points: number[] } }
+  | { operation: 'canvas_clear_undone'; data: { strokes: SerializedStroke[] } }
+  | { operation: 'stroke_ended' | 'canvas_cleared' | 'stroke_undone' };
+
+/** A stroke while it is owned by the canvas: carries a render key the API never sees. */
+interface CanvasStroke extends AvatarStroke {
+  id: string;
+}
+
 export interface DrawingCanvasProps {
   initialStrokes?: AvatarStroke[];
   palette?: string[];
   brushSizes?: number[];
   drawSize?: { w: number; h: number };
-  onStrokeEvent?: (e: {
-    operation:
-      | 'stroke_started'
-      | 'stroke_points_appended'
-      | 'stroke_ended'
-      | 'canvas_cleared'
-      | 'stroke_undone'
-      | 'canvas_clear_undone';
-    data?: Record<string, unknown>;
-  }) => void;
+  onStrokeEvent?: (event: DrawingCanvasEvent) => void;
   onSubmit: (strokes: AvatarStroke[]) => void | Promise<void>;
   onBack?: () => void;
 }
@@ -35,22 +41,41 @@ const DEFAULT_PALETTE_VARS = [
   '--deep',
 ] as const;
 
+const NO_INITIAL_STROKES: AvatarStroke[] = [];
+const DEFAULT_BRUSH_SIZES = [2, 4, 8, 32];
+const DEFAULT_DRAW_SIZE = { w: 320, h: 320 };
+
+let strokeIdCounter = 0;
+
+function nextStrokeId() {
+  strokeIdCounter += 1;
+  return `stroke-${strokeIdCounter}`;
+}
+
+function withRenderIds(strokes: AvatarStroke[]): CanvasStroke[] {
+  return strokes.map((stroke) => ({ ...stroke, id: nextStrokeId() }));
+}
+
+function withoutRenderIds(strokes: CanvasStroke[]): AvatarStroke[] {
+  return strokes.map(({ id: _id, ...stroke }) => stroke);
+}
+
 function resolveCssVar(name: string) {
   const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
   return v || '#000000';
 }
 
 export default function DrawingCanvas({
-  initialStrokes = [],
+  initialStrokes = NO_INITIAL_STROKES,
   palette,
-  brushSizes = [2, 4, 8, 32],
-  drawSize = { w: 320, h: 320 },
+  brushSizes = DEFAULT_BRUSH_SIZES,
+  drawSize = DEFAULT_DRAW_SIZE,
   onStrokeEvent,
   onSubmit,
   onBack,
 }: DrawingCanvasProps) {
-  const [lines, setLines] = useState<AvatarStroke[]>(initialStrokes);
-  const [clearedLines, setClearedLines] = useState<AvatarStroke[] | null>(null);
+  const [lines, setLines] = useState<CanvasStroke[]>(() => withRenderIds(initialStrokes));
+  const [clearedLines, setClearedLines] = useState<CanvasStroke[] | null>(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const hasLoadedInitialRef = useRef(false);
 
@@ -73,13 +98,13 @@ export default function DrawingCanvas({
     const pal =
       palette && palette.length > 0 ? palette : DEFAULT_PALETTE_VARS.map((v) => resolveCssVar(v));
     setColors(pal);
-    if (!penColor || penColor === '#000000') setPenColor(pal[0] || '#000000');
+    setPenColor((prev) => (!prev || prev === '#000000' ? pal[0] || '#000000' : prev));
   }, [palette]);
 
   useEffect(() => {
     if (!hasLoadedInitialRef.current && initialStrokes.length > 0) {
       hasLoadedInitialRef.current = true;
-      setLines(initialStrokes);
+      setLines(withRenderIds(initialStrokes));
     }
   }, [initialStrokes]);
 
@@ -97,7 +122,12 @@ export default function DrawingCanvas({
     const p = e.target.getStage().getPointerPosition();
     if (!p) return;
     const dp = toDrawSpace(p.x, p.y);
-    const stroke: AvatarStroke = { points: [dp.x, dp.y], color: penColor, width: penWidth };
+    const stroke: CanvasStroke = {
+      id: nextStrokeId(),
+      points: [dp.x, dp.y],
+      color: penColor,
+      width: penWidth,
+    };
     setLines((prev) => [...prev, stroke]);
     onStrokeEvent?.({
       operation: 'stroke_started',
@@ -217,7 +247,7 @@ export default function DrawingCanvas({
       setClearedLines(null);
       onStrokeEvent?.({
         operation: 'canvas_clear_undone',
-        data: { strokes: clearedLines },
+        data: { strokes: withoutRenderIds(clearedLines) },
       });
       return;
     }
@@ -231,7 +261,7 @@ export default function DrawingCanvas({
 
   const handleSubmit = async () => {
     const committedLines = lines.map((s) => ({ ...s, committed: true }));
-    await onSubmit(committedLines);
+    await onSubmit(withoutRenderIds(committedLines));
     setLines(committedLines);
   };
 
@@ -281,10 +311,12 @@ export default function DrawingCanvas({
           <label
             className={`${styles.swatch} ${styles.colorPickerLabel} ${!colors.includes(penColor) ? styles.swatchActive : ''}`}
             style={!colors.includes(penColor) ? { background: penColor } : undefined}
+            aria-label="Custom color"
             title="Custom color"
           >
             <input
               type="color"
+              aria-label="Custom color"
               className={styles.hiddenColorInput}
               value={penColor}
               onChange={(e) => setPenColor(e.target.value)}
@@ -305,9 +337,9 @@ export default function DrawingCanvas({
           onTouchEnd={onPointerUp}
         >
           <Layer scaleX={drawScale.x} scaleY={drawScale.y}>
-            {lines.map((s, i) => (
+            {lines.map((s) => (
               <Line
-                key={i}
+                key={s.id}
                 points={s.points}
                 stroke={s.color}
                 strokeWidth={s.width}
@@ -339,7 +371,7 @@ export default function DrawingCanvas({
             size="sm"
             onClick={async () => {
               const committedLines = lines.map((s) => ({ ...s, committed: true }));
-              await onSubmit(committedLines);
+              await onSubmit(withoutRenderIds(committedLines));
               setLines(committedLines);
               onBack();
             }}

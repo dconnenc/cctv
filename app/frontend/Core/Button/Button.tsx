@@ -1,4 +1,11 @@
-import { AnchorHTMLAttributes, ButtonHTMLAttributes, Children, ReactNode, Ref } from 'react';
+import {
+  AnchorHTMLAttributes,
+  ButtonHTMLAttributes,
+  Children,
+  ReactNode,
+  Ref,
+  isValidElement,
+} from 'react';
 
 import { Link, LinkProps } from 'react-router-dom';
 
@@ -97,7 +104,8 @@ function deriveLabel(children: ReactNode, override?: string): string | undefined
   if (override) return override;
 
   const text = Children.toArray(children)
-    .filter((child) => typeof child === 'string' || typeof child === 'number')
+    .filter((child) => !isValidElement(child))
+    .map(String)
     .join(' ')
     .trim();
 

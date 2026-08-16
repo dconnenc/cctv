@@ -9,6 +9,18 @@ interface DispatchResult {
   error?: string;
 }
 
+type GuessWhoCommandBody =
+  | { contestant_index: 0 | 1 }
+  | { contestant_index: 0 | 1; direction: 1 | -1 }
+  | { contestant_index: 0 | 1; clue_order: string[]; hidden_clue_ids: string[] }
+  | { view: GuessWhoMonitorView }
+  | { playing: boolean };
+
+const jsonBody = (body: GuessWhoCommandBody): RequestInit => ({
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify(body),
+});
+
 export function useGuessWhoControls() {
   const { code } = useExperience();
   const { adminFetch } = useAdminAuth();
@@ -50,11 +62,6 @@ export function useGuessWhoControls() {
     },
     [code, adminFetch],
   );
-
-  const jsonBody = (body: Record<string, unknown>): RequestInit => ({
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  });
 
   return {
     start: (blockId: string) => send(blockId, 'start'),

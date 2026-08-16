@@ -94,9 +94,7 @@ export default function CreateQuestion({ data, onChange }: BlockComponentProps<Q
         ]}
         required
         value={data.questionInputType}
-        onChange={(value) =>
-          updateData({ questionInputType: value as QuestionData['questionInputType'] })
-        }
+        onChange={(questionInputType) => updateData({ questionInputType })}
       />
     </div>
   );

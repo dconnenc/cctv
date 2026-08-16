@@ -10,7 +10,7 @@ export default function ParticipantsMenu() {
   const { monitorView } = useExperience();
 
   const participants = useMemo(
-    () => [...(monitorView?.hosts || []), ...(monitorView?.participants || [])].reverse(),
+    () => [...(monitorView?.hosts || []), ...(monitorView?.participants || [])].toReversed(),
     [monitorView?.hosts, monitorView?.participants],
   );
 

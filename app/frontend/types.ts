@@ -3,6 +3,18 @@ import type { SoundKey } from '@cctv/sounds';
 
 // ===== CORE DOMAIN TYPES =====
 
+/** A value as it survives JSON transport between the Rails API and the client. */
+export type JsonValue =
+  | string
+  | number
+  | boolean
+  | null
+  | JsonValue[]
+  | { [key: string]: JsonValue };
+
+/** A JSON object whose keys are decided by the owning block kind rather than this contract. */
+export type JsonObject = { [key: string]: JsonValue };
+
 export interface AuthError extends Error {
   code?: number;
 }
@@ -25,7 +37,7 @@ export enum BlockKind {
   THE_SCENE = 'the_scene',
 }
 
-export const BLOCK_KIND_LABELS: Record<BlockKind, string> = {
+export const BLOCK_KIND_LABELS = {
   [BlockKind.POLL]: 'Poll',
   [BlockKind.QUESTION]: 'Question',
   [BlockKind.ANNOUNCEMENT]: 'Announcement',
@@ -36,7 +48,7 @@ export const BLOCK_KIND_LABELS: Record<BlockKind, string> = {
   [BlockKind.MINIGAME_ARITHMETIC]: 'Minigame: Arithmetic',
   [BlockKind.MINIGAME_BALLOON_PUMP]: 'Minigame: Balloon Pump',
   [BlockKind.THE_SCENE]: 'The Scene',
-};
+} satisfies Record<BlockKind, string>;
 
 export interface ExperienceSegment {
   id: string;
@@ -61,6 +73,7 @@ export interface QuestionPayload {
   ai_context?: string;
   synthetic?: boolean;
   generate_count?: number;
+  buckets?: Array<{ id: string; name: string; answer_ids?: string[] }>;
 }
 
 export interface AnnouncementPayload {
@@ -443,7 +456,7 @@ interface BaseBlock {
       id: string;
       answer: any;
     } | null;
-    aggregate?: Record<string, any>;
+    aggregate?: Record<string, number>;
     all_responses?: BlockResponse[];
   };
 }
@@ -476,13 +489,13 @@ export interface PhotoUploadBlock extends BaseBlock {
     user_responded?: boolean;
     user_response?: {
       id: string;
-      answer: Record<string, unknown>;
+      answer: JsonObject;
       photo_url?: string;
     } | null;
     all_responses?: Array<{
       id: string;
       experience_participant_id: string;
-      answer: Record<string, unknown>;
+      answer: JsonObject;
       photo_url?: string;
       created_at: string;
     }>;
@@ -758,7 +771,7 @@ export interface ExperienceJwtPayload {
 export interface ApiErrorResponse {
   error: string;
   message?: string;
-  details?: Record<string, any>;
+  details?: Record<string, JsonValue>;
 }
 
 // ===== WEBSOCKET MESSAGE TYPES =====
@@ -858,7 +871,7 @@ export type SubmissionState = Record<
   string,
   {
     id?: string;
-    answer?: Record<string, unknown>;
+    answer?: JsonObject;
     photo_url?: string;
     own_suggestion?: { id: string; text: string } | null;
     own_vote_suggestion_id?: string | null;
@@ -1096,7 +1109,7 @@ export type FormBlockData =
   | { kind: BlockKind.THE_SCENE; data: TheSceneData };
 
 export interface UpdateBlockPayload {
-  payload: ApiPayload | Record<string, unknown>;
+  payload: ApiPayload | JsonObject;
   visible_to_segment_ids: string[];
   questions?: Array<{ id: string; question: string }>;
 }
@@ -1185,7 +1198,7 @@ export interface ExperienceContextType {
 
   experiencePerform?: (
     action: string,
-    payload?: Record<string, unknown>,
+    payload?: JsonObject,
     target?: 'primary' | 'monitor' | 'impersonation',
   ) => void;
 }

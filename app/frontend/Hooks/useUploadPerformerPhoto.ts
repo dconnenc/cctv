@@ -6,6 +6,7 @@ import { Performer } from '@cctv/types';
 
 interface UploadPerformerPhotoResult {
   performer: Performer;
+  error?: string;
 }
 
 export function useUploadPerformerPhoto() {
@@ -54,13 +55,13 @@ export function useUploadPerformerPhoto() {
           body: JSON.stringify({ photo: signedId }),
         });
 
-        const data = await res.json();
+        const data: UploadPerformerPhotoResult = await res.json();
 
         if (!res.ok) {
           throw new Error(data.error || 'Failed to update performer photo');
         }
 
-        return data as UploadPerformerPhotoResult;
+        return data;
       } catch (e: unknown) {
         const msg = e instanceof Error ? e.message : 'Upload failed';
         setError(msg);

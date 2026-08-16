@@ -21,7 +21,7 @@ export function ThemeProvider({ children }: PropsWithChildren) {
   const [bgAnimated, setBgAnimatedState] = useState<boolean>(true);
 
   useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY) as Theme | null;
+    const stored = localStorage.getItem(STORAGE_KEY);
     if (stored === 'light' || stored === 'dark') {
       setThemeState(stored);
       return;

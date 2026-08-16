@@ -11,7 +11,7 @@ export type ImageUploadProps = {
   imageUrl?: string | null;
   onFileSelected: (file: File) => void;
   onRemove?: () => void;
-  shape?: 'rect' | 'circle';
+  previewGeometry?: 'rect' | 'circle';
   previewSize?: string;
   accept?: string;
   disabled?: boolean;
@@ -28,7 +28,7 @@ export function ImageUpload({
   imageUrl,
   onFileSelected,
   onRemove,
-  shape = 'rect',
+  previewGeometry = 'rect',
   previewSize = '12rem',
   accept = 'image/*',
   disabled = false,
@@ -53,7 +53,7 @@ export function ImageUpload({
 
   const previewStyle = {
     width: previewSize,
-    height: shape === 'circle' ? previewSize : undefined,
+    height: previewGeometry === 'circle' ? previewSize : undefined,
   };
 
   const buttonLabel = isUploading
@@ -75,7 +75,7 @@ export function ImageUpload({
         {imageUrl && (
           <div
             className={classNames(styles.preview, {
-              [styles.previewCircle]: shape === 'circle',
+              [styles.previewCircle]: previewGeometry === 'circle',
             })}
             style={previewStyle}
           >
