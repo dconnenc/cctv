@@ -68,6 +68,7 @@ RSpec.configure do |config|
   # process. This is a slightly easier setup to maintain for testing, rather
   # than independently managing a process outside of the main tests
   config.before(:suite) do
+    RSpec.configuration.add_setting :sidekiq_embedded
     next unless RSpec.configuration.files_to_run.any? { |f| f.include?("spec/system") }
 
     # Mimic reading the config file and creating the queues in our embedded
@@ -85,7 +86,6 @@ RSpec.configure do |config|
     # below can reach it to call stop. Local variables don't survive between
     # separate before/after suite blocks, so this is the idiomatic way to
     # pass state across suite-level hooks.
-    RSpec.configuration.add_setting :sidekiq_embedded
     RSpec.configuration.sidekiq_embedded = sidekiq
   end
 
