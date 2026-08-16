@@ -3,7 +3,7 @@
   "license": "UNLICENSED",
   "type": "module",
   "engines": {
-    "node": ">=20",
+    "node": ">=22.18",
     "yarn": ">=1.22.0"
   },
   "scripts": {

@@ -6,6 +6,7 @@ export default defineConfig({
     '.claude/**',
     '.cursor/**',
     'node_modules/**',
+    'app/views/pwa/**',
     'public/vite/**',
     'public/vite-dev/**',
     'public/vite-test/**',

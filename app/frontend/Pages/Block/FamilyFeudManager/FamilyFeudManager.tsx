@@ -94,6 +94,11 @@ function readChildPayload(childBlock: Block): FamilyFeudChildPayload {
   return childBlock.kind === BlockKind.QUESTION ? childBlock.payload : {};
 }
 
+function readChildResponses(childBlock: Block): BlockResponse[] {
+  const responses = childBlock.responses;
+  return responses && 'all_responses' in responses ? (responses.all_responses ?? []) : [];
+}
+
 function isStringAnswer(answer: BlockResponse['answer']): answer is string {
   return Object.prototype.toString.call(answer) === '[object String]';
 }
@@ -166,7 +171,7 @@ export default function FamilyFeudManager({ block, focusQuestionId }: FamilyFeud
   // This preserves UI state (collapsed states, optimistic updates)
   useEffect(() => {
     const newQuestionsState: QuestionWithBuckets[] = childQuestions.map((childBlock: Block) => {
-      const responses = childBlock.responses?.all_responses ?? [];
+      const responses = readChildResponses(childBlock);
       const childPayload = readChildPayload(childBlock);
       const questionBuckets = childPayload.buckets ?? [];
 

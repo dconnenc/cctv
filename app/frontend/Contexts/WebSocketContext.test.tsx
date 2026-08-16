@@ -50,7 +50,7 @@ class TestWebSocket extends EventTarget {
 
   triggerOpen() {
     this.readyState = TestWebSocket.OPEN;
-    this.onopen?.(new Event('open'));
+    this.dispatchEvent(new Event('open'));
   }
 
   send = vi.fn();
@@ -60,11 +60,11 @@ class TestWebSocket extends EventTarget {
 
   simulateClose(code = 1006) {
     this.readyState = TestWebSocket.CLOSED;
-    this.onclose?.(new CloseEvent('close', { code }));
+    this.dispatchEvent(new CloseEvent('close', { code }));
   }
 
   simulateMessage(envelope: CableEnvelope) {
-    this.onmessage?.(new MessageEvent('message', { data: JSON.stringify(envelope) }));
+    this.dispatchEvent(new MessageEvent('message', { data: JSON.stringify(envelope) }));
   }
 }
 

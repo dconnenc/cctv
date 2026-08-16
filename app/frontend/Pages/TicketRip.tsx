@@ -585,7 +585,7 @@ export default function TicketRip({ code, experienceName = '', onComplete }: Tic
   }, [fireComplete]);
 
   const handlePointerDown = useCallback(
-    (e: PointerEvent<HTMLDivElement>) => {
+    (e: PointerEvent<HTMLButtonElement>) => {
       e.preventDefault();
       activate();
     },
@@ -593,7 +593,7 @@ export default function TicketRip({ code, experienceName = '', onComplete }: Tic
   );
 
   const handleKeyDown = useCallback(
-    (e: KeyboardEvent<HTMLDivElement>) => {
+    (e: KeyboardEvent<HTMLButtonElement>) => {
       if (e.key === ' ' || e.key === 'Enter') {
         e.preventDefault();
         activate();

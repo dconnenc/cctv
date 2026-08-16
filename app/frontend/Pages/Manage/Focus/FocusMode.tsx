@@ -67,7 +67,7 @@ export default function FocusMode() {
     () =>
       (experience?.blocks || [])
         .filter((block) => block.status === 'closed' && !block.parent_block_id)
-        .sort((a, b) => b.position - a.position),
+        .toSorted((a, b) => b.position - a.position),
     [experience],
   );
 
