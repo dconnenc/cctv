@@ -1,3 +1,6 @@
+import { useEffect } from 'react';
+
+import { trackBlockSeen } from '@cctv/analytics';
 import { Block, BlockKind, ParticipantSummary } from '@cctv/types';
 
 import Announcement from '../Announcement/Announcement';
@@ -24,6 +27,16 @@ export default function ExperienceBlockContainer({
   disabled = false,
   viewContext = 'participant',
 }: ExperienceBlockContainerProps) {
+  // Only a real participant seeing the block counts as an impression. The manage
+  // preview and the projected monitor render the same tree but nobody is being
+  // asked to respond, so counting them would inflate the denominator.
+  const trackImpression = viewContext === 'participant' && Boolean(block.payload);
+
+  useEffect(() => {
+    if (!trackImpression) return;
+    trackBlockSeen({ blockId: block.id, blockKind: block.kind });
+  }, [trackImpression, block.id, block.kind]);
+
   if (!block.payload) {
     return <p>Party's over, everyone go home.</p>;
   }

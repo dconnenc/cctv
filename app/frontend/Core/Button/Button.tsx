@@ -1,6 +1,15 @@
-import { AnchorHTMLAttributes, ButtonHTMLAttributes, ReactNode, Ref } from 'react';
+import {
+  AnchorHTMLAttributes,
+  ButtonHTMLAttributes,
+  Children,
+  ReactNode,
+  Ref,
+  isValidElement,
+} from 'react';
 
 import { Link, LinkProps } from 'react-router-dom';
+
+import { AnalyticsEvent, capture } from '@cctv/analytics';
 
 import styles from './Button.module.scss';
 
@@ -16,6 +25,14 @@ interface SharedProps {
   icon?: ReactNode;
   /** Visually hide the label (children) but keep it for screen readers. Requires `icon`. */
   hideLabel?: boolean;
+  /**
+   * Overrides the label reported to analytics. Set this when the visible label is
+   * dynamic (a count, a name) and would otherwise split one action across many
+   * high-cardinality values.
+   */
+  analyticsLabel?: string;
+  /** Opts this button out of `button clicked` — use for noisy or trivial controls. */
+  analyticsSilent?: boolean;
 }
 
 type NativeButtonProps = Omit<ButtonHTMLAttributes<HTMLButtonElement>, keyof SharedProps>;
@@ -77,6 +94,29 @@ function buildClassName({
     .trim();
 }
 
+/**
+ * Derives a stable analytics label from the button's own content, so mapping a
+ * flow in PostHog needs no bespoke event per button. Only string children are
+ * used — an icon-only button contributes its screen-reader text, and anything
+ * non-textual falls back to undefined rather than serialising a React tree.
+ */
+function deriveLabel(children: ReactNode, override?: string): string | undefined {
+  if (override) return override;
+
+  const text = Children.toArray(children)
+    .filter((child) => !isValidElement(child))
+    .map(String)
+    .join(' ')
+    .trim();
+
+  return text.length > 0 ? text.slice(0, 80) : undefined;
+}
+
+function trackClick(label: string | undefined, variant: ButtonVariant, silent: boolean): void {
+  if (silent || !label) return;
+  capture(AnalyticsEvent.ButtonClicked, { label, variant });
+}
+
 function ButtonContent({
   icon,
   hideLabel,
@@ -107,6 +147,8 @@ export function Button(props: ButtonProps) {
     icon,
     hideLabel = false,
     className,
+    analyticsLabel,
+    analyticsSilent = false,
   } = props;
 
   if (hideLabel && !icon) {
@@ -116,6 +158,7 @@ export function Button(props: ButtonProps) {
   }
 
   const classes = buildClassName({ variant, size, loading, hideLabel, className });
+  const label = deriveLabel(children, analyticsLabel);
 
   if (isLinkProps(props)) {
     const {
@@ -127,10 +170,22 @@ export function Button(props: ButtonProps) {
       size: _s,
       icon: _i,
       hideLabel: _h,
+      analyticsLabel: _al,
+      analyticsSilent: _as,
+      onClick,
       ...rest
     } = props;
     return (
-      <Link {...rest} to={to} ref={ref} className={classes}>
+      <Link
+        {...rest}
+        to={to}
+        ref={ref}
+        className={classes}
+        onClick={(event) => {
+          trackClick(label, variant, analyticsSilent);
+          onClick?.(event);
+        }}
+      >
         <ButtonContent icon={icon} hideLabel={hideLabel}>
           {children}
         </ButtonContent>
@@ -148,10 +203,22 @@ export function Button(props: ButtonProps) {
       size: _s,
       icon: _i,
       hideLabel: _h,
+      analyticsLabel: _al,
+      analyticsSilent: _as,
+      onClick,
       ...rest
     } = props;
     return (
-      <a {...rest} href={href} ref={ref} className={classes}>
+      <a
+        {...rest}
+        href={href}
+        ref={ref}
+        className={classes}
+        onClick={(event) => {
+          trackClick(label, variant, analyticsSilent);
+          onClick?.(event);
+        }}
+      >
         <ButtonContent icon={icon} hideLabel={hideLabel}>
           {children}
         </ButtonContent>
@@ -169,12 +236,25 @@ export function Button(props: ButtonProps) {
     size: _s,
     icon: _i,
     hideLabel: _h,
+    analyticsLabel: _al,
+    analyticsSilent: _as,
+    onClick,
     ...rest
   } = props;
   const isDisabled = disabled || loading;
 
   return (
-    <button {...rest} ref={ref} type={type} disabled={isDisabled} className={classes}>
+    <button
+      {...rest}
+      ref={ref}
+      type={type}
+      disabled={isDisabled}
+      className={classes}
+      onClick={(event) => {
+        trackClick(label, variant, analyticsSilent);
+        onClick?.(event);
+      }}
+    >
       {loading ? (
         <>
           <span className={styles.spinner} aria-hidden="true" />

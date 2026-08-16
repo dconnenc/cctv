@@ -9,6 +9,7 @@ import {
   useState,
 } from 'react';
 
+import { AnalyticsEvent, capture } from '@cctv/analytics';
 import { useExperienceRoute } from '@cctv/hooks/useExperienceRoute';
 import {
   FamilyFeudAction,
@@ -95,6 +96,15 @@ function createWebSocketConnection(
 
   const onOpen = () => {
     qaLogger(`[${config.label}] WebSocket connected`);
+    // Only a reconnect is interesting — the first connect is just startup. This
+    // pairs with `websocket disconnected` to show how long participants spent
+    // cut off from live updates during a show.
+    if (attempt > 0) {
+      capture(AnalyticsEvent.WebsocketReconnected, {
+        stream: config.label,
+        attempts: attempt,
+      });
+    }
     onReconnecting?.(false);
     config.onConnect?.();
 
@@ -123,6 +133,11 @@ function createWebSocketConnection(
 
     if (!disposeRef.current && !rejected && event.code !== 1000 && event.code !== 1001) {
       const delay = Math.min(1000 * Math.pow(2, attempt), 30000);
+      capture(AnalyticsEvent.WebsocketDisconnected, {
+        stream: config.label,
+        close_code: event.code,
+        attempt: attempt + 1,
+      });
       qaLogger(`[${config.label}] Reconnecting in ${delay}ms (attempt ${attempt + 1})`);
       onReconnecting?.(true);
       setTimeout(

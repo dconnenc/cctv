@@ -32,7 +32,9 @@
       "@cctv/utils": ["./app/frontend/utils"],
       "@cctv/utils/*": ["./app/frontend/utils/*"],
       "@cctv/types": ["./app/frontend/types"],
-      "@cctv/sounds": ["./app/frontend/sounds"]
+      "@cctv/sounds": ["./app/frontend/sounds"],
+      "@cctv/analytics": ["./app/frontend/Analytics"],
+      "@cctv/analytics/*": ["./app/frontend/Analytics/*"]
     }
   },
   "include": ["app/frontend/**/*"],

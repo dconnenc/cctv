@@ -23,6 +23,8 @@ class Api::ExperienceAvatarController < Api::BaseController
         }
       )
 
+      track_event(Analytics::Events::AVATAR_SAVED, participant_id: participant.id)
+
       render json: { success: true, avatar: participant.avatar }
     end
   end

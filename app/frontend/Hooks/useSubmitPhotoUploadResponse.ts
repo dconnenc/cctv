@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react';
 
+import { trackSubmissionFailed, trackSubmissionSucceeded } from '@cctv/analytics';
 import { useExperience } from '@cctv/contexts/ExperienceContext';
 import { useExperienceState } from '@cctv/contexts/ExperienceStateContext';
 import { JsonObject } from '@cctv/types';
@@ -48,6 +49,7 @@ export function useSubmitPhotoUploadResponse() {
         if (!data?.success) {
           const msg = data?.error || 'Photo upload submission failed';
           setError(msg);
+          trackSubmissionFailed(blockId, 'photo_upload', 'rejected', msg);
           return { success: false, error: msg };
         }
 
@@ -62,10 +64,13 @@ export function useSubmitPhotoUploadResponse() {
           }));
         }
 
+        trackSubmissionSucceeded(blockId, 'photo_upload');
+
         return data;
       } catch (e: unknown) {
         const msg = e instanceof Error ? e.message : 'Connection error. Please try again.';
         setError(msg);
+        trackSubmissionFailed(blockId, 'photo_upload', 'network', msg);
         return { success: false, error: msg };
       } finally {
         setIsLoading(false);

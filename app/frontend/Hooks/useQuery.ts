@@ -1,5 +1,7 @@
 import { useCallback, useRef, useState } from 'react';
 
+import { instrumentedFetch } from '@cctv/analytics';
+
 interface ApiErrorEnvelope {
   error?: string;
 }
@@ -18,7 +20,11 @@ export function useQuery<T>({ url }: { url: string }) {
       setIsLoading(true);
       setError(undefined);
       try {
-        const response = await fetch(url, { ...options, signal: controller.signal });
+        const response = await instrumentedFetch(
+          url,
+          { ...options, signal: controller.signal },
+          { source: 'public' },
+        );
         const data: T & ApiErrorEnvelope = await response.json();
         if (!response.ok) {
           throw new Error(data?.error || `Request failed with status ${response.status}`);
