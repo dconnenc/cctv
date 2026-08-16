@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import { Plus, X } from 'lucide-react';
 
@@ -21,6 +21,7 @@ export default function SegmentManager({ segments, defaultSegmentId }: SegmentMa
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
   const [editColor, setEditColor] = useState('');
+  const newNameRef = useRef<HTMLInputElement>(null);
 
   const { createSegment, isLoading: isCreating, error: createError } = useCreateSegment();
   const { updateSegment, isLoading: isUpdating, error: updateError } = useUpdateSegment();
@@ -51,6 +52,10 @@ export default function SegmentManager({ segments, defaultSegmentId }: SegmentMa
     setEditName(segment.name);
     setEditColor(segment.color);
   };
+
+  useEffect(() => {
+    if (isAdding) newNameRef.current?.focus();
+  }, [isAdding]);
 
   return (
     <div className={styles.root}>
@@ -130,16 +135,18 @@ export default function SegmentManager({ segments, defaultSegmentId }: SegmentMa
       {isAdding && (
         <div className={styles.addForm}>
           <input
+            ref={newNameRef}
             className={styles.nameInput}
             placeholder="Segment name"
+            aria-label="Segment name"
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
-            autoFocus
           />
           <input
             type="color"
             className={styles.colorInput}
+            aria-label="Segment color"
             value={newColor}
             onChange={(e) => setNewColor(e.target.value)}
           />

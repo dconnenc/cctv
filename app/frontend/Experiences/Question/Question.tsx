@@ -4,7 +4,7 @@ import { useExperienceState } from '@cctv/contexts/ExperienceStateContext';
 import { Button } from '@cctv/core/Button/Button';
 import { TextInput } from '@cctv/core/TextInput/TextInput';
 import { useSubmitQuestionResponse } from '@cctv/hooks/useSubmitQuestionResponse';
-import { QuestionPayload } from '@cctv/types';
+import { JsonValue, QuestionPayload } from '@cctv/types';
 import { getFormData } from '@cctv/utils';
 
 import styles from './Question.module.scss';
@@ -16,12 +16,16 @@ interface QuestionProps extends QuestionPayload {
     user_responded?: boolean;
     user_response?: {
       id: string;
-      answer: any;
+      answer: { value?: string };
     } | null;
   };
   buttonText?: string;
   disabled?: boolean;
   viewContext?: 'participant' | 'monitor' | 'manage';
+}
+
+function answerText(value: JsonValue | undefined): string {
+  return value === null || value === undefined ? '' : String(value);
 }
 
 export default function Question({
@@ -72,9 +76,8 @@ export default function Question({
   };
 
   if (userResponded) {
-    const submissionValue = submission?.answer?.['value'];
     const displayValue =
-      (typeof submissionValue === 'string' ? submissionValue : null) ||
+      answerText(submission?.answer?.['value']) ||
       responses?.user_response?.answer?.value ||
       'You have already responded to this question.';
 

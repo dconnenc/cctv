@@ -105,6 +105,6 @@ describe('blockSummary', () => {
   });
 
   it.each(Object.values(BlockKind))('returns a string for %s', (kind) => {
-    expect(typeof blockSummary(blockOfKind(kind))).toBe('string');
+    expect(blockSummary(blockOfKind(kind))).toBeTypeOf('string');
   });
 });

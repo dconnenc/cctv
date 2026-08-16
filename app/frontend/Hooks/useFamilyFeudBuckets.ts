@@ -13,6 +13,12 @@ interface AutoCategorizeResult {
   buckets: AutoCategorizeBucket[];
 }
 
+interface AutoCategorizeResponse {
+  success?: boolean;
+  error?: string;
+  data: AutoCategorizeResult;
+}
+
 interface GeneratedAnswer {
   id: string;
   text: string;
@@ -22,7 +28,13 @@ interface GenerateSyntheticAnswersResult {
   answers: GeneratedAnswer[];
 }
 
-export function useFamilyFeudBuckets(blockId?: string, dispatch?: (action: any) => void) {
+interface GenerateSyntheticAnswersResponse {
+  success?: boolean;
+  error?: string;
+  data: GenerateSyntheticAnswersResult;
+}
+
+export function useFamilyFeudBuckets(dispatchBlockId?: string, dispatch?: (action: any) => void) {
   const { code, registerFamilyFeudDispatch, unregisterFamilyFeudDispatch } = useExperience();
   const { adminFetch } = useAdminAuth();
   const [isLoading, setIsLoading] = useState(false);
@@ -30,13 +42,13 @@ export function useFamilyFeudBuckets(blockId?: string, dispatch?: (action: any) 
 
   // Register dispatch handler for this specific block
   useEffect(() => {
-    if (blockId && dispatch) {
-      registerFamilyFeudDispatch?.(blockId, dispatch);
+    if (dispatchBlockId && dispatch) {
+      registerFamilyFeudDispatch?.(dispatchBlockId, dispatch);
       return () => {
-        unregisterFamilyFeudDispatch?.(blockId);
+        unregisterFamilyFeudDispatch?.(dispatchBlockId);
       };
     }
-  }, [blockId, dispatch, registerFamilyFeudDispatch, unregisterFamilyFeudDispatch]);
+  }, [dispatchBlockId, dispatch, registerFamilyFeudDispatch, unregisterFamilyFeudDispatch]);
 
   const addBucket = useCallback(
     async (blockId: string, questionId: string, name: string = 'New Bucket') => {
@@ -245,13 +257,13 @@ export function useFamilyFeudBuckets(blockId?: string, dispatch?: (action: any) 
           body: JSON.stringify({ question_id: questionId }),
         });
 
-        const data = await res.json();
+        const data: AutoCategorizeResponse = await res.json();
         if (!res.ok || data?.success === false) {
           const msg = data?.error || 'Failed to auto-categorize answers';
           setError(msg);
           return null;
         }
-        return data.data as AutoCategorizeResult;
+        return data.data;
       } catch (e: unknown) {
         const msg =
           e instanceof Error && e.message === 'Authentication expired'
@@ -292,13 +304,13 @@ export function useFamilyFeudBuckets(blockId?: string, dispatch?: (action: any) 
           }),
         });
 
-        const data = await res.json();
+        const data: GenerateSyntheticAnswersResponse = await res.json();
         if (!res.ok || data?.success === false) {
           const msg = data?.error || 'Failed to generate answers';
           setError(msg);
           return null;
         }
-        return data.data as GenerateSyntheticAnswersResult;
+        return data.data;
       } catch (e: unknown) {
         const msg =
           e instanceof Error && e.message === 'Authentication expired'

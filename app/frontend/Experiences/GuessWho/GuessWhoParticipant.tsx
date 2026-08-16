@@ -3,12 +3,17 @@ import { useEffect, useState } from 'react';
 import { useExperienceState } from '@cctv/contexts/ExperienceStateContext';
 import { Button } from '@cctv/core/Button/Button';
 import { useSubmitPollResponse } from '@cctv/hooks/useSubmitPollResponse';
-import { GuessWhoBlock } from '@cctv/types';
+import { GuessWhoBlock, JsonValue } from '@cctv/types';
 
 import styles from './GuessWho.module.scss';
 
 interface GuessWhoParticipantProps {
   block: GuessWhoBlock;
+}
+
+function selectionLabels(selected: JsonValue | undefined): string[] | null {
+  if (!selected) return null;
+  return Array.isArray(selected) ? selected.map((option) => String(option)) : [String(selected)];
 }
 
 const WATCH_MONITOR = (
@@ -37,8 +42,8 @@ export default function GuessWhoParticipant({ block }: GuessWhoParticipantProps)
 
   if (userResponded) {
     const selected =
-      (submission?.answer?.selectedOptions as string[] | undefined) ??
-      activePoll.user_response?.answer?.selectedOptions;
+      selectionLabels(submission?.answer?.selectedOptions) ??
+      selectionLabels(activePoll.user_response?.answer?.selectedOptions);
     const answer = selected?.join(', ') ?? '';
     return (
       <div className={styles.root}>

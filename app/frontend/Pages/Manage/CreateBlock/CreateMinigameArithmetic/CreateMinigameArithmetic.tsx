@@ -59,16 +59,15 @@ export const minigameArithmeticPayloadToFormData = (
   leaderboard_size: payload.leaderboard_size,
 });
 
+const toWholeNumber = (rawValue: string): number => {
+  const value = parseInt(rawValue, 10);
+  return Number.isNaN(value) ? 0 : value;
+};
+
 export default function CreateMinigameArithmetic({
   data,
   onChange,
 }: BlockComponentProps<MinigameArithmeticData>) {
-  const handleNumberChange =
-    (key: keyof MinigameArithmeticData) => (e: React.ChangeEvent<HTMLInputElement>) => {
-      const value = parseInt(e.target.value, 10);
-      onChange?.({ [key]: Number.isNaN(value) ? 0 : value } as Partial<MinigameArithmeticData>);
-    };
-
   return (
     <div className={sharedStyles.container}>
       <TextInput
@@ -76,21 +75,21 @@ export default function CreateMinigameArithmetic({
         type="number"
         min={5}
         value={data.duration_seconds || ''}
-        onChange={handleNumberChange('duration_seconds')}
+        onChange={(e) => onChange?.({ duration_seconds: toWholeNumber(e.target.value) })}
       />
       <TextInput
         label="Number of questions"
         type="number"
         min={1}
         value={data.question_count || ''}
-        onChange={handleNumberChange('question_count')}
+        onChange={(e) => onChange?.({ question_count: toWholeNumber(e.target.value) })}
       />
       <TextInput
         label="Leaderboard size"
         type="number"
         min={1}
         value={data.leaderboard_size || ''}
-        onChange={handleNumberChange('leaderboard_size')}
+        onChange={(e) => onChange?.({ leaderboard_size: toWholeNumber(e.target.value) })}
       />
     </div>
   );

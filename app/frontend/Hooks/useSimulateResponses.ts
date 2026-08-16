@@ -36,17 +36,33 @@ const RANDOM_WORDS = [
 
 const RANDOM_NUMBERS = ['42', '17', '99', '256', '1024', '7', '13', '21', '55', '100'];
 
+interface SimulatedPollAnswer {
+  selectedOptions: string[];
+  submittedAt: string;
+}
+
+interface SimulatedQuestionAnswer {
+  value: string;
+  submittedAt: string;
+}
+
+type SimulatedAnswer = SimulatedPollAnswer | SimulatedQuestionAnswer;
+
 function getRandomElement<T>(arr: T[]): T {
   return arr[Math.floor(Math.random() * arr.length)];
 }
 
 function getRandomElements<T>(arr: T[], min: number, max: number): T[] {
   const count = Math.floor(Math.random() * (max - min + 1)) + min;
-  const shuffled = [...arr].sort(() => Math.random() - 0.5);
+  const shuffled = [...arr];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
   return shuffled.slice(0, Math.min(count, arr.length));
 }
 
-function generatePollResponse(block: Block): { selectedOptions: string[]; submittedAt: string } {
+function generatePollResponse(block: Block): SimulatedPollAnswer {
   if (block.kind !== BlockKind.POLL) {
     throw new Error('Block is not a poll');
   }
@@ -62,7 +78,7 @@ function generatePollResponse(block: Block): { selectedOptions: string[]; submit
   };
 }
 
-function generateQuestionResponse(block: Block): { value: string; submittedAt: string } {
+function generateQuestionResponse(block: Block): SimulatedQuestionAnswer {
   if (block.kind !== BlockKind.QUESTION) {
     throw new Error('Block is not a question');
   }
@@ -102,7 +118,7 @@ function getSubmitEndpoint(block: Block): string | null {
   }
 }
 
-function generateResponse(block: Block): Record<string, any> | null {
+function generateResponse(block: Block): SimulatedAnswer | null {
   switch (block.kind) {
     case BlockKind.POLL:
       return generatePollResponse(block);
@@ -120,6 +136,26 @@ export interface SimulationProgress {
   total: number;
   completed: number;
   failed: number;
+}
+
+async function submitParticipantsSequentially(
+  participants: DebugParticipant[],
+  delayMs: number,
+  submitOne: (participant: DebugParticipant) => Promise<void>,
+): Promise<void> {
+  const submitAt = async (index: number): Promise<void> => {
+    if (index >= participants.length) return;
+
+    await submitOne(participants[index]);
+
+    if (delayMs > 0 && index < participants.length - 1) {
+      await new Promise((resolve) => setTimeout(resolve, delayMs));
+    }
+
+    await submitAt(index + 1);
+  };
+
+  await submitAt(0);
 }
 
 export function useSimulateResponses() {
@@ -172,14 +208,13 @@ export function useSimulateResponses() {
 
       const url = `/api/experiences/${encodeURIComponent(code)}/blocks/${encodeURIComponent(block.id)}/${endpoint}`;
 
-      for (let i = 0; i < participantsWithJwt.length; i++) {
-        const participant = participantsWithJwt[i];
+      await submitParticipantsSequentially(participantsWithJwt, delayMs, async (participant) => {
         const answer = generateResponse(block);
 
         if (!answer) {
           console.warn(`[Simulate] User ${participant.name}: No answer generated`);
           setProgress((prev) => ({ ...prev, failed: prev.failed + 1 }));
-          continue;
+          return;
         }
 
         console.log(
@@ -209,11 +244,7 @@ export function useSimulateResponses() {
           console.error(`[Simulate] User ${participant.name}: ERROR`, e);
           setProgress((prev) => ({ ...prev, failed: prev.failed + 1 }));
         }
-
-        if (delayMs > 0 && i < participantsWithJwt.length - 1) {
-          await new Promise((resolve) => setTimeout(resolve, delayMs));
-        }
-      }
+      });
 
       setIsSimulating(false);
     },
@@ -249,8 +280,7 @@ export function useSimulateResponses() {
 
       const url = `/api/experiences/${encodeURIComponent(code)}/blocks/${encodeURIComponent(childBlock.id)}/submit_question_response`;
 
-      for (let i = 0; i < participantsWithJwt.length; i++) {
-        const participant = participantsWithJwt[i];
+      await submitParticipantsSequentially(participantsWithJwt, delayMs, async (participant) => {
         const answer = generateQuestionResponse(childBlock);
 
         console.log(
@@ -283,11 +313,7 @@ export function useSimulateResponses() {
           console.error(`[SimulateChild] User ${participant.name}: ERROR`, e);
           setProgress((prev) => ({ ...prev, failed: prev.failed + 1 }));
         }
-
-        if (delayMs > 0 && i < participantsWithJwt.length - 1) {
-          await new Promise((resolve) => setTimeout(resolve, delayMs));
-        }
-      }
+      });
 
       setIsSimulating(false);
     },

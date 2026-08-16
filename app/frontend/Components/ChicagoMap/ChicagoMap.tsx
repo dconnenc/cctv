@@ -105,6 +105,95 @@ function PopupHoverGuard({ closeTimer }: { closeTimer: MutableRefObject<number |
   return null;
 }
 
+interface TheaterMarkerProps {
+  theater: DiscoverTheater;
+  shows: DiscoverEvent[];
+  isFocused: boolean;
+  isHighlighted: boolean;
+  onSelectTheater: (slug: string) => void;
+  onHoverTheater: (slug: string | null) => void;
+  closeTimer: MutableRefObject<number | undefined>;
+}
+
+function TheaterMarker({
+  theater,
+  shows,
+  isFocused,
+  isHighlighted,
+  onSelectTheater,
+  onHoverTheater,
+  closeTimer,
+}: TheaterMarkerProps) {
+  const markerRef = useRef<L.Marker>(null);
+
+  return (
+    <Marker
+      ref={markerRef}
+      position={[theater.lat, theater.lng]}
+      icon={theaterIcon({ isActive: shows.length > 0, isFocused, isHighlighted })}
+      eventHandlers={{
+        click: () => onSelectTheater(theater.slug),
+        mouseover: () => {
+          window.clearTimeout(closeTimer.current);
+          markerRef.current?.openPopup();
+          onHoverTheater(theater.slug);
+        },
+        mouseout: () => {
+          window.clearTimeout(closeTimer.current);
+          closeTimer.current = window.setTimeout(
+            () => markerRef.current?.closePopup(),
+            POPUP_CLOSE_DELAY,
+          );
+          onHoverTheater(null);
+        },
+      }}
+    >
+      <Popup closeButton={false}>
+        <div className={styles.popup}>
+          <div className={styles.popHeader}>
+            <span className={styles.popName}>{theater.name}</span>
+            <span className={styles.popHood}>{theater.neighborhood}</span>
+          </div>
+
+          {shows.length === 0 ? (
+            <p className={styles.popEmpty}>No upcoming shows</p>
+          ) : (
+            <ul className={styles.popList}>
+              {shows.slice(0, 3).map((show) => (
+                <li key={show.id} className={styles.popRow}>
+                  <Link to={`/events/${show.slug}`} className={styles.popShow}>
+                    <span className={styles.popDate}>{formatEventDate(show.starts_at)}</span>
+                    <span className={styles.popTitle}>{show.title}</span>
+                  </Link>
+                  {show.ticket_url && (
+                    <a
+                      className={styles.popTickets}
+                      href={show.ticket_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label={`Get tickets for ${show.title}`}
+                    >
+                      <Ticket size={14} />
+                    </a>
+                  )}
+                </li>
+              ))}
+              {shows.length > 3 && (
+                <li>
+                  <Link to="/events" className={styles.popMore}>
+                    See all {shows.length}
+                    <ArrowRight size={12} />
+                  </Link>
+                </li>
+              )}
+            </ul>
+          )}
+        </div>
+      </Popup>
+    </Marker>
+  );
+}
+
 interface ChicagoMapProps {
   theaters: DiscoverTheater[];
   events: DiscoverEvent[];
@@ -168,82 +257,18 @@ export function ChicagoMap({
           </Pane>
         )}
 
-        {theaters.map((theater) => {
-          const shows = showsByTheater.get(theater.slug) ?? [];
-          return (
-            <Marker
-              key={theater.slug}
-              position={[theater.lat, theater.lng]}
-              icon={theaterIcon({
-                isActive: shows.length > 0,
-                isFocused: theater.slug === focusedTheaterSlug,
-                isHighlighted: theater.slug === highlightedTheaterSlug,
-              })}
-              eventHandlers={{
-                click: () => onSelectTheater(theater.slug),
-                mouseover: (event) => {
-                  window.clearTimeout(closeTimer.current);
-                  (event.target as L.Marker).openPopup();
-                  onHoverTheater(theater.slug);
-                },
-                mouseout: (event) => {
-                  const marker = event.target as L.Marker;
-                  window.clearTimeout(closeTimer.current);
-                  closeTimer.current = window.setTimeout(
-                    () => marker.closePopup(),
-                    POPUP_CLOSE_DELAY,
-                  );
-                  onHoverTheater(null);
-                },
-              }}
-            >
-              <Popup closeButton={false}>
-                <div className={styles.popup}>
-                  <div className={styles.popHeader}>
-                    <span className={styles.popName}>{theater.name}</span>
-                    <span className={styles.popHood}>{theater.neighborhood}</span>
-                  </div>
-
-                  {shows.length === 0 ? (
-                    <p className={styles.popEmpty}>No upcoming shows</p>
-                  ) : (
-                    <ul className={styles.popList}>
-                      {shows.slice(0, 3).map((show) => (
-                        <li key={show.id} className={styles.popRow}>
-                          <Link to={`/events/${show.slug}`} className={styles.popShow}>
-                            <span className={styles.popDate}>
-                              {formatEventDate(show.starts_at)}
-                            </span>
-                            <span className={styles.popTitle}>{show.title}</span>
-                          </Link>
-                          {show.ticket_url && (
-                            <a
-                              className={styles.popTickets}
-                              href={show.ticket_url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              aria-label={`Get tickets for ${show.title}`}
-                            >
-                              <Ticket size={14} />
-                            </a>
-                          )}
-                        </li>
-                      ))}
-                      {shows.length > 3 && (
-                        <li>
-                          <Link to="/events" className={styles.popMore}>
-                            See all {shows.length}
-                            <ArrowRight size={12} />
-                          </Link>
-                        </li>
-                      )}
-                    </ul>
-                  )}
-                </div>
-              </Popup>
-            </Marker>
-          );
-        })}
+        {theaters.map((theater) => (
+          <TheaterMarker
+            key={theater.slug}
+            theater={theater}
+            shows={showsByTheater.get(theater.slug) ?? []}
+            isFocused={theater.slug === focusedTheaterSlug}
+            isHighlighted={theater.slug === highlightedTheaterSlug}
+            onSelectTheater={onSelectTheater}
+            onHoverTheater={onHoverTheater}
+            closeTimer={closeTimer}
+          />
+        ))}
       </MapContainer>
     </div>
   );

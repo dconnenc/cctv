@@ -1,22 +1,24 @@
 import type { StorybookConfig } from '@storybook/react-vite';
-import type { Plugin } from 'vite';
+import type { PluginOption } from 'vite';
 
-const isRubyPlugin = (p: unknown): boolean => {
-  if (!p || typeof p !== 'object' || Array.isArray(p)) return false;
-  return (p as Plugin).name?.startsWith('vite-plugin-ruby') ?? false;
+const RUBY_PLUGIN_PREFIX = 'vite-plugin-ruby';
+
+const isRubyPlugin = (plugin: PluginOption): boolean => {
+  if (!plugin || Array.isArray(plugin)) return false;
+  return 'name' in plugin && plugin.name.startsWith(RUBY_PLUGIN_PREFIX);
 };
 
 const config: StorybookConfig = {
   stories: ['../app/frontend/**/*.stories.@(ts|tsx)'],
   addons: ['@storybook/addon-a11y', '@storybook/addon-docs', '@storybook/addon-interactions'],
   framework: '@storybook/react-vite',
-  viteFinal: async (config) => {
-    config.plugins = (config.plugins ?? []).flatMap((p) => {
-      if (Array.isArray(p)) return (p as Plugin[]).filter((item) => !isRubyPlugin(item));
-      return isRubyPlugin(p) ? [] : [p];
+  viteFinal: async (viteConfig) => {
+    viteConfig.plugins = (viteConfig.plugins ?? []).flatMap((plugin) => {
+      if (Array.isArray(plugin)) return plugin.filter((nested) => !isRubyPlugin(nested));
+      return isRubyPlugin(plugin) ? [] : [plugin];
     });
-    config.base = '/';
-    return config;
+    viteConfig.base = '/';
+    return viteConfig;
   },
 };
 export default config;

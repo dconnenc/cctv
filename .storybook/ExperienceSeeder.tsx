@@ -1,4 +1,4 @@
-import { ReactNode, useEffect } from 'react';
+import { ReactNode, useEffect, useRef } from 'react';
 
 import { useExperienceState } from '../app/frontend/Contexts/ExperienceStateContext';
 import { useLobbyDrawingDispatch } from '../app/frontend/Contexts/LobbyDrawingContext';
@@ -21,8 +21,12 @@ export function ExperienceSeeder({
 }: ExperienceSeederProps) {
   const state = useExperienceState();
   const drawDispatch = useLobbyDrawingDispatch();
+  const seeded = useRef(false);
 
   useEffect(() => {
+    if (seeded.current) return;
+    seeded.current = true;
+
     if (experience) state.setExperience(experience);
     if (participant) state.setParticipant(participant);
     state.setExperienceStatus(experienceStatus);
@@ -43,7 +47,7 @@ export function ExperienceSeeder({
         }
       }
     }
-  }, []);
+  }, [experience, participant, experienceStatus, monitorView, state, drawDispatch]);
 
   return <>{children}</>;
 }

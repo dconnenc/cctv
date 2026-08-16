@@ -2,14 +2,22 @@ import { useCallback, useState } from 'react';
 
 import { useAdminAuth } from '@cctv/contexts/AdminAuthContext';
 import { useExperience } from '@cctv/contexts/ExperienceContext';
-import {
-  ApiPayload,
-  BlockKind,
-  BlockStatus,
-  CreateBlockPayload,
-  CreateExperienceApiResponse,
-} from '@cctv/types';
+import { ApiPayload, BlockKind, BlockStatus, CreateExperienceApiResponse } from '@cctv/types';
 import { qaLogger } from '@cctv/utils';
+
+export interface CreateBlockVariable {
+  key: string;
+  label: string;
+  datatype: string;
+  required: boolean;
+  source?:
+    | { type: string; participant_id: string }
+    | { kind: string; question: string; input_type: string };
+}
+
+export interface CreateBlockQuestion {
+  payload: Record<string, string | number | boolean>;
+}
 
 export interface CreateExperienceBlockParams {
   kind: BlockKind;
@@ -19,18 +27,20 @@ export interface CreateExperienceBlockParams {
   open_immediately?: boolean;
   add_to_playbill?: boolean;
   playbill_mysterious?: boolean;
-  variables?: Array<{
-    key: string;
-    label: string;
-    datatype: string;
-    required: boolean;
-    source?:
-      | { type: string; participant_id: string }
-      | { kind: string; question: string; input_type: string };
-  }>;
-  questions?: Array<{
-    payload: Record<string, string | number | boolean>;
-  }>;
+  variables?: CreateBlockVariable[];
+  questions?: CreateBlockQuestion[];
+}
+
+interface CreateBlockRequestBody {
+  kind: BlockKind;
+  payload?: ApiPayload;
+  visible_to_segment_ids: string[];
+  status: BlockStatus;
+  open_immediately: boolean;
+  add_to_playbill: boolean;
+  playbill_mysterious: boolean;
+  variables?: CreateBlockVariable[];
+  questions?: CreateBlockQuestion[];
 }
 
 export function useCreateExperienceBlock() {
@@ -69,9 +79,9 @@ export function useCreateExperienceBlock() {
           `open_immediately=${open_immediately}, status=${status}`,
       );
 
-      const submitPayload: CreateBlockPayload = {
+      const submitPayload: CreateBlockRequestBody = {
         kind,
-        payload: payload as CreateBlockPayload['payload'],
+        payload,
         visible_to_segment_ids,
         status,
         open_immediately,

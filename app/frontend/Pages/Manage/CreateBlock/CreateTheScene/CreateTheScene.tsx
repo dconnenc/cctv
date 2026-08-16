@@ -55,21 +55,28 @@ export const theScenePayloadToFormData = (payload: TheScenePayload): TheSceneDat
   performer_participant_ids: payload.performer_participant_ids ?? [],
 });
 
+const NO_PARTICIPANTS: ParticipantSummary[] = [];
+
 export default function CreateTheScene({
   data,
   onChange,
-  participants = [],
+  participants = NO_PARTICIPANTS,
 }: BlockComponentProps<TheSceneData>) {
   const { performers } = usePerformers();
 
   const performerUserIds = useMemo(
-    () => new Set(performers.map((p) => p.user_id).filter(Boolean) as string[]),
+    () =>
+      new Set(
+        performers
+          .map((performer) => performer.user_id)
+          .filter((userId): userId is string => Boolean(userId)),
+      ),
     [performers],
   );
 
   const sortedParticipants = useMemo(() => {
     const eligible = participants.filter((p) => p.role !== 'host' && p.role !== 'moderator');
-    return eligible.slice().sort((a, b) => {
+    return eligible.toSorted((a, b) => {
       const aHas = performerUserIds.has(a.user_id) ? 0 : 1;
       const bHas = performerUserIds.has(b.user_id) ? 0 : 1;
       if (aHas !== bHas) return aHas - bHas;

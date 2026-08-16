@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useMemo, useState } from 'react';
+import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 
 import { useExperience } from '@cctv/contexts/ExperienceContext';
 import { useExperienceState } from '@cctv/contexts/ExperienceStateContext';
@@ -156,16 +156,7 @@ function ParticipantView({ block }: { block: TheSceneBlock }) {
               : "The ideal suggestion, continues the narrative. For example: Jordan's character is now a doctor on a first date."}
           </p>
           <form className={styles.suggestionForm} onSubmit={handleSubmit}>
-            <input
-              className={styles.input}
-              type="text"
-              maxLength={MAX_SUGGESTION_LENGTH}
-              placeholder="Taylor eats a bowl of hair…"
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              disabled={isSubmitting}
-              autoFocus
-            />
+            <SuggestionInput value={text} onChange={setText} disabled={isSubmitting} />
             <span className={styles.charCount}>{remaining} characters left</span>
             <Button type="submit" loading={isSubmitting} loadingText="Submitting...">
               {editing ? 'Save' : 'Submit suggestion'}
@@ -231,6 +222,38 @@ function ParticipantView({ block }: { block: TheSceneBlock }) {
         onVote={(id) => void submitVote(block.id, id)}
       />
     </Shell>
+  );
+}
+
+// The suggestion field is the whole point of this screen, so focus moves to it
+// as soon as it appears and it carries its own accessible name.
+function SuggestionInput({
+  value,
+  onChange,
+  disabled,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  disabled: boolean;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    inputRef.current?.focus();
+  }, []);
+
+  return (
+    <input
+      ref={inputRef}
+      className={styles.input}
+      type="text"
+      maxLength={MAX_SUGGESTION_LENGTH}
+      placeholder="Taylor eats a bowl of hair…"
+      aria-label="Your suggestion"
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      disabled={disabled}
+    />
   );
 }
 
@@ -387,8 +410,8 @@ function ManageView({ block }: { block: TheSceneBlock }) {
     all_suggestions = [],
   } = block.payload;
 
-  const participants = useMemo(() => {
-    if (!experience) return [] as ExperienceParticipant[];
+  const participants: ExperienceParticipant[] = useMemo(() => {
+    if (!experience) return [];
     return [...(experience.hosts || []), ...(experience.participants || [])];
   }, [experience]);
 
@@ -405,7 +428,7 @@ function ManageView({ block }: { block: TheSceneBlock }) {
 
   const sortedParticipants = useMemo(() => {
     const eligible = participants.filter((p) => p.role !== 'host' && p.role !== 'moderator');
-    return eligible.slice().sort((a, b) => {
+    return eligible.toSorted((a, b) => {
       const aHas = performerProfileUserIds.has(a.user_id) ? 0 : 1;
       const bHas = performerProfileUserIds.has(b.user_id) ? 0 : 1;
       if (aHas !== bHas) return aHas - bHas;

@@ -27,6 +27,12 @@ export interface AdminAuthContextType {
   isAdminLoading: boolean;
 }
 
+interface AdminTokenResponse {
+  type: 'success';
+  success: boolean;
+  jwt: string;
+}
+
 const AdminAuthContext = createContext<AdminAuthContextType | undefined>(undefined);
 
 export function AdminAuthProvider({ children }: { children: ReactNode }) {
@@ -80,12 +86,12 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
 
       if (!response.ok) throw new Error('Failed to fetch admin JWT');
 
-      const data = await response.json();
+      const data: Partial<AdminTokenResponse> | null = await response.json();
 
-      if (data?.success && data?.jwt) {
+      if (data?.success && data.jwt) {
         qaLogger('Admin JWT received');
         applyAdminJWT(data.jwt);
-        return data.jwt as string;
+        return data.jwt;
       } else {
         throw new Error('Invalid admin JWT response');
       }

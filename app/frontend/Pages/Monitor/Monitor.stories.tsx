@@ -80,6 +80,8 @@ export const CheckYourDevices: Story = {
 
 const playerIds = mockParticipants.filter((p) => p.role !== 'host').map((p) => p.id);
 
+const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
 function ResponseSimulator({
   baseExperience,
   children,
@@ -151,9 +153,8 @@ export const ResponsesLightUp: Story = {
     const konvaCanvas = canvasElement.querySelector('canvas');
     await expect(konvaCanvas).toBeInTheDocument();
 
-    const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
-
-    for (const id of playerIds) {
+    await playerIds.reduce<Promise<void>>(async (previousStep, id) => {
+      await previousStep;
       const name = mockParticipants.find((p) => p.id === id)?.name;
 
       await step(`${name} responds`, async () => {
@@ -161,7 +162,7 @@ export const ResponsesLightUp: Story = {
         const btn = canvas.getByTestId(`respond-${id}`);
         await userEvent.click(btn);
       });
-    }
+    }, Promise.resolve());
 
     await step('All players have responded', async () => {
       await delay(1000);

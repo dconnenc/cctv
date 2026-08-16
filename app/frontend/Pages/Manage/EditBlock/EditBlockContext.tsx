@@ -1,4 +1,12 @@
-import { ReactNode, createContext, useCallback, useContext, useRef, useState } from 'react';
+import {
+  ReactNode,
+  createContext,
+  useCallback,
+  useContext,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 
 import { useExperience } from '@cctv/contexts/ExperienceContext';
 import { useUpdateExperienceBlock } from '@cctv/hooks/useUpdateExperienceBlock';
@@ -7,7 +15,6 @@ import {
   Block,
   BlockKind,
   EditBlockContextValue,
-  FamilyFeudPayload,
   FormBlockData,
   ParticipantSummary,
 } from '@cctv/types';
@@ -80,78 +87,86 @@ interface EditBlockProviderProps {
   onClose: () => void;
 }
 
+interface BlockUpdateFields {
+  payload: ApiPayload;
+  questions?: Array<{ id: string; question: string }>;
+}
+
+function payloadShowsOnMonitor(payload: Block['payload']): boolean {
+  return !('show_on_monitor' in payload) || payload.show_on_monitor !== false;
+}
+
 function blockToFormData(block: Block): FormBlockData {
-  switch (block.kind) {
+  const { kind, payload, children } = block;
+  switch (kind) {
     case BlockKind.POLL:
-      return { kind: BlockKind.POLL, data: pollPayloadToFormData(block.payload) };
+      return { kind: BlockKind.POLL, data: pollPayloadToFormData(payload) };
     case BlockKind.QUESTION:
-      return { kind: BlockKind.QUESTION, data: questionPayloadToFormData(block.payload) };
+      return { kind: BlockKind.QUESTION, data: questionPayloadToFormData(payload) };
     case BlockKind.ANNOUNCEMENT:
-      return { kind: BlockKind.ANNOUNCEMENT, data: announcementPayloadToFormData(block.payload) };
+      return { kind: BlockKind.ANNOUNCEMENT, data: announcementPayloadToFormData(payload) };
     case BlockKind.FAMILY_FEUD:
       return {
         kind: BlockKind.FAMILY_FEUD,
-        data: familyFeudPayloadToFormData(block.payload as FamilyFeudPayload, block.children),
+        data: familyFeudPayloadToFormData(payload, children),
       };
     case BlockKind.PHOTO_UPLOAD:
-      return { kind: BlockKind.PHOTO_UPLOAD, data: photoUploadPayloadToFormData(block.payload) };
+      return { kind: BlockKind.PHOTO_UPLOAD, data: photoUploadPayloadToFormData(payload) };
     case BlockKind.BUZZER:
-      return { kind: BlockKind.BUZZER, data: buzzerPayloadToFormData(block.payload) };
+      return { kind: BlockKind.BUZZER, data: buzzerPayloadToFormData(payload) };
     case BlockKind.GUESS_WHO:
-      return { kind: BlockKind.GUESS_WHO, data: guessWhoPayloadToFormData(block.payload) };
+      return { kind: BlockKind.GUESS_WHO, data: guessWhoPayloadToFormData(payload) };
     case BlockKind.MINIGAME_ARITHMETIC:
       return {
         kind: BlockKind.MINIGAME_ARITHMETIC,
-        data: minigameArithmeticPayloadToFormData(block.payload),
+        data: minigameArithmeticPayloadToFormData(payload),
       };
     case BlockKind.MINIGAME_BALLOON_PUMP:
       return {
         kind: BlockKind.MINIGAME_BALLOON_PUMP,
-        data: minigameBalloonPumpPayloadToFormData(block.payload),
+        data: minigameBalloonPumpPayloadToFormData(payload),
       };
     case BlockKind.THE_SCENE:
       return {
         kind: BlockKind.THE_SCENE,
-        data: theScenePayloadToFormData(block.payload),
+        data: theScenePayloadToFormData(payload),
       };
     default: {
-      const _exhaust: never = block;
-      throw new Error(`Unknown block kind: ${(_exhaust as Block).kind}`);
+      const exhaustiveCheck: never = kind;
+      throw new Error(`Unknown block kind: ${exhaustiveCheck}`);
     }
   }
 }
 
-function buildUpdatePayload(blockData: FormBlockData): {
-  payload: ApiPayload;
-  questions?: Array<{ id: string; question: string }>;
-} {
-  switch (blockData.kind) {
+function buildUpdatePayload(blockData: FormBlockData): BlockUpdateFields {
+  const { kind, data } = blockData;
+  switch (kind) {
     case BlockKind.POLL:
-      return { payload: buildPollPayload(blockData.data) };
+      return { payload: buildPollPayload(data) };
     case BlockKind.QUESTION:
-      return { payload: buildQuestionPayload(blockData.data) };
+      return { payload: buildQuestionPayload(data) };
     case BlockKind.ANNOUNCEMENT:
-      return { payload: buildAnnouncementPayload(blockData.data) };
+      return { payload: buildAnnouncementPayload(data) };
     case BlockKind.FAMILY_FEUD:
       return {
-        payload: buildFamilyFeudPayload(blockData.data),
-        questions: blockData.data.questions.map((q) => ({ id: q.id, question: q.question })),
+        payload: buildFamilyFeudPayload(data),
+        questions: data.questions.map((q) => ({ id: q.id, question: q.question })),
       };
     case BlockKind.PHOTO_UPLOAD:
-      return { payload: buildPhotoUploadPayload(blockData.data) };
+      return { payload: buildPhotoUploadPayload(data) };
     case BlockKind.BUZZER:
-      return { payload: buildBuzzerPayload(blockData.data) };
+      return { payload: buildBuzzerPayload(data) };
     case BlockKind.GUESS_WHO:
-      return { payload: buildGuessWhoPayload(blockData.data) };
+      return { payload: buildGuessWhoPayload(data) };
     case BlockKind.MINIGAME_ARITHMETIC:
-      return { payload: buildMinigameArithmeticPayload(blockData.data) };
+      return { payload: buildMinigameArithmeticPayload(data) };
     case BlockKind.MINIGAME_BALLOON_PUMP:
-      return { payload: buildMinigameBalloonPumpPayload(blockData.data) };
+      return { payload: buildMinigameBalloonPumpPayload(data) };
     case BlockKind.THE_SCENE:
-      return { payload: buildTheScenePayload(blockData.data) };
+      return { payload: buildTheScenePayload(data) };
     default: {
-      const _exhaust: never = blockData;
-      throw new Error(`Unknown block kind: ${(_exhaust as FormBlockData).kind}`);
+      const exhaustiveCheck: never = kind;
+      throw new Error(`Unknown block kind: ${exhaustiveCheck}`);
     }
   }
 }
@@ -166,8 +181,8 @@ export function EditBlockProvider({
 
   const initialVisibleSegments = block.visible_to_segments ?? [];
   const [visibleSegments, setVisibleSegments] = useState<string[]>(initialVisibleSegments);
-  const [showOnMonitor, setShowOnMonitor] = useState<boolean>(
-    (block.payload as { show_on_monitor?: boolean }).show_on_monitor !== false,
+  const [showOnMonitor, setShowOnMonitor] = useState<boolean>(() =>
+    payloadShowsOnMonitor(block.payload),
   );
   const [viewAdditionalDetails, setViewAdditionalDetails] = useState<boolean>(false);
   const [pendingWarning, setPendingWarning] = useState<string | null>(null);
@@ -185,11 +200,7 @@ export function EditBlockProvider({
   const performUpdate = useCallback(
     async (visible_to_segment_ids: string[]) => {
       const { payload, questions } = buildUpdatePayload(blockData);
-
-      const payloadWithShowOnMonitor: Record<string, unknown> = {
-        ...(payload as unknown as Record<string, unknown>),
-        show_on_monitor: showOnMonitor,
-      };
+      const payloadWithShowOnMonitor = { ...payload, show_on_monitor: showOnMonitor };
 
       const result = await updateExperienceBlock(block.id, {
         payload: payloadWithShowOnMonitor,
@@ -207,41 +218,42 @@ export function EditBlockProvider({
   const submit = useCallback(async () => {
     setUpdateError(null);
 
+    const { kind, data } = blockData;
     let validationError: string | null = null;
-    switch (blockData.kind) {
+    switch (kind) {
       case BlockKind.POLL:
-        validationError = validatePoll(blockData.data);
+        validationError = validatePoll(data);
         break;
       case BlockKind.QUESTION:
-        validationError = validateQuestion(blockData.data);
+        validationError = validateQuestion(data);
         break;
       case BlockKind.ANNOUNCEMENT:
-        validationError = validateAnnouncement(blockData.data);
+        validationError = validateAnnouncement(data);
         break;
       case BlockKind.FAMILY_FEUD:
-        validationError = validateFamilyFeud(blockData.data);
+        validationError = validateFamilyFeud(data);
         break;
       case BlockKind.PHOTO_UPLOAD:
-        validationError = validatePhotoUpload(blockData.data);
+        validationError = validatePhotoUpload(data);
         break;
       case BlockKind.BUZZER:
-        validationError = validateBuzzer(blockData.data);
+        validationError = validateBuzzer(data);
         break;
       case BlockKind.GUESS_WHO:
-        validationError = validateGuessWho(blockData.data);
+        validationError = validateGuessWho(data);
         break;
       case BlockKind.MINIGAME_ARITHMETIC:
-        validationError = validateMinigameArithmetic(blockData.data);
+        validationError = validateMinigameArithmetic(data);
         break;
       case BlockKind.MINIGAME_BALLOON_PUMP:
-        validationError = validateMinigameBalloonPump(blockData.data);
+        validationError = validateMinigameBalloonPump(data);
         break;
       case BlockKind.THE_SCENE:
-        validationError = validateTheScene(blockData.data);
+        validationError = validateTheScene(data);
         break;
       default: {
-        const _exhaust: never = blockData;
-        validationError = `Unknown block kind: ${(_exhaust as FormBlockData).kind}`;
+        const exhaustiveCheck: never = kind;
+        validationError = `Unknown block kind: ${exhaustiveCheck}`;
       }
     }
 
@@ -299,23 +311,38 @@ export function EditBlockProvider({
     pendingVisibleSegmentIds.current = [];
   }, []);
 
-  const contextValue: EditBlockContextValue = {
-    blockData,
-    setBlockData,
-    participants,
-    submit,
-    isSubmitting,
-    error: updateError,
-    visibleSegments,
-    setVisibleSegments,
-    showOnMonitor,
-    setShowOnMonitor,
-    viewAdditionalDetails,
-    setViewAdditionalDetails,
-    pendingWarning,
-    confirmWarning,
-    cancelWarning,
-  };
+  const contextValue = useMemo<EditBlockContextValue>(
+    () => ({
+      blockData,
+      setBlockData,
+      participants,
+      submit,
+      isSubmitting,
+      error: updateError,
+      visibleSegments,
+      setVisibleSegments,
+      showOnMonitor,
+      setShowOnMonitor,
+      viewAdditionalDetails,
+      setViewAdditionalDetails,
+      pendingWarning,
+      confirmWarning,
+      cancelWarning,
+    }),
+    [
+      blockData,
+      participants,
+      submit,
+      isSubmitting,
+      updateError,
+      visibleSegments,
+      showOnMonitor,
+      viewAdditionalDetails,
+      pendingWarning,
+      confirmWarning,
+      cancelWarning,
+    ],
+  );
 
   return <EditBlockContext.Provider value={contextValue}>{children}</EditBlockContext.Provider>;
 }

@@ -164,6 +164,35 @@ information about a change you make.
 Do not add in documentation files explaining your changes or testing scripts
 outside of the test suite
 
+### Linting
+
+`yarn lint` runs [oxlint](https://oxc.rs) against `oxlint.config.ts`. It also runs
+on staged files via lint-staged, and in CI. `yarn lint:fix` applies safe autofixes.
+
+Beyond oxlint's built-in rules, the repo vendors the
+[anti-slop](https://github.com/dmmulroy/anti-slop) plugin at
+`tools/oxlint/anti-slop/`. It rejects low-evidence TypeScript: unjustified type
+assertions, `unknown`/`any`/`object` dictionary values, widening that discards
+known literal types, and `typeof` narrowing used in place of boundary parsing.
+The vendored copy is ours to maintain — adjust a rule when it genuinely conflicts
+with the domain rather than working around it.
+
+Consequences for day-to-day work:
+
+- Every non-`as const` type assertion needs a `// SAFETY: <checked invariant>`
+  comment naming concrete evidence. Prefer removing the assertion by typing the
+  code correctly; only justify one that is genuinely irreducible.
+- Use a named domain type for dictionary values. `JsonValue` / `JsonObject` in
+  `app/frontend/types.ts` are for genuinely open JSON crossing the Rails boundary
+  — not a shortcut around modelling a shape the consumers already know.
+- Use `satisfies` rather than a broad annotation when a literal's type matters.
+- Never silence a finding with a disable comment or an `any`.
+
+`anti-slop/no-module-mocking` is set to `warn`, not `error`: the existing
+`vi.mock` calls cover jsdom-incompatible libraries (`react-konva`,
+`@hello-pangea/dnd`) and context isolation. Removing them is a test-architecture
+change, not a lint fix. Do not add new module mocks without cause.
+
 ### Front-end
 
 - Use css modules

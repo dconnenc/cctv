@@ -555,9 +555,11 @@ export default function TicketRip({ code, experienceName = '', onComplete }: Tic
 
   useEffect(() => {
     let cancelled = false;
-    ensureFontsLoaded().then(() => {
+    const loadFonts = async () => {
+      await ensureFontsLoaded();
       if (!cancelled) setFontsReady(true);
-    });
+    };
+    loadFonts();
     return () => {
       cancelled = true;
     };
@@ -1037,12 +1039,11 @@ export default function TicketRip({ code, experienceName = '', onComplete }: Tic
   const captionActive = caption === 'tap-rip' || caption === 'tap-continue';
 
   return (
-    <div
+    <button
+      type="button"
       className={styles.root}
       onPointerDown={handlePointerDown}
       onKeyDown={handleKeyDown}
-      role="button"
-      tabIndex={0}
       aria-label={caption === 'tap-rip' ? 'Tap to tear ticket' : 'Tap to continue'}
     >
       <div className={styles.grain} />
@@ -1053,6 +1054,6 @@ export default function TicketRip({ code, experienceName = '', onComplete }: Tic
           {captionText}
         </div>
       )}
-    </div>
+    </button>
   );
 }

@@ -23,7 +23,7 @@ class MockWebSocket extends EventTarget {
 
   constructor(url: string | URL, _protocols?: string | string[]) {
     super();
-    this.url = typeof url === 'string' ? url : url.toString();
+    this.url = String(url);
   }
 
   send() {}

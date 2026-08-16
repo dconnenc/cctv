@@ -1,17 +1,17 @@
-import type { ForwardedRef, InputHTMLAttributes, TextareaHTMLAttributes } from 'react';
-import { forwardRef, useId } from 'react';
+import type { ComponentPropsWithRef } from 'react';
+import { useId } from 'react';
 
 import classNames from 'classnames';
 
 import styles from './TextInput.module.scss';
 
-interface InputComponent extends InputHTMLAttributes<HTMLInputElement> {
+type InputComponent = ComponentPropsWithRef<'input'> & {
   multiline?: false;
-}
+};
 
-interface TextareaComponent extends TextareaHTMLAttributes<HTMLTextAreaElement> {
+type TextareaComponent = ComponentPropsWithRef<'textarea'> & {
   multiline: true;
-}
+};
 
 type TextInputComponent = InputComponent | TextareaComponent;
 
@@ -19,32 +19,12 @@ type TextInputProps = TextInputComponent & {
   label?: string;
 };
 
-export const TextInput = forwardRef<HTMLInputElement | HTMLTextAreaElement, TextInputProps>(
-  (props, ref) => {
-    const generatedId = useId();
-    const inputId = props.id ?? generatedId;
+export function TextInput(props: TextInputProps) {
+  const generatedId = useId();
+  const inputId = props.id ?? generatedId;
 
-    if (props.multiline) {
-      const { label, className, id, ...textareaRest } = props;
-
-      return (
-        <div className={styles.input}>
-          {label && (
-            <label className={styles.label} htmlFor={inputId}>
-              {label}
-            </label>
-          )}
-          <textarea
-            ref={ref as ForwardedRef<HTMLTextAreaElement>}
-            id={inputId}
-            className={classNames(styles.control, className)}
-            {...textareaRest}
-          />
-        </div>
-      );
-    }
-
-    const { label, type = 'text', className, id, multiline: _multiline, ...inputRest } = props;
+  if (props.multiline) {
+    const { label, className, ...textareaRest } = props;
 
     return (
       <div className={styles.input}>
@@ -53,16 +33,30 @@ export const TextInput = forwardRef<HTMLInputElement | HTMLTextAreaElement, Text
             {label}
           </label>
         )}
-        <input
-          ref={ref as ForwardedRef<HTMLInputElement>}
+        <textarea
+          {...textareaRest}
           id={inputId}
-          type={type}
           className={classNames(styles.control, className)}
-          {...inputRest}
         />
       </div>
     );
-  },
-);
+  }
 
-TextInput.displayName = 'TextInput';
+  const { label, type = 'text', className, multiline: _multiline, ...inputRest } = props;
+
+  return (
+    <div className={styles.input}>
+      {label && (
+        <label className={styles.label} htmlFor={inputId}>
+          {label}
+        </label>
+      )}
+      <input
+        {...inputRest}
+        id={inputId}
+        type={type}
+        className={classNames(styles.control, className)}
+      />
+    </div>
+  );
+}

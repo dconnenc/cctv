@@ -1,6 +1,8 @@
 import { act, render, screen } from '@testing-library/react';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import type { WebSocketMessage } from '@cctv/types';
+
 import { server } from '../test-msw';
 import { WebSocketProvider, useWebSocket } from './WebSocketContext';
 
@@ -17,6 +19,12 @@ import { WebSocketProvider, useWebSocket } from './WebSocketContext';
 
 let mockWsInstances: TestWebSocket[] = [];
 
+/** The ActionCable envelope the server writes onto the wire. */
+interface CableEnvelope {
+  type?: string;
+  message?: WebSocketMessage;
+}
+
 class TestWebSocket extends EventTarget {
   static OPEN = 1;
   static CLOSED = 3;
@@ -24,9 +32,9 @@ class TestWebSocket extends EventTarget {
   static CLOSING = 2;
 
   readyState = TestWebSocket.CONNECTING;
-  onopen: ((event: any) => void) | null = null;
-  onclose: ((event: any) => void) | null = null;
-  onmessage: ((event: any) => void) | null = null;
+  onopen: ((event: Event) => void) | null = null;
+  onclose: ((event: CloseEvent) => void) | null = null;
+  onmessage: ((event: MessageEvent<string>) => void) | null = null;
   onerror: (() => void) | null = null;
   url: string;
   protocol = '';
@@ -36,13 +44,13 @@ class TestWebSocket extends EventTarget {
 
   constructor(url: string | URL, _protocols?: string | string[]) {
     super();
-    this.url = typeof url === 'string' ? url : url.toString();
+    this.url = String(url);
     mockWsInstances.push(this);
   }
 
   triggerOpen() {
     this.readyState = TestWebSocket.OPEN;
-    this.onopen?.({ type: 'open' } as any);
+    this.onopen?.(new Event('open'));
   }
 
   send = vi.fn();
@@ -52,11 +60,11 @@ class TestWebSocket extends EventTarget {
 
   simulateClose(code = 1006) {
     this.readyState = TestWebSocket.CLOSED;
-    this.onclose?.({ code } as CloseEvent);
+    this.onclose?.(new CloseEvent('close', { code }));
   }
 
-  simulateMessage(data: unknown) {
-    this.onmessage?.({ data: JSON.stringify(data) } as MessageEvent);
+  simulateMessage(envelope: CableEnvelope) {
+    this.onmessage?.(new MessageEvent('message', { data: JSON.stringify(envelope) }));
   }
 }
 
@@ -229,7 +237,7 @@ describe('WebSocketContext', () => {
 
     act(() => {
       getLatestWs().simulateMessage({
-        message: { type: 'resubscribe_required' },
+        message: { type: 'resubscribe_required', reason: 'profile_changed' },
       });
     });
 

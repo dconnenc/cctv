@@ -1,5 +1,9 @@
 import { useCallback, useRef, useState } from 'react';
 
+interface ApiErrorEnvelope {
+  error?: string;
+}
+
 export function useQuery<T>({ url }: { url: string }) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string>();
@@ -15,12 +19,9 @@ export function useQuery<T>({ url }: { url: string }) {
       setError(undefined);
       try {
         const response = await fetch(url, { ...options, signal: controller.signal });
-        const data = (await response.json()) as T;
+        const data: T & ApiErrorEnvelope = await response.json();
         if (!response.ok) {
-          const msg =
-            (data as Record<string, unknown>)?.error ||
-            `Request failed with status ${response.status}`;
-          throw new Error(String(msg));
+          throw new Error(data?.error || `Request failed with status ${response.status}`);
         }
         return data;
       } catch (err) {

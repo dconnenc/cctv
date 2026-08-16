@@ -271,9 +271,12 @@ export default function GuessWhoManager({ block }: GuessWhoManagerProps) {
           </section>
 
           <div className={styles.contestantsRow}>
-            {contestants.map((c, i) => (
-              <ContestantPanel key={i} block={block} contestant={c} index={i as 0 | 1} />
-            ))}
+            {contestants[0] && (
+              <ContestantPanel block={block} contestant={contestants[0]} index={0} />
+            )}
+            {contestants[1] && (
+              <ContestantPanel block={block} contestant={contestants[1]} index={1} />
+            )}
           </div>
 
           {!block.payload.revealed && (

@@ -1,4 +1,12 @@
-import { ReactNode, createContext, useContext, useEffect, useState } from 'react';
+import {
+  ReactNode,
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react';
 
 import { clearAllExperienceJWTs } from '@cctv/contexts/jwtStorage';
 import { AvatarStroke, UserRole } from '@cctv/types';
@@ -32,6 +40,14 @@ interface UserProviderProps {
   children: ReactNode;
 }
 
+async function userFetch(input: RequestInfo | URL, init: RequestInit = {}) {
+  return fetch(input, {
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json', ...init.headers },
+    ...init,
+  });
+}
+
 export function UserProvider({ children }: UserProviderProps) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -39,21 +55,13 @@ export function UserProvider({ children }: UserProviderProps) {
   const isAuthenticated = user !== null;
   const isAdmin = user?.super_admin === true || user?.admin === true;
 
-  const userFetch = async (input: RequestInfo | URL, init: RequestInit = {}) => {
-    return fetch(input, {
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json', ...(init.headers || {}) },
-      ...init,
-    });
-  };
-
-  const refreshUser = async () => {
+  const refreshUser = useCallback(async () => {
     setIsLoading(true);
     try {
       const response = await userFetch('/api/users/me');
 
       if (response.ok) {
-        const userData = await response.json();
+        const userData: User | null = await response.json();
         if (userData && Object.keys(userData).length !== 0) {
           setUser(userData);
         } else {
@@ -69,9 +77,9 @@ export function UserProvider({ children }: UserProviderProps) {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
-  const logOut = async () => {
+  const logOut = useCallback(async () => {
     try {
       const response = await userFetch('/api/users/sign_out_user', { method: 'POST' });
       if (response.ok) {
@@ -80,24 +88,27 @@ export function UserProvider({ children }: UserProviderProps) {
         return true;
       }
       return false;
-    } catch (e) {
+    } catch {
       return false;
     }
-  };
+  }, []);
 
   // Check for existing session on mount
   useEffect(() => {
     refreshUser();
-  }, []);
+  }, [refreshUser]);
 
-  const value: UserContextType = {
-    user,
-    isLoading,
-    isAuthenticated,
-    isAdmin,
-    refreshUser,
-    logOut,
-  };
+  const value = useMemo<UserContextType>(
+    () => ({
+      user,
+      isLoading,
+      isAuthenticated,
+      isAdmin,
+      refreshUser,
+      logOut,
+    }),
+    [user, isLoading, isAuthenticated, isAdmin, refreshUser, logOut],
+  );
 
   return <UserContext.Provider value={value}>{children}</UserContext.Provider>;
 }

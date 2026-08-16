@@ -8,6 +8,11 @@ interface PlaybillEntry {
   performer_id: string;
 }
 
+interface UpdatePlaybillBody {
+  playbill: PlaybillEntry[];
+  playbill_enabled?: boolean;
+}
+
 export function useUpdatePlaybill() {
   const { code } = useExperience();
   const { adminFetch } = useAdminAuth();
@@ -23,8 +28,7 @@ export function useUpdatePlaybill() {
       setIsLoading(true);
       setError(null);
       try {
-        const body: Record<string, unknown> = { playbill };
-        if (playbill_enabled !== undefined) body.playbill_enabled = playbill_enabled;
+        const body: UpdatePlaybillBody = { playbill, playbill_enabled };
         const res = await adminFetch(
           `/api/experiences/${encodeURIComponent(code)}/update_playbill`,
           {

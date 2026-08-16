@@ -4,7 +4,7 @@ import { useExperienceState } from '@cctv/contexts/ExperienceStateContext';
 import { Button } from '@cctv/core/Button/Button';
 import { Option } from '@cctv/core/Option/Option';
 import { useSubmitPollResponse } from '@cctv/hooks/useSubmitPollResponse';
-import { PollPayload } from '@cctv/types';
+import { JsonValue, PollPayload } from '@cctv/types';
 import { getFormData } from '@cctv/utils';
 
 import styles from './Poll.module.scss';
@@ -16,12 +16,17 @@ interface PollProps extends PollPayload {
     user_responded?: boolean;
     user_response?: {
       id: string;
-      answer: any;
+      answer: { selectedOptions?: string[] };
     } | null;
     aggregate?: Record<string, number>;
   };
   disabled?: boolean;
   viewContext?: 'participant' | 'monitor' | 'manage';
+}
+
+function selectionLabels(selected: JsonValue | undefined): string[] | null {
+  if (!selected) return null;
+  return Array.isArray(selected) ? selected.map((option) => String(option)) : [String(selected)];
 }
 
 export default function Poll({
@@ -72,11 +77,11 @@ export default function Poll({
   };
 
   if (userResponded) {
-    const rawSelected =
-      (submission?.answer?.selectedOptions as string | string[] | undefined) ??
-      (responses?.user_response?.answer?.selectedOptions as string | string[] | undefined);
-    const displayValue = rawSelected
-      ? ([] as string[]).concat(rawSelected).join(', ')
+    const selected =
+      selectionLabels(submission?.answer?.selectedOptions) ??
+      selectionLabels(responses?.user_response?.answer?.selectedOptions);
+    const displayValue = selected
+      ? selected.join(', ')
       : 'You have already responded to this poll.';
 
     return (

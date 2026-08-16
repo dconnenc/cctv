@@ -9,6 +9,13 @@ interface BalloonProps {
 }
 
 const MIN_SCALE = 0.35;
+const SHARD_COUNT = 14;
+
+interface RgbColor {
+  r: number;
+  g: number;
+  b: number;
+}
 
 export default function Balloon({
   fillRatio,
@@ -85,14 +92,17 @@ function PoppedBalloon({
   // local pop) don't reshuffle them mid-animation.
   const shards = useMemo(
     () =>
-      [...Array(14)].map((_, i) => {
-        const angle = (i / 14) * Math.PI * 2 + Math.random() * 0.3;
+      Array.from({ length: SHARD_COUNT }, (_, spoke) => {
+        const angle = (spoke / SHARD_COUNT) * Math.PI * 2 + Math.random() * 0.3;
         const dist = 60 + Math.random() * 40;
         const x = Math.cos(angle) * dist;
         const y = Math.sin(angle) * dist;
         const dx = Math.random() * 12 - 6;
         const dy = Math.random() * 12 - 6;
-        return `M ${x.toFixed(1)} ${y.toFixed(1)} l ${dx.toFixed(1)} ${dy.toFixed(1)}`;
+        return {
+          id: `shard-${spoke}`,
+          path: `M ${x.toFixed(1)} ${y.toFixed(1)} l ${dx.toFixed(1)} ${dy.toFixed(1)}`,
+        };
       }),
     [],
   );
@@ -122,8 +132,14 @@ function PoppedBalloon({
       style={{ overflow: 'visible', maxWidth: '100%', maxHeight: '100%', pointerEvents: 'none' }}
     >
       <g transform={`scale(${scale})`}>
-        {shards.map((d, i) => (
-          <path key={i} d={d} stroke={color} strokeWidth="3" strokeLinecap="round" />
+        {shards.map((shard) => (
+          <path
+            key={shard.id}
+            d={shard.path}
+            stroke={color}
+            strokeWidth="3"
+            strokeLinecap="round"
+          />
         ))}
       </g>
     </svg>
@@ -147,7 +163,7 @@ function mixHex(hex: string, target: string, amount: number): string {
   return `rgb(${r}, ${g}, ${bl})`;
 }
 
-function hexToRgb(hex: string): { r: number; g: number; b: number } {
+function hexToRgb(hex: string): RgbColor {
   const stripped = hex.replace('#', '');
   const expanded =
     stripped.length === 3

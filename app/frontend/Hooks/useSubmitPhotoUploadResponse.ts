@@ -2,11 +2,12 @@ import { useCallback, useState } from 'react';
 
 import { useExperience } from '@cctv/contexts/ExperienceContext';
 import { useExperienceState } from '@cctv/contexts/ExperienceStateContext';
+import { JsonObject } from '@cctv/types';
 
 export interface SubmitPhotoUploadResponseParams {
   blockId: string;
   photoSignedId: string;
-  answer?: Record<string, unknown>;
+  answer?: JsonObject;
 }
 
 export function useSubmitPhotoUploadResponse() {

@@ -1,4 +1,4 @@
-import { SelectHTMLAttributes } from 'react';
+import { ChangeEvent, SelectHTMLAttributes } from 'react';
 
 import styles from './Dropdown.module.scss';
 
@@ -15,10 +15,15 @@ export function Dropdown<T extends string>({
   onChange,
   ...props
 }: DropdownProps<T>) {
+  const handleChange = (event: ChangeEvent<HTMLSelectElement>) => {
+    const selected = options.find((option) => option.value === event.target.value);
+    if (selected) onChange(selected.value);
+  };
+
   return (
     <label className={styles.root}>
       {label}:
-      <select className={styles.input} onChange={(e) => onChange(e.target.value as T)} {...props}>
+      <select className={styles.input} onChange={handleChange} {...props}>
         {options.map((option) => (
           <option key={option.value} value={option.value}>
             {option.label}

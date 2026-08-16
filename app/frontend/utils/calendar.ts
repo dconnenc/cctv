@@ -1,16 +1,21 @@
 import { CalendarEvent } from '@cctv/types';
 
-export function buildGoogleCalendarUrl(event: CalendarEvent): string {
-  const formatDate = (iso: string) =>
-    new Date(iso)
-      .toISOString()
-      .replace(/[-:]/g, '')
-      .replace(/\.\d{3}/, '');
+function toGoogleCalendarStamp(iso: string): string {
+  return new Date(iso)
+    .toISOString()
+    .replace(/[-:]/g, '')
+    .replace(/\.\d{3}/, '');
+}
 
+function padTwoDigits(value: number): string {
+  return String(value).padStart(2, '0');
+}
+
+export function buildGoogleCalendarUrl(event: CalendarEvent): string {
   const params = new URLSearchParams({
     action: 'TEMPLATE',
     text: event.title,
-    dates: `${formatDate(event.starts_at)}/${formatDate(event.ends_at)}`,
+    dates: `${toGoogleCalendarStamp(event.starts_at)}/${toGoogleCalendarStamp(event.ends_at)}`,
   });
 
   const location = [event.venue_name, event.venue_address].filter(Boolean).join(', ');
@@ -46,8 +51,7 @@ export function formatEventDateFull(iso: string): string {
 
 export function timeFromIso(iso: string): string {
   const d = new Date(iso);
-  const pad = (n: number) => String(n).padStart(2, '0');
-  return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  return `${padTwoDigits(d.getHours())}:${padTwoDigits(d.getMinutes())}`;
 }
 
 export function combineDateAndTime(date: Date, time: string): string {

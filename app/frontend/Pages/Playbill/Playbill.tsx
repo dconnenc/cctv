@@ -18,7 +18,7 @@ import styles from './Playbill.module.scss';
 
 type TabKey = 'performers' | 'running_order';
 
-const BLOCK_KIND_DESCRIPTIONS: Record<BlockKind, string> = {
+const BLOCK_KIND_DESCRIPTIONS = {
   [BlockKind.POLL]: 'Audience-wide poll',
   [BlockKind.QUESTION]: 'Open-response question',
   [BlockKind.ANNOUNCEMENT]: 'Announcement from the host',
@@ -29,7 +29,7 @@ const BLOCK_KIND_DESCRIPTIONS: Record<BlockKind, string> = {
   [BlockKind.MINIGAME_ARITHMETIC]: 'Speed-math minigame',
   [BlockKind.MINIGAME_BALLOON_PUMP]: 'Balloon-pump minigame',
   [BlockKind.THE_SCENE]: 'Improv suggestion + voting',
-};
+} satisfies Record<BlockKind, string>;
 
 export default function Playbill() {
   const { experience, code, isLoading, error } = useExperience();

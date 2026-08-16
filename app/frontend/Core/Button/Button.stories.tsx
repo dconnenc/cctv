@@ -171,13 +171,14 @@ export const Gallery: Story = {
             </Button>
           ))}
         </div>
-        <div
-          role="group"
+        <fieldset
           aria-label="Segmented control example"
           style={{
             display: 'inline-flex',
             gap: '0.25rem',
+            margin: 0,
             padding: '0.25rem',
+            border: 'none',
             background: 'hsl(var(--muted))',
             borderRadius: 'var(--radius)',
           }}
@@ -191,7 +192,7 @@ export const Gallery: Story = {
           <Button variant="ghost" size="sm" aria-pressed="false">
             Responses
           </Button>
-        </div>
+        </fieldset>
       </section>
 
       <section style={sectionStyle}>

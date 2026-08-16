@@ -14,6 +14,19 @@ import { Block, FamilyFeudGameState } from '@cctv/types';
 
 import styles from './FamilyFeudPlayingControls.module.scss';
 
+type FamilyFeudRestartScope = 'playing' | 'categorizing' | 'everything';
+
+function getConfirmMessage(scope: FamilyFeudRestartScope) {
+  switch (scope) {
+    case 'playing':
+      return 'Restart to question 1 and hide all buckets? (Keeps all categorization)';
+    case 'categorizing':
+      return 'Reset all bucket assignments and return to categorizing? (Keeps all answers)';
+    case 'everything':
+      return 'Delete all answers and start over? This cannot be undone!';
+  }
+}
+
 interface FamilyFeudPlayingControlsProps {
   block: Block;
   gameState: FamilyFeudGameState;
@@ -37,7 +50,7 @@ export default function FamilyFeudPlayingControls({
   const [revealingBucket, setRevealingBucket] = useState<string | null>(null);
   const [showingX, setShowingX] = useState(false);
   const [advancing, setAdvancing] = useState(false);
-  const [restarting, setRestarting] = useState<string | null>(null);
+  const [restarting, setRestarting] = useState<FamilyFeudRestartScope | null>(null);
 
   const currentQuestion = gameState.questions[gameState.current_question_index];
   const isLastQuestion = gameState.current_question_index === gameState.questions.length - 1;
@@ -78,31 +91,20 @@ export default function FamilyFeudPlayingControls({
     }
   };
 
-  const handleRestart = async (type: 'playing' | 'categorizing' | 'everything') => {
-    if (!confirm(getConfirmMessage(type))) return;
+  const handleRestart = async (scope: FamilyFeudRestartScope) => {
+    if (!confirm(getConfirmMessage(scope))) return;
 
-    setRestarting(type);
+    setRestarting(scope);
     try {
-      if (type === 'playing') {
+      if (scope === 'playing') {
         await onRestartPlaying();
-      } else if (type === 'categorizing') {
+      } else if (scope === 'categorizing') {
         await onRestartCategorizing();
       } else {
         await onRestartEverything();
       }
     } finally {
       setRestarting(null);
-    }
-  };
-
-  const getConfirmMessage = (type: 'playing' | 'categorizing' | 'everything') => {
-    switch (type) {
-      case 'playing':
-        return 'Restart to question 1 and hide all buckets? (Keeps all categorization)';
-      case 'categorizing':
-        return 'Reset all bucket assignments and return to categorizing? (Keeps all answers)';
-      case 'everything':
-        return 'Delete all answers and start over? This cannot be undone!';
     }
   };
 

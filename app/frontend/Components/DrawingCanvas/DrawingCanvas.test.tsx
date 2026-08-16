@@ -14,21 +14,28 @@ beforeAll(() => {
   };
 });
 
-interface MockComponentProps {
+interface MockStageProps {
   children?: ReactNode;
-  [key: string]: unknown;
+  width?: number;
+  height?: number;
+}
+
+interface MockLayerProps {
+  children?: ReactNode;
+}
+
+interface MockLineProps {
+  stroke?: string;
 }
 
 vi.mock('react-konva', () => ({
-  Stage: ({ children, ...props }: MockComponentProps) => (
-    <div data-testid="konva-stage" {...props}>
+  Stage: ({ children, width, height }: MockStageProps) => (
+    <div data-testid="konva-stage" data-width={width} data-height={height}>
       {children}
     </div>
   ),
-  Layer: ({ children }: MockComponentProps) => <div data-testid="konva-layer">{children}</div>,
-  Line: ({ stroke, ...props }: MockComponentProps) => (
-    <div data-testid="konva-line" data-stroke={stroke} {...props} />
-  ),
+  Layer: ({ children }: MockLayerProps) => <div data-testid="konva-layer">{children}</div>,
+  Line: ({ stroke }: MockLineProps) => <div data-testid="konva-line" data-stroke={stroke} />,
 }));
 
 describe('DrawingCanvas', () => {

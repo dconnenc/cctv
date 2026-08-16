@@ -1,9 +1,9 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { fn } from '@storybook/test';
 
-import { BlockKind } from '@cctv/types';
 import type { Block } from '@cctv/types';
 
+import { announcementBlock, familyFeudBlock, pollBlock, questionBlock } from '../testFactories';
 import BlockSidebar from './BlockSidebar';
 
 const meta: Meta<typeof BlockSidebar> = {
@@ -24,33 +24,23 @@ export default meta;
 
 type Story = StoryObj<typeof BlockSidebar>;
 
-function block(
-  id: string,
-  kind: Block['kind'],
-  status: Block['status'],
-  overrides: Partial<Block> = {},
-): Block {
-  return {
-    id,
-    kind,
-    status,
-    position: 0,
-    payload: {},
-    ...overrides,
-  } as Block;
-}
-
 const flatBlocks: Block[] = [
-  block('b1', BlockKind.ANNOUNCEMENT, 'open'),
-  block('b2', BlockKind.POLL, 'closed'),
-  block('b3', BlockKind.QUESTION, 'hidden'),
+  announcementBlock({ id: 'b1', status: 'open', position: 0 }),
+  pollBlock({ id: 'b2', status: 'closed', position: 1, responses: { total: 24 } }),
+  questionBlock({ id: 'b3', status: 'hidden', position: 2 }),
 ];
 
 const blocksWithChildren: Block[] = [
-  block('b1', BlockKind.FAMILY_FEUD, 'open', {
-    children: [block('c1', BlockKind.POLL, 'closed'), block('c2', BlockKind.QUESTION, 'hidden')],
+  familyFeudBlock({ id: 'b1', status: 'open', position: 0 }),
+  pollBlock({ id: 'c1', status: 'closed', position: 1, parent_block_id: 'b1' }),
+  questionBlock({
+    id: 'c2',
+    status: 'hidden',
+    position: 2,
+    parent_block_id: 'b1',
+    payload: { question: '', formKey: 'answer_1', synthetic: true },
   }),
-  block('b2', BlockKind.ANNOUNCEMENT, 'hidden'),
+  announcementBlock({ id: 'b2', status: 'hidden', position: 3 }),
 ];
 
 export const Expanded: Story = {

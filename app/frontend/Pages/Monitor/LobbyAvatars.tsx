@@ -5,7 +5,7 @@ import { Group, Layer, Line, Stage } from 'react-konva';
 
 import { useExperience } from '@cctv/contexts/ExperienceContext';
 import { useLobbyDrawingState } from '@cctv/contexts/LobbyDrawingContext';
-import type { ExperienceParticipant } from '@cctv/types';
+import type { AvatarStroke, ExperienceParticipant } from '@cctv/types';
 
 import styles from './LobbyAvatars.module.scss';
 
@@ -41,6 +41,16 @@ function initMotion(w: number, h: number): AvatarMotion {
     scalePhase: Math.random() * Math.PI * 2,
     scaleFreq: SCALE_FREQ_MIN + Math.random() * SCALE_FREQ_RANGE,
   };
+}
+
+function keyedStrokes(strokes: AvatarStroke[]): { key: string; stroke: AvatarStroke }[] {
+  const originCounts = new Map<string, number>();
+  return strokes.map((stroke) => {
+    const origin = `${stroke.color}:${stroke.width}:${stroke.points[0]},${stroke.points[1]}`;
+    const occurrence = originCounts.get(origin) ?? 0;
+    originCounts.set(origin, occurrence + 1);
+    return { key: `${origin}#${occurrence}`, stroke };
+  });
 }
 
 export default function LobbyAvatars() {
@@ -186,12 +196,12 @@ export default function LobbyAvatars() {
                   scaleY={initialScale}
                   opacity={isGrayed ? 0.3 : 1}
                 >
-                  {strokes.map((s, idx) => (
+                  {keyedStrokes(strokes).map(({ key, stroke }) => (
                     <Line
-                      key={idx}
-                      points={s.points}
-                      stroke={isGrayed ? 'hsl(60 4% 35%)' : s.color}
-                      strokeWidth={s.width}
+                      key={key}
+                      points={stroke.points}
+                      stroke={isGrayed ? 'hsl(60 4% 35%)' : stroke.color}
+                      strokeWidth={stroke.width}
                       lineCap="round"
                     />
                   ))}

@@ -85,6 +85,32 @@ interface FamilyFeudChildPayload {
   buckets?: Array<{ id: string; name: string; answer_ids?: string[] }>;
 }
 
+interface QuestionSubmissionAnswer {
+  value?: string;
+  submittedAt?: string;
+}
+
+function readChildPayload(childBlock: Block): FamilyFeudChildPayload {
+  return childBlock.kind === BlockKind.QUESTION ? childBlock.payload : {};
+}
+
+function isStringAnswer(answer: BlockResponse['answer']): answer is string {
+  return Object.prototype.toString.call(answer) === '[object String]';
+}
+
+function isQuestionSubmissionAnswer(
+  answer: BlockResponse['answer'],
+): answer is QuestionSubmissionAnswer {
+  return answer instanceof Object && 'value' in answer;
+}
+
+function readAnswerText(answer: BlockResponse['answer']): string {
+  if (answer === null || answer === undefined) return '';
+  if (isStringAnswer(answer)) return answer;
+  if (isQuestionSubmissionAnswer(answer)) return answer.value ?? JSON.stringify(answer);
+  return String(answer);
+}
+
 interface FamilyFeudManagerProps {
   block: Block;
   onBucketOperation?: (action: FamilyFeudAction) => void;
@@ -140,16 +166,12 @@ export default function FamilyFeudManager({ block, focusQuestionId }: FamilyFeud
   // This preserves UI state (collapsed states, optimistic updates)
   useEffect(() => {
     const newQuestionsState: QuestionWithBuckets[] = childQuestions.map((childBlock: Block) => {
-      const responses =
-        (childBlock.responses as { all_responses?: BlockResponse[] }).all_responses ?? [];
-      const childPayload = childBlock.payload as FamilyFeudChildPayload | undefined;
-      const questionBuckets = childPayload?.buckets ?? [];
+      const responses = childBlock.responses?.all_responses ?? [];
+      const childPayload = readChildPayload(childBlock);
+      const questionBuckets = childPayload.buckets ?? [];
 
       const allAnswers = responses.map((response) => {
-        const answerText =
-          typeof response.answer === 'string'
-            ? response.answer
-            : (response.answer?.value ?? JSON.stringify(response.answer));
+        const answerText = readAnswerText(response.answer);
 
         return {
           id: response.id,
@@ -198,9 +220,9 @@ export default function FamilyFeudManager({ block, focusQuestionId }: FamilyFeud
     const syntheticTextMap: Record<string, string> = {};
     const syntheticCountMap: Record<string, string> = {};
     childQuestions.forEach((childBlock: Block) => {
-      const childPayload = childBlock.payload as FamilyFeudChildPayload | undefined;
-      contextMap[childBlock.id] = childPayload?.ai_context ?? '';
-      if (childPayload?.synthetic) {
+      const childPayload = readChildPayload(childBlock);
+      contextMap[childBlock.id] = childPayload.ai_context ?? '';
+      if (childPayload.synthetic) {
         syntheticTextMap[childBlock.id] = childPayload.question ?? '';
         syntheticCountMap[childBlock.id] = String(
           childPayload.generate_count ?? DEFAULT_SYNTHETIC_COUNT,
@@ -967,7 +989,7 @@ const BucketItem = ({
             </Button>
           </div>
 
-          {!isCollapsed && <BucketDropZone bucket={bucket} snapshot={snapshot} />}
+          {!isCollapsed && <BucketDropZone bucket={bucket} droppableSnapshot={snapshot} />}
           {provided.placeholder}
         </div>
       )}
@@ -975,14 +997,14 @@ const BucketItem = ({
   );
 };
 
-const BucketDropZone = ({ bucket, snapshot }: { bucket: any; snapshot: any }) => {
+const BucketDropZone = ({ bucket, droppableSnapshot }: { bucket: any; droppableSnapshot: any }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
   useScrollFade(scrollRef);
 
   return (
     <div
       ref={scrollRef}
-      className={`${styles.bucketDropZone} ${snapshot.isDraggingOver ? styles.isDraggingOver : ''}`}
+      className={`${styles.bucketDropZone} ${droppableSnapshot.isDraggingOver ? styles.isDraggingOver : ''}`}
     >
       <div className={styles.bucketDropZoneInner}>
         {bucket.answers.length === 0 ? (
@@ -990,12 +1012,12 @@ const BucketDropZone = ({ bucket, snapshot }: { bucket: any; snapshot: any }) =>
         ) : (
           bucket.answers.map((answer: any, index: number) => (
             <Draggable key={answer.id} draggableId={answer.id} index={index}>
-              {(provided, snapshot) => (
+              {(dragProvided, dragSnapshot) => (
                 <div
-                  ref={provided.innerRef}
-                  {...provided.draggableProps}
-                  {...provided.dragHandleProps}
-                  className={`${styles.answer} ${snapshot.isDragging ? styles.isDragging : ''}`}
+                  ref={dragProvided.innerRef}
+                  {...dragProvided.draggableProps}
+                  {...dragProvided.dragHandleProps}
+                  className={`${styles.answer} ${dragSnapshot.isDragging ? styles.isDragging : ''}`}
                 >
                   {answer.text}
                 </div>
@@ -1034,13 +1056,13 @@ const AnswersColumn = ({ answers }: { answers: any[] }) => {
       </div>
 
       <Droppable droppableId="unassigned" renderClone={renderClone}>
-        {(provided, snapshot) => (
+        {(droppableProvided, droppableSnapshot) => (
           <div
             ref={scrollRef}
-            {...provided.droppableProps}
-            className={`${styles.answersList} ${snapshot.isDraggingOver ? styles.isDraggingOver : ''}`}
+            {...droppableProvided.droppableProps}
+            className={`${styles.answersList} ${droppableSnapshot.isDraggingOver ? styles.isDraggingOver : ''}`}
           >
-            <div ref={provided.innerRef} className={styles.answersListInner}>
+            <div ref={droppableProvided.innerRef} className={styles.answersListInner}>
               {answers.length === 0 ? (
                 <div className={styles.noAnswers}>
                   <p>All answers have been assigned to buckets.</p>
@@ -1048,12 +1070,12 @@ const AnswersColumn = ({ answers }: { answers: any[] }) => {
               ) : (
                 answers.map((answer, index) => (
                   <Draggable key={answer.id} draggableId={answer.id} index={index}>
-                    {(provided, snapshot) => (
+                    {(dragProvided, dragSnapshot) => (
                       <div
-                        ref={provided.innerRef}
-                        {...provided.draggableProps}
-                        {...provided.dragHandleProps}
-                        className={`${styles.answer} ${snapshot.isDragging ? styles.isDragging : ''}`}
+                        ref={dragProvided.innerRef}
+                        {...dragProvided.draggableProps}
+                        {...dragProvided.dragHandleProps}
+                        className={`${styles.answer} ${dragSnapshot.isDragging ? styles.isDragging : ''}`}
                       >
                         {answer.text}
                       </div>
@@ -1061,7 +1083,7 @@ const AnswersColumn = ({ answers }: { answers: any[] }) => {
                   </Draggable>
                 ))
               )}
-              {provided.placeholder}
+              {droppableProvided.placeholder}
             </div>
           </div>
         )}

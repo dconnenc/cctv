@@ -127,15 +127,15 @@ export default function GuessWhoMonitor({ block, viewContext = 'monitor' }: Gues
       <div className={styles.root}>
         <h2 className={styles.title}>Guess Who?</h2>
         <div className={styles.idleRow}>
-          {contestants.map((c, i) => (
-            <ContestantHeader key={i} contestant={c} />
+          {contestants.map((c) => (
+            <ContestantHeader key={c.contestant_user_id ?? 'unassigned'} contestant={c} />
           ))}
         </div>
       </div>
     );
   }
 
-  const contestantIndex = view.startsWith('c1') ? 0 : 1;
+  const contestantIndex: 0 | 1 = view.startsWith('c1') ? 0 : 1;
   const contestant = contestants[contestantIndex];
   const isClueView = view.endsWith('clue');
 
@@ -145,11 +145,7 @@ export default function GuessWhoMonitor({ block, viewContext = 'monitor' }: Gues
       {isClueView ? (
         <ClueView contestant={contestant} />
       ) : (
-        <BoardWithPoll
-          block={block}
-          contestant={contestant}
-          contestantIndex={contestantIndex as 0 | 1}
-        />
+        <BoardWithPoll block={block} contestant={contestant} contestantIndex={contestantIndex} />
       )}
     </div>
   );

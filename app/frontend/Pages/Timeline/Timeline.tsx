@@ -8,7 +8,7 @@ import { useExperience } from '@cctv/contexts/ExperienceContext';
 import { Button, Dialog, DialogContent } from '@cctv/core';
 import { useBlockPresentation } from '@cctv/hooks/useBlockPresentation';
 import { useReorderBlock } from '@cctv/hooks/useReorderBlock';
-import { Block, BlockStatus, ExperienceSegment, ParticipantSummary } from '@cctv/types';
+import { Block, BlockKind, BlockStatus, ExperienceSegment, ParticipantSummary } from '@cctv/types';
 
 import CreateBlock from '../Manage/CreateBlock/CreateBlock';
 import SegmentManager from '../Manage/ParticipantsTab/SegmentManager/SegmentManager';
@@ -18,13 +18,15 @@ import styles from './Timeline.module.scss';
 const MONITOR_TRACK_ID = '__monitor__';
 const AUDIENCE_TRACK_ID = '__audience__';
 
+type BoardStyle = CSSProperties & { '--col-template': string };
+
 type Track =
   | { id: typeof MONITOR_TRACK_ID; label: 'Monitor'; kind: 'monitor' }
   | { id: typeof AUDIENCE_TRACK_ID; label: 'Audience'; kind: 'audience' }
   | { id: string; label: string; kind: 'segment'; segment: ExperienceSegment };
 
 function buildTracks(segments: ExperienceSegment[]): Track[] {
-  const sorted = [...segments].sort((a, b) => a.position - b.position);
+  const sorted = segments.toSorted((a, b) => a.position - b.position);
   return [
     { id: MONITOR_TRACK_ID, label: 'Monitor', kind: 'monitor' },
     { id: AUDIENCE_TRACK_ID, label: 'Audience', kind: 'audience' },
@@ -74,14 +76,23 @@ function statusDotClass(status: BlockStatus): string {
 }
 
 function blockLabel(block: Block): string {
-  const payload = block.payload as Record<string, unknown> | undefined;
-  if (!payload) return block.kind;
-  const candidate =
-    (payload.question as string | undefined) ||
-    (payload.title as string | undefined) ||
-    (payload.message as string | undefined) ||
-    (payload.prompt as string | undefined);
-  return candidate && candidate.length > 0 ? candidate : block.kind;
+  switch (block.kind) {
+    case BlockKind.POLL:
+    case BlockKind.QUESTION:
+      return block.payload.question || block.kind;
+    case BlockKind.ANNOUNCEMENT:
+      return block.payload.message || block.kind;
+    case BlockKind.FAMILY_FEUD:
+      return block.payload.title || block.kind;
+    case BlockKind.PHOTO_UPLOAD:
+    case BlockKind.BUZZER:
+      return block.payload.prompt || block.kind;
+    case BlockKind.GUESS_WHO:
+    case BlockKind.MINIGAME_ARITHMETIC:
+    case BlockKind.MINIGAME_BALLOON_PUMP:
+    case BlockKind.THE_SCENE:
+      return block.kind;
+  }
 }
 
 interface BlockCardProps {
@@ -151,6 +162,10 @@ export default function Timeline() {
 
   const columns = useMemo(() => buildColumns(topLevelBlocks), [topLevelBlocks]);
 
+  const boardStyle: BoardStyle = {
+    '--col-template': `repeat(${columns.length}, var(--col-w))`,
+  };
+
   const blocksByColumn = useMemo(() => {
     const map = new Map<number, Block[]>();
     topLevelBlocks.forEach((block) => {
@@ -159,9 +174,12 @@ export default function Timeline() {
       list.push(block);
       map.set(col, list);
     });
-    map.forEach((list) =>
-      list.sort((a, b) => (a.created_at || '').localeCompare(b.created_at || '')),
-    );
+    map.forEach((list, column) => {
+      map.set(
+        column,
+        list.toSorted((a, b) => (a.created_at || '').localeCompare(b.created_at || '')),
+      );
+    });
     return map;
   }, [topLevelBlocks]);
 
@@ -248,14 +266,7 @@ export default function Timeline() {
             ))}
           </div>
 
-          <div
-            className={styles.scroll}
-            style={
-              {
-                '--col-template': `repeat(${columns.length}, var(--col-w))`,
-              } as CSSProperties
-            }
-          >
+          <div className={styles.scroll} style={boardStyle}>
             <div className={styles.columnHeaderRow}>
               {columns.map((col) => (
                 <button
@@ -290,6 +301,7 @@ export default function Timeline() {
                             <div
                               ref={provided.innerRef}
                               {...provided.droppableProps}
+                              role="presentation"
                               onClick={() => setSelectedColumn(col)}
                               className={classNames(styles.cell, {
                                 [styles.cellDroppableOver]: snapshot.isDraggingOver,
@@ -322,6 +334,7 @@ export default function Timeline() {
                     return (
                       <div
                         key={`${track.id}-${col}`}
+                        role="presentation"
                         onClick={() => setSelectedColumn(col)}
                         className={classNames(styles.cell, {
                           [styles.cellSelected]: isSelected,
@@ -370,7 +383,7 @@ export default function Timeline() {
                   const blocksAtCol = blocksByColumn.get(selectedColumn) || [];
                   const monitorTrack = tracks.find((t) => t.kind === 'monitor');
                   const monitorBlock = monitorTrack
-                    ? blocksAtCol.filter((b) => blockIsVisibleOnTrack(b, monitorTrack))[0]
+                    ? blocksAtCol.find((b) => blockIsVisibleOnTrack(b, monitorTrack))
                     : undefined;
                   const monitorLabel = monitorBlock ? blockLabel(monitorBlock) : '';
                   return (
@@ -410,7 +423,7 @@ export default function Timeline() {
                     .filter((t) => t.kind !== 'monitor')
                     .map((track) => {
                       const blocksAtCol = blocksByColumn.get(selectedColumn) || [];
-                      const block = blocksAtCol.filter((b) => blockIsVisibleOnTrack(b, track))[0];
+                      const block = blocksAtCol.find((b) => blockIsVisibleOnTrack(b, track));
                       const itemLabel = block ? blockLabel(block) : '';
                       return (
                         <li key={track.id} className={styles.previewItem}>

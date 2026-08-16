@@ -39,6 +39,16 @@ function deriveCurrentBlock(blocks: Block[], submissionState: SubmissionState): 
   return blocks[0];
 }
 
+function keyedStrokes(strokes: AvatarStroke[]): { key: string; stroke: AvatarStroke }[] {
+  const originCounts = new Map<string, number>();
+  return strokes.map((stroke) => {
+    const origin = `${stroke.color}:${stroke.width}:${stroke.points[0]},${stroke.points[1]}`;
+    const occurrence = originCounts.get(origin) ?? 0;
+    originCounts.set(origin, occurrence + 1);
+    return { key: `${origin}#${occurrence}`, stroke };
+  });
+}
+
 function AvatarCircle({ strokes }: { strokes: AvatarStroke[] }) {
   if (!strokes.length) {
     return (
@@ -70,14 +80,14 @@ function AvatarCircle({ strokes }: { strokes: AvatarStroke[] }) {
 
   return (
     <svg viewBox={viewBox} className={styles.avatarCircleSvg} aria-hidden>
-      {strokes.map((stroke, i) => {
+      {keyedStrokes(strokes).map(({ key, stroke }) => {
         const pts: string[] = [];
         for (let j = 0; j < stroke.points.length; j += 2) {
           pts.push(`${stroke.points[j]},${stroke.points[j + 1]}`);
         }
         return (
           <polyline
-            key={i}
+            key={key}
             points={pts.join(' ')}
             stroke={stroke.color}
             strokeWidth={Math.max(Math.min(stroke.width * 0.25, 4), 1)}

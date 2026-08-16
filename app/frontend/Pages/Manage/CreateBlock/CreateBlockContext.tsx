@@ -1,4 +1,4 @@
-import { ReactNode, createContext, useCallback, useContext, useState } from 'react';
+import { ReactNode, createContext, useCallback, useContext, useMemo, useState } from 'react';
 
 import { useExperience } from '@cctv/contexts/ExperienceContext';
 import { useCreateExperienceBlock } from '@cctv/hooks/useCreateExperienceBlock';
@@ -85,6 +85,8 @@ import {
 
 const CreateBlockContext = createContext<CreateBlockContextValue | null>(null);
 
+const unknownBlockKindMessage = (formData: FormBlockData) => `Unknown block kind: ${formData.kind}`;
+
 export function useCreateBlockContext() {
   const context = useContext(CreateBlockContext);
   if (!context) {
@@ -137,8 +139,8 @@ export function CreateBlockProvider({
       case BlockKind.THE_SCENE:
         return { kind: BlockKind.THE_SCENE, data: getDefaultTheSceneState() };
       default: {
-        const _exhaust: never = blockKind;
-        throw new Error(`Unknown block kind: ${_exhaust}`);
+        const exhaustiveCheck: never = blockKind;
+        throw new Error(`Unknown block kind: ${exhaustiveCheck}`);
       }
     }
   }, []);
@@ -204,8 +206,8 @@ export function CreateBlockProvider({
           validationError = validateTheScene(blockData.data);
           break;
         default: {
-          const _exhaust: never = blockData;
-          validationError = `Unknown block kind: ${(_exhaust as FormBlockData).kind}`;
+          const exhaustiveCheck: never = blockData;
+          validationError = unknownBlockKindMessage(exhaustiveCheck);
         }
       }
 
@@ -247,9 +249,9 @@ export function CreateBlockProvider({
           canOpenImmediately = canTheSceneOpenImmediately(blockData.data, participants);
           break;
         default: {
-          const _exhaust: never = blockData;
+          const exhaustiveCheck: never = blockData;
           canOpenImmediately = false;
-          console.error(`Unknown block kind: ${(_exhaust as FormBlockData).kind}`);
+          console.error(unknownBlockKindMessage(exhaustiveCheck));
         }
       }
 
@@ -325,9 +327,9 @@ export function CreateBlockProvider({
           };
           break;
         default: {
-          const _exhaust: never = blockData;
-          processedFormData = _exhaust as FormBlockData;
-          console.error(`Unknown block kind: ${(_exhaust as FormBlockData).kind}`);
+          const exhaustiveCheck: never = blockData;
+          processedFormData = exhaustiveCheck;
+          console.error(unknownBlockKindMessage(exhaustiveCheck));
         }
       }
 
@@ -364,8 +366,8 @@ export function CreateBlockProvider({
           payload = buildTheScenePayload(processedFormData.data);
           break;
         default: {
-          const _exhaust: never = processedFormData;
-          throw new Error(`Unknown block kind: ${(_exhaust as FormBlockData).kind}`);
+          const exhaustiveCheck: never = processedFormData;
+          throw new Error(unknownBlockKindMessage(exhaustiveCheck));
         }
       }
 
@@ -374,35 +376,21 @@ export function CreateBlockProvider({
         .map((name) => definedSegments.find((s) => s.name === name)?.id)
         .filter((id): id is string => id !== undefined);
 
-      const submitPayload: {
-        kind: BlockKind;
-        payload: ApiPayload;
-        visible_to_segment_ids: string[];
-        target_user_ids: string[];
-        status: BlockStatus;
-        open_immediately: boolean;
-        add_to_playbill: boolean;
-        playbill_mysterious: boolean;
-        questions?: Array<{ payload: Record<string, string | boolean | number> }>;
-      } = {
+      const questions =
+        processedFormData.kind === BlockKind.FAMILY_FEUD
+          ? buildFamilyFeudQuestions(processedFormData.data)
+          : undefined;
+
+      await createExperienceBlock({
         kind: blockData.kind,
         payload,
         visible_to_segment_ids,
-        target_user_ids: [],
-        status: status,
+        status,
         open_immediately: status === 'open',
         add_to_playbill: addToPlaybill,
         playbill_mysterious: addToPlaybill && playbillMysterious,
-      };
-
-      if (
-        blockData.kind === BlockKind.FAMILY_FEUD &&
-        processedFormData.kind === BlockKind.FAMILY_FEUD
-      ) {
-        submitPayload.questions = buildFamilyFeudQuestions(processedFormData.data);
-      }
-
-      await createExperienceBlock(submitPayload);
+        questions,
+      });
 
       onClose();
 
@@ -431,28 +419,45 @@ export function CreateBlockProvider({
     ],
   );
 
-  const contextValue: CreateBlockContextValue = {
-    blockData,
-    setBlockData,
-    setKind,
-    participants,
-    submit,
-    isSubmitting,
-    error: createError,
-    visibleSegments,
-    setVisibleSegments,
-    viewAdditionalDetails,
-    setViewAdditionalDetails,
-    addToPlaybill,
-    setAddToPlaybill: (value: boolean) => {
-      setAddToPlaybill(value);
-      if (!value) {
-        setPlaybillMysterious(false);
-      }
-    },
-    playbillMysterious,
-    setPlaybillMysterious,
-  };
+  const toggleAddToPlaybill = useCallback((value: boolean) => {
+    setAddToPlaybill(value);
+    if (!value) {
+      setPlaybillMysterious(false);
+    }
+  }, []);
+
+  const contextValue = useMemo<CreateBlockContextValue>(
+    () => ({
+      blockData,
+      setBlockData,
+      setKind,
+      participants,
+      submit,
+      isSubmitting,
+      error: createError,
+      visibleSegments,
+      setVisibleSegments,
+      viewAdditionalDetails,
+      setViewAdditionalDetails,
+      addToPlaybill,
+      setAddToPlaybill: toggleAddToPlaybill,
+      playbillMysterious,
+      setPlaybillMysterious,
+    }),
+    [
+      blockData,
+      setKind,
+      participants,
+      submit,
+      isSubmitting,
+      createError,
+      visibleSegments,
+      viewAdditionalDetails,
+      addToPlaybill,
+      toggleAddToPlaybill,
+      playbillMysterious,
+    ],
+  );
 
   return <CreateBlockContext.Provider value={contextValue}>{children}</CreateBlockContext.Provider>;
 }
