@@ -34,6 +34,7 @@ export enum BlockKind {
   GUESS_WHO = 'guess_who',
   MINIGAME_ARITHMETIC = 'minigame_arithmetic',
   MINIGAME_BALLOON_PUMP = 'minigame_balloon_pump',
+  COLLABORATIVE_DRAWING = 'collaborative_drawing',
   THE_SCENE = 'the_scene',
 }
 
@@ -47,6 +48,7 @@ export const BLOCK_KIND_LABELS = {
   [BlockKind.GUESS_WHO]: 'Guess Who',
   [BlockKind.MINIGAME_ARITHMETIC]: 'Minigame: Arithmetic',
   [BlockKind.MINIGAME_BALLOON_PUMP]: 'Minigame: Balloon Pump',
+  [BlockKind.COLLABORATIVE_DRAWING]: 'Collaborative Drawing',
   [BlockKind.THE_SCENE]: 'The Scene',
 } satisfies Record<BlockKind, string>;
 
@@ -239,6 +241,50 @@ export interface MinigameBalloonPumpPodiumEntry {
   fill_amount: number;
 }
 
+export type CollaborativeDrawingPhase = 'intake' | 'round';
+
+export interface CollaborativeDrawingPoolItem {
+  photo_id: string;
+  url: string;
+}
+
+export interface CollaborativeDrawingCompositeSlice {
+  slice_index: number;
+  image: string | null;
+  name?: string | null;
+}
+
+export interface CollaborativeDrawingComposite {
+  group_index: number;
+  slice_count: number | null;
+  source_photo_url: string | null;
+  slices: CollaborativeDrawingCompositeSlice[];
+}
+
+export interface CollaborativeDrawingPayload {
+  prompt: string;
+  min_subsections: number;
+  max_subsections: number;
+  drawing_time_seconds: number;
+  total_drawings: number;
+  phase: CollaborativeDrawingPhase;
+  subsection_count: number | null;
+  pool: CollaborativeDrawingPoolItem[];
+  preview_started_at: string | null;
+  round_started_at: string | null;
+  ended_at: string | null;
+  composites: CollaborativeDrawingComposite[] | null;
+}
+
+// Per-participant slice assignment, delivered via client submission state
+// (never in a shared broadcast payload).
+export interface CollaborativeDrawingAssignment {
+  group_index: number;
+  slice_index: number;
+  slice_count: number;
+  source_photo_url: string | null;
+}
+
 export type TheScenePhase = 'idle' | 'collecting' | 'winner_reveal' | 'ended';
 
 export interface TheSceneSuggestion {
@@ -354,6 +400,15 @@ export interface MinigameBalloonPumpApiPayload {
   target_units: number;
 }
 
+export interface CollaborativeDrawingApiPayload {
+  type: 'collaborative_drawing';
+  prompt: string;
+  min_subsections: number;
+  max_subsections: number;
+  drawing_time_seconds: number;
+  total_drawings: number;
+}
+
 // Discriminated union for API payloads (what gets sent to backend)
 export type ApiPayload =
   | PollApiPayload
@@ -365,6 +420,7 @@ export type ApiPayload =
   | GuessWhoApiPayload
   | MinigameArithmeticApiPayload
   | MinigameBalloonPumpApiPayload
+  | CollaborativeDrawingApiPayload
   | TheSceneApiPayload;
 
 // ===== PLAYBILL TYPES =====
@@ -571,6 +627,16 @@ export interface MinigameBalloonPumpBlock extends BaseBlock {
   };
 }
 
+export interface CollaborativeDrawingBlock extends BaseBlock {
+  kind: BlockKind.COLLABORATIVE_DRAWING;
+  payload: CollaborativeDrawingPayload;
+  responses?: {
+    total: number;
+    assignment_count?: number;
+    submission_count?: number;
+  };
+}
+
 export interface TheSceneBlock extends BaseBlock {
   kind: BlockKind.THE_SCENE;
   payload: TheScenePayload;
@@ -590,6 +656,7 @@ export type Block =
   | GuessWhoBlock
   | MinigameArithmeticBlock
   | MinigameBalloonPumpBlock
+  | CollaborativeDrawingBlock
   | TheSceneBlock;
 
 export interface PlaybillRunningOrderEntry {
@@ -663,6 +730,7 @@ export interface CreateBlockPayload {
     | GuessWhoPayload
     | MinigameArithmeticPayload
     | MinigameBalloonPumpPayload
+    | CollaborativeDrawingPayload
     | TheScenePayload;
   visible_to_segment_ids?: string[];
   status?: BlockStatus;
@@ -914,6 +982,9 @@ export type SubmissionState = Record<
     current_question?: { index: number; prompt: string } | null;
     score?: { correct: number; completed: number };
     fill_amount?: number;
+    assignment?: CollaborativeDrawingAssignment;
+    image?: string | null;
+    submitted?: boolean;
   }
 >;
 
@@ -1113,6 +1184,14 @@ export interface MinigameBalloonPumpData {
   target_units: number;
 }
 
+export interface CollaborativeDrawingData {
+  prompt: string;
+  min_subsections: number;
+  max_subsections: number;
+  drawing_time_seconds: number;
+  total_drawings: number;
+}
+
 export interface TheSceneData {
   leaderboard_size: number;
   prompt_input_count: number;
@@ -1130,6 +1209,7 @@ export type BlockComponentData =
   | GuessWhoData
   | MinigameArithmeticData
   | MinigameBalloonPumpData
+  | CollaborativeDrawingData
   | TheSceneData;
 
 // Discriminated union for form block data
@@ -1143,6 +1223,7 @@ export type FormBlockData =
   | { kind: BlockKind.GUESS_WHO; data: GuessWhoData }
   | { kind: BlockKind.MINIGAME_ARITHMETIC; data: MinigameArithmeticData }
   | { kind: BlockKind.MINIGAME_BALLOON_PUMP; data: MinigameBalloonPumpData }
+  | { kind: BlockKind.COLLABORATIVE_DRAWING; data: CollaborativeDrawingData }
   | { kind: BlockKind.THE_SCENE; data: TheSceneData };
 
 export interface UpdateBlockPayload {

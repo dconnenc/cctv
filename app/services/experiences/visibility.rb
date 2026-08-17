@@ -643,6 +643,23 @@ module Experiences
         results = block.experience_minigame_balloon_results.to_a
         { total: results.count }
 
+      when ExperienceBlock::COLLABORATIVE_DRAWING
+        photos      = block.experience_collaborative_drawing_photos.includes(photo_attachment: :blob).to_a
+        assignments = block.experience_collaborative_drawing_assignments.to_a
+        response    = {
+          total: photos.count,
+          assignment_count: assignments.count,
+          submission_count: assignments.count { |a| a.submitted_at.present? }
+        }
+
+        if mod_or_host?(participant_role)
+          response[:all_responses] = photos.map do |p|
+            { id: p.id, photo_url: attachment_url(p.photo) }
+          end
+        end
+
+        response
+
       when ExperienceBlock::THE_SCENE
         suggestion_count = block.improv_suggestions.active.count
         vote_count =
