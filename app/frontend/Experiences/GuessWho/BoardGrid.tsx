@@ -46,7 +46,7 @@ export default function BoardGrid({ contestant }: BoardGridProps) {
         return (
           <div key={uid} className={styles.boardCell}>
             <div className={styles.boardAvatarWrap}>
-              <Avatar strokes={p?.avatar?.strokes ?? null} size={AVATAR_SIZE} />
+              <Avatar avatar={p?.avatar} size={AVATAR_SIZE} />
               {isUnanswered && (
                 <span className={styles.shameBadge} aria-label="Did not respond">
                   ?

@@ -1,9 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import { Layer, Line, Stage } from 'react-konva';
+import { Image as KonvaImage, Layer, Line, Rect, Stage } from 'react-konva';
 
+import { applyCosmetic, getCosmeticDragData } from '@cctv/components/Cosmetics';
 import { Button } from '@cctv/core/Button/Button';
-import { AvatarStroke } from '@cctv/types';
+import { AvatarStroke, CosmeticPlacement } from '@cctv/types';
+
+import CosmeticNode from './CosmeticNode';
+import { flattenStrokesToDataUrl } from './flatten';
 
 import styles from './DrawingCanvas.module.scss';
 
@@ -22,13 +26,27 @@ interface CanvasStroke extends AvatarStroke {
   id: string;
 }
 
+export interface DrawingCanvasSubmission {
+  image: string;
+  cosmetics: CosmeticPlacement[];
+}
+
+export type DrawingCanvasMode = 'draw' | 'decorate' | 'background';
+
 export interface DrawingCanvasProps {
   initialStrokes?: AvatarStroke[];
+  // A previously flattened avatar image, shown as the base layer when re-editing.
+  initialImage?: string | null;
+  cosmetics?: CosmeticPlacement[];
+  onCosmeticsChange?: (next: CosmeticPlacement[]) => void;
+  // 'draw' lets the user draw and locks cosmetics; 'decorate' locks drawing and
+  // lets the user move/remove clothing.
+  mode?: DrawingCanvasMode;
   palette?: string[];
   brushSizes?: number[];
   drawSize?: { w: number; h: number };
   onStrokeEvent?: (event: DrawingCanvasEvent) => void;
-  onSubmit: (strokes: AvatarStroke[]) => void | Promise<void>;
+  onSubmit: (submission: DrawingCanvasSubmission) => void | Promise<void>;
   onBack?: () => void;
 }
 
@@ -42,6 +60,7 @@ const DEFAULT_PALETTE_VARS = [
 ] as const;
 
 const NO_INITIAL_STROKES: AvatarStroke[] = [];
+const NO_COSMETICS: CosmeticPlacement[] = [];
 const DEFAULT_BRUSH_SIZES = [2, 4, 8, 32];
 const DEFAULT_DRAW_SIZE = { w: 320, h: 320 };
 
@@ -65,8 +84,17 @@ function resolveCssVar(name: string) {
   return v || '#000000';
 }
 
+function handleDragOver(e: React.DragEvent) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'copy';
+}
+
 export default function DrawingCanvas({
   initialStrokes = NO_INITIAL_STROKES,
+  initialImage = null,
+  cosmetics = NO_COSMETICS,
+  onCosmeticsChange,
+  mode = 'draw',
   palette,
   brushSizes = DEFAULT_BRUSH_SIZES,
   drawSize = DEFAULT_DRAW_SIZE,
@@ -77,7 +105,32 @@ export default function DrawingCanvas({
   const [lines, setLines] = useState<CanvasStroke[]>(() => withRenderIds(initialStrokes));
   const [clearedLines, setClearedLines] = useState<CanvasStroke[] | null>(null);
   const [isDrawing, setIsDrawing] = useState(false);
+  const [selectedCosmetic, setSelectedCosmetic] = useState<number | null>(null);
+  const [backgroundColor, setBackgroundColor] = useState<string | null>(null);
+  const [openTool, setOpenTool] = useState<'brush' | 'color' | null>(null);
+  const [baseImage, setBaseImage] = useState<HTMLImageElement | null>(null);
+  const [clearedBaseImage, setClearedBaseImage] = useState<HTMLImageElement | null>(null);
   const hasLoadedInitialRef = useRef(false);
+  const hasLoadedImageRef = useRef(false);
+
+  // Load the previously flattened avatar as the base layer (once).
+  useEffect(() => {
+    if (hasLoadedImageRef.current || !initialImage) return;
+    hasLoadedImageRef.current = true;
+    const img = new window.Image();
+    img.addEventListener('load', () => setBaseImage(img));
+    img.src = initialImage;
+  }, [initialImage]);
+
+  // Leaving decorate mode drops any cosmetic selection; changing mode collapses
+  // any open tool panel.
+  useEffect(() => {
+    if (mode !== 'decorate') setSelectedCosmetic(null);
+    setOpenTool(null);
+  }, [mode]);
+
+  const toggleTool = (tool: 'brush' | 'color') =>
+    setOpenTool((prev) => (prev === tool ? null : tool));
 
   const [penWidth, setPenWidth] = useState<number>(4);
   const [penColor, setPenColor] = useState<string>('#000000');
@@ -115,7 +168,12 @@ export default function DrawingCanvas({
   });
 
   const onPointerDown = (e: any) => {
+    // Drawing is only possible in draw mode; cosmetics are locked here.
+    if (mode !== 'draw') return;
+    // Interacting with a cosmetic (select/drag) must not start a stroke.
+    if (e?.target?.name?.() === 'cosmetic') return;
     if (e?.evt?.preventDefault) e.evt.preventDefault();
+    setSelectedCosmetic(null);
     setClearedLines(null);
     setIsDrawing(true);
     isDrawingRef.current = true;
@@ -244,7 +302,9 @@ export default function DrawingCanvas({
   const onUndo = () => {
     if (lines.length === 0 && clearedLines) {
       setLines(clearedLines);
+      setBaseImage(clearedBaseImage);
       setClearedLines(null);
+      setClearedBaseImage(null);
       onStrokeEvent?.({
         operation: 'canvas_clear_undone',
         data: { strokes: withoutRenderIds(clearedLines) },
@@ -259,10 +319,33 @@ export default function DrawingCanvas({
 
   const canUndo = lines.some((s) => !s.committed) || (lines.length === 0 && !!clearedLines);
 
+  // Flatten the background + drawing layers to a fixed-size raster; cosmetics
+  // stay a separate layer and are submitted as structured placements.
+  const buildSubmission = () => ({
+    image: flattenStrokesToDataUrl(lines, drawSize.w, backgroundColor, baseImage),
+    cosmetics,
+  });
+
   const handleSubmit = async () => {
-    const committedLines = lines.map((s) => ({ ...s, committed: true }));
-    await onSubmit(withoutRenderIds(committedLines));
-    setLines(committedLines);
+    await onSubmit(buildSubmission());
+  };
+
+  const updateCosmetic = (index: number, next: CosmeticPlacement) => {
+    onCosmeticsChange?.(cosmetics.map((c, i) => (i === index ? next : c)));
+  };
+
+  const removeCosmetic = (index: number) => {
+    onCosmeticsChange?.(cosmetics.filter((_, i) => i !== index));
+    setSelectedCosmetic(null);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    const cosmetic = getCosmeticDragData(e.dataTransfer);
+    const rect = drawWrapRef.current?.getBoundingClientRect();
+    if (!cosmetic || !rect || !onCosmeticsChange) return;
+    const dp = toDrawSpace(e.clientX - rect.left, e.clientY - rect.top);
+    onCosmeticsChange(applyCosmetic(cosmetics, cosmetic, dp.x, dp.y));
   };
 
   useEffect(() => {
@@ -284,28 +367,157 @@ export default function DrawingCanvas({
 
   return (
     <div className={styles.root}>
-      <div className={styles.toolbar}>
-        <div className={styles.sizeGroup}>
+      <div
+        ref={drawWrapRef}
+        className={`${styles.stageWrap} ${styles.square}`}
+        onDragOver={handleDragOver}
+        onDrop={handleDrop}
+      >
+        <Stage
+          width={drawStageSize.w}
+          height={drawStageSize.h}
+          onMouseDown={onPointerDown}
+          onMouseMove={onPointerMove}
+          onMouseUp={onPointerUp}
+          onTouchStart={onPointerDown}
+          onTouchMove={onPointerMove}
+          onTouchEnd={onPointerUp}
+        >
+          <Layer scaleX={drawScale.x} scaleY={drawScale.y}>
+            {backgroundColor ? (
+              <Rect
+                x={0}
+                y={0}
+                width={drawSize.w}
+                height={drawSize.h}
+                fill={backgroundColor}
+                listening={false}
+              />
+            ) : null}
+            {baseImage ? (
+              <KonvaImage
+                image={baseImage}
+                x={0}
+                y={0}
+                width={drawSize.w}
+                height={drawSize.h}
+                listening={false}
+              />
+            ) : null}
+            {lines.map((s) => (
+              <Line
+                key={s.id}
+                points={s.points}
+                stroke={s.color}
+                strokeWidth={s.width}
+                lineCap="round"
+              />
+            ))}
+          </Layer>
+          <Layer scaleX={drawScale.x} scaleY={drawScale.y}>
+            {cosmetics
+              .map((placement, i) => ({ placement, i }))
+              .toSorted(
+                (a, b) =>
+                  (a.placement.category === 'frame' ? 1 : 0) -
+                  (b.placement.category === 'frame' ? 1 : 0),
+              )
+              .map(({ placement, i }) => (
+                <CosmeticNode
+                  key={`${placement.cosmetic_id}-${i}`}
+                  placement={placement}
+                  interactive={mode === 'decorate' && placement.category === 'clothing'}
+                  selected={selectedCosmetic === i}
+                  onSelect={() => setSelectedCosmetic(i)}
+                  onChange={(next) => updateCosmetic(i, next)}
+                />
+              ))}
+          </Layer>
+        </Stage>
+      </div>
+
+      {mode === 'draw' ? (
+        <div className={styles.tools}>
+          <button
+            type="button"
+            className={styles.toolBtn}
+            aria-expanded={openTool === 'brush'}
+            onClick={() => toggleTool('brush')}
+          >
+            Brush:{' '}
+            {penWidth === 2
+              ? 'Thin'
+              : penWidth === 4
+                ? 'Medium'
+                : penWidth === 8
+                  ? 'Thick'
+                  : 'Huge'}
+          </button>
+          <button
+            type="button"
+            className={styles.toolBtn}
+            aria-expanded={openTool === 'color'}
+            onClick={() => toggleTool('color')}
+          >
+            Color
+            <span className={styles.toolSwatch} style={{ background: penColor }} aria-hidden />
+          </button>
+        </div>
+      ) : null}
+
+      {mode === 'background' ? (
+        <div className={styles.tools}>
+          <button
+            type="button"
+            className={styles.toolBtn}
+            aria-expanded={openTool === 'color'}
+            onClick={() => toggleTool('color')}
+          >
+            Color
+            {backgroundColor ? (
+              <span
+                className={styles.toolSwatch}
+                style={{ background: backgroundColor }}
+                aria-hidden
+              />
+            ) : (
+              <span className={styles.toolNone}>None</span>
+            )}
+          </button>
+        </div>
+      ) : null}
+
+      {mode === 'draw' && openTool === 'brush' ? (
+        <div className={`${styles.toolPanel} ${styles.sizeGroup}`}>
           {brushSizes.map((sz) => (
             <Button
               key={sz}
               variant="outline"
               size="sm"
               aria-pressed={penWidth === sz}
-              onClick={() => setPenWidth(sz)}
+              onClick={() => {
+                setPenWidth(sz);
+                setOpenTool(null);
+              }}
             >
               {sz === 2 ? 'Thin' : sz === 4 ? 'Medium' : sz === 8 ? 'Thick' : 'Huge'}
             </Button>
           ))}
         </div>
-        <div className={styles.palette}>
+      ) : null}
+
+      {mode === 'draw' && openTool === 'color' ? (
+        <div className={`${styles.toolPanel} ${styles.palette}`}>
           {colors.map((c) => (
             <button
               key={c}
               aria-label={`Color ${c}`}
               className={`${styles.swatch} ${penColor === c ? styles.swatchActive : ''}`}
               style={{ background: c }}
-              onClick={() => setPenColor(c)}
+              onClick={() => {
+                setPenColor(c);
+                setOpenTool(null);
+              }}
             />
           ))}
           <label
@@ -323,63 +535,102 @@ export default function DrawingCanvas({
             />
           </label>
         </div>
-      </div>
+      ) : null}
 
-      <div ref={drawWrapRef} className={`${styles.stageWrap} ${styles.square}`}>
-        <Stage
-          width={drawStageSize.w}
-          height={drawStageSize.h}
-          onMouseDown={onPointerDown}
-          onMouseMove={onPointerMove}
-          onMouseUp={onPointerUp}
-          onTouchStart={onPointerDown}
-          onTouchMove={onPointerMove}
-          onTouchEnd={onPointerUp}
-        >
-          <Layer scaleX={drawScale.x} scaleY={drawScale.y}>
-            {lines.map((s) => (
-              <Line
-                key={s.id}
-                points={s.points}
-                stroke={s.color}
-                strokeWidth={s.width}
-                lineCap="round"
-              />
-            ))}
-          </Layer>
-        </Stage>
-      </div>
+      {mode === 'background' && openTool === 'color' ? (
+        <div className={`${styles.toolPanel} ${styles.palette}`}>
+          <button
+            type="button"
+            aria-label="No background"
+            aria-pressed={backgroundColor === null}
+            className={`${styles.swatch} ${styles.swatchNone} ${backgroundColor === null ? styles.swatchActive : ''}`}
+            title="No background"
+            onClick={() => {
+              setBackgroundColor(null);
+              setOpenTool(null);
+            }}
+          />
+          {colors.map((c) => (
+            <button
+              key={c}
+              aria-label={`Background ${c}`}
+              aria-pressed={backgroundColor === c}
+              className={`${styles.swatch} ${backgroundColor === c ? styles.swatchActive : ''}`}
+              style={{ background: c }}
+              onClick={() => {
+                setBackgroundColor(c);
+                setOpenTool(null);
+              }}
+            />
+          ))}
+          <label
+            className={`${styles.swatch} ${styles.colorPickerLabel} ${backgroundColor && !colors.includes(backgroundColor) ? styles.swatchActive : ''}`}
+            style={
+              backgroundColor && !colors.includes(backgroundColor)
+                ? { background: backgroundColor }
+                : undefined
+            }
+            aria-label="Custom background color"
+            title="Custom background color"
+          >
+            <input
+              type="color"
+              aria-label="Custom background color"
+              className={styles.hiddenColorInput}
+              value={backgroundColor ?? '#000000'}
+              onChange={(e) => setBackgroundColor(e.target.value)}
+            />
+          </label>
+        </div>
+      ) : null}
 
       <div className={styles.controls}>
-        <Button variant="secondary" size="sm" onClick={onUndo} disabled={!canUndo}>
-          Undo
-        </Button>
-        <Button
-          variant="secondary"
-          size="sm"
-          onClick={() => {
-            if (lines.length > 0) setClearedLines(lines);
-            setLines([]);
-            onStrokeEvent?.({ operation: 'canvas_cleared' });
-          }}
-        >
-          Clear
-        </Button>
+        {mode === 'draw' ? (
+          <>
+            <Button variant="secondary" size="sm" onClick={onUndo} disabled={!canUndo}>
+              Undo
+            </Button>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => {
+                if (lines.length > 0 || baseImage) {
+                  setClearedLines(lines);
+                  setClearedBaseImage(baseImage);
+                }
+                setLines([]);
+                setBaseImage(null);
+                onStrokeEvent?.({ operation: 'canvas_cleared' });
+              }}
+            >
+              Clear
+            </Button>
+          </>
+        ) : null}
+        {selectedCosmetic !== null ? (
+          <Button variant="secondary" size="sm" onClick={() => removeCosmetic(selectedCosmetic)}>
+            Remove
+          </Button>
+        ) : null}
         {onBack ? (
           <Button
             variant="secondary"
             size="sm"
             onClick={async () => {
-              const committedLines = lines.map((s) => ({ ...s, committed: true }));
-              await onSubmit(withoutRenderIds(committedLines));
-              setLines(committedLines);
+              await onSubmit(buildSubmission());
               onBack();
             }}
           >
             Save
           </Button>
         ) : (
-          <Button size="sm" onClick={handleSubmit} disabled={lines.length === 0}>
+          <Button
+            size="sm"
+            onClick={handleSubmit}
+            disabled={
+              lines.length === 0 && cosmetics.length === 0 && !backgroundColor && !baseImage
+            }
+          >
             Submit
           </Button>
         )}

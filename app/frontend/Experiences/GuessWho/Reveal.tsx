@@ -35,7 +35,7 @@ function ContestantCard({ contestant }: { contestant: GuessWhoContestant }) {
   return (
     <div className={styles.revealCard}>
       <div className={styles.revealLabel}>The mystery participant was…</div>
-      <Avatar strokes={contestant.mystery?.avatar?.strokes ?? null} size={192} />
+      <Avatar avatar={contestant.mystery?.avatar} size={192} />
       <div className={styles.revealName}>{contestant.mystery?.name ?? 'Unknown'}</div>
       <div className={styles.revealCrawl}>
         <div className={styles.crawlInner}>

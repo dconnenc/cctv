@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 
 import type Konva from 'konva';
-import { Group, Layer, Line, Stage } from 'react-konva';
+import { Group, Image as KonvaImage, Layer, Line, Stage } from 'react-konva';
 
+import { cosmeticAssetUrl, sortCosmetics } from '@cctv/components/Cosmetics';
 import { useExperience } from '@cctv/contexts/ExperienceContext';
 import { useLobbyDrawingState } from '@cctv/contexts/LobbyDrawingContext';
-import type { AvatarStroke, ExperienceParticipant } from '@cctv/types';
+import type { AvatarStroke, CosmeticPlacement, ExperienceParticipant } from '@cctv/types';
 
 import styles from './LobbyAvatars.module.scss';
 
@@ -165,8 +166,9 @@ export default function LobbyAvatars() {
         <Stage width={size.w} height={size.h}>
           <Layer ref={layerRef}>
             {participants.map((p) => {
+              const committed = drawState.committed?.[p.id];
               const strokes = drawState.strokes[p.id] ?? [];
-              if (!strokes.length) return null;
+              if (!committed?.image && strokes.length === 0) return null;
 
               const motion = motionsRef.current.get(p.id);
               if (!motion) return null;
@@ -196,15 +198,19 @@ export default function LobbyAvatars() {
                   scaleY={initialScale}
                   opacity={isGrayed ? 0.3 : 1}
                 >
-                  {keyedStrokes(strokes).map(({ key, stroke }) => (
-                    <Line
-                      key={key}
-                      points={stroke.points}
-                      stroke={isGrayed ? 'hsl(60 4% 35%)' : stroke.color}
-                      strokeWidth={stroke.width}
-                      lineCap="round"
-                    />
-                  ))}
+                  {committed?.image ? (
+                    <FlattenedAvatar image={committed.image} cosmetics={committed.cosmetics} />
+                  ) : (
+                    keyedStrokes(strokes).map(({ key, stroke }) => (
+                      <Line
+                        key={key}
+                        points={stroke.points}
+                        stroke={isGrayed ? 'hsl(60 4% 35%)' : stroke.color}
+                        strokeWidth={stroke.width}
+                        lineCap="round"
+                      />
+                    ))
+                  )}
                 </Group>
               );
             })}
@@ -212,5 +218,67 @@ export default function LobbyAvatars() {
         </Stage>
       </div>
     </div>
+  );
+}
+
+function KonvaUrlImage({
+  src,
+  x,
+  y,
+  width,
+  height,
+  rotation,
+}: {
+  src: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  rotation?: number;
+}) {
+  const [img, setImg] = useState<HTMLImageElement | null>(null);
+  useEffect(() => {
+    if (!src) return;
+    const image = new window.Image();
+    image.addEventListener('load', () => setImg(image));
+    image.src = src;
+  }, [src]);
+  if (!img) return null;
+  // Render about the center so rotation matches the editor and HTML renderers.
+  return (
+    <KonvaImage
+      image={img}
+      x={x + width / 2}
+      y={y + height / 2}
+      offsetX={width / 2}
+      offsetY={height / 2}
+      width={width}
+      height={height}
+      rotation={rotation}
+      listening={false}
+    />
+  );
+}
+
+function FlattenedAvatar({ image, cosmetics }: { image: string; cosmetics: CosmeticPlacement[] }) {
+  return (
+    <>
+      <KonvaUrlImage src={image} x={0} y={0} width={DRAW_SIZE} height={DRAW_SIZE} />
+      {sortCosmetics(cosmetics).map((c) => {
+        const url = cosmeticAssetUrl(c.asset_key);
+        if (!url) return null;
+        return (
+          <KonvaUrlImage
+            key={`${c.cosmetic_id}-${c.x}-${c.y}-${c.rotation}`}
+            src={url}
+            x={c.x}
+            y={c.y}
+            width={c.width}
+            height={c.height}
+            rotation={c.rotation}
+          />
+        );
+      })}
+    </>
   );
 }

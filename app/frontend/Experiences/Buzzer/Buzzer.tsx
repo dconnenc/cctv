@@ -1,34 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import { Layer, Line, Stage } from 'react-konva';
-
 import { useExperience } from '@cctv/contexts/ExperienceContext';
 import { useExperienceState } from '@cctv/contexts/ExperienceStateContext';
+import Avatar from '@cctv/experiences/GuessWho/Avatar';
 import { useSubmitBuzzerResponse } from '@cctv/hooks/useSubmitBuzzerResponse';
-import { AvatarStroke, BuzzerBlock } from '@cctv/types';
+import { BuzzerBlock } from '@cctv/types';
 
 import styles from './Buzzer.module.scss';
 
-const DRAW_SIZE = 320;
 const AVATAR_DISPLAY_SIZE = 280;
-const AVATAR_SCALE = AVATAR_DISPLAY_SIZE / DRAW_SIZE;
-
-interface IdentifiedStroke {
-  id: string;
-  stroke: AvatarStroke;
-}
-
-// Strokes carry no id, so identity comes from the drawn geometry plus an
-// occurrence counter that keeps repeated identical marks distinct.
-function identifyStrokes(strokes: AvatarStroke[]): IdentifiedStroke[] {
-  const occurrences = new Map<string, number>();
-  return strokes.map((stroke) => {
-    const drawn = `${stroke.color}:${stroke.width}:${stroke.points.join(',')}`;
-    const occurrence = occurrences.get(drawn) ?? 0;
-    occurrences.set(drawn, occurrence + 1);
-    return { id: `${drawn}#${occurrence}`, stroke };
-  });
-}
 
 function playBuzzerSound() {
   try {
@@ -174,28 +154,17 @@ export default function Buzzer({ block, viewContext = 'participant' }: BuzzerPro
     const sourceView = monitorView ?? experience;
     const allParticipants = [...(sourceView?.participants ?? []), ...(sourceView?.hosts ?? [])];
     const winner = allParticipants.find((p) => p.id === firstResponse.experience_participant_id);
-    const strokes = firstResponse.avatar?.strokes ?? [];
+    const avatar = firstResponse.avatar;
+    const hasAvatar = !!(avatar?.image || avatar?.strokes?.length);
 
     return (
       <div className={styles.monitorWinner}>
         <p className={styles.monitorLabel}>
           {block.payload.prompt || 'Contestants be ready to buzz in!'}
         </p>
-        {strokes.length > 0 ? (
+        {hasAvatar ? (
           <div className={styles.avatarWrap}>
-            <Stage width={AVATAR_DISPLAY_SIZE} height={AVATAR_DISPLAY_SIZE}>
-              <Layer scaleX={AVATAR_SCALE} scaleY={AVATAR_SCALE}>
-                {identifyStrokes(strokes).map(({ id, stroke }) => (
-                  <Line
-                    key={id}
-                    points={stroke.points}
-                    stroke={stroke.color}
-                    strokeWidth={stroke.width}
-                    lineCap="round"
-                  />
-                ))}
-              </Layer>
-            </Stage>
+            <Avatar avatar={avatar} size={AVATAR_DISPLAY_SIZE} />
           </div>
         ) : (
           <div className={styles.avatarPlaceholder} />

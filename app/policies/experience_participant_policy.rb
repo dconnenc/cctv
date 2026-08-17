@@ -1,4 +1,8 @@
 class ExperienceParticipantPolicy < ApplicationPolicy
+  def show?
+    own_record? || manage?
+  end
+
   def update_avatar?
     own_record? || manage?
   end

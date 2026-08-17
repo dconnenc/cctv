@@ -145,7 +145,7 @@ export interface GuessWhoClue {
 export interface GuessWhoUserSummary {
   user_id: string;
   name: string;
-  avatar?: { strokes?: AvatarStroke[] } | null;
+  avatar?: AvatarData | null;
 }
 
 export interface GuessWhoContestant {
@@ -211,7 +211,7 @@ export interface MinigameArithmeticLeaderboardEntry {
   participant_id: string;
   user_id: string;
   name: string;
-  avatar?: { strokes?: AvatarStroke[] } | null;
+  avatar?: AvatarData | null;
   correct: number;
   completed: number;
   rank: number;
@@ -235,7 +235,7 @@ export interface MinigameBalloonPumpPodiumEntry {
   place: 1 | 2 | 3;
   participant_id: string;
   name: string;
-  avatar?: { strokes?: AvatarStroke[] } | null;
+  avatar?: AvatarData | null;
   fill_amount: number;
 }
 
@@ -405,6 +405,46 @@ export interface AvatarStroke {
   committed?: boolean;
 }
 
+// Clothing is placed/draggable; a frame wraps the whole avatar and is not
+// manipulable.
+export type CosmeticCategory = 'clothing' | 'frame';
+
+// Placement of a cosmetic on the avatar, in the fixed 320x320 draw space.
+// `asset_key` is denormalized so any renderer can resolve the art without the
+// cosmetic catalog.
+export interface CosmeticPlacement {
+  cosmetic_id: string;
+  slug: string;
+  asset_key: string;
+  category: CosmeticCategory;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  rotation: number;
+}
+
+// A cosmetic the user owns, available to apply to their avatar.
+export interface Cosmetic {
+  id: string;
+  name: string;
+  slug: string;
+  kind: string;
+  category: CosmeticCategory;
+  asset_key: string;
+  default_placement: Pick<CosmeticPlacement, 'x' | 'y' | 'width' | 'height' | 'rotation'>;
+}
+
+// Persisted avatar. Finalized avatars store a flattened `image` plus a separate,
+// non-flattened `cosmetics` layer. `strokes` is legacy (avatars drawn before the
+// flatten change) and is still rendered as a fallback.
+export interface AvatarData {
+  image?: string;
+  cosmetics?: CosmeticPlacement[];
+  strokes?: AvatarStroke[];
+  updated_at?: string;
+}
+
 export interface ExperienceParticipant {
   id: string;
   user_id: string;
@@ -418,10 +458,7 @@ export interface ExperienceParticipant {
   fingerprint: string | null;
   created_at: string;
   updated_at: string;
-  avatar?: {
-    strokes?: AvatarStroke[];
-    updated_at?: string;
-  } | null;
+  avatar?: AvatarData | null;
 }
 
 export interface BlockResponse {
@@ -514,7 +551,7 @@ export interface BuzzerBlock extends BaseBlock {
       experience_participant_id: string;
       answer: { buzzed_at: string };
       created_at: string;
-      avatar?: { strokes?: AvatarStroke[] } | null;
+      avatar?: AvatarData | null;
     }>;
   };
 }
