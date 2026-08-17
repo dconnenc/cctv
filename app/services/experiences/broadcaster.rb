@@ -49,20 +49,23 @@ class Experiences::Broadcaster
       .where("target_user_ids IS NOT NULL AND cardinality(target_user_ids) > 0")
       .pluck(:id, :target_user_ids)
 
+    visibility = Experiences::Visibility.new(experience)
+
     experience.experience_participants.includes(:user, :experience_segments)
       .group_by { |p| self.class.visibility_fingerprint(experience, p, targeted_block_data: targeted_block_data) }
       .each do |fingerprint, participants|
         rep = participants.first
         broadcast_to_profile(
           self.class.profile_stream_key(experience, fingerprint),
-          role:     rep.role,
-          segments: rep.experience_segments.map(&:name),
-          user_id:  rep.user_id
+          role:       rep.role,
+          segments:   rep.experience_segments.map(&:name),
+          user_id:    rep.user_id,
+          visibility: visibility
         )
       end
 
-    broadcast_monitor_view
-    broadcast_admin_view
+    broadcast_monitor_view(visibility: visibility)
+    broadcast_admin_view(visibility: visibility)
   end
 
   def broadcast_family_feud_update(block_id:, operation:, data:)
@@ -101,9 +104,9 @@ class Experiences::Broadcaster
     )
   end
 
-  def broadcast_monitor_view
+  def broadcast_monitor_view(visibility:)
     begin
-      payload = Experiences::Visibility.for_monitor(experience)
+      payload = visibility.for_monitor
 
       send_broadcast(
         self.class.monitor_stream_key(experience),
@@ -125,9 +128,9 @@ class Experiences::Broadcaster
     end
   end
 
-  def broadcast_admin_view
+  def broadcast_admin_view(visibility:)
     begin
-      payload = Experiences::Visibility.for_admin(experience)
+      payload = visibility.for_admin
 
       send_broadcast(
         self.class.admin_stream_key(experience),
@@ -152,9 +155,9 @@ class Experiences::Broadcaster
     end
   end
 
-  def broadcast_to_profile(stream_key, role:, segments:, user_id: nil)
+  def broadcast_to_profile(stream_key, role:, segments:, user_id: nil, visibility:)
     begin
-      payload = Experiences::Visibility.for_profile(experience, role: role, segments: segments, user_id: user_id)
+      payload = visibility.for_profile(role: role, segments: segments, user_id: user_id)
 
       send_broadcast(
         stream_key,
