@@ -11,6 +11,7 @@ class ExperienceBlock < ApplicationRecord
     GUESS_WHO = "guess_who",
     MINIGAME_ARITHMETIC = "minigame_arithmetic",
     MINIGAME_BALLOON_PUMP = "minigame_balloon_pump",
+    COLLABORATIVE_DRAWING = "collaborative_drawing",
     THE_SCENE = "the_scene",
     NEWSLETTER_SIGNUP = "newsletter_signup"
   ]
@@ -22,7 +23,8 @@ class ExperienceBlock < ApplicationRecord
     GUESS_WHO => {
       "theme" => "guess_who_theme"
     },
-    THE_SCENE => { "on_buzzer_press" => "buzzer_error" }
+    THE_SCENE => { "on_buzzer_press" => "buzzer_error" },
+    COLLABORATIVE_DRAWING => { "on_countdown" => "buzzer_error" }
   }.freeze
 
   belongs_to :experience
@@ -43,6 +45,8 @@ class ExperienceBlock < ApplicationRecord
   has_many :experience_newsletter_submissions, dependent: :destroy
   has_many :experience_minigame_submissions, dependent: :destroy
   has_many :experience_minigame_balloon_results, dependent: :destroy
+  has_many :experience_collaborative_drawing_photos, dependent: :destroy
+  has_many :experience_collaborative_drawing_assignments, dependent: :destroy
   has_many :improv_suggestions, dependent: :destroy
   has_many :improv_votes, dependent: :destroy
 
