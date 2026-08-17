@@ -9,6 +9,8 @@ import FamilyFeud from '../FamilyFeud/FamilyFeud';
 import GuessWho from '../GuessWho/GuessWho';
 import MinigameArithmetic from '../MinigameArithmetic/MinigameArithmetic';
 import MinigameBalloonPump from '../MinigameBalloonPump/MinigameBalloonPump';
+import Newscasters from '../Newscasters/Newscasters';
+import NewscastersSource from '../NewscastersSource/NewscastersSource';
 import PhotoUpload from '../PhotoUpload/PhotoUpload';
 import Poll from '../Poll/Poll';
 import Question from '../Question/Question';
@@ -101,6 +103,19 @@ export default function ExperienceBlockContainer({
       return <MinigameBalloonPump block={block} viewContext={viewContext} />;
     case BlockKind.THE_SCENE:
       return <TheScene block={block} viewContext={viewContext} />;
+    case BlockKind.NEWSCASTERS:
+      return <Newscasters block={block} viewContext={viewContext} />;
+    case BlockKind.NEWSCASTERS_SOURCE:
+      return (
+        <NewscastersSource
+          blockId={block.id}
+          prompt={block.payload.prompt}
+          allowUpload={block.payload.allow_upload}
+          responses={block.responses}
+          disabled={disabled}
+          viewContext={viewContext}
+        />
+      );
     default:
       const exhaustiveCheck: never = block;
       return (

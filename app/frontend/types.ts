@@ -35,6 +35,8 @@ export enum BlockKind {
   MINIGAME_ARITHMETIC = 'minigame_arithmetic',
   MINIGAME_BALLOON_PUMP = 'minigame_balloon_pump',
   THE_SCENE = 'the_scene',
+  NEWSCASTERS = 'newscasters',
+  NEWSCASTERS_SOURCE = 'newscasters_source',
 }
 
 export const BLOCK_KIND_LABELS = {
@@ -48,7 +50,13 @@ export const BLOCK_KIND_LABELS = {
   [BlockKind.MINIGAME_ARITHMETIC]: 'Minigame: Arithmetic',
   [BlockKind.MINIGAME_BALLOON_PUMP]: 'Minigame: Balloon Pump',
   [BlockKind.THE_SCENE]: 'The Scene',
+  [BlockKind.NEWSCASTERS]: 'Newscasters',
+  [BlockKind.NEWSCASTERS_SOURCE]: 'Newscasters Source',
 } satisfies Record<BlockKind, string>;
+
+// Kinds the create dialog does not offer directly. NEWSCASTERS_SOURCE is
+// spawned automatically alongside a Newscasters block.
+export const HIDDEN_CREATE_BLOCK_KINDS: readonly BlockKind[] = [BlockKind.NEWSCASTERS_SOURCE];
 
 export interface ExperienceSegment {
   id: string;
@@ -124,6 +132,27 @@ export interface FamilyFeudPayload {
 
 export interface PhotoUploadPayload {
   prompt: string;
+}
+
+export type NewscastersVideoKind = 'upload' | 'youtube';
+
+export interface NewscastersSelectedVideo {
+  kind: NewscastersVideoKind;
+  url: string;
+  submission_id: string;
+}
+
+export interface NewscastersPayload {
+  playing: boolean;
+  restart_count: number;
+  source_block_id?: string;
+  selected_video?: NewscastersSelectedVideo | null;
+  show_on_monitor?: boolean;
+}
+
+export interface NewscastersSourcePayload {
+  prompt: string;
+  allow_upload: boolean;
 }
 
 export interface BuzzerPayload {
@@ -354,6 +383,18 @@ export interface MinigameBalloonPumpApiPayload {
   target_units: number;
 }
 
+export interface NewscastersApiPayload {
+  type: 'newscasters';
+  source_prompt: string;
+  allow_upload: boolean;
+}
+
+export interface NewscastersSourceApiPayload {
+  type: 'newscasters_source';
+  prompt: string;
+  allow_upload: boolean;
+}
+
 // Discriminated union for API payloads (what gets sent to backend)
 export type ApiPayload =
   | PollApiPayload
@@ -365,7 +406,9 @@ export type ApiPayload =
   | GuessWhoApiPayload
   | MinigameArithmeticApiPayload
   | MinigameBalloonPumpApiPayload
-  | TheSceneApiPayload;
+  | TheSceneApiPayload
+  | NewscastersApiPayload
+  | NewscastersSourceApiPayload;
 
 // ===== PLAYBILL TYPES =====
 
@@ -580,6 +623,29 @@ export interface TheSceneBlock extends BaseBlock {
   };
 }
 
+export interface NewscastersBlock extends BaseBlock {
+  kind: BlockKind.NEWSCASTERS;
+  payload: NewscastersPayload;
+}
+
+export interface NewscastersSourceVideoResponse {
+  id: string;
+  experience_participant_id: string;
+  answer: Record<string, unknown>;
+  video_url?: string | null;
+  video_kind?: NewscastersVideoKind;
+  created_at: string;
+}
+
+export interface NewscastersSourceBlock extends BaseBlock {
+  kind: BlockKind.NEWSCASTERS_SOURCE;
+  payload: NewscastersSourcePayload;
+  responses?: {
+    total: number;
+    all_responses?: NewscastersSourceVideoResponse[];
+  };
+}
+
 export type Block =
   | PollBlock
   | QuestionBlock
@@ -590,7 +656,9 @@ export type Block =
   | GuessWhoBlock
   | MinigameArithmeticBlock
   | MinigameBalloonPumpBlock
-  | TheSceneBlock;
+  | TheSceneBlock
+  | NewscastersBlock
+  | NewscastersSourceBlock;
 
 export interface PlaybillRunningOrderEntry {
   id: string;
@@ -663,7 +731,9 @@ export interface CreateBlockPayload {
     | GuessWhoPayload
     | MinigameArithmeticPayload
     | MinigameBalloonPumpPayload
-    | TheScenePayload;
+    | TheScenePayload
+    | NewscastersPayload
+    | NewscastersSourcePayload;
   visible_to_segment_ids?: string[];
   status?: BlockStatus;
   open_immediately?: boolean;
@@ -909,6 +979,7 @@ export type SubmissionState = Record<
     id?: string;
     answer?: JsonObject;
     photo_url?: string;
+    video_url?: string;
     own_suggestion?: { id: string; text: string } | null;
     own_vote_suggestion_id?: string | null;
     current_question?: { index: number; prompt: string } | null;
@@ -1119,6 +1190,16 @@ export interface TheSceneData {
   performer_participant_ids: string[];
 }
 
+export interface NewscastersData {
+  source_prompt: string;
+  allow_upload: boolean;
+}
+
+export interface NewscastersSourceData {
+  prompt: string;
+  allow_upload: boolean;
+}
+
 // Union type for all block component data
 export type BlockComponentData =
   | PollData
@@ -1130,7 +1211,9 @@ export type BlockComponentData =
   | GuessWhoData
   | MinigameArithmeticData
   | MinigameBalloonPumpData
-  | TheSceneData;
+  | TheSceneData
+  | NewscastersData
+  | NewscastersSourceData;
 
 // Discriminated union for form block data
 export type FormBlockData =
@@ -1143,7 +1226,9 @@ export type FormBlockData =
   | { kind: BlockKind.GUESS_WHO; data: GuessWhoData }
   | { kind: BlockKind.MINIGAME_ARITHMETIC; data: MinigameArithmeticData }
   | { kind: BlockKind.MINIGAME_BALLOON_PUMP; data: MinigameBalloonPumpData }
-  | { kind: BlockKind.THE_SCENE; data: TheSceneData };
+  | { kind: BlockKind.THE_SCENE; data: TheSceneData }
+  | { kind: BlockKind.NEWSCASTERS; data: NewscastersData }
+  | { kind: BlockKind.NEWSCASTERS_SOURCE; data: NewscastersSourceData };
 
 export interface UpdateBlockPayload {
   payload: ApiPayload | JsonObject;

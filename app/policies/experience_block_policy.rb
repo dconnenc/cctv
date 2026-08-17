@@ -15,6 +15,10 @@ class ExperienceBlockPolicy < ApplicationPolicy
     user_allowed_to_interact_with_block?
   end
 
+  def submit_newscasters_source_response?
+    user_allowed_to_interact_with_block?
+  end
+
   # The arithmetic round runs client-side and records answers best-effort; a
   # late answer landing after the block has closed must not 403. Any participant
   # in the experience may record an answer regardless of block status.

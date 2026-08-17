@@ -110,6 +110,15 @@ function renderPreview(kind: BlockKind) {
           <Lines widths={['55%']} />
         </>
       );
+    case BlockKind.NEWSCASTERS:
+      return <div className={styles.glyph}>▶</div>;
+    case BlockKind.NEWSCASTERS_SOURCE:
+      return (
+        <div className={styles.frames}>
+          <div className={styles.frame} />
+          <div className={styles.frame} />
+        </div>
+      );
     default: {
       const exhaustiveCheck: never = kind;
       return <div className={styles.glyph}>{exhaustiveCheck}</div>;

@@ -321,6 +321,13 @@ class ExperienceSubscriptionChannel < ApplicationCable::Channel
         result[s.experience_block_id.to_s] = { id: s.id, answer: s.answer, photo_url: photo_url }
       end
 
+    ExperienceVideoSubmission
+      .where(experience_block_id: block_scope, experience_participant_id: participant.id)
+      .includes(video_attachment: :blob)
+      .each do |s|
+        result[s.experience_block_id.to_s] = { id: s.id, answer: s.answer, video_url: s.video_url }
+      end
+
     ImprovSuggestion.active
       .where(experience_block_id: block_scope, experience_participant_id: participant.id)
       .each do |s|
