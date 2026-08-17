@@ -127,7 +127,7 @@ module Experiences
     end
 
     def monitor_visible_blocks
-      all      = @experience.experience_blocks.includes(:experience_segments).order(position: :asc).to_a
+      all      = all_blocks_with_segments
       parents  = all.select(&:parent_block?)
       children = all.reject(&:parent_block?)
       children_by_parent = children.group_by(&:parent_block_id)
@@ -160,7 +160,7 @@ module Experiences
     end
 
     def participant_visible_blocks(participant)
-      all     = @experience.experience_blocks.includes(:experience_segments).order(position: :asc).to_a
+      all     = all_blocks_with_segments
       parents = all.select(&:parent_block?)
 
       return parents if host_or_moderator?(participant.role)
@@ -175,7 +175,7 @@ module Experiences
     end
 
     def profile_visible_blocks(role:, segments:, user_id: nil)
-      all     = @experience.experience_blocks.includes(:experience_segments).order(position: :asc).to_a
+      all     = all_blocks_with_segments
       parents = all.select(&:parent_block?)
 
       return parents if host_or_moderator?(role)
@@ -739,7 +739,7 @@ module Experiences
 
     def experience_payload(blocks:, **extra)
       base_url     = Rails.application.config.app_base_url
-      participants = @experience.experience_participants.includes(:user, :experience_segments).to_a
+      participants = loaded_participants
 
       result = {
         id:               @experience.id,
@@ -786,15 +786,14 @@ module Experiences
     end
 
     def serialize_segments
-      @experience.experience_segments.order(position: :asc).map do |s|
+      loaded_segments.map do |s|
         { id: s.id, name: s.name, color: s.color, position: s.position }
       end
     end
 
     def serialize_playbill_running_order
-      @experience.experience_blocks
-        .where(parent_block_id: nil, add_to_playbill: true)
-        .order(position: :asc)
+      all_blocks_with_segments
+        .select { |b| b.parent_block_id.nil? && b.add_to_playbill }
         .map do |block|
           {
             id:                  block.id,
@@ -871,6 +870,23 @@ module Experiences
 
     def attachment_url(attachment)
       attachment.attached? ? ActiveStorageUrlService.blob_url(attachment.blob) : nil
+    end
+
+    def all_blocks_with_segments
+      @all_blocks_with_segments ||= @experience.experience_blocks
+        .includes(:experience_segments)
+        .order(position: :asc)
+        .to_a
+    end
+
+    def loaded_participants
+      @loaded_participants ||= @experience.experience_participants
+        .includes(:user, :experience_segments)
+        .to_a
+    end
+
+    def loaded_segments
+      @loaded_segments ||= @experience.experience_segments.order(position: :asc).to_a
     end
 
     def host_or_moderator?(role)
