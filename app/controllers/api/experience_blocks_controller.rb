@@ -10,6 +10,7 @@ class Api::ExperienceBlocksController < Api::BaseController
     set_guess_who_theme_music restart_guess_who_theme_music
     start_minigame_arithmetic end_minigame_arithmetic restart_minigame_arithmetic
     start_minigame_balloon_pump end_minigame_balloon_pump restart_minigame_balloon_pump
+    start_collaborative_drawing_round end_collaborative_drawing_round restart_collaborative_drawing
     start_the_scene end_the_scene force_next_the_scene update_the_scene_performers
     clear_the_scene_top clear_the_scene_suggestion clear_the_scene_all
   ].freeze
@@ -18,6 +19,7 @@ class Api::ExperienceBlocksController < Api::BaseController
     submit_poll_response submit_question_response
     submit_photo_upload_response submit_buzzer_response
     submit_minigame_arithmetic_response submit_minigame_balloon_pump_update
+    submit_collaborative_drawing_photo submit_collaborative_drawing
     submit_the_scene_suggestion submit_the_scene_vote press_the_scene_buzzer
   ].freeze
 
@@ -838,6 +840,85 @@ class Api::ExperienceBlocksController < Api::BaseController
       end
 
       render json: { success: true, result: outcome[:result] }, status: 200
+    end
+  end
+
+  # POST /api/experiences/:experience_id/blocks/:id/collaborative_drawing/photos
+  def submit_collaborative_drawing_photo
+    with_experience_orchestration do
+      submission = Experiences::Orchestrator.new(
+        experience: @experience, actor: @user
+      ).submit_collaborative_drawing_photo!(
+        block: @block,
+        photo_signed_id: params[:photo_signed_id],
+        answer: params[:answer] || {}
+      )
+
+      Experiences::Broadcaster.enqueue_update(@experience)
+
+      photo_url = submission.photo.attached? ? ActiveStorageUrlService.blob_url(submission.photo.blob) : nil
+      render json: { success: true, submission: { id: submission.id, answer: submission.answer, photo_url: photo_url } }, status: 200
+    end
+  end
+
+  # POST /api/experiences/:experience_id/blocks/:id/collaborative_drawing/start
+  def start_collaborative_drawing_round
+    with_experience_orchestration do
+      block = Experiences::Orchestrator.new(
+        experience: @experience, actor: @user
+      ).start_collaborative_drawing_round!(block: @block)
+
+      # Push the new payload (pool + timing) to everyone, then force each
+      # participant to re-pull client state so they receive their per-person
+      # slice assignment before the preview begins.
+      Experiences::Broadcaster.enqueue_update(@experience)
+      Experiences::Broadcaster.new(@experience).broadcast_resubscribe_all
+
+      render json: { success: true, data: block }, status: 200
+    end
+  end
+
+  # POST /api/experiences/:experience_id/blocks/:id/collaborative_drawing/end
+  def end_collaborative_drawing_round
+    with_experience_orchestration do
+      block = Experiences::Orchestrator.new(
+        experience: @experience, actor: @user
+      ).end_collaborative_drawing_round!(block: @block)
+
+      Experiences::Broadcaster.enqueue_update(@experience)
+
+      render json: { success: true, data: block }, status: 200
+    end
+  end
+
+  # POST /api/experiences/:experience_id/blocks/:id/collaborative_drawing/restart
+  def restart_collaborative_drawing
+    with_experience_orchestration do
+      block = Experiences::Orchestrator.new(
+        experience: @experience, actor: @user
+      ).restart_collaborative_drawing!(block: @block)
+
+      Experiences::Broadcaster.enqueue_update(@experience)
+      Experiences::Broadcaster.new(@experience).broadcast_resubscribe_all
+
+      render json: { success: true, data: block }, status: 200
+    end
+  end
+
+  # POST /api/experiences/:experience_id/blocks/:id/collaborative_drawing/drawings
+  def submit_collaborative_drawing
+    with_experience_orchestration do
+      submission = Experiences::Orchestrator.new(
+        experience: @experience, actor: @user
+      ).submit_collaborative_drawing!(
+        block: @block,
+        image: params[:image]
+      )
+
+      Experiences::Broadcaster.enqueue_update(@experience)
+
+      answer = submission ? { image: submission.drawing_image } : nil
+      render json: { success: true, submission: submission && { id: submission.id, answer: answer } }, status: 200
     end
   end
 

@@ -86,6 +86,7 @@ function blockLabel(block: Block): string {
       return block.payload.title || block.kind;
     case BlockKind.PHOTO_UPLOAD:
     case BlockKind.BUZZER:
+    case BlockKind.COLLABORATIVE_DRAWING:
       return block.payload.prompt || block.kind;
     case BlockKind.GUESS_WHO:
     case BlockKind.MINIGAME_ARITHMETIC:
