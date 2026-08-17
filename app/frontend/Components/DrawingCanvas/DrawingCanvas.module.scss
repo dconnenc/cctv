@@ -60,6 +60,8 @@
   gap: var(--space-xs) var(--space-xs);
   align-items: center;
   justify-content: center;
+  // Breathing room so the active swatch's outline-offset isn't clipped.
+  padding: 4px 0;
 }
 
 .sizeGroup {
@@ -72,6 +74,8 @@
   display: inline-flex;
   gap: var(--space-xs);
   align-items: center;
+  // Keep the active swatch outline (2px + 2px offset) from being clipped.
+  padding: 5px;
 }
 
 .swatch {
@@ -85,6 +89,63 @@
 .swatchActive {
   outline: 2px solid hsl(var(--ring));
   outline-offset: 2px;
+}
+
+// "No background" swatch: a red diagonal over a muted base.
+.swatchNone {
+  background:
+    linear-gradient(45deg, transparent 44%, var(--red) 44%, var(--red) 56%, transparent 56%),
+    hsl(var(--muted));
+}
+
+// Compact "click-into" tool selectors that live below the canvas.
+.tools {
+  display: flex;
+  gap: var(--space-xs);
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.toolBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 36px;
+  padding: 0.35rem 0.75rem;
+  border: 1px solid hsl(var(--border));
+  background: hsl(var(--muted));
+  color: hsl(var(--foreground));
+  border-radius: 9999px;
+  font-size: 0.85rem;
+  cursor: pointer;
+
+  &:hover {
+    border-color: hsl(var(--ring));
+  }
+
+  &[aria-expanded='true'] {
+    border-color: hsl(var(--ring));
+    outline: 2px solid hsl(var(--ring) / 0.25);
+    outline-offset: 1px;
+  }
+}
+
+.toolSwatch {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  border: 1px solid hsl(var(--border));
+}
+
+.toolNone {
+  font-size: 0.75rem;
+  color: hsl(var(--muted-foreground));
+}
+
+.toolPanel {
+  flex-wrap: wrap;
+  padding: 5px;
 }
 
 .colorPickerLabel {

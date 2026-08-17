@@ -9,7 +9,7 @@ import {
 } from 'react';
 
 import { clearAllExperienceJWTs } from '@cctv/contexts/jwtStorage';
-import { AvatarStroke, UserRole } from '@cctv/types';
+import { AvatarData, UserRole } from '@cctv/types';
 
 interface User {
   id: string;
@@ -21,7 +21,7 @@ interface User {
   admin: boolean;
   super_admin: boolean;
   most_recent_participant_name?: string;
-  most_recent_avatar?: { strokes?: AvatarStroke[] } | null;
+  most_recent_avatar?: AvatarData | null;
   performer_slug?: string | null;
 }
 

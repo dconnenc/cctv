@@ -195,13 +195,21 @@ class ExperienceSubscriptionChannel < ApplicationCable::Channel
       # doesn't scale, so this should be de-coupled from the initial fetch in
       # the future
       @experience.experience_participants.includes(:user).each do |p|
-        next unless p.avatar.present? && p.avatar['strokes'].present?
+        next unless p.avatar.present?
+
+        data =
+          if p.avatar['image'].present?
+            { image: p.avatar['image'], cosmetics: p.avatar['cosmetics'] || [] }
+          elsif p.avatar['strokes'].present?
+            { strokes: p.avatar['strokes'] }
+          end
+        next unless data
 
         transmit({
           type: 'drawing_update',
           participant_id: p.id,
           operation: 'avatar_committed',
-          data: { strokes: p.avatar['strokes'] }
+          data: data
         })
       end
     when 'impersonation'

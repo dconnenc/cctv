@@ -61,6 +61,7 @@ Rails.application.routes.draw do
         post :clear_avatars
         patch :update_playbill
         post :avatar, to: 'experience_avatar#create'
+        get :cosmetics, to: 'experience_cosmetics#index'
       end
 
       resources(

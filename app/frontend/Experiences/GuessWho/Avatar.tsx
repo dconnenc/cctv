@@ -2,16 +2,17 @@ import { useMemo } from 'react';
 
 import { Layer, Line, Stage } from 'react-konva';
 
-import { AvatarStroke } from '@cctv/types';
+import { DRAW_SIZE, cosmeticAssetUrl, sortCosmetics } from '@cctv/components/Cosmetics';
+import { AvatarData, AvatarStroke } from '@cctv/types';
 
 interface AvatarProps {
-  strokes?: AvatarStroke[] | null;
+  avatar?: AvatarData | null;
   size?: number;
   className?: string;
 }
 
-// Fraction of the box kept clear around the drawing so strokes don't touch the
-// edges when fitted.
+// Fraction of the box kept clear around a legacy drawing so strokes don't touch
+// the edges when fitted.
 const PADDING_RATIO = 0.1;
 
 interface IdentifiedStroke {
@@ -31,20 +32,22 @@ function identifyStrokes(strokes: AvatarStroke[]): IdentifiedStroke[] {
   });
 }
 
-export default function Avatar({ strokes, size = 96, className }: AvatarProps) {
-  const list = useMemo(() => strokes ?? [], [strokes]);
-  const identified = useMemo(() => identifyStrokes(list), [list]);
+export default function Avatar({ avatar, size = 96, className }: AvatarProps) {
+  const image = avatar?.image;
+  const cosmetics = useMemo(() => avatar?.cosmetics ?? [], [avatar?.cosmetics]);
+  const strokes = useMemo(() => avatar?.strokes ?? [], [avatar?.strokes]);
+  const identified = useMemo(() => identifyStrokes(strokes), [strokes]);
 
-  // Fit the drawing to its own bounding box so it fills the avatar area instead
-  // of floating tiny in a corner of the 400x400 drawing space.
+  // Fit legacy stroke drawings to their bounding box (pre-flatten avatars).
   const fit = useMemo(() => {
+    if (image || strokes.length === 0) return null;
     let minX = Infinity;
     let minY = Infinity;
     let maxX = -Infinity;
     let maxY = -Infinity;
     let maxStroke = 0;
 
-    for (const s of list) {
+    for (const s of strokes) {
       maxStroke = Math.max(maxStroke, s.width ?? 0);
       const pts = s.points ?? [];
       for (let i = 0; i + 1 < pts.length; i += 2) {
@@ -75,9 +78,41 @@ export default function Avatar({ strokes, size = 96, className }: AvatarProps) {
       offsetX: size / 2 - cx * scale,
       offsetY: size / 2 - cy * scale,
     };
-  }, [list, size]);
+  }, [image, strokes, size]);
 
-  if (list.length === 0 || !fit) {
+  // Flattened avatar: fixed-size raster image plus the separate cosmetics layer.
+  // No bbox-fit — every avatar renders at identical dimensions (whitespace kept).
+  if (image) {
+    const scale = size / DRAW_SIZE;
+    return (
+      <div className={className} style={{ position: 'relative', width: size, height: size }}>
+        <img src={image} width={size} height={size} alt="" style={{ display: 'block' }} />
+        {sortCosmetics(cosmetics).map((c) => {
+          const url = cosmeticAssetUrl(c.asset_key);
+          if (!url) return null;
+          return (
+            <img
+              key={`${c.cosmetic_id}-${c.x}-${c.y}-${c.rotation}`}
+              src={url}
+              alt=""
+              style={{
+                position: 'absolute',
+                left: c.x * scale,
+                top: c.y * scale,
+                width: c.width * scale,
+                height: c.height * scale,
+                transform: c.rotation ? `rotate(${c.rotation}deg)` : undefined,
+                transformOrigin: 'center',
+                pointerEvents: 'none',
+              }}
+            />
+          );
+        })}
+      </div>
+    );
+  }
+
+  if (strokes.length === 0 || !fit) {
     return (
       <div
         className={className}

@@ -6,15 +6,19 @@ module Experiences
     # Upper bound on AI-generated synthetic answers per question.
     MAX_SYNTHETIC_ANSWERS = 200
 
+    # The fixed avatar draw space. Frames are stored as a full-canvas placement.
+    AVATAR_DRAW_SIZE = 320
+
     attr_reader :profile_changes
     def kick_participant!(participant)
       participant.destroy!
     end
 
-    def update_participant_avatar!(participant:, strokes:)
-      avatar = participant.avatar || {}
-      avatar[:strokes] = strokes unless strokes.nil?
-      participant.update!(avatar: avatar)
+    def update_participant_avatar!(participant:, image:, cosmetics: nil)
+      participant.update!(avatar: {
+        "image" => image,
+        "cosmetics" => sanitize_cosmetics(participant: participant, cosmetics: cosmetics)
+      })
       participant
     end
 
@@ -1415,6 +1419,51 @@ module Experiences
     end
 
     private
+
+    def sanitize_cosmetics(participant:, cosmetics:)
+      return [] if cosmetics.blank?
+
+      owned = participant.user.cosmetics.active.index_by(&:id)
+
+      placements = Array(cosmetics).filter_map do |placement|
+        placement = (placement.respond_to?(:to_unsafe_h) ? placement.to_unsafe_h : placement.to_h)
+          .with_indifferent_access
+        cosmetic = owned[placement[:cosmetic_id].to_s]
+        next unless cosmetic
+
+        build_placement(cosmetic, placement)
+      end
+
+      # Frames are one-at-a-time (last wins) and render on top of clothing.
+      clothing, frames = placements.partition { |p| p["category"] != "frame" }
+      clothing + frames.last(1)
+    end
+
+    def build_placement(cosmetic, placement)
+      base = {
+        "cosmetic_id" => cosmetic.id,
+        "slug" => cosmetic.slug,
+        "asset_key" => cosmetic.asset_key,
+        "category" => cosmetic.category
+      }
+
+      if cosmetic.category == "frame"
+        # Frames wrap the whole avatar; geometry is fixed, not client-controlled.
+        base.merge(
+          "x" => 0.0, "y" => 0.0,
+          "width" => AVATAR_DRAW_SIZE.to_f, "height" => AVATAR_DRAW_SIZE.to_f,
+          "rotation" => 0.0
+        )
+      else
+        base.merge(
+          "x" => placement[:x].to_f,
+          "y" => placement[:y].to_f,
+          "width" => placement[:width].to_f,
+          "height" => placement[:height].to_f,
+          "rotation" => placement[:rotation].to_f
+        )
+      end
+    end
 
     # Cap the board at the most popular MAX_FAMILY_FEUD_BUCKETS buckets (by member
     # count), preserving order; overflow buckets' answers fall back to unassigned.

@@ -36,6 +36,8 @@ vi.mock('react-konva', () => ({
   ),
   Layer: ({ children }: MockLayerProps) => <div data-testid="konva-layer">{children}</div>,
   Line: ({ stroke }: MockLineProps) => <div data-testid="konva-line" data-stroke={stroke} />,
+  Rect: () => <div data-testid="konva-rect" />,
+  Image: () => <div data-testid="konva-image" />,
 }));
 
 describe('DrawingCanvas', () => {
@@ -52,13 +54,19 @@ describe('DrawingCanvas', () => {
     expect(screen.getByText('Submit')).toBeInTheDocument();
   });
 
-  it('renders brush size buttons', () => {
+  it('reveals brush size buttons after opening the Brush tool', async () => {
+    const user = userEvent.setup();
     render(<DrawingCanvas {...defaultProps} />);
 
-    expect(screen.getByText('Thin')).toBeInTheDocument();
-    expect(screen.getByText('Medium')).toBeInTheDocument();
-    expect(screen.getByText('Thick')).toBeInTheDocument();
-    expect(screen.getByText('Huge')).toBeInTheDocument();
+    // Sizes are hidden behind the compact Brush control.
+    expect(screen.queryByRole('button', { name: 'Thin' })).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: /^Brush:/ }));
+
+    expect(screen.getByRole('button', { name: 'Thin' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Medium' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Thick' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Huge' })).toBeInTheDocument();
   });
 
   it('disables Submit when no strokes are drawn', () => {
@@ -143,7 +151,7 @@ describe('DrawingCanvas', () => {
     expect(onStrokeEvent).toHaveBeenCalledWith({ operation: 'canvas_cleared' });
   });
 
-  it('calls onSubmit with committed strokes on Submit', async () => {
+  it('calls onSubmit with a flattened image and cosmetics on Submit', async () => {
     const user = userEvent.setup();
     const onSubmit = vi.fn();
     const strokes = [{ points: [10, 10, 20, 20], color: '#ff0000', width: 4 }];
@@ -152,9 +160,30 @@ describe('DrawingCanvas', () => {
 
     await user.click(screen.getByRole('button', { name: 'Submit' }));
 
-    expect(onSubmit).toHaveBeenCalledWith([
-      { points: [10, 10, 20, 20], color: '#ff0000', width: 4, committed: true },
-    ]);
+    expect(onSubmit).toHaveBeenCalledWith({
+      image: expect.any(String),
+      cosmetics: [],
+    });
+  });
+
+  it('selects a background color and submits a background-only avatar', async () => {
+    const user = userEvent.setup();
+    const onSubmit = vi.fn();
+
+    render(
+      <DrawingCanvas onSubmit={onSubmit} mode="background" palette={['#ff0000', '#00ff00']} />,
+    );
+
+    expect(screen.getByRole('button', { name: 'Submit' })).toBeDisabled();
+
+    await user.click(screen.getByRole('button', { name: /^Color/ }));
+    await user.click(screen.getByRole('button', { name: 'Background #ff0000' }));
+
+    const submit = screen.getByRole('button', { name: 'Submit' });
+    expect(submit).toBeEnabled();
+
+    await user.click(submit);
+    expect(onSubmit).toHaveBeenCalledWith({ image: expect.any(String), cosmetics: [] });
   });
 
   it('shows Save button instead of Submit when onBack is provided', () => {
@@ -164,7 +193,7 @@ describe('DrawingCanvas', () => {
     expect(screen.queryByRole('button', { name: 'Submit' })).not.toBeInTheDocument();
   });
 
-  it('calls onSubmit with committed strokes and onBack on Save', async () => {
+  it('calls onSubmit with a flattened image and onBack on Save', async () => {
     const user = userEvent.setup();
     const onSubmit = vi.fn();
     const onBack = vi.fn();
@@ -174,9 +203,10 @@ describe('DrawingCanvas', () => {
 
     await user.click(screen.getByRole('button', { name: 'Save' }));
 
-    expect(onSubmit).toHaveBeenCalledWith([
-      { points: [10, 10, 20, 20], color: '#ff0000', width: 4, committed: true },
-    ]);
+    expect(onSubmit).toHaveBeenCalledWith({
+      image: expect.any(String),
+      cosmetics: [],
+    });
     expect(onBack).toHaveBeenCalled();
   });
 
