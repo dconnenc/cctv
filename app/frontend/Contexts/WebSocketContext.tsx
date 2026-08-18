@@ -209,7 +209,7 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
     setSubmissionState,
     impersonatedParticipantId,
   } = useExperienceState();
-  const { getFamilyFeudDispatch } = useDispatchRegistry();
+  const { getFamilyFeudDispatch, getBalloonPumpLeaderDispatch } = useDispatchRegistry();
   const lobbyDrawingDispatch = useLobbyDrawingDispatch();
 
   const [wsConnected, setWsConnected] = useState(false);
@@ -343,6 +343,12 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
         }
       } else if (target === 'main' && wsMessage.type === WebSocketMessageTypes.SUBMISSION_STATE) {
         setSubmissionState(wsMessage.submissions);
+      } else if (
+        target === 'main' &&
+        wsMessage.type === WebSocketMessageTypes.MINIGAME_BALLOON_PUMP_LEADER_UPDATED
+      ) {
+        const { block_id, leader_fill, leader_participant_id } = wsMessage;
+        getBalloonPumpLeaderDispatch(block_id)?.({ leader_fill, leader_participant_id });
       }
     },
     [
@@ -355,6 +361,7 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
       setWsReady,
       setSubmissionState,
       getFamilyFeudDispatch,
+      getBalloonPumpLeaderDispatch,
       lobbyDrawingDispatch,
       reconnectParticipantWs,
     ],

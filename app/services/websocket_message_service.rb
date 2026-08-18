@@ -10,6 +10,7 @@ class WebsocketMessageService
 
     # Block-specific updates
     FAMILY_FEUD_UPDATED: 'family_feud_updated',
+    MINIGAME_BALLOON_PUMP_LEADER_UPDATED: 'minigame_balloon_pump_leader_updated',
 
     # Subscription management
     RESUBSCRIBE_REQUIRED: 'resubscribe_required',
@@ -89,6 +90,17 @@ class WebsocketMessageService
     {
       type: MESSAGE_TYPES[:SUBMISSION_STATE],
       submissions: submissions
+    }
+  end
+
+  # Build balloon pump leader update message
+  def self.minigame_balloon_pump_leader_updated(block_id:, leader_fill:, leader_participant_id:)
+    {
+      type: MESSAGE_TYPES[:MINIGAME_BALLOON_PUMP_LEADER_UPDATED],
+      block_id: block_id,
+      leader_fill: leader_fill,
+      leader_participant_id: leader_participant_id,
+      timestamp: Time.current.to_f
     }
   end
 

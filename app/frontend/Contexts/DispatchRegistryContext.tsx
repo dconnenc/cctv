@@ -2,6 +2,11 @@ import { ReactNode, createContext, useCallback, useContext, useMemo, useRef } fr
 
 import { FamilyFeudAction } from '@cctv/pages/Block/FamilyFeudManager/familyFeudReducer';
 
+export interface BalloonPumpLeaderState {
+  leader_fill: number;
+  leader_participant_id: string | null;
+}
+
 export interface DispatchRegistryContextType {
   registerFamilyFeudDispatch: (
     blockId: string,
@@ -9,6 +14,14 @@ export interface DispatchRegistryContextType {
   ) => void;
   unregisterFamilyFeudDispatch: (blockId: string) => void;
   getFamilyFeudDispatch: (blockId: string) => ((action: FamilyFeudAction) => void) | undefined;
+  registerBalloonPumpLeaderDispatch: (
+    blockId: string,
+    dispatch: (state: BalloonPumpLeaderState) => void,
+  ) => void;
+  unregisterBalloonPumpLeaderDispatch: (blockId: string) => void;
+  getBalloonPumpLeaderDispatch: (
+    blockId: string,
+  ) => ((state: BalloonPumpLeaderState) => void) | undefined;
 }
 
 const DispatchRegistryContext = createContext<DispatchRegistryContextType | undefined>(undefined);
@@ -17,6 +30,9 @@ export function DispatchRegistryProvider({ children }: { children: ReactNode }) 
   const familyFeudDispatchRegistry = useRef<Map<string, (action: FamilyFeudAction) => void>>(
     new Map(),
   );
+  const balloonPumpLeaderDispatchRegistry = useRef<
+    Map<string, (state: BalloonPumpLeaderState) => void>
+  >(new Map());
 
   const registerFamilyFeudDispatch = useCallback(
     (blockId: string, dispatch: (action: FamilyFeudAction) => void) => {
@@ -33,13 +49,38 @@ export function DispatchRegistryProvider({ children }: { children: ReactNode }) 
     return familyFeudDispatchRegistry.current.get(blockId);
   }, []);
 
+  const registerBalloonPumpLeaderDispatch = useCallback(
+    (blockId: string, dispatch: (state: BalloonPumpLeaderState) => void) => {
+      balloonPumpLeaderDispatchRegistry.current.set(blockId, dispatch);
+    },
+    [],
+  );
+
+  const unregisterBalloonPumpLeaderDispatch = useCallback((blockId: string) => {
+    balloonPumpLeaderDispatchRegistry.current.delete(blockId);
+  }, []);
+
+  const getBalloonPumpLeaderDispatch = useCallback((blockId: string) => {
+    return balloonPumpLeaderDispatchRegistry.current.get(blockId);
+  }, []);
+
   const value = useMemo<DispatchRegistryContextType>(
     () => ({
       registerFamilyFeudDispatch,
       unregisterFamilyFeudDispatch,
       getFamilyFeudDispatch,
+      registerBalloonPumpLeaderDispatch,
+      unregisterBalloonPumpLeaderDispatch,
+      getBalloonPumpLeaderDispatch,
     }),
-    [registerFamilyFeudDispatch, unregisterFamilyFeudDispatch, getFamilyFeudDispatch],
+    [
+      registerFamilyFeudDispatch,
+      unregisterFamilyFeudDispatch,
+      getFamilyFeudDispatch,
+      registerBalloonPumpLeaderDispatch,
+      unregisterBalloonPumpLeaderDispatch,
+      getBalloonPumpLeaderDispatch,
+    ],
   );
 
   return (

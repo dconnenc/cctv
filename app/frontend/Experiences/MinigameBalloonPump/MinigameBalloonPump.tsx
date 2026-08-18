@@ -2,6 +2,10 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { Layer, Line, Stage } from 'react-konva';
 
+import {
+  BalloonPumpLeaderState,
+  useDispatchRegistry,
+} from '@cctv/contexts/DispatchRegistryContext';
 import { useExperience } from '@cctv/contexts/ExperienceContext';
 import { useExperienceState } from '@cctv/contexts/ExperienceStateContext';
 import { useMinigameBalloonPump } from '@cctv/hooks/useMinigameBalloonPump';
@@ -152,8 +156,23 @@ function MonitorView({ block }: { block: MinigameBalloonPumpBlock }) {
 }
 
 function ManageView({ block }: { block: MinigameBalloonPumpBlock }) {
-  const { target_units, started_at, ended_at, leader_fill, live_results } = block.payload;
+  const { target_units, started_at, ended_at, live_results } = block.payload;
+  const { registerBalloonPumpLeaderDispatch, unregisterBalloonPumpLeaderDispatch } =
+    useDispatchRegistry();
+  const [leaderState, setLeaderState] = useState<BalloonPumpLeaderState>({
+    leader_fill: 0,
+    leader_participant_id: null,
+  });
   const status = !started_at ? 'queued' : ended_at ? 'ended' : 'running';
+
+  useEffect(() => {
+    registerBalloonPumpLeaderDispatch(block.id, setLeaderState);
+    return () => unregisterBalloonPumpLeaderDispatch(block.id);
+  }, [block.id, registerBalloonPumpLeaderDispatch, unregisterBalloonPumpLeaderDispatch]);
+
+  const displayLeaderFill = ended_at
+    ? (block.payload.leader_fill ?? leaderState.leader_fill)
+    : leaderState.leader_fill;
 
   return (
     <div className={styles.manageRoot}>
@@ -162,8 +181,8 @@ function ManageView({ block }: { block: MinigameBalloonPumpBlock }) {
         {(target_units / 10).toFixed(1)} strokes)
       </p>
       <p className={styles.manageStat}>
-        Leader fill: {leader_fill ?? 0} (
-        {target_units > 0 ? Math.round(((leader_fill ?? 0) / target_units) * 100) : 0}%)
+        Leader fill: {displayLeaderFill} (
+        {target_units > 0 ? Math.round((displayLeaderFill / target_units) * 100) : 0}%)
       </p>
 
       {live_results && live_results.length > 0 && (

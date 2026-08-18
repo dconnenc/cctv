@@ -406,20 +406,17 @@ module Experiences
 
       shaped = {
         "variant"                => payload["variant"],
-        "target_units"           => target_units,
+        "target_units"           => payload["target_units"].to_i,
         "started_at"             => payload["started_at"],
         "ended_at"               => payload["ended_at"],
-        "leader_fill"            => payload["leader_fill"].to_i,
-        "leader_participant_id"  => payload["leader_participant_id"],
         "winner_participant_ids" => Array(payload["winner_participant_ids"])
       }
 
       if ended
-        shaped["podium"] = balloon_pump_podium(block, shaped["winner_participant_ids"])
-      end
-
-      if privileged
-        shaped["live_results"] = balloon_pump_live_results(block)
+        shaped["leader_fill"]           = payload["leader_fill"].to_i
+        shaped["leader_participant_id"] = payload["leader_participant_id"]
+        shaped["podium"]                = balloon_pump_podium(block, shaped["winner_participant_ids"])
+        shaped["live_results"]          = balloon_pump_live_results(block) if privileged
       end
 
       shaped
