@@ -347,8 +347,8 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
         target === 'main' &&
         wsMessage.type === WebSocketMessageTypes.MINIGAME_BALLOON_PUMP_LEADER_UPDATED
       ) {
-        const { block_id, leader_fill, leader_participant_id } = wsMessage;
-        getBalloonPumpLeaderDispatch(block_id)?.({ leader_fill, leader_participant_id });
+        const { block_id, leader_fill } = wsMessage;
+        getBalloonPumpLeaderDispatch(block_id)?.({ leader_fill });
       }
     },
     [

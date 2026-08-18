@@ -68,11 +68,13 @@ class Experiences::Broadcaster
     broadcast_admin_view(visibility: visibility)
   end
 
-  def broadcast_balloon_pump_leader_update(block_id:, leader_fill:, leader_participant_id:)
+  def broadcast_balloon_pump_leader_update(block_id:, leader_fill:)
+    Rails.logger.info(
+      "[Broadcaster] Broadcasting balloon_pump_leader_updated to experience #{experience.code}"
+    )
     message = WebsocketMessageService.minigame_balloon_pump_leader_updated(
       block_id: block_id,
-      leader_fill: leader_fill,
-      leader_participant_id: leader_participant_id
+      leader_fill: leader_fill
     )
     send_broadcast(self.class.admin_stream_key(experience), message)
   end

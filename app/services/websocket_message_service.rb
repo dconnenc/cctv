@@ -94,12 +94,11 @@ class WebsocketMessageService
   end
 
   # Build balloon pump leader update message
-  def self.minigame_balloon_pump_leader_updated(block_id:, leader_fill:, leader_participant_id:)
+  def self.minigame_balloon_pump_leader_updated(block_id:, leader_fill:)
     {
       type: MESSAGE_TYPES[:MINIGAME_BALLOON_PUMP_LEADER_UPDATED],
       block_id: block_id,
       leader_fill: leader_fill,
-      leader_participant_id: leader_participant_id,
       timestamp: Time.current.to_f
     }
   end

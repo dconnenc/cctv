@@ -4,7 +4,6 @@ import { FamilyFeudAction } from '@cctv/pages/Block/FamilyFeudManager/familyFeud
 
 export interface BalloonPumpLeaderState {
   leader_fill: number;
-  leader_participant_id: string | null;
 }
 
 export interface DispatchRegistryContextType {

@@ -96,7 +96,6 @@ RSpec.describe ExperienceSubscriptionChannel, type: :channel do
             "target_units" => 40,
             "started_at" => Time.current.iso8601,
             "leader_fill" => 20,
-            "leader_participant_id" => "some-participant-id",
             "winner_participant_ids" => []
           }
         )

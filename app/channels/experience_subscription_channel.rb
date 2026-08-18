@@ -229,8 +229,7 @@ class ExperienceSubscriptionChannel < ApplicationCable::Channel
           next unless payload["started_at"].present? && payload["ended_at"].blank?
           transmit(WebsocketMessageService.minigame_balloon_pump_leader_updated(
             block_id: b.id,
-            leader_fill: payload["leader_fill"].to_i,
-            leader_participant_id: payload["leader_participant_id"]
+            leader_fill: payload["leader_fill"].to_i
           ))
         end
     else

@@ -428,7 +428,6 @@ RSpec.describe Experiences::Visibility do
           "started_at" => Time.current.iso8601,
           "ended_at" => nil,
           "leader_fill" => 25,
-          "leader_participant_id" => "some-participant-id",
           "winner_participant_ids" => []
         }
       )
@@ -444,10 +443,6 @@ RSpec.describe Experiences::Visibility do
       it "omits leader_fill from the shaped payload" do
         expect(shaped_block_payload).not_to have_key("leader_fill")
       end
-
-      it "omits leader_participant_id from the shaped payload" do
-        expect(shaped_block_payload).not_to have_key("leader_participant_id")
-      end
     end
 
     context "after the game has ended (ended_at set)" do
@@ -461,10 +456,6 @@ RSpec.describe Experiences::Visibility do
         payload = shaped_block_payload
         expect(payload).to have_key("leader_fill")
         expect(payload["leader_fill"]).to eq(25)
-      end
-
-      it "includes leader_participant_id in the shaped payload" do
-        expect(shaped_block_payload).to have_key("leader_participant_id")
       end
 
       it "includes podium in the shaped payload" do

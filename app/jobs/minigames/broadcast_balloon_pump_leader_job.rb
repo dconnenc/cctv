@@ -1,6 +1,8 @@
 class Minigames::BroadcastBalloonPumpLeaderJob < ApplicationJob
   queue_as :default
 
+  discard_on ActiveRecord::RecordNotFound
+
   sidekiq_options lock: :until_executing,
                   lock_args_method: :lock_args,
                   on_conflict: { client: :log }
@@ -16,9 +18,7 @@ class Minigames::BroadcastBalloonPumpLeaderJob < ApplicationJob
 
     Experiences::Broadcaster.new(block.experience).broadcast_balloon_pump_leader_update(
       block_id: block_id,
-      leader_fill: payload["leader_fill"].to_i,
-      leader_participant_id: payload["leader_participant_id"]
+      leader_fill: payload["leader_fill"].to_i
     )
-  rescue ActiveRecord::RecordNotFound
   end
 end

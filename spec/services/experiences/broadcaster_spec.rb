@@ -129,8 +129,7 @@ RSpec.describe Experiences::Broadcaster do
     it "sends minigame_balloon_pump_leader_updated to the admin stream" do
       broadcaster.broadcast_balloon_pump_leader_update(
         block_id: 42,
-        leader_fill: 25,
-        leader_participant_id: "99"
+        leader_fill: 25
       )
 
       call = broadcast_calls.find { |c| c[:stream_key] == Experiences::Broadcaster.admin_stream_key(experience) }
@@ -138,7 +137,6 @@ RSpec.describe Experiences::Broadcaster do
       expect(call[:message][:type]).to eq("minigame_balloon_pump_leader_updated")
       expect(call[:message][:block_id]).to eq(42)
       expect(call[:message][:leader_fill]).to eq(25)
-      expect(call[:message][:leader_participant_id]).to eq("99")
     end
   end
 

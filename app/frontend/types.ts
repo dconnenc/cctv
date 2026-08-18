@@ -239,12 +239,6 @@ export interface MinigameBalloonPumpPodiumEntry {
   fill_amount: number;
 }
 
-export interface MinigameBalloonPumpLiveResult {
-  participant_id: string;
-  name: string;
-  fill_amount: number;
-}
-
 export type TheScenePhase = 'idle' | 'collecting' | 'winner_reveal' | 'ended';
 
 export interface TheSceneSuggestion {
@@ -284,10 +278,8 @@ export interface MinigameBalloonPumpPayload {
   started_at: string | null;
   ended_at: string | null;
   leader_fill?: number;
-  leader_participant_id?: string | null;
   winner_participant_ids: string[];
   podium?: MinigameBalloonPumpPodiumEntry[];
-  live_results?: MinigameBalloonPumpLiveResult[];
 }
 
 export interface BlockLink {
@@ -872,7 +864,6 @@ export interface MinigameBalloonPumpLeaderUpdatedMessage
   extends BaseWebSocketMessage<'minigame_balloon_pump_leader_updated'> {
   block_id: string;
   leader_fill: number;
-  leader_participant_id: string | null;
 }
 
 export type SubmissionState = Record<
