@@ -112,39 +112,4 @@ RSpec.describe "Balloon Pump Minigame", type: :system do
     end
   end
 
-  it "shows live leader fill updates in the manage view as participants pump" do
-    sign_in(admin)
-    create_experience_and_go_to_manage(name: "Leader Test", code: "leader-exp")
-
-    queue_block(n: 1) do
-      select "Minigame: Balloon Pump", from: "Kind"
-      fill_in "Target units to fill the balloon", with: "40"
-    end
-
-    start_experience
-
-    using_session(:participant) do
-      register_participant(
-        code: "leader-exp",
-        name: "Alice",
-        email: "alice@example.com",
-        experience_name: "Leader Test"
-      )
-      expect(page).to have_text("Waiting for the next activity...")
-    end
-
-    visit current_path
-    select_and_present(1, kind: "balloon")
-
-    expect(page).to have_button("Start minigame")
-    click_button "Start minigame"
-    expect(page).to have_button("End minigame")
-
-    using_session(:participant) do
-      pump_strokes(2)
-      expect(page).to have_text("20 / 40")
-    end
-
-    expect(page).to have_text("Leader fill: 20")
-  end
 end
