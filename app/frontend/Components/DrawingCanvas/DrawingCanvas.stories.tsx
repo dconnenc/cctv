@@ -10,6 +10,7 @@ const meta: Meta<typeof DrawingCanvas> = {
   args: {
     onSubmit: fn(),
     onStrokeEvent: fn(),
+    onCosmeticsChange: fn(),
   },
 };
 export default meta;
@@ -17,6 +18,37 @@ export default meta;
 type Story = StoryObj<typeof DrawingCanvas>;
 
 export const Empty: Story = {};
+
+export const BackgroundMode: Story = {
+  args: {
+    mode: 'background',
+    initialStrokes: [
+      { points: [90, 120, 150, 120, 150, 180, 90, 180, 90, 120], color: '#080808', width: 4 },
+    ],
+  },
+};
+
+export const WithCosmetic: Story = {
+  args: {
+    mode: 'decorate',
+    initialStrokes: [
+      { points: [80, 120, 160, 120, 160, 200, 80, 200, 80, 120], color: '#c8f060', width: 4 },
+    ],
+    cosmetics: [
+      {
+        cosmetic_id: 'hat-1',
+        slug: 'top-hat',
+        asset_key: 'hat',
+        category: 'clothing',
+        x: 100,
+        y: 60,
+        width: 120,
+        height: 96,
+        rotation: 0,
+      },
+    ],
+  },
+};
 
 export const WithInitialStrokes: Story = {
   args: {

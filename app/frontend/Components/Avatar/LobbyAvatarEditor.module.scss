@@ -6,6 +6,13 @@
   align-items: center;
 }
 
+.modeToggle {
+  display: flex;
+  gap: var(--space-xs);
+  align-items: center;
+  justify-content: center;
+}
+
 .stageWrap {
   width: 100%;
   max-width: 480px;

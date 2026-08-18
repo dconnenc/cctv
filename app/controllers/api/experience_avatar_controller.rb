@@ -9,7 +9,11 @@ class Api::ExperienceAvatarController < Api::BaseController
   def create
     with_experience_orchestration do
       participant = Experiences::Orchestrator.new(experience: @experience, actor: @user)
-        .update_participant_avatar!(participant: @participant, strokes: params.dig(:avatar, :strokes))
+        .update_participant_avatar!(
+          participant: @participant,
+          image: params.dig(:avatar, :image),
+          cosmetics: params.dig(:avatar, :cosmetics)
+        )
 
       Experiences::Broadcaster.enqueue_update(@experience)
 
@@ -19,7 +23,10 @@ class Api::ExperienceAvatarController < Api::BaseController
           type: 'drawing_update',
           participant_id: participant.id,
           operation: 'avatar_committed',
-          data: { strokes: participant.avatar['strokes'] || [] }
+          data: {
+            image: participant.avatar['image'],
+            cosmetics: participant.avatar['cosmetics'] || []
+          }
         }
       )
 

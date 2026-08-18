@@ -7,6 +7,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { BookOpen } from 'lucide-react';
 
 import { ParticipantsList } from '@cctv/components';
+import { DRAW_SIZE, cosmeticAssetUrl, sortCosmetics } from '@cctv/components/Cosmetics';
 import { useExperience } from '@cctv/contexts/ExperienceContext';
 import { useExperienceState } from '@cctv/contexts/ExperienceStateContext';
 import { useUser } from '@cctv/contexts/UserContext';
@@ -21,7 +22,7 @@ import {
 } from '@cctv/core';
 import ExperienceBlockContainer from '@cctv/experiences/ExperienceBlockContainer/ExperienceBlockContainer';
 import { useClearAvatars } from '@cctv/hooks/useClearAvatars';
-import { AvatarStroke, Block, BlockKind, SubmissionState } from '@cctv/types';
+import { AvatarData, AvatarStroke, Block, BlockKind, SubmissionState } from '@cctv/types';
 
 import AdminNotification from './AdminNotification/AdminNotification';
 
@@ -49,7 +50,41 @@ function keyedStrokes(strokes: AvatarStroke[]): { key: string; stroke: AvatarStr
   });
 }
 
-function AvatarCircle({ strokes }: { strokes: AvatarStroke[] }) {
+function AvatarCircle({ avatar }: { avatar?: AvatarData | null }) {
+  if (avatar?.image) {
+    return (
+      <div className={styles.avatarCircleSvg} style={{ position: 'relative', overflow: 'hidden' }}>
+        <img
+          src={avatar.image}
+          alt=""
+          style={{ width: '100%', height: '100%', display: 'block' }}
+        />
+        {sortCosmetics(avatar.cosmetics ?? []).map((c) => {
+          const url = cosmeticAssetUrl(c.asset_key);
+          if (!url) return null;
+          return (
+            <img
+              key={`${c.cosmetic_id}-${c.x}-${c.y}-${c.rotation}`}
+              src={url}
+              alt=""
+              style={{
+                position: 'absolute',
+                left: `${(c.x / DRAW_SIZE) * 100}%`,
+                top: `${(c.y / DRAW_SIZE) * 100}%`,
+                width: `${(c.width / DRAW_SIZE) * 100}%`,
+                height: `${(c.height / DRAW_SIZE) * 100}%`,
+                transform: c.rotation ? `rotate(${c.rotation}deg)` : undefined,
+                transformOrigin: 'center',
+                pointerEvents: 'none',
+              }}
+            />
+          );
+        })}
+      </div>
+    );
+  }
+
+  const strokes = avatar?.strokes ?? [];
   if (!strokes.length) {
     return (
       <svg viewBox="0 0 100 100" className={styles.avatarCircleSvg} aria-hidden>
@@ -131,7 +166,7 @@ export default function Experience() {
             title="Edit avatar"
             onClick={() => navigate(`/experiences/${code}/avatar`)}
           >
-            <AvatarCircle strokes={participant.avatar?.strokes ?? []} />
+            <AvatarCircle avatar={participant.avatar} />
           </button>,
           document.body,
         )

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_06_10_000002) do
+ActiveRecord::Schema[7.2].define(version: 2026_07_07_000003) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "citext"
   enable_extension "plpgsql"
@@ -51,6 +51,24 @@ ActiveRecord::Schema[7.2].define(version: 2026_06_10_000002) do
     t.bigint "blob_id", null: false
     t.string "variation_digest", null: false
     t.index ["blob_id", "variation_digest"], name: "index_active_storage_variant_records_uniqueness", unique: true
+  end
+
+  create_table "cosmetics", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.string "name", null: false
+    t.string "slug", null: false
+    t.string "kind", null: false
+    t.string "asset_key", null: false
+    t.jsonb "default_placement", default: {}, null: false
+    t.integer "price_cents", default: 0, null: false
+    t.boolean "default_grant", default: false, null: false
+    t.boolean "active", default: true, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.string "category", default: "clothing", null: false
+    t.boolean "beta_only", default: false, null: false
+    t.index ["category"], name: "index_cosmetics_on_category"
+    t.index ["default_grant"], name: "index_cosmetics_on_default_grant"
+    t.index ["slug"], name: "index_cosmetics_on_slug", unique: true
   end
 
   create_table "event_performers", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -321,6 +339,17 @@ ActiveRecord::Schema[7.2].define(version: 2026_06_10_000002) do
     t.index ["user_id"], name: "index_performers_on_user_id", unique: true
   end
 
+  create_table "user_cosmetics", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "user_id", null: false
+    t.uuid "cosmetic_id", null: false
+    t.datetime "acquired_at", null: false
+    t.string "source", default: "grant", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["cosmetic_id"], name: "index_user_cosmetics_on_cosmetic_id"
+    t.index ["user_id", "cosmetic_id"], name: "index_user_cosmetics_on_user_id_and_cosmetic_id", unique: true
+  end
+
   create_table "users", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.string "name", null: false
     t.datetime "created_at", null: false
@@ -371,4 +400,6 @@ ActiveRecord::Schema[7.2].define(version: 2026_06_10_000002) do
   add_foreign_key "improv_votes", "experience_participants", on_delete: :cascade
   add_foreign_key "improv_votes", "improv_suggestions", on_delete: :cascade
   add_foreign_key "performers", "users", on_delete: :cascade
+  add_foreign_key "user_cosmetics", "cosmetics", on_delete: :cascade
+  add_foreign_key "user_cosmetics", "users", on_delete: :cascade
 end

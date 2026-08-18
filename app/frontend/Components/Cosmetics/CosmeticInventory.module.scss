@@ -1,0 +1,97 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  width: 100%;
+}
+
+.barSelect {
+  width: 100%;
+  padding: var(--space-xs) var(--space-sm);
+  background: hsl(var(--muted));
+  border: 1px solid hsl(var(--border));
+  border-radius: 8px;
+  cursor: pointer;
+  font-family: var(--font-ui);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.85rem;
+  color: hsl(var(--foreground));
+
+  &:hover {
+    border-color: hsl(var(--ring));
+  }
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  min-width: 0;
+}
+
+.row {
+  display: flex;
+  gap: var(--space-xs);
+  overflow-x: auto;
+  padding: 4px 2px;
+  scrollbar-width: thin;
+  -webkit-overflow-scrolling: touch;
+}
+
+.item {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  width: 72px;
+  padding: var(--space-xs);
+  background: hsl(var(--muted));
+  border: 1px solid hsl(var(--border));
+  border-radius: 8px;
+  cursor: grab;
+  color: hsl(var(--foreground));
+
+  &:active {
+    cursor: grabbing;
+  }
+
+  &:hover {
+    border-color: hsl(var(--ring));
+  }
+}
+
+.thumb {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+  pointer-events: none;
+}
+
+.noneItem {
+  cursor: pointer;
+}
+
+.noneThumb {
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
+  border: 1px dashed hsl(var(--border));
+  background:
+    linear-gradient(45deg, transparent 46%, var(--red) 46%, var(--red) 54%, transparent 54%),
+    hsl(var(--muted));
+}
+
+.label {
+  font-size: 0.7rem;
+  line-height: 1;
+  text-align: center;
+  color: hsl(var(--muted-foreground));
+}
+
+.empty {
+  font-size: 0.8rem;
+  color: hsl(var(--muted-foreground));
+  padding: 0.25rem 0;
+}
