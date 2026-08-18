@@ -17,6 +17,4 @@ if posthog_api_key.present?
     config.current_user_method = :current_user
     config.user_id_method = :posthog_distinct_id
   end
-elsif Rails.env.development?
-  raise "POSTHOG_API_KEY variable required by PostHog is missing or un-configured, this causes events to be silently missed. This error stops appearing once POSTHOG_API_KEY is configured"
 end
