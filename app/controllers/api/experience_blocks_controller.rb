@@ -833,6 +833,8 @@ class Api::ExperienceBlocksController < Api::BaseController
 
       if outcome[:winners]&.any?
         Experiences::Broadcaster.enqueue_update(@experience)
+      elsif outcome[:leader_updated]
+        Minigames::BroadcastBalloonPumpLeaderJob.perform_later(@block.id)
       end
 
       render json: { success: true, result: outcome[:result] }, status: 200

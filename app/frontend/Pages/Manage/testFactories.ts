@@ -120,8 +120,6 @@ export function minigameBalloonPumpBlock(
       target_units: 100,
       started_at: null,
       ended_at: null,
-      leader_fill: 0,
-      leader_participant_id: null,
       winner_participant_ids: [],
     },
     ...overrides,

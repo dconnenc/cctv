@@ -45,5 +45,4 @@ group :development do
 end
 
 gem "posthog-ruby", "~> 3.11"
-
 gem "posthog-rails", "~> 3.11"

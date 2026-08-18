@@ -85,6 +85,47 @@ RSpec.describe ExperienceSubscriptionChannel, type: :channel do
 
       expect(transmissions.last).to include("type" => "experience_state")
     end
+
+    context "when a balloon pump game is running" do
+      let!(:balloon_block) do
+        create(:experience_block,
+          experience: experience,
+          kind: ExperienceBlock::MINIGAME_BALLOON_PUMP,
+          status: :open,
+          payload: {
+            "target_units" => 40,
+            "started_at" => Time.current.iso8601,
+            "leader_fill" => 20,
+            "winner_participant_ids" => []
+          }
+        )
+      end
+
+      it "transmits a minigame_balloon_pump_leader_updated message after the experience_state" do
+        subscribe(code: experience.code_slug, token: token)
+
+        leader_msg = transmissions.find { |t| t["type"] == "minigame_balloon_pump_leader_updated" }
+        expect(leader_msg).to be_present
+        expect(leader_msg["block_id"]).to eq(balloon_block.id)
+        expect(leader_msg["leader_fill"]).to eq(20)
+      end
+
+      it "does not transmit a leader message when the game has not started" do
+        balloon_block.update!(payload: balloon_block.payload.merge("started_at" => nil))
+        subscribe(code: experience.code_slug, token: token)
+
+        leader_msgs = transmissions.select { |t| t["type"] == "minigame_balloon_pump_leader_updated" }
+        expect(leader_msgs).to be_empty
+      end
+
+      it "does not transmit a leader message when the game has ended" do
+        balloon_block.update!(payload: balloon_block.payload.merge("ended_at" => Time.current.iso8601))
+        subscribe(code: experience.code_slug, token: token)
+
+        leader_msgs = transmissions.select { |t| t["type"] == "minigame_balloon_pump_leader_updated" }
+        expect(leader_msgs).to be_empty
+      end
+    end
   end
 
   describe "subscribing as a participant with a valid participant JWT" do

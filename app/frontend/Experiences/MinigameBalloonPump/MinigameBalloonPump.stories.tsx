@@ -3,12 +3,7 @@ import { useEffect } from 'react';
 import type { Decorator, Meta, StoryObj } from '@storybook/react-vite';
 
 import { useExperienceState } from '@cctv/contexts/ExperienceStateContext';
-import {
-  BlockKind,
-  MinigameBalloonPumpBlock,
-  MinigameBalloonPumpLiveResult,
-  MinigameBalloonPumpPodiumEntry,
-} from '@cctv/types';
+import { BlockKind, MinigameBalloonPumpBlock, MinigameBalloonPumpPodiumEntry } from '@cctv/types';
 
 import { ExperienceSeeder } from '../../../../.storybook/ExperienceSeeder';
 import {
@@ -45,12 +40,6 @@ const podium: MinigameBalloonPumpPodiumEntry[] = [
   },
 ];
 
-const liveResults: MinigameBalloonPumpLiveResult[] = [
-  { participant_id: 'p2', name: 'Bob', fill_amount: 35 },
-  { participant_id: 'p3', name: 'Charlie', fill_amount: 28 },
-  { participant_id: 'p4', name: 'Diana', fill_amount: 12 },
-];
-
 function build(
   overrides: Partial<MinigameBalloonPumpBlock['payload']> = {},
 ): MinigameBalloonPumpBlock {
@@ -64,8 +53,6 @@ function build(
       target_units: TARGET,
       started_at: new Date().toISOString(),
       ended_at: null,
-      leader_fill: 0,
-      leader_participant_id: null,
       winner_participant_ids: [],
       ...overrides,
     },
@@ -140,7 +127,6 @@ export const ParticipantBurstWinner: Story = {
     block: build({
       ended_at: new Date().toISOString(),
       leader_fill: TARGET,
-      leader_participant_id: mockParticipant.id,
       winner_participant_ids: [mockParticipant.id],
       podium,
     }),
@@ -154,7 +140,6 @@ export const ParticipantGameOver: Story = {
     block: build({
       ended_at: new Date().toISOString(),
       leader_fill: TARGET,
-      leader_participant_id: 'p1',
       winner_participant_ids: ['p1'],
       podium,
     }),
@@ -171,7 +156,7 @@ export const MonitorGetReady: Story = {
 
 export const MonitorRunning: Story = {
   args: {
-    block: build({ leader_fill: 35, leader_participant_id: 'p2' }),
+    block: build(),
     viewContext: 'monitor',
   },
 };
@@ -181,7 +166,6 @@ export const MonitorPodium: Story = {
     block: build({
       ended_at: new Date().toISOString(),
       leader_fill: TARGET,
-      leader_participant_id: 'p1',
       winner_participant_ids: ['p1'],
       podium,
     }),
@@ -198,7 +182,7 @@ export const ManageQueued: Story = {
 
 export const ManageRunning: Story = {
   args: {
-    block: build({ leader_fill: 35, leader_participant_id: 'p2', live_results: liveResults }),
+    block: build(),
     viewContext: 'manage',
   },
 };
@@ -208,9 +192,7 @@ export const ManageEnded: Story = {
     block: build({
       ended_at: new Date().toISOString(),
       leader_fill: TARGET,
-      leader_participant_id: 'p1',
       winner_participant_ids: ['p1'],
-      live_results: liveResults,
       podium,
     }),
     viewContext: 'manage',

@@ -94,18 +94,24 @@ RSpec.describe Experiences::Orchestrator, "minigame balloon pump" do
       expect(outcome[:winners].map(&:id)).to eq([player_a.id])
     end
 
-    it "awards gold to multiple players who cross in the same close-out window" do
-      player_a_orchestrator.submit_balloon_pump_update!(block: block, fill_amount: 49)
-      player_b_orchestrator.submit_balloon_pump_update!(block: block, fill_amount: 49)
-
-      ExperienceMinigameBalloonResult
-        .where(experience_block_id: block.id, experience_participant: player_b)
-        .update_all(fill_amount: 50)
+    it "declares only the triggering participant the winner even when another participant already has fill_amount >= target in the DB" do
+      ExperienceMinigameBalloonResult.create!(
+        experience_block_id: block.id,
+        experience_participant: player_b,
+        fill_amount: 50
+      )
 
       outcome = player_a_orchestrator.submit_balloon_pump_update!(block: block, fill_amount: 50)
 
-      expect(outcome[:winners].map(&:id)).to contain_exactly(player_a.id, player_b.id)
-      expect(block.reload.payload["winner_participant_ids"]).to contain_exactly(player_a.id, player_b.id)
+      expect(outcome[:winners].map(&:id)).to eq([player_a.id])
+      expect(block.reload.payload["winner_participant_ids"]).to eq([player_a.id])
+    end
+
+    it "ignores a second participant who reaches target after the game has already ended" do
+      player_a_orchestrator.submit_balloon_pump_update!(block: block, fill_amount: 50)
+      outcome = player_b_orchestrator.submit_balloon_pump_update!(block: block.reload, fill_amount: 50)
+
+      expect(outcome[:result]).to eq(:ignored)
     end
 
     it "ignores submissions before start" do
@@ -128,6 +134,39 @@ RSpec.describe Experiences::Orchestrator, "minigame balloon pump" do
       block.reload
       expect(block.payload["leader_fill"]).to eq(25)
       expect(block.payload["leader_participant_id"]).to eq(player_b.id)
+    end
+
+    context "when the game ends in the DB while a non-winning leader update is in flight" do
+      it "does not wipe ended_at" do
+        stale_block = block
+        ExperienceBlock.where(id: block.id).update_all(
+          "payload = payload || '{\"ended_at\": \"2099-01-01T00:00:00Z\"}'::jsonb"
+        )
+
+        player_a_orchestrator.submit_balloon_pump_update!(block: stale_block, fill_amount: 20)
+
+        expect(block.reload.payload["ended_at"]).to be_present
+      end
+    end
+
+    it "returns leader_updated: true when the fill sets a new high" do
+      outcome = player_a_orchestrator.submit_balloon_pump_update!(block: block, fill_amount: 20)
+
+      expect(outcome[:leader_updated]).to be true
+    end
+
+    it "returns leader_updated: false when the fill does not beat the current leader" do
+      player_a_orchestrator.submit_balloon_pump_update!(block: block, fill_amount: 30)
+      outcome = player_b_orchestrator.submit_balloon_pump_update!(block: block.reload, fill_amount: 15)
+
+      expect(outcome[:leader_updated]).to be false
+    end
+
+    it "returns leader_updated: false in the winners path" do
+      outcome = player_a_orchestrator.submit_balloon_pump_update!(block: block, fill_amount: 50)
+
+      expect(outcome[:winners]).not_to be_empty
+      expect(outcome[:leader_updated]).to be false
     end
   end
 

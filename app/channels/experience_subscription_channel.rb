@@ -229,6 +229,17 @@ class ExperienceSubscriptionChannel < ApplicationCable::Channel
           participant_id: nil
         )
       )
+
+      @experience.experience_blocks
+        .where(kind: ExperienceBlock::MINIGAME_BALLOON_PUMP)
+        .each do |b|
+          payload = b.payload || {}
+          next unless payload["started_at"].present? && payload["ended_at"].blank?
+          transmit(WebsocketMessageService.minigame_balloon_pump_leader_updated(
+            block_id: b.id,
+            leader_fill: payload["leader_fill"].to_i
+          ))
+        end
     else
       # Regular participant stream
       Rails.logger.info(

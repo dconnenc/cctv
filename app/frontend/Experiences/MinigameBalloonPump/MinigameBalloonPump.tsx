@@ -1,5 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 
+import {
+  BalloonPumpLeaderState,
+  useDispatchRegistry,
+} from '@cctv/contexts/DispatchRegistryContext';
 import { useExperience } from '@cctv/contexts/ExperienceContext';
 import { useExperienceState } from '@cctv/contexts/ExperienceStateContext';
 import Avatar from '@cctv/experiences/GuessWho/Avatar';
@@ -147,8 +151,24 @@ function MonitorView({ block }: { block: MinigameBalloonPumpBlock }) {
 }
 
 function ManageView({ block }: { block: MinigameBalloonPumpBlock }) {
-  const { target_units, started_at, ended_at, leader_fill, live_results } = block.payload;
+  const { target_units, started_at, ended_at } = block.payload;
+  const { registerBalloonPumpLeaderDispatch, unregisterBalloonPumpLeaderDispatch } =
+    useDispatchRegistry();
+  const [leaderState, setLeaderState] = useState<BalloonPumpLeaderState>({ leader_fill: 0 });
   const status = !started_at ? 'queued' : ended_at ? 'ended' : 'running';
+
+  useEffect(() => {
+    registerBalloonPumpLeaderDispatch(block.id, setLeaderState);
+    return () => unregisterBalloonPumpLeaderDispatch(block.id);
+  }, [block.id, registerBalloonPumpLeaderDispatch, unregisterBalloonPumpLeaderDispatch]);
+
+  useEffect(() => {
+    if (!started_at) setLeaderState({ leader_fill: 0 });
+  }, [started_at]);
+
+  const displayLeaderFill = ended_at
+    ? (block.payload.leader_fill ?? leaderState.leader_fill)
+    : leaderState.leader_fill;
 
   return (
     <div className={styles.manageRoot}>
@@ -157,20 +177,9 @@ function ManageView({ block }: { block: MinigameBalloonPumpBlock }) {
         {(target_units / 10).toFixed(1)} strokes)
       </p>
       <p className={styles.manageStat}>
-        Leader fill: {leader_fill ?? 0} (
-        {target_units > 0 ? Math.round(((leader_fill ?? 0) / target_units) * 100) : 0}%)
+        Leader fill: {displayLeaderFill} (
+        {target_units > 0 ? Math.round((displayLeaderFill / target_units) * 100) : 0}%)
       </p>
-
-      {live_results && live_results.length > 0 && (
-        <div className={styles.liveResults}>
-          {live_results.map((r) => (
-            <div key={r.participant_id} className={styles.liveResultRow}>
-              <span>{r.name}</span>
-              <span>{r.fill_amount}</span>
-            </div>
-          ))}
-        </div>
-      )}
     </div>
   );
 }

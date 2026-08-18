@@ -226,20 +226,3 @@
   font-size: 0.95rem;
   opacity: 0.85;
 }
-
-.liveResults {
-  max-height: 16rem;
-  overflow-y: auto;
-  border: 1px dashed var(--phosphor-glow-medium);
-  border-radius: 0.5rem;
-  padding: 0.5rem;
-}
-
-.liveResultRow {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 1rem;
-  font-family: var(--font-body);
-  font-size: 0.9rem;
-  padding: 0.25rem 0.5rem;
-}

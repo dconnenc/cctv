@@ -239,12 +239,6 @@ export interface MinigameBalloonPumpPodiumEntry {
   fill_amount: number;
 }
 
-export interface MinigameBalloonPumpLiveResult {
-  participant_id: string;
-  name: string;
-  fill_amount: number;
-}
-
 export type TheScenePhase = 'idle' | 'collecting' | 'winner_reveal' | 'ended';
 
 export interface TheSceneSuggestion {
@@ -283,11 +277,9 @@ export interface MinigameBalloonPumpPayload {
   target_units: number;
   started_at: string | null;
   ended_at: string | null;
-  leader_fill: number;
-  leader_participant_id: string | null;
+  leader_fill?: number;
   winner_participant_ids: string[];
   podium?: MinigameBalloonPumpPodiumEntry[];
-  live_results?: MinigameBalloonPumpLiveResult[];
 }
 
 export interface BlockLink {
@@ -822,6 +814,7 @@ export const WebSocketMessageTypes = {
   PING: 'ping',
   FAMILY_FEUD_UPDATED: 'family_feud_updated',
   SUBMISSION_STATE: 'submission_state',
+  MINIGAME_BALLOON_PUMP_LEADER_UPDATED: 'minigame_balloon_pump_leader_updated',
 } as const;
 
 export type WebSocketMessageType =
@@ -904,6 +897,12 @@ export interface FamilyFeudUpdatedMessage
   data: FamilyFeudDispatchPayload;
 }
 
+export interface MinigameBalloonPumpLeaderUpdatedMessage
+  extends BaseWebSocketMessage<'minigame_balloon_pump_leader_updated'> {
+  block_id: string;
+  leader_fill: number;
+}
+
 export type SubmissionState = Record<
   string,
   {
@@ -936,7 +935,8 @@ export type WebSocketMessage =
   | ConfirmSubscriptionMessage
   | PingMessage
   | FamilyFeudUpdatedMessage
-  | SubmissionStateMessage;
+  | SubmissionStateMessage
+  | MinigameBalloonPumpLeaderUpdatedMessage;
 
 export interface DrawingUpdateMessage {
   type: 'drawing_update';

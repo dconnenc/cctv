@@ -1156,14 +1156,15 @@ module Experiences
 
       crossed_target = result.fill_amount >= target_units
       winners        = []
+      leader_updated = false
 
       if crossed_target
-        winners = close_balloon_pump_with_winners!(block, target_units)
+        winners = close_balloon_pump_with_winners!(block, target_units, participant)
       else
-        update_balloon_pump_leader!(block, participant, result.fill_amount)
+        leader_updated = update_balloon_pump_leader!(block, participant, result.fill_amount)
       end
 
-      { result: :accepted, winners: winners }
+      { result: :accepted, winners: winners, leader_updated: leader_updated }
     end
 
     # The Scene -------------------------------------------------------------
@@ -1653,51 +1654,34 @@ module Experiences
       }
     end
 
-    def close_balloon_pump_with_winners!(block, target_units)
+    def close_balloon_pump_with_winners!(block, target_units, winner)
       transaction do
         block.lock!
         payload = block.payload || {}
         return [] if payload["ended_at"].present?
 
-        winning_participant_ids = ExperienceMinigameBalloonResult
-          .where(experience_block_id: block.id)
-          .where("fill_amount >= ?", target_units)
-          .pluck(:experience_participant_id)
-
-        winners = experience.experience_participants
-          .includes(:user)
-          .where(id: winning_participant_ids)
-          .to_a
-
         payload["ended_at"]               = Time.current.iso8601
-        payload["winner_participant_ids"] = winners.map(&:id)
+        payload["winner_participant_ids"] = [winner.id]
         payload["leader_fill"]            = target_units
-        payload["leader_participant_id"]  = winners.first&.id
-
+        payload["leader_participant_id"]  = winner.id
         block.update!(payload: payload)
-        winners
+        [winner]
       end
     end
 
     def update_balloon_pump_leader!(block, participant, fill_amount)
-      payload      = block.payload || {}
-      target_units = payload["target_units"].to_i
-      return false if target_units.zero?
+      return false if block.payload&.dig("target_units").to_i.zero?
 
-      current_leader_fill = payload["leader_fill"].to_i
+      rows = ExperienceBlock
+        .where(id: block.id)
+        .where("(payload->>'ended_at') IS NULL")
+        .where("COALESCE((payload->>'leader_fill')::int, 0) < ?", fill_amount)
+        .update_all([
+          "payload = payload || jsonb_build_object('leader_fill', ?::int, 'leader_participant_id', ?::text), updated_at = ?",
+          fill_amount, participant.id.to_s, Time.current
+        ])
 
-      return false if fill_amount < current_leader_fill
-      return false if fill_amount == current_leader_fill && payload["leader_participant_id"] == participant.id
-
-      block.update_columns(
-        payload: payload.merge(
-          "leader_fill"            => fill_amount,
-          "leader_participant_id"  => participant.id
-        ),
-        updated_at: Time.current
-      )
-
-      true
+      rows > 0
     end
 
     def create_family_feud_question(parent_block:, question_spec:, position:)

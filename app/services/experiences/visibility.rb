@@ -397,53 +397,22 @@ module Experiences
     def shape_minigame_balloon_pump_payload(block, participant_role, view_context)
       payload = block.payload.deep_dup || {}
 
-      privileged =
-        view_context == :admin ||
-        (view_context == :participant && mod_or_host?(participant_role))
-
-      target_units = payload["target_units"].to_i
-      ended        = payload["ended_at"].present?
+      ended = payload["ended_at"].present?
 
       shaped = {
         "variant"                => payload["variant"],
-        "target_units"           => target_units,
+        "target_units"           => payload["target_units"].to_i,
         "started_at"             => payload["started_at"],
         "ended_at"               => payload["ended_at"],
-        "leader_fill"            => payload["leader_fill"].to_i,
-        "leader_participant_id"  => payload["leader_participant_id"],
         "winner_participant_ids" => Array(payload["winner_participant_ids"])
       }
 
       if ended
-        shaped["podium"] = balloon_pump_podium(block, shaped["winner_participant_ids"])
-      end
-
-      if privileged
-        shaped["live_results"] = balloon_pump_live_results(block)
+        shaped["leader_fill"] = payload["leader_fill"].to_i
+        shaped["podium"]      = balloon_pump_podium(block, shaped["winner_participant_ids"])
       end
 
       shaped
-    end
-
-
-    def balloon_pump_live_results(block)
-      participants_by_id = @experience.experience_participants
-        .includes(:user)
-        .index_by(&:id)
-
-      ExperienceMinigameBalloonResult
-        .where(experience_block_id: block.id)
-        .order(fill_amount: :desc)
-        .map do |r|
-          participant = participants_by_id[r.experience_participant_id]
-          next nil unless participant
-
-          {
-            "participant_id" => participant.id,
-            "name"           => participant.name,
-            "fill_amount"    => r.fill_amount
-          }
-        end.compact
     end
 
     def balloon_pump_podium(block, winner_ids)

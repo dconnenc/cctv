@@ -8,7 +8,7 @@ interface ActionResult {
   error?: string;
 }
 
-const MIN_PUMP_INTERVAL_MS = 100;
+const MIN_PUMP_INTERVAL_MS = 250;
 
 export function useMinigameBalloonPump() {
   const { code, experienceFetch } = useExperience();

@@ -416,6 +416,54 @@ RSpec.describe Experiences::Visibility do
     end
   end
 
+  describe "minigame balloon pump payload shaping" do
+    let!(:balloon_block) do
+      create(:experience_block,
+        experience: experience,
+        kind: ExperienceBlock::MINIGAME_BALLOON_PUMP,
+        status: :open,
+        payload: {
+          "variant" => "balloon_pump",
+          "target_units" => 40,
+          "started_at" => Time.current.iso8601,
+          "ended_at" => nil,
+          "leader_fill" => 25,
+          "winner_participant_ids" => []
+        }
+      )
+    end
+
+    subject(:result) { described_class.for_admin(experience) }
+
+    def shaped_block_payload
+      result[:blocks].find { |b| b[:id] == balloon_block.id }[:payload]
+    end
+
+    context "while the game is running (started_at set, ended_at blank)" do
+      it "omits leader_fill from the shaped payload" do
+        expect(shaped_block_payload).not_to have_key("leader_fill")
+      end
+    end
+
+    context "after the game has ended (ended_at set)" do
+      before do
+        balloon_block.update!(
+          payload: balloon_block.payload.merge("ended_at" => Time.current.iso8601)
+        )
+      end
+
+      it "includes leader_fill in the shaped payload" do
+        payload = shaped_block_payload
+        expect(payload).to have_key("leader_fill")
+        expect(payload["leader_fill"]).to eq(25)
+      end
+
+      it "includes podium in the shaped payload" do
+        expect(shaped_block_payload).to have_key("podium")
+      end
+    end
+  end
+
   describe ".block_visible_to_user?" do
     let(:user) { create(:user, :user) }
     let!(:participant) { create(:experience_participant, user: user, experience: experience, role: :audience) }
