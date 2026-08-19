@@ -261,6 +261,19 @@ export interface CollaborativeDrawingComposite {
   slices: CollaborativeDrawingCompositeSlice[];
 }
 
+export interface CollaborativeDrawingBoardSlice {
+  slice_index: number;
+  participant_id: string;
+  name?: string | null;
+  avatar?: AvatarData | null;
+  submitted: boolean;
+}
+
+export interface CollaborativeDrawingBoardGroup {
+  group_index: number;
+  slices: CollaborativeDrawingBoardSlice[];
+}
+
 export interface CollaborativeDrawingPayload {
   prompt: string;
   min_subsections: number;
@@ -274,6 +287,8 @@ export interface CollaborativeDrawingPayload {
   round_started_at: string | null;
   ended_at: string | null;
   composites: CollaborativeDrawingComposite[] | null;
+  // Present on monitor/manage payloads while the round runs.
+  board?: CollaborativeDrawingBoardGroup[];
 }
 
 // Per-participant slice assignment, delivered via client submission state
