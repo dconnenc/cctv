@@ -216,6 +216,46 @@
   text-shadow: var(--tv-glow);
 }
 
+.teamBoard {
+  display: flex;
+  gap: var(--space-lg);
+  align-items: flex-start;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.teamColumn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.teamLabel {
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  color: var(--foreground);
+}
+
+.teamMember {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-xs);
+  transition: opacity 0.3s ease;
+}
+
+.teamMemberPending {
+  opacity: 0.3;
+  filter: grayscale(1);
+}
+
+.teamMemberName {
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  color: var(--foreground);
+}
+
 .compositeGrid {
   display: flex;
   flex-wrap: wrap;

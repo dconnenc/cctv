@@ -85,9 +85,12 @@ RSpec.describe "Collaborative Drawing Block", type: :system do
       expect(page).to have_text(/Memorize this image!|Remember your section!/, wait: 10)
     end
 
-    # The monitor counts the audience down to "draw".
+    # The monitor counts the audience down to "draw", then shows the live team
+    # board with each drawer (greyed until they submit).
     using_session(:monitor) do
       expect(page).to have_text(/Get ready to draw!|Drawing on phones/, wait: 10)
+      expect(page).to have_text("Team 1", wait: 15)
+      expect(page).to have_text("Alice")
     end
 
     # End the round from the host: composites assemble and are shown back.

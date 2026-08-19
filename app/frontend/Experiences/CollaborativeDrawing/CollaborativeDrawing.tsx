@@ -12,8 +12,9 @@ import {
   useSubmitCollaborativeDrawingPhoto,
 } from '@cctv/hooks';
 import { SoundKey, useMonitorSound } from '@cctv/sounds';
-import { CollaborativeDrawingBlock } from '@cctv/types';
+import { CollaborativeDrawingBlock, CollaborativeDrawingBoardGroup } from '@cctv/types';
 
+import Avatar from '../GuessWho/Avatar';
 import CompositeCanvas from './CompositeCanvas';
 import {
   MARKER_SECONDS,
@@ -345,6 +346,31 @@ function DrawSlice({
   );
 }
 
+// One column per group (team); avatars stacked in slice order, greyed until
+// the participant submits their slice.
+function TeamBoard({ board }: { board: CollaborativeDrawingBoardGroup[] }) {
+  if (board.length === 0) return null;
+
+  return (
+    <div className={styles.teamBoard}>
+      {board.map((group) => (
+        <div key={group.group_index} className={styles.teamColumn}>
+          <p className={styles.teamLabel}>Team {group.group_index + 1}</p>
+          {group.slices.map((slice) => (
+            <div
+              key={slice.slice_index}
+              className={`${styles.teamMember} ${slice.submitted ? '' : styles.teamMemberPending}`}
+            >
+              <Avatar avatar={slice.avatar} size={72} />
+              <span className={styles.teamMemberName}>{slice.name}</span>
+            </div>
+          ))}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 // ---- Monitor ------------------------------------------------------------
 
 function MonitorView({
@@ -354,7 +380,8 @@ function MonitorView({
   block: CollaborativeDrawingBlock;
   sounds?: Partial<Record<string, SoundKey>>;
 }) {
-  const { phase, prompt, round_started_at, ended_at, composites } = block.payload;
+  const { phase, prompt, round_started_at, ended_at, composites, drawing_time_seconds, board } =
+    block.payload;
   const photoCount = block.responses?.total ?? 0;
   const active = !!round_started_at && !ended_at;
   const now = useNow(active);
@@ -364,6 +391,8 @@ function MonitorView({
     const elapsed = (now - new Date(round_started_at).getTime()) / 1000;
     return Math.max(0, Math.ceil(MONITOR_COUNTDOWN_SECONDS - elapsed));
   }, [round_started_at, now]);
+
+  const { drawRemaining } = computeSubPhase(round_started_at, drawing_time_seconds, ended_at, now);
 
   useMonitorSound(sounds?.on_countdown, active && countdown > 0, 'monitor');
 
@@ -406,6 +435,8 @@ function MonitorView({
     return (
       <div className={styles.monitorRoot}>
         <p className={styles.monitorIndicator}>Drawing on phones…</p>
+        <p className={styles.monitorCountdown}>{drawRemaining}s</p>
+        <TeamBoard board={board ?? []} />
       </div>
     );
   }

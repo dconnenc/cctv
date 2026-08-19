@@ -145,8 +145,38 @@ export const MonitorCountdown = seeded(
   'monitor',
 );
 
+const boardMember = (sliceIndex: number, name: string, submitted: boolean) => ({
+  slice_index: sliceIndex,
+  participant_id: `p-${name}`,
+  name,
+  avatar: { strokes: [{ points: [40, 40, 280, 280], color: '#39ff14', width: 10 }] },
+  submitted,
+});
+
 export const MonitorDrawing = seeded(
-  build({ phase: 'round', subsection_count: 3, round_started_at: isoSecondsAgo(12) }),
+  build({
+    phase: 'round',
+    subsection_count: 3,
+    round_started_at: isoSecondsAgo(12),
+    board: [
+      {
+        group_index: 0,
+        slices: [
+          boardMember(0, 'Alice', true),
+          boardMember(1, 'Bob', false),
+          boardMember(2, 'Carol', false),
+        ],
+      },
+      {
+        group_index: 1,
+        slices: [
+          boardMember(0, 'Dave', true),
+          boardMember(1, 'Erin', true),
+          boardMember(2, 'Frank', false),
+        ],
+      },
+    ],
+  }),
   'monitor',
 );
 
