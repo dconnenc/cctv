@@ -46,12 +46,14 @@ function initMotion(w: number, h: number): AvatarMotion {
 
 function keyedStrokes(strokes: AvatarStroke[]): { key: string; stroke: AvatarStroke }[] {
   const originCounts = new Map<string, number>();
-  return strokes.map((stroke) => {
-    const origin = `${stroke.color}:${stroke.width}:${stroke.points[0]},${stroke.points[1]}`;
-    const occurrence = originCounts.get(origin) ?? 0;
-    originCounts.set(origin, occurrence + 1);
-    return { key: `${origin}#${occurrence}`, stroke };
-  });
+  return strokes
+    .filter((stroke) => Array.isArray(stroke.points))
+    .map((stroke) => {
+      const origin = `${stroke.color}:${stroke.width}:${stroke.points[0]},${stroke.points[1]}`;
+      const occurrence = originCounts.get(origin) ?? 0;
+      originCounts.set(origin, occurrence + 1);
+      return { key: `${origin}#${occurrence}`, stroke };
+    });
 }
 
 export default function LobbyAvatars() {

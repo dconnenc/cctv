@@ -35,7 +35,7 @@ export class AnalyticsErrorBoundary extends Component<Props, State> {
 
   render(): ReactNode {
     if (!this.state.hasError) return this.props.children;
-    return this.props.fallback ?? <ErrorFallback />;
+    return this.props.fallback !== undefined ? this.props.fallback : <ErrorFallback />;
   }
 }
 

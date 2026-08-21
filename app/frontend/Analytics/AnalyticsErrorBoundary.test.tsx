@@ -60,4 +60,14 @@ describe('AnalyticsErrorBoundary', () => {
 
     expect(screen.getByText('Custom fallback')).toBeInTheDocument();
   });
+
+  it('renders nothing when fallback is explicitly null', () => {
+    const { container } = render(
+      <AnalyticsErrorBoundary fallback={null}>
+        <Boom />
+      </AnalyticsErrorBoundary>,
+    );
+
+    expect(container.firstChild).toBeNull();
+  });
 });

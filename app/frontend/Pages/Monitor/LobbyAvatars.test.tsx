@@ -274,4 +274,26 @@ describe('LobbyAvatars', () => {
     const groups = screen.getAllByTestId('konva-group');
     expect(groups).toHaveLength(1);
   });
+
+  it('filters out corrupt strokes with missing points without crashing', () => {
+    mockMonitorView.mockReturnValue(baseMonitorView());
+    mockDrawState.mockReturnValue({
+      strokes: {
+        // p2 has one valid stroke and one corrupt stroke (no points field)
+        p2: [
+          { points: [10, 10, 20, 20], color: '#00ff00', width: 4 },
+          // SAFETY: omitting `points` deliberately to represent a corrupt stroke
+          // record as it may exist in legacy DB data; the test verifies the
+          // filter drops it before it reaches stroke.points[0].
+          { color: '#ff0000', width: 4 } as never,
+        ],
+      },
+    });
+
+    render(<LobbyAvatars />);
+
+    const lines = screen.getAllByTestId('konva-line');
+    expect(lines).toHaveLength(1);
+    expect(lines[0].dataset.stroke).toBe('#00ff00');
+  });
 });
