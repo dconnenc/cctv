@@ -500,6 +500,82 @@ RSpec.describe ExperienceSubscriptionChannel, type: :channel do
       end
     end
 
+    describe "canvas_clear_undone" do
+      before do
+        perform(:drawing_event, {
+          "operation" => "stroke_started",
+          "data" => { "points" => [10, 20], "color" => "#ff0000", "width" => 4 }
+        })
+        perform(:drawing_event, { "operation" => "stroke_ended" })
+      end
+
+      it "restores valid strokes and discards corrupt ones" do
+        perform(:drawing_event, {
+          "operation" => "canvas_clear_undone",
+          "data" => {
+            "strokes" => [
+              { "points" => [1, 2, 3, 4], "color" => "#ff0000", "width" => 4 },
+              { "color" => "#0000ff", "width" => 2 }
+            ]
+          }
+        })
+
+        avatar = participant.reload.avatar
+        expect(avatar["strokes"].length).to eq(1)
+        expect(avatar["strokes"].first["color"]).to eq("#ff0000")
+      end
+
+      it "saves an empty strokes array when none of the restored strokes are valid" do
+        perform(:drawing_event, {
+          "operation" => "canvas_clear_undone",
+          "data" => { "strokes" => [{ "color" => "#0000ff", "width" => 2 }] }
+        })
+
+        expect(participant.reload.avatar["strokes"]).to eq([])
+      end
+
+      it "saves an empty strokes array when the strokes payload is not an array" do
+        perform(:drawing_event, {
+          "operation" => "canvas_clear_undone",
+          "data" => { "strokes" => "corrupt" }
+        })
+
+        expect(participant.reload.avatar["strokes"]).to eq([])
+      end
+
+      it "still broadcasts the event after filtering" do
+        expect do
+          perform(:drawing_event, {
+            "operation" => "canvas_clear_undone",
+            "data" => { "strokes" => [{ "color" => "#0000ff", "width" => 2 }] }
+          })
+        end.to have_broadcasted_to(monitor_stream_key).with(
+          hash_including("type" => "drawing_update", "operation" => "canvas_clear_undone")
+        )
+      end
+    end
+
+    describe "stroke_started with invalid points" do
+      it "does not broadcast when points is not an array" do
+        expect do
+          perform(:drawing_event, {
+            "operation" => "stroke_started",
+            "data" => { "points" => "bad", "color" => "#ff0000", "width" => 4 }
+          })
+        end.not_to have_broadcasted_to(monitor_stream_key)
+      end
+
+      it "does not persist a stroke when points is not an array" do
+        perform(:drawing_event, {
+          "operation" => "stroke_started",
+          "data" => { "points" => "bad", "color" => "#ff0000", "width" => 4 }
+        })
+        perform(:drawing_event, { "operation" => "stroke_ended" })
+
+        expect(participant.reload.avatar).to be_blank
+      end
+    end
+
     describe "authorization" do
       it "ignores drawing events from admins" do
         admin_token = Experiences::AuthService.jwt_for_admin(user: admin)

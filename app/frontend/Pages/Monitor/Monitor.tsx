@@ -1,3 +1,4 @@
+import { AnalyticsErrorBoundary } from '@cctv/analytics';
 import { useExperience } from '@cctv/contexts/ExperienceContext';
 import ExperienceBlockContainer from '@cctv/experiences/ExperienceBlockContainer/ExperienceBlockContainer';
 import { BlockKind } from '@cctv/types';
@@ -50,7 +51,11 @@ export default function Monitor() {
 
   return (
     <section className={styles.root}>
-      {!showingBalloonPodium && <LobbyAvatars />}
+      {!showingBalloonPodium && (
+        <AnalyticsErrorBoundary fallback={null}>
+          <LobbyAvatars />
+        </AnalyticsErrorBoundary>
+      )}
       {showProgramBlock ? (
         <div className={styles.blockContainer}>
           <ExperienceBlockContainer block={currentBlock} disabled viewContext="monitor" />

@@ -46,15 +46,19 @@ function reducer(state: DrawingState, action: DrawingAction): DrawingState {
             ...state.committed,
             [participant_id]: {
               image: action.data.image,
-              cosmetics: action.data.cosmetics ?? [],
+              cosmetics: Array.isArray(action.data.cosmetics) ? action.data.cosmetics : [],
             },
           },
         };
       }
-      // Legacy stroke-based commit.
+      // Legacy stroke-based commit: filter out any strokes with a missing or
+      // non-array points field so corrupt DB data cannot reach the renderer.
       return {
         ...state,
-        strokes: { ...state.strokes, [participant_id]: action.data?.strokes || [] },
+        strokes: {
+          ...state.strokes,
+          [participant_id]: (action.data?.strokes || []).filter((s) => Array.isArray(s.points)),
+        },
       };
     case 'canvas_cleared':
       return {
@@ -62,8 +66,9 @@ function reducer(state: DrawingState, action: DrawingAction): DrawingState {
         committed: withoutKey(state.committed, participant_id),
       };
     case 'stroke_started': {
+      const rawPoints = action.data?.points;
       const stroke: Stroke = {
-        points: action.data?.points || [],
+        points: Array.isArray(rawPoints) ? rawPoints : [],
         color: action.data?.color || '#000',
         width: action.data?.width || 4,
       };
@@ -98,7 +103,10 @@ function reducer(state: DrawingState, action: DrawingAction): DrawingState {
     case 'canvas_clear_undone': {
       return {
         ...state,
-        strokes: { ...state.strokes, [participant_id]: action.data?.strokes || [] },
+        strokes: {
+          ...state.strokes,
+          [participant_id]: (action.data?.strokes || []).filter((s) => Array.isArray(s.points)),
+        },
       };
     }
     default:

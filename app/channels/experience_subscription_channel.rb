@@ -32,14 +32,18 @@ class ExperienceSubscriptionChannel < ApplicationCable::Channel
 
     case op
     when 'stroke_started'
+      points = payload['points']
+      return unless points.is_a?(Array)
       @current_stroke = {
-        'points' => payload['points'] || [],
+        'points' => points,
         'color' => payload['color'],
         'width' => payload['width'],
       }
     when 'stroke_points_appended'
+      extra = payload['points']
+      return unless extra.is_a?(Array)
       @current_stroke ||= { 'points' => [], 'color' => nil, 'width' => nil }
-      @current_stroke['points'] = (@current_stroke['points'] || []).concat(payload['points'] || [])
+      @current_stroke['points'] = (@current_stroke['points'] || []).concat(extra)
     when 'stroke_ended'
       if @current_stroke
         points = @current_stroke['points'] || []
@@ -63,8 +67,9 @@ class ExperienceSubscriptionChannel < ApplicationCable::Channel
       end
     when 'canvas_clear_undone'
       @current_stroke = nil
-      strokes = payload['strokes'] || []
-      @participant.update!(avatar: { 'strokes' => strokes })
+      raw = payload['strokes']
+      valid_strokes = raw.is_a?(Array) ? raw.select { |s| s.is_a?(Hash) && s['points'].is_a?(Array) } : []
+      @participant.update!(avatar: { 'strokes' => valid_strokes })
     when 'canvas_cleared'
       @current_stroke = nil
       @participant.update!(avatar: {})
