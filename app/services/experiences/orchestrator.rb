@@ -114,6 +114,31 @@ module Experiences
         payload["active_poll_block_id"]    = nil
         payload["active_poll_contestant_index"] = nil
         payload["contestants"]             = []
+      when ExperienceBlock::COLLABORATIVE_DRAWING
+        min_subsections     = payload["min_subsections"].to_i
+        max_subsections     = payload["max_subsections"].to_i
+        drawing_time_seconds = payload["drawing_time_seconds"].to_i
+        total_drawings      = payload["total_drawings"].to_i
+
+        raise ArgumentError, "prompt must be present" if payload["prompt"].to_s.strip.empty?
+        raise ArgumentError, "min_subsections must be positive" unless min_subsections.positive?
+        raise ArgumentError, "max_subsections must be positive" unless max_subsections.positive?
+        raise ArgumentError, "max_subsections must be >= min_subsections" if max_subsections < min_subsections
+        raise ArgumentError, "drawing_time_seconds must be positive" unless drawing_time_seconds.positive?
+        raise ArgumentError, "total_drawings must be positive" unless total_drawings.positive?
+
+        payload["prompt"]               = payload["prompt"].to_s.strip
+        payload["min_subsections"]      = min_subsections
+        payload["max_subsections"]      = max_subsections
+        payload["drawing_time_seconds"] = drawing_time_seconds
+        payload["total_drawings"]       = total_drawings
+        payload["phase"]                = "intake"
+        payload["subsection_count"]     = nil
+        payload["pool"]                 = []
+        payload["preview_started_at"]   = nil
+        payload["round_started_at"]     = nil
+        payload["ended_at"]             = nil
+        payload["composites"]           = nil
       end
 
       payload
@@ -1076,6 +1101,119 @@ module Experiences
       submission
     end
 
+    # Collaborative drawing ---------------------------------------------------
+
+    # Seconds a participant views the full source photo before the marker + draw.
+    COLLABORATIVE_DRAWING_PREVIEW_SECONDS = 10
+    # Seconds for the slice marker highlight + rotate-to-landscape animation.
+    COLLABORATIVE_DRAWING_MARKER_SECONDS = 3
+
+    def submit_collaborative_drawing_photo!(block:, photo_signed_id:, answer: {})
+      raise ArgumentError, "Block is not a collaborative drawing" unless block.kind == ExperienceBlock::COLLABORATIVE_DRAWING
+
+      blob = ActiveStorage::Blob.find_signed!(photo_signed_id)
+
+      submission = ExperienceCollaborativeDrawingPhoto.find_or_initialize_by(
+        experience_block_id: block.id,
+        experience_participant: current_participant
+      )
+
+      submission.answer = answer
+
+      if submission.new_record?
+        submission.save!(validate: false)
+        submission.photo.attach(blob)
+      else
+        submission.photo.attach(blob)
+        submission.save!
+      end
+
+      submission
+    end
+
+    def start_collaborative_drawing_round!(block:)
+      raise ArgumentError, "Block is not a collaborative drawing" unless block.kind == ExperienceBlock::COLLABORATIVE_DRAWING
+
+      transaction do
+        payload = block.payload || {}
+
+        plan = plan_collaborative_drawing_assignments(block)
+        raise ArgumentError, "No photos submitted for the round" if plan[:pool].empty?
+
+        block.experience_collaborative_drawing_assignments.delete_all
+        plan[:assignments].each { |attrs| block.experience_collaborative_drawing_assignments.create!(attrs) }
+
+        started_at = Time.current
+        draw_seconds = payload["drawing_time_seconds"].to_i
+        total_seconds = COLLABORATIVE_DRAWING_PREVIEW_SECONDS + COLLABORATIVE_DRAWING_MARKER_SECONDS + draw_seconds
+
+        payload["phase"]              = "round"
+        payload["subsection_count"]   = plan[:subsection_count]
+        payload["pool"]               = plan[:pool]
+        payload["round_started_at"]   = started_at.iso8601
+        payload["preview_started_at"] = started_at.iso8601
+        payload["ended_at"]           = nil
+        payload["composites"]         = nil
+
+        block.update!(payload: payload, status: :open)
+
+        Minigames::EndCollaborativeDrawingJob.set(wait: total_seconds.seconds)
+          .perform_later(block.id, payload["round_started_at"])
+
+        block
+      end
+    end
+
+    def end_collaborative_drawing_round!(block:)
+      raise ArgumentError, "Block is not a collaborative drawing" unless block.kind == ExperienceBlock::COLLABORATIVE_DRAWING
+
+      transaction do
+        payload = block.payload || {}
+        return block if payload["ended_at"].present?
+
+        payload["ended_at"]   = Time.current.iso8601
+        payload["composites"] = assemble_collaborative_drawing_composites(block)
+        block.update!(payload: payload)
+      end
+
+      block
+    end
+
+    def restart_collaborative_drawing!(block:)
+      raise ArgumentError, "Block is not a collaborative drawing" unless block.kind == ExperienceBlock::COLLABORATIVE_DRAWING
+
+      transaction do
+        payload = block.payload || {}
+        payload["phase"]              = "intake"
+        payload["subsection_count"]   = nil
+        payload["pool"]               = []
+        payload["round_started_at"]   = nil
+        payload["preview_started_at"] = nil
+        payload["ended_at"]           = nil
+        payload["composites"]         = nil
+
+        block.experience_collaborative_drawing_assignments.delete_all
+        block.update!(payload: payload)
+      end
+
+      block
+    end
+
+    # Drawings are recorded best-effort: a client submits when the user taps
+    # submit or when their timer expires, so a late dispatch landing after the
+    # round has ended must not raise. Returns nil when there is no assignment.
+    # The drawing is a flattened image data URL produced by DrawingCanvas.
+    def submit_collaborative_drawing!(block:, image:)
+      raise ArgumentError, "Block is not a collaborative drawing" unless block.kind == ExperienceBlock::COLLABORATIVE_DRAWING
+
+      assignment = block.experience_collaborative_drawing_assignments
+        .find_by(experience_participant: current_participant)
+      return nil unless assignment
+
+      assignment.update!(drawing_image: image.to_s, submitted_at: Time.current)
+      assignment
+    end
+
     # Minigame: balloon pump --------------------------------------------------
 
     def start_minigame_balloon_pump!(block:)
@@ -1463,6 +1601,101 @@ module Experiences
           "height" => placement[:height].to_f,
           "rotation" => placement[:rotation].to_f
         )
+      end
+    end
+
+    # Builds the per-round plan for a collaborative drawing block: chooses how
+    # many horizontal slices each photo is split into (within the configured
+    # range) so as many participants as possible get a slot, randomly selects the
+    # source photos, and maps each (group, slice) slot to a participant.
+    def plan_collaborative_drawing_assignments(block)
+      payload         = block.payload || {}
+      min_subsections = payload["min_subsections"].to_i
+      max_subsections = payload["max_subsections"].to_i
+      total_drawings  = payload["total_drawings"].to_i
+
+      eligible = experience.experience_participants
+        .where.not(role: %w[host moderator])
+        .to_a
+        .shuffle
+
+      photos = block.experience_collaborative_drawing_photos
+        .includes(photo_attachment: :blob)
+        .select { |p| p.photo.attached? }
+        .shuffle
+        .first(total_drawings)
+
+      return { subsection_count: min_subsections, pool: [], assignments: [] } if photos.empty?
+
+      if photos.length < total_drawings
+        Rails.logger.info(
+          "[CollaborativeDrawing] Only #{photos.length} of #{total_drawings} requested photos available for block #{block.id}"
+        )
+      end
+
+      group_count = photos.length
+      target      = (eligible.length.to_f / group_count).ceil
+      subsection_count = target.clamp(min_subsections, max_subsections)
+
+      pool = photos.map do |photo|
+        { "photo_id" => photo.id, "url" => ActiveStorageUrlService.blob_url(photo.photo.blob) }
+      end
+
+      slots = []
+      photos.each_with_index do |photo, group_index|
+        subsection_count.times do |slice_index|
+          slots << { photo: photo, group_index: group_index, slice_index: slice_index }
+        end
+      end
+
+      assignments = slots.take(eligible.length).each_with_index.map do |slot, i|
+        {
+          experience_participant_id: eligible[i].id,
+          source_photo_id:           slot[:photo].id,
+          group_index:               slot[:group_index],
+          slice_index:               slot[:slice_index],
+          slice_count:               subsection_count
+        }
+      end
+
+      if slots.length > eligible.length
+        Rails.logger.info(
+          "[CollaborativeDrawing] #{slots.length - eligible.length} slice slot(s) left unassigned for block #{block.id}"
+        )
+      elsif eligible.length > slots.length
+        Rails.logger.info(
+          "[CollaborativeDrawing] #{eligible.length - slots.length} participant(s) left without a slice for block #{block.id}"
+        )
+      end
+
+      { subsection_count: subsection_count, pool: pool, assignments: assignments }
+    end
+
+    # Stacks each group's submitted slices in slice order into a composite result.
+    # This is aggregate result data (like a leaderboard), safe to broadcast.
+    def assemble_collaborative_drawing_composites(block)
+      assignments = block.experience_collaborative_drawing_assignments
+        .includes(:experience_participant, source_photo: { photo_attachment: :blob })
+        .to_a
+
+      assignments.group_by(&:group_index).sort.map do |group_index, group_assignments|
+        source_photo = group_assignments.first&.source_photo
+        source_url   = source_photo&.photo&.attached? ? ActiveStorageUrlService.blob_url(source_photo.photo.blob) : nil
+
+        slices = group_assignments.sort_by(&:slice_index).map do |a|
+          {
+            "slice_index" => a.slice_index,
+            "image"       => a.drawing_image,
+            "name"        => a.experience_participant&.name
+          }
+        end
+
+        {
+          "group_index"      => group_index,
+          "slice_count"      => group_assignments.first&.slice_count,
+          "source_photo_url" => source_url,
+          "slices"           => slices
+        }
       end
     end
 

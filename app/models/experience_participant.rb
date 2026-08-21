@@ -10,6 +10,8 @@ class ExperienceParticipant < ApplicationRecord
   has_many :experience_buzzer_submissions, dependent: :destroy
   has_many :experience_minigame_submissions, dependent: :destroy
   has_many :experience_minigame_balloon_results, dependent: :destroy
+  has_many :experience_collaborative_drawing_photos, dependent: :destroy
+  has_many :experience_collaborative_drawing_assignments, dependent: :destroy
   has_many :improv_suggestions, dependent: :destroy
   has_many :improv_votes, dependent: :destroy
 

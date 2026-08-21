@@ -30,6 +30,11 @@ import {
   validateBuzzer,
 } from '../CreateBlock/CreateBuzzer/CreateBuzzer';
 import {
+  buildCollaborativeDrawingPayload,
+  collaborativeDrawingPayloadToFormData,
+  validateCollaborativeDrawing,
+} from '../CreateBlock/CreateCollaborativeDrawing/CreateCollaborativeDrawing';
+import {
   buildFamilyFeudPayload,
   familyFeudPayloadToFormData,
   validateFamilyFeud,
@@ -126,6 +131,11 @@ function blockToFormData(block: Block): FormBlockData {
         kind: BlockKind.MINIGAME_BALLOON_PUMP,
         data: minigameBalloonPumpPayloadToFormData(payload),
       };
+    case BlockKind.COLLABORATIVE_DRAWING:
+      return {
+        kind: BlockKind.COLLABORATIVE_DRAWING,
+        data: collaborativeDrawingPayloadToFormData(block.payload),
+      };
     case BlockKind.THE_SCENE:
       return {
         kind: BlockKind.THE_SCENE,
@@ -162,6 +172,8 @@ function buildUpdatePayload(blockData: FormBlockData): BlockUpdateFields {
       return { payload: buildMinigameArithmeticPayload(data) };
     case BlockKind.MINIGAME_BALLOON_PUMP:
       return { payload: buildMinigameBalloonPumpPayload(data) };
+    case BlockKind.COLLABORATIVE_DRAWING:
+      return { payload: buildCollaborativeDrawingPayload(data) };
     case BlockKind.THE_SCENE:
       return { payload: buildTheScenePayload(data) };
     default: {
@@ -247,6 +259,9 @@ export function EditBlockProvider({
         break;
       case BlockKind.MINIGAME_BALLOON_PUMP:
         validationError = validateMinigameBalloonPump(data);
+        break;
+      case BlockKind.COLLABORATIVE_DRAWING:
+        validationError = validateCollaborativeDrawing(blockData.data);
         break;
       case BlockKind.THE_SCENE:
         validationError = validateTheScene(data);
