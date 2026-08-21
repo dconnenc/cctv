@@ -18,6 +18,7 @@ import { BLOCK_KIND_LABELS, Block, BlockKind, Experience, ParticipantSummary } f
 
 import FamilyFeudManager from '../../Block/FamilyFeudManager/FamilyFeudManager';
 import GuessWhoManager from '../../Block/GuessWhoManager/GuessWhoManager';
+import NewscastersManager from '../../Block/NewscastersManager/NewscastersManager';
 import BlockPreview from '../BlockPreview/BlockPreview';
 import ContextView from '../ContextView/ContextView';
 import BlockResponsesList from './BlockResponsesList';
@@ -265,6 +266,12 @@ export default function BlockDetailPanel({
           {selectedBlock.kind === BlockKind.GUESS_WHO && (
             <div className="mb-6">
               <GuessWhoManager block={selectedBlock} />
+            </div>
+          )}
+
+          {selectedBlock.kind === BlockKind.NEWSCASTERS && (
+            <div className="mb-6">
+              <NewscastersManager block={selectedBlock} />
             </div>
           )}
 

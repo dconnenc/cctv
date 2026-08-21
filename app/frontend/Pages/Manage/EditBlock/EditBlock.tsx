@@ -12,6 +12,7 @@ import CreateFamilyFeud from '../CreateBlock/CreateFamilyFeud/CreateFamilyFeud';
 import CreateGuessWho from '../CreateBlock/CreateGuessWho/CreateGuessWho';
 import CreateMinigameArithmetic from '../CreateBlock/CreateMinigameArithmetic/CreateMinigameArithmetic';
 import CreateMinigameBalloonPump from '../CreateBlock/CreateMinigameBalloonPump/CreateMinigameBalloonPump';
+import CreateNewscastersSource from '../CreateBlock/CreateNewscastersSource/CreateNewscastersSource';
 import CreatePhotoUpload from '../CreateBlock/CreatePhotoUpload/CreatePhotoUpload';
 import CreatePoll from '../CreateBlock/CreatePoll/CreatePoll';
 import CreateQuestion from '../CreateBlock/CreateQuestion/CreateQuestion';
@@ -237,6 +238,26 @@ function BlockEditor() {
           onChange={(updates) =>
             setBlockData((prev) =>
               prev.kind === BlockKind.THE_SCENE
+                ? { ...prev, data: { ...prev.data, ...updates } }
+                : prev,
+            )
+          }
+        />
+      );
+    case BlockKind.NEWSCASTERS:
+      return (
+        <p className={styles.note}>
+          Manage playback (video selection, play/pause) from the block panel. There are no editable
+          settings here.
+        </p>
+      );
+    case BlockKind.NEWSCASTERS_SOURCE:
+      return (
+        <CreateNewscastersSource
+          data={data}
+          onChange={(updates) =>
+            setBlockData((prev) =>
+              prev.kind === BlockKind.NEWSCASTERS_SOURCE
                 ? { ...prev, data: { ...prev.data, ...updates } }
                 : prev,
             )

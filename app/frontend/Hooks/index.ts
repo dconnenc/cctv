@@ -22,6 +22,8 @@ export { useSimulateResponses } from './useSimulateResponses';
 export { useUpdatePlaybill } from './useUpdatePlaybill';
 export { useDirectUpload } from './useDirectUpload';
 export { useSubmitPhotoUploadResponse } from './useSubmitPhotoUploadResponse';
+export { useSubmitNewscastersSourceResponse } from './useSubmitNewscastersSourceResponse';
+export { useNewscasters } from './useNewscasters';
 export { useBlockPresentation } from './useBlockPresentation';
 export { useSubmitBuzzerResponse } from './useSubmitBuzzerResponse';
 export { useClearBuzzerResponses } from './useClearBuzzerResponses';

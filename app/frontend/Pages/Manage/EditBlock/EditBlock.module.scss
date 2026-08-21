@@ -112,3 +112,10 @@
   color: var(--hot-white);
   width: 100%;
 }
+
+.note {
+  font-family: var(--font-body);
+  font-size: 0.875rem;
+  color: hsl(var(--muted-foreground));
+  margin: 0;
+}
