@@ -1,4 +1,4 @@
-import type { JsonValue, ParticipantSummary } from '@cctv/types';
+import type { AvatarStroke, JsonValue, ParticipantSummary } from '@cctv/types';
 
 export function getFormData<T>(form: HTMLFormElement): Partial<T> {
   const formData = new FormData(form);
@@ -41,6 +41,23 @@ export function qaLogger(output: string) {
 }
 
 export const fmtDate = (s?: string | null) => (s ? new Date(s).toLocaleString() : '—');
+
+/**
+ * Assigns stable, unique keys to an array of avatar strokes for React
+ * reconciliation. Strokes with a missing or non-array `points` field are
+ * silently dropped — they cannot be rendered and indicate corrupt data.
+ */
+export function keyedStrokes(strokes: AvatarStroke[]): { key: string; stroke: AvatarStroke }[] {
+  const originCounts = new Map<string, number>();
+  return strokes
+    .filter((stroke) => Array.isArray(stroke.points))
+    .map((stroke) => {
+      const origin = `${stroke.color}:${stroke.width}:${stroke.points[0]},${stroke.points[1]}`;
+      const occurrence = originCounts.get(origin) ?? 0;
+      originCounts.set(origin, occurrence + 1);
+      return { key: `${origin}#${occurrence}`, stroke };
+    });
+}
 
 export const capitalize = (s?: string | null) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : '');
 

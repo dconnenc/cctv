@@ -66,8 +66,9 @@ function reducer(state: DrawingState, action: DrawingAction): DrawingState {
         committed: withoutKey(state.committed, participant_id),
       };
     case 'stroke_started': {
+      const rawPoints = action.data?.points;
       const stroke: Stroke = {
-        points: action.data?.points || [],
+        points: Array.isArray(rawPoints) ? rawPoints : [],
         color: action.data?.color || '#000',
         width: action.data?.width || 4,
       };

@@ -22,7 +22,8 @@ import {
 } from '@cctv/core';
 import ExperienceBlockContainer from '@cctv/experiences/ExperienceBlockContainer/ExperienceBlockContainer';
 import { useClearAvatars } from '@cctv/hooks/useClearAvatars';
-import { AvatarData, AvatarStroke, Block, BlockKind, SubmissionState } from '@cctv/types';
+import { AvatarData, Block, BlockKind, SubmissionState } from '@cctv/types';
+import { keyedStrokes } from '@cctv/utils';
 
 import AdminNotification from './AdminNotification/AdminNotification';
 
@@ -40,16 +41,6 @@ function deriveCurrentBlock(blocks: Block[], submissionState: SubmissionState): 
   return blocks[0];
 }
 
-function keyedStrokes(strokes: AvatarStroke[]): { key: string; stroke: AvatarStroke }[] {
-  const originCounts = new Map<string, number>();
-  return strokes.map((stroke) => {
-    const origin = `${stroke.color}:${stroke.width}:${stroke.points[0]},${stroke.points[1]}`;
-    const occurrence = originCounts.get(origin) ?? 0;
-    originCounts.set(origin, occurrence + 1);
-    return { key: `${origin}#${occurrence}`, stroke };
-  });
-}
-
 function AvatarCircle({ avatar }: { avatar?: AvatarData | null }) {
   if (avatar?.image) {
     return (
@@ -59,7 +50,7 @@ function AvatarCircle({ avatar }: { avatar?: AvatarData | null }) {
           alt=""
           style={{ width: '100%', height: '100%', display: 'block' }}
         />
-        {sortCosmetics(avatar.cosmetics ?? []).map((c) => {
+        {sortCosmetics(Array.isArray(avatar.cosmetics) ? avatar.cosmetics : []).map((c) => {
           const url = cosmeticAssetUrl(c.asset_key);
           if (!url) return null;
           return (
@@ -84,7 +75,7 @@ function AvatarCircle({ avatar }: { avatar?: AvatarData | null }) {
     );
   }
 
-  const strokes = avatar?.strokes ?? [];
+  const strokes = (avatar?.strokes ?? []).filter((s) => Array.isArray(s.points));
   if (!strokes.length) {
     return (
       <svg viewBox="0 0 100 100" className={styles.avatarCircleSvg} aria-hidden>

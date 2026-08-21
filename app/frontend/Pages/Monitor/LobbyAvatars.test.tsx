@@ -275,6 +275,22 @@ describe('LobbyAvatars', () => {
     expect(groups).toHaveLength(1);
   });
 
+  it('renders an empty group when all strokes for a participant are corrupt', () => {
+    mockMonitorView.mockReturnValue(baseMonitorView());
+    // p2 has only a corrupt stroke — no points field
+    mockDrawState.mockReturnValue({
+      strokes: { p2: [{ color: '#ff0000', width: 4 }] },
+    });
+
+    render(<LobbyAvatars />);
+
+    // The group still renders (strokes.length > 0 before filtering) but
+    // keyedStrokes drops the corrupt entry, so no <Line> is produced.
+    const groups = screen.getAllByTestId('konva-group');
+    expect(groups).toHaveLength(1);
+    expect(screen.queryAllByTestId('konva-line')).toHaveLength(0);
+  });
+
   it('filters out corrupt strokes with missing points without crashing', () => {
     mockMonitorView.mockReturnValue(baseMonitorView());
     mockDrawState.mockReturnValue({

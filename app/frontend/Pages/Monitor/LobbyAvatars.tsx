@@ -6,7 +6,8 @@ import { Group, Image as KonvaImage, Layer, Line, Stage } from 'react-konva';
 import { cosmeticAssetUrl, sortCosmetics } from '@cctv/components/Cosmetics';
 import { useExperience } from '@cctv/contexts/ExperienceContext';
 import { useLobbyDrawingState } from '@cctv/contexts/LobbyDrawingContext';
-import type { AvatarStroke, CosmeticPlacement, ExperienceParticipant } from '@cctv/types';
+import type { CosmeticPlacement, ExperienceParticipant } from '@cctv/types';
+import { keyedStrokes } from '@cctv/utils';
 
 import styles from './LobbyAvatars.module.scss';
 
@@ -42,18 +43,6 @@ function initMotion(w: number, h: number): AvatarMotion {
     scalePhase: Math.random() * Math.PI * 2,
     scaleFreq: SCALE_FREQ_MIN + Math.random() * SCALE_FREQ_RANGE,
   };
-}
-
-function keyedStrokes(strokes: AvatarStroke[]): { key: string; stroke: AvatarStroke }[] {
-  const originCounts = new Map<string, number>();
-  return strokes
-    .filter((stroke) => Array.isArray(stroke.points))
-    .map((stroke) => {
-      const origin = `${stroke.color}:${stroke.width}:${stroke.points[0]},${stroke.points[1]}`;
-      const occurrence = originCounts.get(origin) ?? 0;
-      originCounts.set(origin, occurrence + 1);
-      return { key: `${origin}#${occurrence}`, stroke };
-    });
 }
 
 export default function LobbyAvatars() {
