@@ -48,6 +48,9 @@ export interface DrawingCanvasProps {
   onStrokeEvent?: (event: DrawingCanvasEvent) => void;
   onSubmit: (submission: DrawingCanvasSubmission) => void | Promise<void>;
   onBack?: () => void;
+  // Incrementing this from a parent force-submits the current drawing without a
+  // button press — used to auto-dispatch when a timer expires.
+  submitSignal?: number;
 }
 
 const DEFAULT_PALETTE_VARS = [
@@ -101,6 +104,7 @@ export default function DrawingCanvas({
   onStrokeEvent,
   onSubmit,
   onBack,
+  submitSignal,
 }: DrawingCanvasProps) {
   const [lines, setLines] = useState<CanvasStroke[]>(() => withRenderIds(initialStrokes));
   const [clearedLines, setClearedLines] = useState<CanvasStroke[] | null>(null);
@@ -329,6 +333,17 @@ export default function DrawingCanvas({
   const handleSubmit = async () => {
     await onSubmit(buildSubmission());
   };
+
+  // Force-submit the current drawing when the parent bumps submitSignal (e.g.
+  // the draw timer expired), without requiring a button press.
+  const lastSubmitSignalRef = useRef(submitSignal);
+  useEffect(() => {
+    if (submitSignal === undefined) return;
+    if (submitSignal === lastSubmitSignalRef.current) return;
+    lastSubmitSignalRef.current = submitSignal;
+    void onSubmit(buildSubmission());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [submitSignal]);
 
   const updateCosmetic = (index: number, next: CosmeticPlacement) => {
     onCosmeticsChange?.(cosmetics.map((c, i) => (i === index ? next : c)));

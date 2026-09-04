@@ -2,13 +2,14 @@ import { ReactNode, useEffect, useRef } from 'react';
 
 import { useExperienceState } from '../app/frontend/Contexts/ExperienceStateContext';
 import { useLobbyDrawingDispatch } from '../app/frontend/Contexts/LobbyDrawingContext';
-import { Experience, ParticipantSummary } from '../app/frontend/types';
+import { Experience, ParticipantSummary, SubmissionState } from '../app/frontend/types';
 
 interface ExperienceSeederProps {
   experience?: Experience;
   participant?: ParticipantSummary;
   experienceStatus?: 'lobby' | 'live';
   monitorView?: Experience;
+  submissionState?: SubmissionState;
   children: ReactNode;
 }
 
@@ -17,6 +18,7 @@ export function ExperienceSeeder({
   participant,
   experienceStatus = 'lobby',
   monitorView,
+  submissionState,
   children,
 }: ExperienceSeederProps) {
   const state = useExperienceState();
@@ -32,6 +34,7 @@ export function ExperienceSeeder({
     state.setExperienceStatus(experienceStatus);
     state.setWsReady(true);
     if (monitorView) state.setMonitorView(monitorView);
+    if (submissionState) state.setSubmissionState(submissionState);
 
     const source = monitorView || experience;
     if (source) {
@@ -47,7 +50,15 @@ export function ExperienceSeeder({
         }
       }
     }
-  }, [experience, participant, experienceStatus, monitorView, state, drawDispatch]);
+  }, [
+    experience,
+    participant,
+    experienceStatus,
+    monitorView,
+    submissionState,
+    state,
+    drawDispatch,
+  ]);
 
   return <>{children}</>;
 }

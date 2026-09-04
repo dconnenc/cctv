@@ -28,6 +28,23 @@ class ExperienceBlockPolicy < ApplicationPolicy
     user_allowed_to_interact_with_block?
   end
 
+  # The photo intake is decoupled from the active block segment — any participant
+  # may contribute a photo whether or not the block is currently their visible
+  # block. Mirrors the arithmetic pattern: participant-only, status-independent.
+  def submit_collaborative_drawing_photo?
+    return false unless user
+
+    participant?
+  end
+
+  # A drawing is submitted on tap or when the client timer expires; a late
+  # dispatch landing after the round closes must not 403.
+  def submit_collaborative_drawing?
+    return false unless user
+
+    participant?
+  end
+
   def submit_the_scene_suggestion?
     user_allowed_to_interact_with_block?
   end

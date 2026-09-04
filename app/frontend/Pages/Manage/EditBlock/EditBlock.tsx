@@ -8,6 +8,7 @@ import { BLOCK_KIND_LABELS, Block, BlockKind, ParticipantSummary } from '@cctv/t
 
 import CreateAnnouncement from '../CreateBlock/CreateAnnouncement/CreateAnnouncement';
 import CreateBuzzer from '../CreateBlock/CreateBuzzer/CreateBuzzer';
+import CreateCollaborativeDrawing from '../CreateBlock/CreateCollaborativeDrawing/CreateCollaborativeDrawing';
 import CreateFamilyFeud from '../CreateBlock/CreateFamilyFeud/CreateFamilyFeud';
 import CreateGuessWho from '../CreateBlock/CreateGuessWho/CreateGuessWho';
 import CreateMinigameArithmetic from '../CreateBlock/CreateMinigameArithmetic/CreateMinigameArithmetic';
@@ -224,6 +225,19 @@ function BlockEditor() {
           onChange={(updates) =>
             setBlockData((prev) =>
               prev.kind === BlockKind.MINIGAME_BALLOON_PUMP
+                ? { ...prev, data: { ...prev.data, ...updates } }
+                : prev,
+            )
+          }
+        />
+      );
+    case BlockKind.COLLABORATIVE_DRAWING:
+      return (
+        <CreateCollaborativeDrawing
+          data={data}
+          onChange={(updates) =>
+            setBlockData((prev) =>
+              prev.kind === BlockKind.COLLABORATIVE_DRAWING
                 ? { ...prev, data: { ...prev.data, ...updates } }
                 : prev,
             )
