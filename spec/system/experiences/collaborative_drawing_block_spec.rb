@@ -3,16 +3,17 @@ require "rails_helper"
 RSpec.describe "Collaborative Drawing Block", type: :system do
   let(:admin) { create(:user, :admin) }
 
-  # Attaches a photo to the collaborative drawing block on behalf of a
-  # participant, bypassing the ActiveStorage direct-upload UI (which is not
-  # driven in system tests). Seeds the intake pool before a round starts.
+  # Attaches a photo to the intake block on behalf of a participant, bypassing
+  # the ActiveStorage direct-upload UI (which is not driven in system tests).
   def seed_photo(code:, participant_name:)
     experience = Experience.find_by!(code: code)
-    block = experience.experience_blocks.find_by!(kind: ExperienceBlock::COLLABORATIVE_DRAWING)
+    intake = experience.experience_blocks
+      .where(kind: ExperienceBlock::COLLABORATIVE_DRAWING)
+      .find { |b| b.payload["phase"] == "intake" }
     participant = experience.experience_participants.find_by!(name: participant_name)
 
     photo = ExperienceCollaborativeDrawingPhoto.new(
-      experience_block: block,
+      experience_block: intake,
       experience_participant: participant
     )
     photo.save!(validate: false)
@@ -23,7 +24,7 @@ RSpec.describe "Collaborative Drawing Block", type: :system do
     )
   end
 
-  it "collects photos, dispatches a slice assignment, and reveals the composite" do
+  it "queues an intake + round pair, then dispatches slices and reveals the composite" do
     sign_in(admin)
     create_experience_and_go_to_manage(name: "Draw Party", code: "draw-exp")
 
@@ -35,6 +36,10 @@ RSpec.describe "Collaborative Drawing Block", type: :system do
       fill_in "Maximum subsections", with: "4"
       fill_in "Drawing time", with: "30"
     end
+
+    # Two discrete blocks are queued: the photo intake and the drawing round.
+    expect(page).to have_css("li[aria-label='block 1']")
+    expect(page).to have_css("li[aria-label='block 2']")
 
     start_experience
 
@@ -48,14 +53,12 @@ RSpec.describe "Collaborative Drawing Block", type: :system do
       expect(page).to have_text("Waiting for the next activity...")
     end
 
+    # Present the intake block to collect photos.
     visit current_path
     select_and_present(1, kind: "collaborative_drawing")
-
-    # Host sees the intake config; the round cannot start without photos.
     expect(page).to have_text("Submit a photo of your pet")
-    expect(page).to have_button("Start round", disabled: true)
 
-    # Participant is prompted to contribute a photo, decoupled from any round.
+    # Participant is prompted to contribute a photo, decoupled from the round.
     using_session(:participant) do
       expect(page).to have_text("Submit a photo of your pet")
       expect(page).to have_text("Tap to select a photo")
@@ -68,13 +71,16 @@ RSpec.describe "Collaborative Drawing Block", type: :system do
       expect(page).to have_text("0 photos received")
     end
 
-    # Seed a photo into the pool, then reload the manage view so the count and
-    # the enabled "Start round" control reflect it.
+    # Seed a photo into the intake pool, then close the intake and move on to
+    # the round block.
     seed_photo(code: "draw-exp", participant_name: "Alice")
     visit current_path
     select_block(1, kind: "collaborative_drawing")
+    stop_presenting_block
 
-    expect(page).to have_text("1 photo received")
+    # The round is the second block; it pulls its pool from the intake and can
+    # start now that a photo exists.
+    select_and_present(2, kind: "collaborative_drawing")
     expect(page).to have_button("Start round", disabled: false)
     click_button "Start round"
     expect(page).to have_button("End round now")
