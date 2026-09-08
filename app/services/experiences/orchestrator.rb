@@ -55,7 +55,30 @@ module Experiences
           block.update!(payload: updated_payload)
         end
 
-        block.update!(status: :open) if open_immediately
+        # Collaborative Drawing queues two discrete, independently-sequenced
+        # blocks: a photo intake that collects the pool, and the drawing round
+        # that consumes it. They are decoupled — the host opens the intake to
+        # gather photos, then opens the round later. `open_immediately` opens the
+        # intake (to start collecting); the round always begins queued.
+        if kind == ExperienceBlock::COLLABORATIVE_DRAWING
+          intake = experience.experience_blocks.create!(
+            kind: ExperienceBlock::COLLABORATIVE_DRAWING,
+            status: status,
+            payload: prepared_payload.merge("phase" => "intake"),
+            visible_to_roles: visible_to_roles,
+            target_user_ids: target_user_ids,
+            position: block.position,
+            add_to_playbill: add_to_playbill,
+            playbill_mysterious: add_to_playbill && playbill_mysterious
+          )
+          block.update!(
+            position: block.position + 1,
+            status: :hidden,
+            payload: block.payload.merge("intake_block_id" => intake.id)
+          )
+        end
+
+        block.update!(status: :open) if open_immediately && kind != ExperienceBlock::COLLABORATIVE_DRAWING
 
         block
       end
@@ -132,7 +155,10 @@ module Experiences
         payload["max_subsections"]      = max_subsections
         payload["drawing_time_seconds"] = drawing_time_seconds
         payload["total_drawings"]       = total_drawings
-        payload["phase"]                = "intake"
+        # The primary block is the drawing round; queuing also spins up a
+        # linked intake (photo-upload) block — see #add_block!.
+        payload["phase"]                = "round"
+        payload["intake_block_id"]      = nil
         payload["subsection_count"]     = nil
         payload["pool"]                 = []
         payload["preview_started_at"]   = nil
@@ -1184,7 +1210,6 @@ module Experiences
 
       transaction do
         payload = block.payload || {}
-        payload["phase"]              = "intake"
         payload["subsection_count"]   = nil
         payload["pool"]               = []
         payload["round_started_at"]   = nil
@@ -1197,6 +1222,14 @@ module Experiences
       end
 
       block
+    end
+
+    # The linked photo-intake block for a drawing round (nil if unset/deleted).
+    def collaborative_drawing_intake_block(block)
+      intake_id = block.payload&.dig("intake_block_id")
+      return nil if intake_id.blank?
+
+      experience.experience_blocks.find_by(id: intake_id)
     end
 
     # Drawings are recorded best-effort: a client submits when the user taps
@@ -1619,7 +1652,8 @@ module Experiences
         .to_a
         .shuffle
 
-      photos = block.experience_collaborative_drawing_photos
+      intake_block = collaborative_drawing_intake_block(block)
+      photos = (intake_block&.experience_collaborative_drawing_photos || ExperienceCollaborativeDrawingPhoto.none)
         .includes(photo_attachment: :blob)
         .select { |p| p.photo.attached? }
         .shuffle

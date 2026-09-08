@@ -281,6 +281,8 @@ export interface CollaborativeDrawingPayload {
   drawing_time_seconds: number;
   total_drawings: number;
   phase: CollaborativeDrawingPhase;
+  // Set on the round block: the linked photo-intake block it draws its pool from.
+  intake_block_id?: string | null;
   subsection_count: number | null;
   pool: CollaborativeDrawingPoolItem[];
   preview_started_at: string | null;

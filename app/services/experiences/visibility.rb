@@ -679,21 +679,31 @@ module Experiences
         { total: results.count }
 
       when ExperienceBlock::COLLABORATIVE_DRAWING
-        photos      = block.experience_collaborative_drawing_photos.includes(photo_attachment: :blob).to_a
-        assignments = block.experience_collaborative_drawing_assignments.to_a
-        response    = {
-          total: photos.count,
-          assignment_count: assignments.count,
-          submission_count: assignments.count { |a| a.submitted_at.present? }
-        }
+        if block.payload["phase"] == "intake"
+          # Intake block: photos submitted to this block.
+          photos   = block.experience_collaborative_drawing_photos.includes(photo_attachment: :blob).to_a
+          response = { total: photos.count }
 
-        if mod_or_host?(participant_role)
-          response[:all_responses] = photos.map do |p|
-            { id: p.id, photo_url: attachment_url(p.photo) }
+          if mod_or_host?(participant_role)
+            response[:all_responses] = photos.map do |p|
+              { id: p.id, photo_url: attachment_url(p.photo) }
+            end
           end
-        end
 
-        response
+          response
+        else
+          # Round block: the photo pool lives on the linked intake block; the
+          # `total` drives the "Start round" gate.
+          intake_id   = block.payload["intake_block_id"]
+          photo_count = intake_id.present? ? ExperienceCollaborativeDrawingPhoto.where(experience_block_id: intake_id).count : 0
+          assignments = block.experience_collaborative_drawing_assignments.to_a
+
+          {
+            total: photo_count,
+            assignment_count: assignments.count,
+            submission_count: assignments.count { |a| a.submitted_at.present? }
+          }
+        end
 
       when ExperienceBlock::THE_SCENE
         suggestion_count = block.improv_suggestions.active.count

@@ -31,13 +31,17 @@ export default function MinigameControls({ block }: { block: Block }) {
   let startDisabled = false;
 
   if (block.kind === BlockKind.COLLABORATIVE_DRAWING) {
+    // The intake (photo-upload) block is driven by the normal Present/close
+    // controls; only the round block exposes start/end/restart.
+    if (block.payload.phase !== 'round') return null;
+
     game = {
       start: collaborativeDrawing.startRound,
       end: collaborativeDrawing.endRound,
       restart: collaborativeDrawing.restart,
     };
-    const { phase, ended_at } = block.payload;
-    status = phase === 'intake' ? 'queued' : ended_at ? 'ended' : 'running';
+    const { ended_at } = block.payload;
+    status = !block.payload.round_started_at ? 'queued' : ended_at ? 'ended' : 'running';
     startLabel = 'Start round';
     endLabel = 'End round now';
     startDisabled = (block.responses?.total ?? 0) === 0;
