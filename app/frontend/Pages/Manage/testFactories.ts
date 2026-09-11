@@ -9,6 +9,8 @@ import {
   GuessWhoBlock,
   MinigameArithmeticBlock,
   MinigameBalloonPumpBlock,
+  NewscastersBlock,
+  NewscastersSourceBlock,
   PhotoUploadBlock,
   PollBlock,
   QuestionBlock,
@@ -147,6 +149,33 @@ export function theSceneBlock(overrides: Partial<TheSceneBlock> = {}): TheSceneB
   };
 }
 
+export function newscastersBlock(overrides: Partial<NewscastersBlock> = {}): NewscastersBlock {
+  return {
+    ...blockDefaults,
+    id: 'block-newscasters',
+    kind: BlockKind.NEWSCASTERS,
+    payload: {
+      playing: false,
+      restart_count: 0,
+      source_block_id: 'block-newscasters-source',
+      selected_video: null,
+    },
+    ...overrides,
+  };
+}
+
+export function newscastersSourceBlock(
+  overrides: Partial<NewscastersSourceBlock> = {},
+): NewscastersSourceBlock {
+  return {
+    ...blockDefaults,
+    id: 'block-newscasters-source',
+    kind: BlockKind.NEWSCASTERS_SOURCE,
+    payload: { prompt: 'Send us your breaking news clip', allow_upload: false },
+    ...overrides,
+  };
+}
+
 export function blockOfKind(kind: BlockKind): Block {
   switch (kind) {
     case BlockKind.POLL:
@@ -169,6 +198,10 @@ export function blockOfKind(kind: BlockKind): Block {
       return minigameBalloonPumpBlock();
     case BlockKind.THE_SCENE:
       return theSceneBlock();
+    case BlockKind.NEWSCASTERS:
+      return newscastersBlock();
+    case BlockKind.NEWSCASTERS_SOURCE:
+      return newscastersSourceBlock();
     default: {
       const exhaustiveCheck: never = kind;
       throw new Error(`Unhandled block kind: ${exhaustiveCheck}`);

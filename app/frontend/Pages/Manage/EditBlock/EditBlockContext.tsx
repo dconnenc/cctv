@@ -50,6 +50,15 @@ import {
   validateMinigameBalloonPump,
 } from '../CreateBlock/CreateMinigameBalloonPump/CreateMinigameBalloonPump';
 import {
+  buildNewscastersPayload,
+  newscastersPayloadToFormData,
+} from '../CreateBlock/CreateNewscasters/CreateNewscasters';
+import {
+  buildNewscastersSourcePayload,
+  newscastersSourcePayloadToFormData,
+  validateNewscastersSource,
+} from '../CreateBlock/CreateNewscastersSource/CreateNewscastersSource';
+import {
   buildPhotoUploadPayload,
   photoUploadPayloadToFormData,
   validatePhotoUpload,
@@ -131,6 +140,16 @@ function blockToFormData(block: Block): FormBlockData {
         kind: BlockKind.THE_SCENE,
         data: theScenePayloadToFormData(payload),
       };
+    case BlockKind.NEWSCASTERS:
+      return {
+        kind: BlockKind.NEWSCASTERS,
+        data: newscastersPayloadToFormData(block.payload),
+      };
+    case BlockKind.NEWSCASTERS_SOURCE:
+      return {
+        kind: BlockKind.NEWSCASTERS_SOURCE,
+        data: newscastersSourcePayloadToFormData(block.payload),
+      };
     default: {
       const exhaustiveCheck: never = kind;
       throw new Error(`Unknown block kind: ${exhaustiveCheck}`);
@@ -164,6 +183,10 @@ function buildUpdatePayload(blockData: FormBlockData): BlockUpdateFields {
       return { payload: buildMinigameBalloonPumpPayload(data) };
     case BlockKind.THE_SCENE:
       return { payload: buildTheScenePayload(data) };
+    case BlockKind.NEWSCASTERS:
+      return { payload: buildNewscastersPayload(data) };
+    case BlockKind.NEWSCASTERS_SOURCE:
+      return { payload: buildNewscastersSourcePayload(data) };
     default: {
       const exhaustiveCheck: never = kind;
       throw new Error(`Unknown block kind: ${exhaustiveCheck}`);
@@ -250,6 +273,14 @@ export function EditBlockProvider({
         break;
       case BlockKind.THE_SCENE:
         validationError = validateTheScene(data);
+        break;
+      case BlockKind.NEWSCASTERS:
+        // The playback block has no editable form fields — only its
+        // monitor-visibility flag is merged server-side.
+        validationError = null;
+        break;
+      case BlockKind.NEWSCASTERS_SOURCE:
+        validationError = validateNewscastersSource(blockData.data);
         break;
       default: {
         const exhaustiveCheck: never = kind;

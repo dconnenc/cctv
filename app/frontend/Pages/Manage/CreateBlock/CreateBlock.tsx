@@ -4,7 +4,12 @@ import { useExperience } from '@cctv/contexts/ExperienceContext';
 import { DialogDescription, DialogTitle, SegmentMultiSelect, Switch } from '@cctv/core';
 import { Button } from '@cctv/core/Button/Button';
 import { Dropdown } from '@cctv/core/Dropdown/Dropdown';
-import { BLOCK_KIND_LABELS, BlockKind, ParticipantSummary } from '@cctv/types';
+import {
+  BLOCK_KIND_LABELS,
+  BlockKind,
+  HIDDEN_CREATE_BLOCK_KINDS,
+  ParticipantSummary,
+} from '@cctv/types';
 
 import CreateAnnouncement from './CreateAnnouncement/CreateAnnouncement';
 import { CreateBlockProvider, useCreateBlockContext } from './CreateBlockContext';
@@ -13,6 +18,8 @@ import CreateFamilyFeud from './CreateFamilyFeud/CreateFamilyFeud';
 import CreateGuessWho from './CreateGuessWho/CreateGuessWho';
 import CreateMinigameArithmetic from './CreateMinigameArithmetic/CreateMinigameArithmetic';
 import CreateMinigameBalloonPump from './CreateMinigameBalloonPump/CreateMinigameBalloonPump';
+import CreateNewscasters from './CreateNewscasters/CreateNewscasters';
+import CreateNewscastersSource from './CreateNewscastersSource/CreateNewscastersSource';
 import CreatePhotoUpload from './CreatePhotoUpload/CreatePhotoUpload';
 import CreatePoll from './CreatePoll/CreatePoll';
 import CreateQuestion from './CreateQuestion/CreateQuestion';
@@ -52,10 +59,12 @@ function CreateBlockForm({ onClose }: CreateBlockFormProps) {
 
       <Dropdown
         label="Kind"
-        options={Object.values(BlockKind).map((kind) => ({
-          label: BLOCK_KIND_LABELS[kind],
-          value: kind,
-        }))}
+        options={Object.values(BlockKind)
+          .filter((kind) => !HIDDEN_CREATE_BLOCK_KINDS.includes(kind))
+          .map((kind) => ({
+            label: BLOCK_KIND_LABELS[kind],
+            value: kind,
+          }))}
         value={blockData.kind}
         onChange={setKind}
         required
@@ -123,6 +132,10 @@ function BlockEditor() {
       return <CreateMinigameBalloonPump data={blockData.data} onChange={onChange} />;
     case BlockKind.THE_SCENE:
       return <CreateTheScene data={blockData.data} onChange={onChange} />;
+    case BlockKind.NEWSCASTERS:
+      return <CreateNewscasters data={blockData.data} onChange={onChange} />;
+    case BlockKind.NEWSCASTERS_SOURCE:
+      return <CreateNewscastersSource data={blockData.data} onChange={onChange} />;
     default:
       const exhaustiveCheck: never = blockData;
       return <div className={styles.details}>Unknown block type: {exhaustiveCheck}</div>;

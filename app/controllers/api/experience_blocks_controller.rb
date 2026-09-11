@@ -12,6 +12,7 @@ class Api::ExperienceBlocksController < Api::BaseController
     start_minigame_balloon_pump end_minigame_balloon_pump restart_minigame_balloon_pump
     start_the_scene end_the_scene force_next_the_scene update_the_scene_performers
     clear_the_scene_top clear_the_scene_suggestion clear_the_scene_all
+    select_newscasters_video set_newscasters_playing restart_newscasters
   ].freeze
 
   SUBMISSION_ACTIONS = %i[
@@ -19,6 +20,7 @@ class Api::ExperienceBlocksController < Api::BaseController
     submit_photo_upload_response submit_buzzer_response
     submit_minigame_arithmetic_response submit_minigame_balloon_pump_update
     submit_the_scene_suggestion submit_the_scene_vote press_the_scene_buzzer
+    submit_newscasters_source_response
   ].freeze
 
   before_action :authenticate_and_set_user_and_experience
@@ -37,7 +39,18 @@ class Api::ExperienceBlocksController < Api::BaseController
 
       segment_ids = create_params[:visible_to_segment_ids] || []
 
-      block = if create_params[:questions].present?
+      block = if create_params[:kind] == ExperienceBlock::NEWSCASTERS
+        orchestrator.add_newscasters_with_source!(
+          payload: create_params[:payload] || {},
+          visible_to_roles: create_params[:visible_to_roles] || [],
+          target_user_ids: create_params[:target_user_ids] || [],
+          status: create_params[:status] || :hidden,
+          open_immediately: create_params[:open_immediately] || false,
+          show_in_lobby: create_params[:show_in_lobby] || false,
+          add_to_playbill: create_params[:add_to_playbill] || false,
+          playbill_mysterious: create_params[:playbill_mysterious] || false
+        )
+      elsif create_params[:questions].present?
         orchestrator.add_block_with_dependencies!(
           kind: create_params[:kind],
           payload: create_params[:payload] || {},
@@ -394,6 +407,71 @@ class Api::ExperienceBlocksController < Api::BaseController
 
       photo_url = submission.photo.attached? ? ActiveStorageUrlService.blob_url(submission.photo.blob) : nil
       render json: { success: true, submission: { id: submission.id, answer: submission.answer, photo_url: photo_url } }, status: 200
+    end
+  end
+
+  # POST /api/experiences/:experience_id/blocks/:id/newscasters/source/response
+  def submit_newscasters_source_response
+    with_experience_orchestration do
+      submission = Experiences::Orchestrator.new(
+        experience: @experience, actor: @user
+      ).submit_newscasters_source_response!(
+        block: @block,
+        video_signed_id: params[:video_signed_id],
+        video_url: params[:video_url]
+      )
+
+      Experiences::Broadcaster.enqueue_update(@experience)
+
+      render json: {
+        success: true,
+        submission: { id: submission.id, answer: submission.answer, video_url: submission.video_url }
+      }, status: 200
+    end
+  end
+
+  # POST /api/experiences/:experience_id/blocks/:id/newscasters/select_video
+  def select_newscasters_video
+    with_experience_orchestration do
+      Experiences::Orchestrator.new(
+        experience: @experience, actor: @user
+      ).select_newscasters_video!(
+        block: @block,
+        submission_id: params[:submission_id]
+      )
+
+      Experiences::Broadcaster.enqueue_update(@experience)
+
+      render json: { success: true }, status: 200
+    end
+  end
+
+  # POST /api/experiences/:experience_id/blocks/:id/newscasters/playing
+  def set_newscasters_playing
+    with_experience_orchestration do
+      Experiences::Orchestrator.new(
+        experience: @experience, actor: @user
+      ).set_newscasters_playing!(
+        block: @block,
+        playing: ActiveModel::Type::Boolean.new.cast(params[:playing])
+      )
+
+      Experiences::Broadcaster.enqueue_update(@experience)
+
+      render json: { success: true }, status: 200
+    end
+  end
+
+  # POST /api/experiences/:experience_id/blocks/:id/newscasters/restart
+  def restart_newscasters
+    with_experience_orchestration do
+      Experiences::Orchestrator.new(
+        experience: @experience, actor: @user
+      ).restart_newscasters!(block: @block)
+
+      Experiences::Broadcaster.enqueue_update(@experience)
+
+      render json: { success: true }, status: 200
     end
   end
 
