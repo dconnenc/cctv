@@ -91,6 +91,18 @@ RSpec.describe Experiences::Orchestrator, "collaborative drawing" do
       expect(assignments.map(&:slice_index)).to contain_exactly(0, 1)
     end
 
+    it "hides the intake so participants advance from photo upload to the round" do
+      round = create_round
+      intake = intake_block_for(round)
+      intake.open!
+      attach_photo(round, player_a)
+
+      orchestrator.start_collaborative_drawing_round!(block: round)
+
+      expect(intake.reload.status).to eq("hidden")
+      expect(round.reload.status).to eq("open")
+    end
+
     it "excludes hosts and moderators from the drawers" do
       round = create_round
       attach_photo(round, player_a)

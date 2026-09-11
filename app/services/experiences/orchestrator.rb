@@ -1199,6 +1199,11 @@ module Experiences
 
         block.update!(payload: payload, status: :open)
 
+        # Close the intake so participants advance to the round: a non-host sees
+        # only the lowest-positioned open block, and the intake sits below the
+        # round.
+        collaborative_drawing_intake_block(block)&.hide!
+
         Minigames::EndCollaborativeDrawingJob.set(wait: total_seconds.seconds)
           .perform_later(block.id, payload["round_started_at"])
 
