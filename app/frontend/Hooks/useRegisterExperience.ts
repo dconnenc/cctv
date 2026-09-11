@@ -21,21 +21,21 @@ export function useRegisterExperience() {
     name,
     participantName,
     isAuthenticated,
-  }: RegisterExperienceParams) => {
+  }: RegisterExperienceParams): Promise<{ url: string } | null> => {
     // Validate required fields
     if (!isAuthenticated && (!email || !email.trim())) {
       setError('Please enter your email');
-      return;
+      return null;
     }
 
     if (!participantName.trim()) {
       setError('Please enter your name');
-      return;
+      return null;
     }
 
     if (!code?.trim()) {
       setError('Missing experience code');
-      return;
+      return null;
     }
 
     qaLogger(
@@ -51,20 +51,18 @@ export function useRegisterExperience() {
     );
 
     if (!response) {
-      return;
+      return null;
     }
 
     if (response.type === 'error') {
       setError(response.error || 'Registration failed');
-      return;
+      return null;
     }
 
-    if (response.type === 'success') {
-      // Success - store JWT and redirect to experience
-      qaLogger(`Successfully regsitered participant. Storing JWT and redirecting to experience`);
-      setParticipantJWT(response.jwt);
-      window.location.href = response.url;
-    }
+    // Success - store JWT and hand back the destination for the ticket animation
+    qaLogger(`Successfully regsitered participant. Storing JWT`);
+    setParticipantJWT(response.jwt);
+    return { url: response.url };
   };
 
   return {
