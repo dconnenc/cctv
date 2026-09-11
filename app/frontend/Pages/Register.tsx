@@ -1,4 +1,13 @@
-import { ChangeEvent, FormEvent, KeyboardEvent, useEffect, useState } from 'react';
+import {
+  ChangeEvent,
+  FormEvent,
+  KeyboardEvent,
+  Suspense,
+  lazy,
+  useCallback,
+  useEffect,
+  useState,
+} from 'react';
 
 import { useParams } from 'react-router-dom';
 
@@ -8,6 +17,8 @@ import { useGet } from '@cctv/hooks/useGet';
 import { useRegisterExperience } from '@cctv/hooks/useRegisterExperience';
 
 import styles from './Register.module.scss';
+
+const TicketRip = lazy(() => import('./TicketRip'));
 
 interface RegistrationInfoResponse {
   type: 'success' | 'error';
@@ -24,6 +35,7 @@ interface RegistrationInfoResponse {
 export default function Register() {
   const [email, setEmail] = useState('');
   const [participantName, setParticipantName] = useState('');
+  const [registered, setRegistered] = useState<{ url: string } | null>(null);
   const { code: slug } = useParams<{ code: string }>();
   const { user, isAuthenticated } = useUser();
 
@@ -42,8 +54,20 @@ export default function Register() {
 
   const handleSubmit = async (e?: FormEvent<HTMLFormElement>) => {
     e?.preventDefault();
-    await registerExperience({ email, participantName, isAuthenticated });
+    const result = await registerExperience({ email, participantName, isAuthenticated });
+    if (!result) return;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      window.location.href = result.url;
+      return;
+    }
+    setRegistered({ url: result.url });
   };
+
+  const handleAnimationComplete = useCallback(() => {
+    if (registered) {
+      window.location.href = registered.url;
+    }
+  }, [registered]);
 
   const handleEmailChange = (e: ChangeEvent<HTMLInputElement>) => {
     setEmail(e.target.value);
@@ -65,6 +89,18 @@ export default function Register() {
       handleSubmit();
     }
   };
+
+  if (registered) {
+    return (
+      <Suspense fallback={null}>
+        <TicketRip
+          code={registrationInfo?.experience?.code || slug || ''}
+          experienceName={registrationInfo?.experience?.name}
+          onComplete={handleAnimationComplete}
+        />
+      </Suspense>
+    );
+  }
 
   return (
     <section className="page flex-centered">

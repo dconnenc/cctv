@@ -81,6 +81,12 @@ export default function Join() {
     e.preventDefault();
     const result = await joinExperience(actualCode);
     if (!result) return;
+    // Unregistered participants log in first; the ticket animation plays after
+    // they submit credentials on the register screen.
+    if (result.status === 'needs_registration') {
+      window.location.href = result.url;
+      return;
+    }
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
       window.location.href = result.url;
       return;
