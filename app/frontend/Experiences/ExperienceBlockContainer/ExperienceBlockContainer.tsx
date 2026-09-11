@@ -5,6 +5,7 @@ import { Block, BlockKind, ParticipantSummary } from '@cctv/types';
 
 import Announcement from '../Announcement/Announcement';
 import Buzzer from '../Buzzer/Buzzer';
+import CollaborativeDrawing from '../CollaborativeDrawing/CollaborativeDrawing';
 import FamilyFeud from '../FamilyFeud/FamilyFeud';
 import GuessWho from '../GuessWho/GuessWho';
 import MinigameArithmetic from '../MinigameArithmetic/MinigameArithmetic';
@@ -99,6 +100,8 @@ export default function ExperienceBlockContainer({
       return <MinigameArithmetic block={block} viewContext={viewContext} />;
     case BlockKind.MINIGAME_BALLOON_PUMP:
       return <MinigameBalloonPump block={block} viewContext={viewContext} />;
+    case BlockKind.COLLABORATIVE_DRAWING:
+      return <CollaborativeDrawing block={block} viewContext={viewContext} sounds={block.sounds} />;
     case BlockKind.THE_SCENE:
       return <TheScene block={block} viewContext={viewContext} />;
     default:

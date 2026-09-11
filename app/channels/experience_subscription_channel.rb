@@ -352,6 +352,23 @@ class ExperienceSubscriptionChannel < ApplicationCable::Channel
       .where(experience_block_id: block_scope, experience_participant_id: participant.id)
       .each { |r| result[r.experience_block_id.to_s] = { fill_amount: r.fill_amount } }
 
+    ExperienceCollaborativeDrawingAssignment
+      .where(experience_block_id: block_scope, experience_participant_id: participant.id)
+      .includes(source_photo: { photo_attachment: :blob })
+      .each do |a|
+        source_url = a.source_photo&.photo&.attached? ? ActiveStorageUrlService.blob_url(a.source_photo.photo.blob) : nil
+        result[a.experience_block_id.to_s] = {
+          assignment: {
+            group_index:      a.group_index,
+            slice_index:      a.slice_index,
+            slice_count:      a.slice_count,
+            source_photo_url: source_url
+          },
+          image:     a.drawing_image,
+          submitted: a.submitted_at.present?
+        }
+      end
+
     result
   end
 

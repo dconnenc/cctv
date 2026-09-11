@@ -43,6 +43,10 @@ export function blockSummary(block: Block): string {
       return block.payload.title.trim();
     case BlockKind.PHOTO_UPLOAD:
       return block.payload.prompt.trim();
+    case BlockKind.COLLABORATIVE_DRAWING:
+      return block.payload.phase === 'intake'
+        ? `Photo intake — ${block.payload.prompt.trim()}`
+        : 'Drawing round';
     case BlockKind.BUZZER:
       return (block.payload.prompt ?? block.payload.label ?? '').trim();
     case BlockKind.GUESS_WHO:

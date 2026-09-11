@@ -1,0 +1,293 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-sm);
+  width: 100%;
+  flex: 1;
+  min-height: 0;
+}
+
+.prompt {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  text-align: center;
+  color: var(--foreground);
+}
+
+.error {
+  color: var(--red);
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+.uploadArea {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-xs);
+  width: 100%;
+  min-height: 200px;
+  border: 2px dashed hsl(var(--border));
+  border-radius: 12px;
+  background: hsl(var(--muted));
+  color: var(--foreground);
+  cursor: pointer;
+}
+
+.previewWrapper {
+  position: relative;
+  width: 100%;
+  max-width: 480px;
+}
+
+.preview,
+.submittedPhoto {
+  width: 100%;
+  border-radius: 12px;
+  object-fit: contain;
+}
+
+.progressOverlay {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  height: 6px;
+  background: hsl(var(--muted));
+}
+
+.progressBar {
+  height: 100%;
+  background: var(--phosphor);
+  transition: width 0.15s ease;
+}
+
+.submitted {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-sm);
+  width: 100%;
+}
+
+.successBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  color: var(--phosphor);
+  font-family: var(--font-body);
+}
+
+.waiting {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  text-align: center;
+  color: var(--foreground);
+  opacity: 0.85;
+}
+
+/* ---- Preview + marker ---- */
+
+.previewCaption {
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  text-align: center;
+  color: var(--foreground);
+}
+
+.previewImageFrame {
+  position: relative;
+  width: 100%;
+  max-width: 360px;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.previewImage {
+  width: 100%;
+  display: block;
+}
+
+.sliceMarker {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  border: 3px solid var(--phosphor);
+  background: color-mix(in srgb, var(--phosphor) 15%, transparent);
+  box-shadow: 0 0 0 100vmax color-mix(in srgb, var(--deep) 55%, transparent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sliceMarkerLabel {
+  font-family: var(--font-display);
+  color: var(--phosphor);
+  text-shadow: var(--tv-glow);
+  font-size: 1.1rem;
+}
+
+/* ---- Draw overlay ---- */
+
+.drawOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: var(--space-sm);
+  background: hsl(var(--background));
+}
+
+.drawHeader {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  width: 100%;
+  justify-content: space-between;
+  max-width: 640px;
+}
+
+.drawTimer {
+  font-family: var(--font-display);
+  font-size: 2rem;
+  color: var(--phosphor);
+  text-shadow: var(--tv-glow);
+}
+
+.drawHint {
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  color: var(--foreground);
+  opacity: 0.8;
+}
+
+/* ---- Composite ---- */
+
+.resultTitle {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  text-align: center;
+  color: var(--foreground);
+}
+
+.compositeFrame {
+  border: 1px solid hsl(var(--border));
+  border-radius: 12px;
+  overflow: hidden;
+  line-height: 0;
+}
+
+/* ---- Monitor ---- */
+
+.monitorRoot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+  padding: 2rem;
+  min-height: 60vh;
+  text-align: center;
+}
+
+.monitorIndicator {
+  font-family: var(--font-display);
+  font-size: 2.5rem;
+  color: var(--foreground);
+}
+
+.monitorSub {
+  font-family: var(--font-body);
+  font-size: 1.25rem;
+  color: var(--foreground);
+  opacity: 0.8;
+}
+
+.monitorCountdown {
+  font-family: var(--font-display);
+  font-size: 6rem;
+  color: var(--phosphor);
+  text-shadow: var(--tv-glow);
+}
+
+.teamBoard {
+  display: flex;
+  gap: var(--space-lg);
+  align-items: flex-start;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.teamColumn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.teamLabel {
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  color: var(--foreground);
+}
+
+.teamMember {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-xs);
+  transition: opacity 0.3s ease;
+}
+
+.teamMemberPending {
+  opacity: 0.3;
+  filter: grayscale(1);
+}
+
+.teamMemberName {
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  color: var(--foreground);
+}
+
+.compositeGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-md);
+  align-items: flex-start;
+  justify-content: center;
+}
+
+.compositeGridItem {
+  border: 1px solid hsl(var(--border));
+  border-radius: 12px;
+  overflow: hidden;
+  line-height: 0;
+}
+
+/* ---- Manage ---- */
+
+.manageRoot {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  padding: var(--space-sm);
+}
+
+.manageStat {
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  color: var(--foreground);
+}
+
+.manageControls {
+  display: flex;
+  gap: var(--space-xs);
+  margin-top: var(--space-xs);
+}

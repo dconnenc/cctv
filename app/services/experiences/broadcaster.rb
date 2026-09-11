@@ -40,6 +40,26 @@ class Experiences::Broadcaster
     end
   end
 
+  # Forces every participant to re-subscribe (and thus re-pull their client
+  # state) by broadcasting resubscribe_required to each unique profile stream.
+  # Used when per-participant client state changes without a profile change —
+  # e.g. collaborative drawing slice assignments generated at round start.
+  def broadcast_resubscribe_all
+    targeted_block_data = experience.experience_blocks
+      .where("target_user_ids IS NOT NULL AND cardinality(target_user_ids) > 0")
+      .pluck(:id, :target_user_ids)
+
+    experience.experience_participants.includes(:experience_segments)
+      .group_by { |p| self.class.visibility_fingerprint(experience, p, targeted_block_data: targeted_block_data) }
+      .each do |fingerprint, participants|
+        rep = participants.first
+        send_broadcast(
+          self.class.profile_stream_key(experience, fingerprint),
+          WebsocketMessageService.resubscribe_required(participant_id: rep.id, reason: "client_state_changed")
+        )
+      end
+  end
+
   def broadcast_experience_update
     Rails.logger.info(
       "[Broadcaster] Broadcasting to experience #{experience.code}"

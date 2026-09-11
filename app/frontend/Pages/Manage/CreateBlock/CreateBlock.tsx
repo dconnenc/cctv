@@ -9,6 +9,7 @@ import { BLOCK_KIND_LABELS, BlockKind, ParticipantSummary } from '@cctv/types';
 import CreateAnnouncement from './CreateAnnouncement/CreateAnnouncement';
 import { CreateBlockProvider, useCreateBlockContext } from './CreateBlockContext';
 import CreateBuzzer from './CreateBuzzer/CreateBuzzer';
+import CreateCollaborativeDrawing from './CreateCollaborativeDrawing/CreateCollaborativeDrawing';
 import CreateFamilyFeud from './CreateFamilyFeud/CreateFamilyFeud';
 import CreateGuessWho from './CreateGuessWho/CreateGuessWho';
 import CreateMinigameArithmetic from './CreateMinigameArithmetic/CreateMinigameArithmetic';
@@ -121,6 +122,8 @@ function BlockEditor() {
       return <CreateMinigameArithmetic data={blockData.data} onChange={onChange} />;
     case BlockKind.MINIGAME_BALLOON_PUMP:
       return <CreateMinigameBalloonPump data={blockData.data} onChange={onChange} />;
+    case BlockKind.COLLABORATIVE_DRAWING:
+      return <CreateCollaborativeDrawing data={blockData.data} onChange={onChange} />;
     case BlockKind.THE_SCENE:
       return <CreateTheScene data={blockData.data} onChange={onChange} />;
     default:

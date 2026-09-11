@@ -28,6 +28,7 @@ const BLOCK_KIND_DESCRIPTIONS = {
   [BlockKind.GUESS_WHO]: 'Guess-who reveal',
   [BlockKind.MINIGAME_ARITHMETIC]: 'Speed-math minigame',
   [BlockKind.MINIGAME_BALLOON_PUMP]: 'Balloon-pump minigame',
+  [BlockKind.COLLABORATIVE_DRAWING]: 'Group photo redraw',
   [BlockKind.THE_SCENE]: 'Improv suggestion + voting',
 } satisfies Record<BlockKind, string>;
 
