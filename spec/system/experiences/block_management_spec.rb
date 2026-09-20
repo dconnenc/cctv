@@ -43,8 +43,7 @@ RSpec.describe "Managing Blocks", type: :system do
 
       select_block(1, kind: "announcement")
 
-      click_button "Edit"
-      expect(page).to have_text("Edit Block")
+      edit_block
       click_button "View Additional Details"
       expect(page).to have_field("Show on monitor", checked: true)
       uncheck "Show on monitor"

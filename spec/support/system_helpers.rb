@@ -168,19 +168,19 @@ module SystemHelpers
   end
 
   # Presents the currently selected block.
-  # Pre-asserts "Present" is available; post-asserts "Stop Presenting" appears.
+  # Pre-asserts "Open" is available; post-asserts "Close" appears.
   def present_block
-    expect(page).to have_button("Present")
-    click_button "Present"
-    expect(page).to have_button("Stop Presenting")
+    expect(page).to have_button("Open")
+    click_button "Open"
+    expect(page).to have_button("Close")
   end
 
   # Stops presenting the currently selected block.
-  # Pre-asserts "Stop Presenting" is available; post-asserts "Present" appears.
+  # Pre-asserts "Close" is available; post-asserts "Open" appears.
   def stop_presenting_block
-    expect(page).to have_button("Stop Presenting")
-    click_button "Stop Presenting"
-    expect(page).to have_button("Present")
+    expect(page).to have_button("Close")
+    click_button "Close"
+    expect(page).to have_button("Open")
   end
 
   # Selects block N in the sidebar and presents it in one step.
@@ -190,8 +190,9 @@ module SystemHelpers
   end
 
   # Opens the edit form for the currently selected block.
-  # Pre-asserts "Edit" is available; post-asserts "Edit Block" heading appears.
+  # Opens the block overflow menu, clicks Edit, then asserts the Edit Block heading.
   def edit_block
+    click_button "Block options"
     expect(page).to have_button("Edit")
     click_button "Edit"
     expect(page).to have_text("Edit Block")

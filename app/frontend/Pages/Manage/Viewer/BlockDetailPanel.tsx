@@ -1,17 +1,23 @@
 import { useState } from 'react';
 
 import {
-  CornerLeftUp,
+  ArrowRight,
+  CircleDot,
   MessageSquare,
   Monitor,
-  Pause,
-  Play,
-  SkipForward,
+  MoreHorizontal,
+  Square,
   Trash2,
   User,
 } from 'lucide-react';
 
 import { useExperience } from '@cctv/contexts/ExperienceContext';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@cctv/core';
 import { Button } from '@cctv/core/Button/Button';
 import { SegmentBadge } from '@cctv/core/SegmentBadge/SegmentBadge';
 import { BLOCK_KIND_LABELS, Block, BlockKind, Experience, ParticipantSummary } from '@cctv/types';
@@ -21,7 +27,6 @@ import GuessWhoManager from '../../Block/GuessWhoManager/GuessWhoManager';
 import BlockPreview from '../BlockPreview/BlockPreview';
 import ContextView from '../ContextView/ContextView';
 import BlockResponsesList from './BlockResponsesList';
-import MinigameControls from './MinigameControls';
 
 function getStatusColor(status: string) {
   switch (status) {
@@ -106,91 +111,74 @@ export default function BlockDetailPanel({
           </div>
         </div>
         <div className="flex items-center gap-2">
-          {selectedBlock.parent_block_id && onDetach && (
-            <Button
-              variant="secondary"
-              onClick={() => onDetach(selectedBlock)}
-              loading={isDetaching}
-              loadingText="Detaching..."
-              icon={<CornerLeftUp size={16} />}
-              title="Detach from parent (promote to top-level)"
-            >
-              Detach
-            </Button>
-          )}
-          {!selectedBlock.parent_block_id && (
-            <Button variant="secondary" onClick={() => onEdit(selectedBlock)}>
-              Edit
-            </Button>
-          )}
           {selectedBlock.status === 'open' ? (
             <>
               <Button
                 variant="secondary"
                 onClick={() => onStopPresenting(selectedBlock)}
                 loading={busyBlockId === selectedBlock.id}
-                loadingText="Stopping..."
+                loadingText="Closing..."
               >
-                <span className="flex items-center gap-2">
-                  <Pause size={16} /> <span>Stop Presenting</span>
-                </span>
+                <Square size={16} />
+                <span>Close</span>
               </Button>
               <Button
                 onClick={onPlayNext}
                 loading={busyBlockId === selectedBlock.id}
                 loadingText="Next..."
               >
-                <span className="flex items-center gap-2">
-                  <SkipForward size={16} /> <span>Play Next</span>
-                </span>
+                <ArrowRight size={16} />
+                <span>Next</span>
               </Button>
             </>
           ) : (
             <Button
               onClick={() => onPresent(selectedBlock)}
               loading={busyBlockId === selectedBlock.id}
-              loadingText="Starting..."
+              loadingText="Opening..."
             >
-              <span className="flex items-center gap-2">
-                <Play size={16} />
-                <span>Present</span>
-              </span>
+              <CircleDot size={16} />
+              <span>Open</span>
             </Button>
           )}
-          <MinigameControls block={selectedBlock} />
-          {confirmingDelete ? (
-            <>
-              <Button
-                variant="destructive"
-                onClick={() => {
-                  onDelete(selectedBlock);
-                  setConfirmingDelete(false);
-                }}
-                loading={isDeleting}
-                loadingText="Deleting..."
-              >
-                Confirm Delete
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="secondary" title="Block options" aria-label="Block options">
+                <MoreHorizontal size={16} />
               </Button>
-              <Button
-                variant="ghost"
-                onClick={() => setConfirmingDelete(false)}
-                disabled={isDeleting}
-              >
-                Cancel
-              </Button>
-            </>
-          ) : (
-            <Button
-              variant="destructive"
-              onClick={() => setConfirmingDelete(true)}
-              disabled={!canDelete || isDeleting}
-              title={canDelete ? 'Delete block' : 'Stop presenting before deleting'}
-              icon={<Trash2 size={16} />}
-              hideLabel
-            >
-              Delete
-            </Button>
-          )}
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              {!selectedBlock.parent_block_id && (
+                <DropdownMenuItem onSelect={() => onEdit(selectedBlock)}>Edit</DropdownMenuItem>
+              )}
+              {selectedBlock.parent_block_id && onDetach && (
+                <DropdownMenuItem onSelect={() => onDetach(selectedBlock)} disabled={isDetaching}>
+                  {isDetaching ? 'Detaching...' : 'Detach'}
+                </DropdownMenuItem>
+              )}
+              {confirmingDelete ? (
+                <>
+                  <DropdownMenuItem
+                    onSelect={() => {
+                      onDelete(selectedBlock);
+                      setConfirmingDelete(false);
+                    }}
+                  >
+                    <Trash2 size={14} />
+                    {isDeleting ? 'Deleting...' : 'Confirm Delete'}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onSelect={() => setConfirmingDelete(false)}>
+                    Cancel
+                  </DropdownMenuItem>
+                </>
+              ) : (
+                <DropdownMenuItem onSelect={() => setConfirmingDelete(true)} disabled={!canDelete}>
+                  <Trash2 size={14} />
+                  {canDelete ? 'Delete' : 'Stop presenting before deleting'}
+                </DropdownMenuItem>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
