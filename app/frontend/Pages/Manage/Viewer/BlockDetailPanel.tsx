@@ -37,7 +37,7 @@ function VisibilityDetails({ block }: { block: Block }) {
   const definedSegments = experience?.segments || [];
 
   return (
-    <details className="inline">
+    <details className="inline-block">
       <summary className="cursor-pointer text-xs text-[hsl(var(--muted-foreground))] bg-[hsl(var(--muted))] px-1.5 py-0.5 rounded select-none">
         Targeted
       </summary>
