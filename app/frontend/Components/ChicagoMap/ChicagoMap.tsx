@@ -1,108 +1,60 @@
-import { type MutableRefObject, useEffect, useMemo, useRef } from 'react';
+import { type CSSProperties, useEffect, useMemo, useRef, useState } from 'react';
 
 import { Link } from 'react-router-dom';
 
 import classNames from 'classnames';
-import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
 import { ArrowRight, Ticket } from 'lucide-react';
-import { MapContainer, Marker, Pane, Popup, TileLayer, useMap } from 'react-leaflet';
 
-import { useTheme } from '@cctv/contexts/ThemeContext';
 import { DiscoverEvent, DiscoverTheater } from '@cctv/types';
 import { formatEventDate } from '@cctv/utils/calendar';
 
+import {
+  ARTERIAL_PATH,
+  FRAME_HEIGHT,
+  FRAME_WIDTH,
+  PARK_PATH,
+  RIVER_PATH,
+  STREET_PATH,
+  WATER_PATH,
+} from './chicago-geometry';
+import { projectToFrame } from './projection';
+
 import styles from './ChicagoMap.module.scss';
-import './leaflet-markers.css';
 
 // Centred toward the shoreline so, full-bleed, the venues sit left-of-centre and
 // Lake Michigan fills the right of the screen (behind the rail).
-const CENTER: [number, number] = [41.915, -87.655];
-const ZOOM = 13;
-
-// Sits above the tile pane (200) but below the marker (600) and popup (700)
-// panes, so the legibility gradient never covers dots or tooltips.
-const SCRIM_PANE_Z = 450;
+const CENTER_LAT = 41.915;
+const CENTER_LNG = -87.655;
 const POPUP_CLOSE_DELAY = 15000;
 
-const TILE_URLS = {
-  dark: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
-  light: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
-};
+const CENTER = projectToFrame(CENTER_LAT, CENTER_LNG);
 
-function theaterIcon(opts: { isActive: boolean; isFocused: boolean; isHighlighted: boolean }) {
-  const cls = classNames('cctv-dot', {
-    'cctv-dot--active': opts.isActive,
-    'cctv-dot--dim': !opts.isActive,
-    'cctv-dot--focused': opts.isFocused,
-    'cctv-dot--highlighted': opts.isHighlighted,
-  });
-  return L.divIcon({
-    className: 'cctv-marker',
-    html: `<span class="${cls}"><span class="cctv-dot__core"></span>${
-      opts.isFocused ? '<span class="cctv-dot__pulse"></span>' : ''
-    }</span>`,
-    iconSize: [24, 24],
-    iconAnchor: [12, 12],
-    popupAnchor: [0, -10],
-  });
-}
+// The basemap and the marker layer are both the full baked frame, pinned so the
+// map centre lands on the container's centre. No measuring, no reflow on resize.
+const FRAME_STYLE = {
+  width: `${FRAME_WIDTH}px`,
+  height: `${FRAME_HEIGHT}px`,
+  marginLeft: `${-CENTER.x}px`,
+  marginTop: `${-CENTER.y}px`,
+} satisfies CSSProperties;
 
-// Leaflet measures its container on mount; if that happens before layout settles
-// the tiles render grey until the first interaction. Nudge it.
-function MapSizer() {
-  const map = useMap();
-  useEffect(() => {
-    const fix = () => map.invalidateSize();
-    const id = window.setTimeout(fix, 200);
-    window.addEventListener('resize', fix);
-    return () => {
-      window.clearTimeout(id);
-      window.removeEventListener('resize', fix);
-    };
-  }, [map]);
-  return null;
-}
-
-// Keeps an open popup alive while the cursor is over it, and re-arms the close
-// timer when the cursor leaves — so hovering into the popup to click a link
-// doesn't trip the auto-close.
-function PopupHoverGuard({ closeTimer }: { closeTimer: MutableRefObject<number | undefined> }) {
-  const map = useMap();
-  useEffect(() => {
-    let detach: (() => void) | null = null;
-
-    const onOpen = (event: L.PopupEvent) => {
-      const el = event.popup.getElement();
-      if (!el) return;
-      const cancel = () => window.clearTimeout(closeTimer.current);
-      const schedule = () => {
-        window.clearTimeout(closeTimer.current);
-        closeTimer.current = window.setTimeout(() => map.closePopup(), POPUP_CLOSE_DELAY);
-      };
-      el.addEventListener('mouseenter', cancel);
-      el.addEventListener('mouseleave', schedule);
-      detach = () => {
-        el.removeEventListener('mouseenter', cancel);
-        el.removeEventListener('mouseleave', schedule);
-      };
-    };
-
-    const onClose = () => {
-      detach?.();
-      detach = null;
-    };
-
-    map.on('popupopen', onOpen);
-    map.on('popupclose', onClose);
-    return () => {
-      map.off('popupopen', onOpen);
-      map.off('popupclose', onClose);
-      detach?.();
-    };
-  }, [map, closeTimer]);
-
-  return null;
+function Basemap() {
+  return (
+    <svg
+      className={styles.basemap}
+      style={FRAME_STYLE}
+      width={FRAME_WIDTH}
+      height={FRAME_HEIGHT}
+      aria-hidden="true"
+      focusable="false"
+    >
+      <path className={styles.water} d={WATER_PATH} />
+      <path className={styles.park} d={PARK_PATH} />
+      <path className={styles.river} d={RIVER_PATH} />
+      <path className={styles.street} d={STREET_PATH} />
+      <path className={styles.arterial} d={ARTERIAL_PATH} />
+    </svg>
+  );
 }
 
 interface TheaterMarkerProps {
@@ -110,9 +62,11 @@ interface TheaterMarkerProps {
   shows: DiscoverEvent[];
   isFocused: boolean;
   isHighlighted: boolean;
+  isOpen: boolean;
   onSelectTheater: (slug: string) => void;
-  onHoverTheater: (slug: string | null) => void;
-  closeTimer: MutableRefObject<number | undefined>;
+  onOpen: (slug: string) => void;
+  onScheduleClose: () => void;
+  onCancelClose: () => void;
 }
 
 function TheaterMarker({
@@ -120,36 +74,44 @@ function TheaterMarker({
   shows,
   isFocused,
   isHighlighted,
+  isOpen,
   onSelectTheater,
-  onHoverTheater,
-  closeTimer,
+  onOpen,
+  onScheduleClose,
+  onCancelClose,
 }: TheaterMarkerProps) {
-  const markerRef = useRef<L.Marker>(null);
+  const point = projectToFrame(theater.lat, theater.lng);
+  const isActive = shows.length > 0;
 
   return (
-    <Marker
-      ref={markerRef}
-      position={[theater.lat, theater.lng]}
-      icon={theaterIcon({ isActive: shows.length > 0, isFocused, isHighlighted })}
-      eventHandlers={{
-        click: () => onSelectTheater(theater.slug),
-        mouseover: () => {
-          window.clearTimeout(closeTimer.current);
-          markerRef.current?.openPopup();
-          onHoverTheater(theater.slug);
-        },
-        mouseout: () => {
-          window.clearTimeout(closeTimer.current);
-          closeTimer.current = window.setTimeout(
-            () => markerRef.current?.closePopup(),
-            POPUP_CLOSE_DELAY,
-          );
-          onHoverTheater(null);
-        },
-      }}
+    <div
+      className={classNames(styles.marker, { [styles.markerOpen]: isOpen })}
+      style={{ left: `${point.x}px`, top: `${point.y}px` }}
     >
-      <Popup closeButton={false}>
-        <div className={styles.popup}>
+      <button
+        type="button"
+        className={styles.dotButton}
+        aria-label={`${theater.name}, ${theater.neighborhood}`}
+        onClick={() => onSelectTheater(theater.slug)}
+        onMouseEnter={() => onOpen(theater.slug)}
+        onMouseLeave={onScheduleClose}
+        onFocus={() => onOpen(theater.slug)}
+        onBlur={onScheduleClose}
+      >
+        <span
+          className={classNames(styles.dot, {
+            [styles.dotDim]: !isActive,
+            [styles.dotFocused]: isFocused,
+            [styles.dotHighlighted]: isHighlighted,
+          })}
+        >
+          <span className={styles.dotCore} />
+          {isFocused && <span className={styles.dotPulse} />}
+        </span>
+      </button>
+
+      {isOpen && (
+        <div className={styles.popup} onMouseEnter={onCancelClose} onMouseLeave={onScheduleClose}>
           <div className={styles.popHeader}>
             <span className={styles.popName}>{theater.name}</span>
             <span className={styles.popHood}>{theater.neighborhood}</span>
@@ -189,8 +151,8 @@ function TheaterMarker({
             </ul>
           )}
         </div>
-      </Popup>
-    </Marker>
+      )}
+    </div>
   );
 }
 
@@ -216,7 +178,7 @@ export function ChicagoMap({
   scrim = false,
   className,
 }: ChicagoMapProps) {
-  const { theme } = useTheme();
+  const [openSlug, setOpenSlug] = useState<string | null>(null);
   const closeTimer = useRef<number | undefined>(undefined);
 
   useEffect(() => () => window.clearTimeout(closeTimer.current), []);
@@ -232,31 +194,29 @@ export function ChicagoMap({
     return grouped;
   }, [events]);
 
+  const openPopup = (slug: string) => {
+    window.clearTimeout(closeTimer.current);
+    setOpenSlug(slug);
+    onHoverTheater(slug);
+  };
+
+  // Hovering off a dot keeps the popup alive long enough to move the cursor into
+  // it and click a link; moving back onto either cancels the pending close.
+  const scheduleClose = () => {
+    window.clearTimeout(closeTimer.current);
+    closeTimer.current = window.setTimeout(() => setOpenSlug(null), POPUP_CLOSE_DELAY);
+    onHoverTheater(null);
+  };
+
+  const cancelClose = () => window.clearTimeout(closeTimer.current);
+
   return (
     <div className={classNames(styles.map, className)}>
-      <MapContainer
-        center={CENTER}
-        zoom={ZOOM}
-        dragging={false}
-        doubleClickZoom={false}
-        scrollWheelZoom={false}
-        boxZoom={false}
-        keyboard={false}
-        touchZoom={false}
-        zoomControl={false}
-        attributionControl={false}
-        className={styles.leaflet}
-      >
-        <TileLayer key={theme} url={theme === 'light' ? TILE_URLS.light : TILE_URLS.dark} />
-        <MapSizer />
-        <PopupHoverGuard closeTimer={closeTimer} />
+      <Basemap />
 
-        {scrim && (
-          <Pane name="cctv-scrim" style={{ zIndex: SCRIM_PANE_Z }}>
-            <div className={styles.scrim} />
-          </Pane>
-        )}
+      {scrim && <div className={styles.scrim} />}
 
+      <div className={styles.markers} style={FRAME_STYLE}>
         {theaters.map((theater) => (
           <TheaterMarker
             key={theater.slug}
@@ -264,12 +224,14 @@ export function ChicagoMap({
             shows={showsByTheater.get(theater.slug) ?? []}
             isFocused={theater.slug === focusedTheaterSlug}
             isHighlighted={theater.slug === highlightedTheaterSlug}
+            isOpen={theater.slug === openSlug}
             onSelectTheater={onSelectTheater}
-            onHoverTheater={onHoverTheater}
-            closeTimer={closeTimer}
+            onOpen={openPopup}
+            onScheduleClose={scheduleClose}
+            onCancelClose={cancelClose}
           />
         ))}
-      </MapContainer>
+      </div>
     </div>
   );
 }

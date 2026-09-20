@@ -53,6 +53,10 @@
   --shadow-md: 0 2px 8px hsl(var(--foreground) / 0.1);
   --shadow-lg: 0 8px 16px hsl(var(--foreground) / 0.12);
   --shadow-1: var(--shadow-lg);
+  --map-water: 210 30% 86%;
+  --map-park: 96 22% 86%;
+  --map-street: 42 8% 84%;
+  --map-arterial: 42 8% 76%;
 }
 
 :root[data-theme='dark'] {
@@ -80,6 +84,10 @@
   --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.3);
   --shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.4);
   --shadow-1: var(--shadow-lg);
+  --map-water: 210 30% 9%;
+  --map-park: 96 14% 8%;
+  --map-street: 48 4% 14%;
+  --map-arterial: 48 4% 22%;
 }
 
 .app {

@@ -2,23 +2,56 @@
   position: relative;
   width: 100%;
   height: 100%;
-}
-
-.leaflet {
-  width: 100%;
-  height: 100%;
+  overflow: hidden;
   background: hsl(var(--background));
 }
 
-// Left-to-right legibility gradient. Lives in a Leaflet pane below the marker
-// and popup panes (so dots/tooltips stay above it) but above the tiles. The map
-// is static, so a viewport-sized cover stays aligned.
+// The basemap and marker layer are the full baked frame, pinned so the map
+// centre sits at the container's centre (the offset is an inline margin).
+.basemap,
+.markers {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+}
+
+.basemap {
+  display: block;
+}
+
+.water {
+  fill: hsl(var(--map-water));
+}
+
+.park {
+  fill: hsl(var(--map-park));
+}
+
+.river {
+  fill: none;
+  stroke: hsl(var(--map-water));
+  stroke-width: 3;
+  stroke-linecap: round;
+}
+
+.street {
+  fill: none;
+  stroke: hsl(var(--map-street));
+  stroke-width: 0.9;
+}
+
+.arterial {
+  fill: none;
+  stroke: hsl(var(--map-arterial));
+  stroke-width: 1.4;
+}
+
+// Left-to-right legibility gradient. Sits above the basemap and below the
+// markers, so dots and popups stay readable over it.
 .scrim {
   position: absolute;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
+  inset: 0;
+  z-index: 1;
   pointer-events: none;
   background: linear-gradient(
     90deg,
@@ -28,12 +61,112 @@
   );
 }
 
+.markers {
+  z-index: 2;
+  pointer-events: none;
+}
+
+.marker {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  pointer-events: auto;
+}
+
+.markerOpen {
+  z-index: 1;
+}
+
+.dotButton {
+  display: block;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+}
+
+.dot {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+.dotCore {
+  width: 0.625rem;
+  height: 0.625rem;
+  border-radius: 999px;
+  background: var(--phosphor);
+  box-shadow: 0 0 0 3px var(--phosphor-glow-medium);
+  transition:
+    transform 0.12s ease,
+    box-shadow 0.12s ease,
+    opacity 0.12s ease;
+}
+
+.dotDim .dotCore {
+  opacity: 0.4;
+  transform: scale(0.7);
+  box-shadow: none;
+}
+
+.dotHighlighted .dotCore,
+.dotButton:hover .dotCore,
+.dotButton:focus-visible .dotCore {
+  transform: scale(1.4);
+  box-shadow: 0 0 0 5px var(--phosphor-glow-medium);
+  opacity: 1;
+}
+
+.dotPulse {
+  position: absolute;
+  width: 0.625rem;
+  height: 0.625rem;
+  border-radius: 999px;
+  background: var(--phosphor);
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .dotPulse {
+    animation: dot-pulse 2s ease-out infinite;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dotFocused .dotCore {
+    box-shadow: 0 0 0 6px var(--phosphor-glow-medium);
+  }
+}
+
+@keyframes dot-pulse {
+  0% {
+    transform: scale(1);
+    opacity: 0.6;
+  }
+  100% {
+    transform: scale(4.5);
+    opacity: 0;
+  }
+}
+
 .popup {
+  position: absolute;
+  bottom: calc(100% + 0.4rem);
+  left: 50%;
+  transform: translateX(-50%);
   width: 15rem;
   max-width: 78vw;
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+  padding: 0.75rem;
+  background: hsl(var(--popover));
+  color: hsl(var(--popover-foreground));
+  border: 1px solid hsl(var(--border));
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-lg);
 }
 
 .popHeader {
@@ -56,6 +189,7 @@
 }
 
 .popEmpty {
+  margin: 0;
   font-size: 0.85rem;
   color: hsl(var(--muted-foreground));
 }

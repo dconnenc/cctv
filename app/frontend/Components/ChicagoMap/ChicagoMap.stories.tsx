@@ -80,8 +80,8 @@ const meta: Meta<typeof ChicagoMap> = {
         <Story />
       </ThemeProvider>
     ),
-    // Leaflet needs an explicitly sized container to mount into. Tiles require
-    // network access, so the basemap is blank offline — markers still render.
+    // The map fills its container and centres itself on Chicago, so it needs an
+    // explicitly sized box here.
     (Story) => (
       <div style={{ width: '900px', height: '640px' }}>
         <Story />
@@ -108,4 +108,8 @@ export const HighlightedTheater: Story = {
 
 export const Empty: Story = {
   args: { events: [], focusedTheaterSlug: null, highlightedTheaterSlug: null },
+};
+
+export const WithScrim: Story = {
+  args: { events, focusedTheaterSlug: 'the-den', highlightedTheaterSlug: null, scrim: true },
 };
