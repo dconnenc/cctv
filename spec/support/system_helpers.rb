@@ -190,10 +190,8 @@ module SystemHelpers
   end
 
   # Opens the edit form for the currently selected block.
-  # Opens the block overflow menu, clicks Edit, then asserts the Edit Block heading.
+  # Clicks the Edit button directly in the panel body, then asserts the Edit Block heading.
   def edit_block
-    click_button "Block options"
-    expect(page).to have_button("Edit")
     click_button "Edit"
     expect(page).to have_text("Edit Block")
   end

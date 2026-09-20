@@ -115,7 +115,6 @@ export default function BlockDetailPanel({
             {hasTargetingRules(selectedBlock) && <VisibilityDetails block={selectedBlock} />}
           </div>
         </div>
-        {/* block controls live in the ManageViewer command bar */}
       </div>
 
       <div className="flex items-center gap-2 -mt-4">
