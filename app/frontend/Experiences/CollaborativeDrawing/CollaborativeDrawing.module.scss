@@ -131,22 +131,33 @@
   display: block;
 }
 
+// The marker crop and the drawing canvas share one border box (same width,
+// aspect, and border) so the canvas fades in exactly where the crop was.
+.cropFrame {
+  box-sizing: border-box;
+  position: relative;
+  width: auto;
+  max-width: 100%;
+  margin: 0 auto;
+  overflow: hidden;
+  border: 3px solid var(--phosphor);
+  border-radius: 0;
+  background: hsl(var(--muted));
+}
+
 // During the marker beat the frame crops to the assigned region: the full image
 // is scaled up and offset (inline styles) so only that portion is visible.
 .cropImage {
   display: block;
 }
 
-// Hosts the band-proportioned drawing canvas; it fills width at the slice
-// aspect so the surface matches the participant's portion.
+// Hosts the drawing canvas at the same width as the marker crop so the drawing
+// surface lands in the exact same border box (width set inline).
 .sliceCanvasHost {
-  width: 100%;
-  max-width: 640px;
+  box-sizing: border-box;
   display: flex;
   flex-direction: column;
   align-items: center;
-  flex: 1;
-  min-height: 0;
 }
 
 /* ---- Composite ---- */

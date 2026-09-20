@@ -32,14 +32,17 @@
   aspect-ratio: 16 / 9;
 }
 
-// Fill the parent at the drawSize aspect ratio instead of the 480px cap.
+// Fill the parent's width at the drawSize aspect ratio instead of the 480px
+// cap. The parent sets the width, so this matches the marker crop's border box
+// exactly (same width, aspect, and border) for a fade-in-place swap.
 .fit {
-  width: auto;
+  box-sizing: border-box;
+  width: 100%;
   max-width: 100%;
-  max-height: 100%;
-  flex: 1 1 auto;
-  min-height: 0;
+  flex: 0 0 auto;
   margin: 0 auto;
+  border: 3px solid var(--phosphor);
+  border-radius: 0;
 }
 
 .controls {

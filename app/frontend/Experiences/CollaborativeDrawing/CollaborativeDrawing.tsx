@@ -337,7 +337,7 @@ const SLICE_CANVAS_WIDTH = 1000;
 
 // The tallest a preview/crop/canvas stage may grow, leaving room for the
 // caption, countdown, and drawing tools within one viewport.
-const STAGE_MAX_VH = 58;
+const STAGE_MAX_VH = 64;
 
 const FULL_REGION = { x: 0, y: 0, w: 1, h: 1 };
 
@@ -424,7 +424,7 @@ function SliceStage({
         ) : subPhase === 'marker' ? (
           <motion.div
             key="crop"
-            className={styles.sliceFrame}
+            className={styles.cropFrame}
             style={{
               width: cropWidth,
               aspectRatio: `${region.w * aspect.w} / ${region.h * aspect.h}`,
