@@ -48,6 +48,17 @@ export interface DrawingCanvasProps {
   onStrokeEvent?: (event: DrawingCanvasEvent) => void;
   onSubmit: (submission: DrawingCanvasSubmission) => void | Promise<void>;
   onBack?: () => void;
+  // Incrementing this from a parent force-submits the current drawing without a
+  // button press — used to auto-dispatch when a timer expires.
+  submitSignal?: number;
+  // Incrementing this persists the current canvas without marking the drawing
+  // as submitted — used to autosave on a timer so nothing is lost if the drawer
+  // never taps submit. Skipped when the canvas is empty.
+  autosaveSignal?: number;
+  onAutosave?: (submission: DrawingCanvasSubmission) => void;
+  // Fill the parent (no max-width cap) instead of the default 480px square, so
+  // the drawing surface uses all available space at the `drawSize` aspect ratio.
+  fitContainer?: boolean;
 }
 
 const DEFAULT_PALETTE_VARS = [
@@ -101,6 +112,10 @@ export default function DrawingCanvas({
   onStrokeEvent,
   onSubmit,
   onBack,
+  submitSignal,
+  autosaveSignal,
+  onAutosave,
+  fitContainer = false,
 }: DrawingCanvasProps) {
   const [lines, setLines] = useState<CanvasStroke[]>(() => withRenderIds(initialStrokes));
   const [clearedLines, setClearedLines] = useState<CanvasStroke[] | null>(null);
@@ -322,13 +337,37 @@ export default function DrawingCanvas({
   // Flatten the background + drawing layers to a fixed-size raster; cosmetics
   // stay a separate layer and are submitted as structured placements.
   const buildSubmission = () => ({
-    image: flattenStrokesToDataUrl(lines, drawSize.w, backgroundColor, baseImage),
+    image: flattenStrokesToDataUrl(lines, drawSize.w, backgroundColor, baseImage, drawSize.h),
     cosmetics,
   });
 
   const handleSubmit = async () => {
     await onSubmit(buildSubmission());
   };
+
+  // Force-submit the current drawing when the parent bumps submitSignal (e.g.
+  // the draw timer expired), without requiring a button press.
+  const lastSubmitSignalRef = useRef(submitSignal);
+  useEffect(() => {
+    if (submitSignal === undefined) return;
+    if (submitSignal === lastSubmitSignalRef.current) return;
+    lastSubmitSignalRef.current = submitSignal;
+    void onSubmit(buildSubmission());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [submitSignal]);
+
+  // Autosave the current canvas when the parent bumps autosaveSignal, without
+  // marking the drawing submitted. Empty canvases are skipped so idle drawers
+  // stay ungreyed on the board.
+  const lastAutosaveSignalRef = useRef(autosaveSignal);
+  useEffect(() => {
+    if (autosaveSignal === undefined) return;
+    if (autosaveSignal === lastAutosaveSignalRef.current) return;
+    lastAutosaveSignalRef.current = autosaveSignal;
+    if (lines.length === 0 && !baseImage && !backgroundColor) return;
+    onAutosave?.(buildSubmission());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autosaveSignal]);
 
   const updateCosmetic = (index: number, next: CosmeticPlacement) => {
     onCosmeticsChange?.(cosmetics.map((c, i) => (i === index ? next : c)));
@@ -350,15 +389,20 @@ export default function DrawingCanvas({
 
   useEffect(() => {
     const updateSize = () => {
-      if (drawWrapRef.current) {
-        const side = Math.floor(drawWrapRef.current.getBoundingClientRect().width);
-        setDrawStageSize({ w: side, h: side });
-      }
+      if (!drawWrapRef.current) return;
+      const el = drawWrapRef.current;
+      // Measure the content box (clientWidth/Height excludes the border) so the
+      // Konva stage fills exactly inside the frame border, with no overflow clip.
+      const w = el.clientWidth;
+      // The wrapper carries the drawSize aspect ratio, so its measured height
+      // tracks the width; fall back to deriving it if layout hasn't settled.
+      const h = el.clientHeight || Math.round(w * (drawSize.h / drawSize.w));
+      setDrawStageSize({ w, h });
     };
     updateSize();
     window.addEventListener('resize', updateSize);
     return () => window.removeEventListener('resize', updateSize);
-  }, []);
+  }, [drawSize.w, drawSize.h]);
 
   const drawScale = {
     x: drawStageSize.w / drawSize.w,
@@ -369,7 +413,8 @@ export default function DrawingCanvas({
     <div className={styles.root}>
       <div
         ref={drawWrapRef}
-        className={`${styles.stageWrap} ${styles.square}`}
+        className={`${styles.stageWrap} ${fitContainer ? styles.fit : ''}`}
+        style={{ aspectRatio: `${drawSize.w} / ${drawSize.h}` }}
         onDragOver={handleDragOver}
         onDrop={handleDrop}
       >

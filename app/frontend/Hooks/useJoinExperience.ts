@@ -1,4 +1,5 @@
 import { AnalyticsEvent, capture } from '@cctv/analytics';
+import { setStoredParticipantJWT } from '@cctv/contexts/jwtStorage';
 import { JoinExperienceApiResponse } from '@cctv/types';
 import { qaLogger } from '@cctv/utils';
 
@@ -36,6 +37,9 @@ export function useJoinExperience() {
       case 'success':
         qaLogger(`User already registrated, redirecting to: ${response.url}`);
         sessionStorage.setItem('cctv_last_join_code', code.trim());
+        // Store the participant JWT so the lobby route guard admits us; without
+        // it the lobby bounces back to /join and loops.
+        setStoredParticipantJWT(response.experience_code_slug, response.jwt);
         capture(AnalyticsEvent.ExperienceJoined, {
           status: 'registered',
           experience_name: response.experience_name,
