@@ -110,6 +110,7 @@ module Experiences
           :experience_minigame_balloon_results,
           :experience_buzzer_submissions,
           experience_photo_upload_submissions: { photo_attachment: :blob },
+          experience_video_submissions: { video_attachment: :blob },
           children: [
             :experience_segments,
             :children,
@@ -310,9 +311,30 @@ module Experiences
         shape_minigame_balloon_pump_payload(block, participant_role, view_context)
       when ExperienceBlock::THE_SCENE
         shape_the_scene_payload(block, participant_role, view_context)
+      when ExperienceBlock::NEWSCASTERS
+        shape_newscasters_payload(block)
       else
         block.payload
       end
+    end
+
+    # Resolves the selected source video's URL at read time so a purged upload
+    # degrades to an empty selection rather than a dangling link.
+    def shape_newscasters_payload(block)
+      payload = block.payload.deep_dup || {}
+      selected = payload["selected_video"]
+
+      if selected.is_a?(Hash) && selected["submission_id"].present?
+        submission = ExperienceVideoSubmission.find_by(id: selected["submission_id"])
+        payload["selected_video"] =
+          if submission
+            { "kind" => submission.video_kind, "url" => submission.video_url, "submission_id" => submission.id }
+          else
+            nil
+          end
+      end
+
+      payload
     end
 
 
@@ -624,6 +646,18 @@ module Experiences
 
         if mod_or_host?(participant_role)
           response[:all_responses] = submissions.map { |s| submission_payload(s).merge(photo_url: attachment_url(s.photo)) }
+        end
+
+        response
+
+      when ExperienceBlock::NEWSCASTERS_SOURCE
+        submissions = block.experience_video_submissions.includes(video_attachment: :blob).to_a
+        response    = { total: submissions.count }
+
+        if mod_or_host?(participant_role)
+          response[:all_responses] = submissions.map do |s|
+            submission_payload(s).merge(video_url: s.video_url, video_kind: s.video_kind)
+          end
         end
 
         response

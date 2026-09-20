@@ -55,6 +55,20 @@ import {
   validateMinigameBalloonPump,
 } from './CreateMinigameBalloonPump/CreateMinigameBalloonPump';
 import {
+  buildNewscastersPayload,
+  canNewscastersOpenImmediately,
+  getDefaultNewscastersState,
+  processNewscastersBeforeSubmit,
+  validateNewscasters,
+} from './CreateNewscasters/CreateNewscasters';
+import {
+  buildNewscastersSourcePayload,
+  canNewscastersSourceOpenImmediately,
+  getDefaultNewscastersSourceState,
+  processNewscastersSourceBeforeSubmit,
+  validateNewscastersSource,
+} from './CreateNewscastersSource/CreateNewscastersSource';
+import {
   buildPhotoUploadPayload,
   canPhotoUploadOpenImmediately,
   getDefaultPhotoUploadState,
@@ -138,6 +152,10 @@ export function CreateBlockProvider({
         };
       case BlockKind.THE_SCENE:
         return { kind: BlockKind.THE_SCENE, data: getDefaultTheSceneState() };
+      case BlockKind.NEWSCASTERS:
+        return { kind: BlockKind.NEWSCASTERS, data: getDefaultNewscastersState() };
+      case BlockKind.NEWSCASTERS_SOURCE:
+        return { kind: BlockKind.NEWSCASTERS_SOURCE, data: getDefaultNewscastersSourceState() };
       default: {
         const exhaustiveCheck: never = blockKind;
         throw new Error(`Unknown block kind: ${exhaustiveCheck}`);
@@ -205,6 +223,12 @@ export function CreateBlockProvider({
         case BlockKind.THE_SCENE:
           validationError = validateTheScene(blockData.data);
           break;
+        case BlockKind.NEWSCASTERS:
+          validationError = validateNewscasters(blockData.data);
+          break;
+        case BlockKind.NEWSCASTERS_SOURCE:
+          validationError = validateNewscastersSource(blockData.data);
+          break;
         default: {
           const exhaustiveCheck: never = blockData;
           validationError = unknownBlockKindMessage(exhaustiveCheck);
@@ -247,6 +271,12 @@ export function CreateBlockProvider({
           break;
         case BlockKind.THE_SCENE:
           canOpenImmediately = canTheSceneOpenImmediately(blockData.data, participants);
+          break;
+        case BlockKind.NEWSCASTERS:
+          canOpenImmediately = canNewscastersOpenImmediately(blockData.data, participants);
+          break;
+        case BlockKind.NEWSCASTERS_SOURCE:
+          canOpenImmediately = canNewscastersSourceOpenImmediately(blockData.data, participants);
           break;
         default: {
           const exhaustiveCheck: never = blockData;
@@ -326,6 +356,18 @@ export function CreateBlockProvider({
             data: processTheSceneBeforeSubmit(blockData.data, status, participants),
           };
           break;
+        case BlockKind.NEWSCASTERS:
+          processedFormData = {
+            kind: BlockKind.NEWSCASTERS,
+            data: processNewscastersBeforeSubmit(blockData.data, status, participants),
+          };
+          break;
+        case BlockKind.NEWSCASTERS_SOURCE:
+          processedFormData = {
+            kind: BlockKind.NEWSCASTERS_SOURCE,
+            data: processNewscastersSourceBeforeSubmit(blockData.data, status, participants),
+          };
+          break;
         default: {
           const exhaustiveCheck: never = blockData;
           processedFormData = exhaustiveCheck;
@@ -364,6 +406,12 @@ export function CreateBlockProvider({
           break;
         case BlockKind.THE_SCENE:
           payload = buildTheScenePayload(processedFormData.data);
+          break;
+        case BlockKind.NEWSCASTERS:
+          payload = buildNewscastersPayload(processedFormData.data);
+          break;
+        case BlockKind.NEWSCASTERS_SOURCE:
+          payload = buildNewscastersSourcePayload(processedFormData.data);
           break;
         default: {
           const exhaustiveCheck: never = processedFormData;

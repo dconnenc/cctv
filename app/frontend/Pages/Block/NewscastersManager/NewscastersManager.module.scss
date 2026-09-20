@@ -1,0 +1,62 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.controls {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.empty {
+  font-family: var(--font-body);
+  font-size: 0.875rem;
+  color: hsl(var(--muted-foreground));
+  margin: 0;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.row,
+.rowSelected {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid hsl(var(--border));
+}
+
+.rowSelected {
+  border-color: hsl(var(--accent));
+  background: hsl(var(--accent) / 0.1);
+}
+
+.rowInfo {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.rowName {
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 0.9375rem;
+}
+
+.rowKind {
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  color: hsl(var(--muted-foreground));
+}
+
+.rowLink {
+  font-family: var(--font-body);
+  font-size: 0.8125rem;
+  color: hsl(var(--primary));
+}

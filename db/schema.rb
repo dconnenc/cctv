@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_07_07_000003) do
+ActiveRecord::Schema[7.2].define(version: 2026_08_16_000001) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "citext"
   enable_extension "plpgsql"
@@ -258,6 +258,16 @@ ActiveRecord::Schema[7.2].define(version: 2026_07_07_000003) do
     t.index ["experience_id", "position"], name: "index_experience_segments_on_experience_id_and_position", unique: true
   end
 
+  create_table "experience_video_submissions", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "experience_block_id", null: false
+    t.uuid "experience_participant_id", null: false
+    t.jsonb "answer", default: {}, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["experience_block_id"], name: "index_experience_video_submissions_on_block_id"
+    t.index ["experience_participant_id"], name: "index_video_submissions_on_participant_id"
+  end
+
   create_table "experiences", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.string "name", null: false
     t.citext "code", null: false
@@ -390,6 +400,8 @@ ActiveRecord::Schema[7.2].define(version: 2026_07_07_000003) do
   add_foreign_key "experience_question_submissions", "experience_blocks", on_delete: :cascade
   add_foreign_key "experience_question_submissions", "experience_participants", on_delete: :cascade
   add_foreign_key "experience_segments", "experiences", on_delete: :cascade
+  add_foreign_key "experience_video_submissions", "experience_blocks", on_delete: :cascade
+  add_foreign_key "experience_video_submissions", "experience_participants", on_delete: :cascade
   add_foreign_key "experiences", "experience_segments", column: "default_segment_id", on_delete: :nullify
   add_foreign_key "experiences", "users", column: "creator_id", on_delete: :cascade
   add_foreign_key "follows", "performers", on_delete: :cascade

@@ -29,6 +29,8 @@ const BLOCK_KIND_DESCRIPTIONS = {
   [BlockKind.MINIGAME_ARITHMETIC]: 'Speed-math minigame',
   [BlockKind.MINIGAME_BALLOON_PUMP]: 'Balloon-pump minigame',
   [BlockKind.THE_SCENE]: 'Improv suggestion + voting',
+  [BlockKind.NEWSCASTERS]: 'Fullscreen video playback',
+  [BlockKind.NEWSCASTERS_SOURCE]: 'Audience video submission',
 } satisfies Record<BlockKind, string>;
 
 export default function Playbill() {

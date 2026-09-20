@@ -114,6 +114,14 @@ module Experiences
         payload["active_poll_block_id"]    = nil
         payload["active_poll_contestant_index"] = nil
         payload["contestants"]             = []
+      when ExperienceBlock::NEWSCASTERS
+        payload["playing"]        = false
+        payload["restart_count"]  = 0
+        payload["selected_video"] = nil
+        # source_block_id is passed through from add_newscasters_with_source!
+      when ExperienceBlock::NEWSCASTERS_SOURCE
+        payload["prompt"]       = payload["prompt"].to_s
+        payload["allow_upload"] = ActiveModel::Type::Boolean.new.cast(payload["allow_upload"]) || false
       end
 
       payload
@@ -319,6 +327,86 @@ module Experiences
       end
 
       submission
+    end
+
+    def submit_newscasters_source_response!(block:, video_signed_id: nil, video_url: nil)
+      raise ArgumentError, "Block is not a newscasters source" unless block.kind == ExperienceBlock::NEWSCASTERS_SOURCE
+
+      submission = ExperienceVideoSubmission.find_or_initialize_by(
+        experience_block_id: block.id,
+        experience_participant: current_participant
+      )
+
+      if video_signed_id.present?
+        unless block.payload["allow_upload"]
+          raise Experiences::ForbiddenError, "Uploads are not enabled for this block"
+        end
+
+        blob = ActiveStorage::Blob.find_signed!(video_signed_id)
+        submission.answer = { "kind" => "upload" }
+
+        if submission.new_record?
+          submission.save!(validate: false)
+          submission.video.attach(blob)
+        else
+          submission.video.attach(blob)
+          submission.save!
+        end
+
+        Newscasters::PurgeVideoJob.set(wait: 24.hours).perform_later(submission.id)
+      elsif video_url.present?
+        submission.video.purge if submission.video.attached?
+        submission.answer = { "kind" => "youtube", "url" => video_url.to_s.strip }
+        submission.save!
+      else
+        raise ArgumentError, "A video link or upload is required"
+      end
+
+      submission
+    end
+
+    def select_newscasters_video!(block:, submission_id:)
+      raise ArgumentError, "Block is not a newscasters block" unless block.kind == ExperienceBlock::NEWSCASTERS
+
+      transaction do
+        payload = block.payload.deep_dup
+        if submission_id.blank?
+          payload["selected_video"] = nil
+        else
+          submission = ExperienceVideoSubmission.find(submission_id)
+          payload["selected_video"] = {
+            "kind" => submission.video_kind,
+            "submission_id" => submission.id
+          }
+        end
+        block.update!(payload: payload)
+      end
+
+      block
+    end
+
+    def set_newscasters_playing!(block:, playing:)
+      raise ArgumentError, "Block is not a newscasters block" unless block.kind == ExperienceBlock::NEWSCASTERS
+
+      transaction do
+        payload = block.payload.deep_dup
+        payload["playing"] = playing
+        block.update!(payload: payload)
+      end
+
+      block
+    end
+
+    def restart_newscasters!(block:)
+      raise ArgumentError, "Block is not a newscasters block" unless block.kind == ExperienceBlock::NEWSCASTERS
+
+      transaction do
+        payload = block.payload.deep_dup
+        payload["restart_count"] = (payload["restart_count"] || 0) + 1
+        block.update!(payload: payload)
+      end
+
+      block
     end
 
     def submit_buzzer_response!(block:, answer:)
@@ -1360,7 +1448,13 @@ module Experiences
       transaction do
         safety_check_edit!(block, payload)
 
-        block.update!(payload: payload)
+        if block.kind == ExperienceBlock::NEWSCASTERS
+          # Playback runtime state (playing, selected_video, source_block_id)
+          # must survive edits, so only the monitor-visibility flag is merged in.
+          block.update!(payload: block.payload.merge(payload.slice("show_on_monitor")))
+        else
+          block.update!(payload: payload)
+        end
 
         block.experience_block_segments.delete_all
         if visible_to_segment_ids.any?
@@ -1416,6 +1510,44 @@ module Experiences
         end
 
         parent_block
+      end
+    end
+
+    # Creates the Newscasters playback block together with its companion source
+    # block. The two are intentionally UNCOUPLED — no parent_block_id, no
+    # ExperienceBlockLink — so the source can be moved to the start of the
+    # program while the playback block runs later. The play block softly
+    # references the source via payload["source_block_id"].
+    def add_newscasters_with_source!(
+      payload: {},
+      visible_to_roles: [],
+      target_user_ids: [],
+      status: :hidden,
+      open_immediately: false,
+      show_in_lobby: false,
+      add_to_playbill: false,
+      playbill_mysterious: false
+    )
+      transaction do
+        source_block = add_block!(
+          kind: ExperienceBlock::NEWSCASTERS_SOURCE,
+          payload: {
+            "prompt" => payload["source_prompt"].to_s,
+            "allow_upload" => ActiveModel::Type::Boolean.new.cast(payload["allow_upload"]) || false
+          },
+          show_in_lobby: show_in_lobby
+        )
+
+        add_block!(
+          kind: ExperienceBlock::NEWSCASTERS,
+          payload: { "source_block_id" => source_block.id },
+          visible_to_roles: visible_to_roles,
+          target_user_ids: target_user_ids,
+          status: status,
+          open_immediately: open_immediately,
+          add_to_playbill: add_to_playbill,
+          playbill_mysterious: playbill_mysterious
+        )
       end
     end
 

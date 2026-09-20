@@ -45,10 +45,13 @@ export function blockSummary(block: Block): string {
       return block.payload.prompt.trim();
     case BlockKind.BUZZER:
       return (block.payload.prompt ?? block.payload.label ?? '').trim();
+    case BlockKind.NEWSCASTERS_SOURCE:
+      return block.payload.prompt.trim();
     case BlockKind.GUESS_WHO:
     case BlockKind.MINIGAME_ARITHMETIC:
     case BlockKind.MINIGAME_BALLOON_PUMP:
     case BlockKind.THE_SCENE:
+    case BlockKind.NEWSCASTERS:
       return '';
     default: {
       const exhaustiveCheck: never = block;

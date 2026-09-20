@@ -82,6 +82,11 @@ Rails.application.routes.draw do
           post :submit_buzzer_response
           delete :clear_buzzer_responses
 
+          post 'newscasters/source/response', action: :submit_newscasters_source_response
+          post 'newscasters/select_video', action: :select_newscasters_video
+          post 'newscasters/playing', action: :set_newscasters_playing
+          post 'newscasters/restart', action: :restart_newscasters
+
           post 'family_feud/auto_categorize', action: :auto_categorize
           post 'family_feud/generate_synthetic_answers', action: :generate_synthetic_answers
           patch 'family_feud/ai_context', action: :update_ai_context

@@ -30,14 +30,16 @@ class Api::DirectUploadsController < ActiveStorage::DirectUploadsController
     content_type = params[:blob]&.dig(:content_type) || params[:content_type]
     byte_size = params[:blob]&.dig(:byte_size) || params[:byte_size]
 
-    unless content_type.to_s.start_with?("image/")
-      render json: { error: "Only image uploads are allowed" }, status: :unprocessable_entity
-      return
-    end
-
-    if byte_size.to_i > 7.megabytes
-      render json: { error: "File size must be less than 7 MB" }, status: :unprocessable_entity
-      return
+    if content_type.to_s.start_with?("image/")
+      if byte_size.to_i > 7.megabytes
+        render json: { error: "File size must be less than 7 MB" }, status: :unprocessable_entity
+      end
+    elsif content_type.to_s.start_with?("video/")
+      if byte_size.to_i > 60.megabytes
+        render json: { error: "File size must be less than 60 MB" }, status: :unprocessable_entity
+      end
+    else
+      render json: { error: "Only image and video uploads are allowed" }, status: :unprocessable_entity
     end
   end
 end
