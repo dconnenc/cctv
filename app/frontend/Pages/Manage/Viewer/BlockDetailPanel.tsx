@@ -1,15 +1,6 @@
 import { useState } from 'react';
 
-import {
-  ArrowRight,
-  CircleDot,
-  MessageSquare,
-  Monitor,
-  MoreHorizontal,
-  Square,
-  Trash2,
-  User,
-} from 'lucide-react';
+import { ArrowRight, CircleDot, Monitor, MoreHorizontal, Square, Trash2, User } from 'lucide-react';
 
 import { useExperience } from '@cctv/contexts/ExperienceContext';
 import {
@@ -22,11 +13,9 @@ import { Button } from '@cctv/core/Button/Button';
 import { SegmentBadge } from '@cctv/core/SegmentBadge/SegmentBadge';
 import { BLOCK_KIND_LABELS, Block, BlockKind, Experience, ParticipantSummary } from '@cctv/types';
 
-import FamilyFeudManager from '../../Block/FamilyFeudManager/FamilyFeudManager';
-import GuessWhoManager from '../../Block/GuessWhoManager/GuessWhoManager';
 import BlockPreview from '../BlockPreview/BlockPreview';
 import ContextView from '../ContextView/ContextView';
-import BlockResponsesList from './BlockResponsesList';
+import BlockContextTab from './BlockContextTab';
 
 function getStatusColor(status: string) {
   switch (status) {
@@ -45,7 +34,7 @@ interface BlockDetailPanelProps {
   selectedBlock: Block;
   currentOpenBlock?: Block;
   busyBlockId?: string;
-  viewMode: 'monitor' | 'participant' | 'responses';
+  viewMode: 'monitor' | 'participant' | 'block';
   monitorView?: Experience;
   participantView?: Experience;
   impersonatedParticipantId?: string;
@@ -53,7 +42,7 @@ interface BlockDetailPanelProps {
   onPresent: (block: Block) => void;
   onStopPresenting: (block: Block) => void;
   onPlayNext: () => void;
-  onViewModeChange: (mode: 'monitor' | 'participant' | 'responses') => void;
+  onViewModeChange: (mode: 'monitor' | 'participant' | 'block') => void;
   onImpersonatedParticipantChange: (id: string) => void;
   onEdit: (block: Block) => void;
   onDetach?: (block: Block) => void;
@@ -82,19 +71,10 @@ export default function BlockDetailPanel({
   onDelete,
   deletingBlockId,
 }: BlockDetailPanelProps) {
-  const { experience } = useExperience();
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const isDetaching = detachingBlockId === selectedBlock.id;
   const isDeleting = deletingBlockId === selectedBlock.id;
   const canDelete = selectedBlock.status !== 'open';
-
-  // A synthetic question has no participant/monitor view; selecting it opens the
-  // Family Feud manager (focused on that question) so it can be sent to the agent.
-  const isSyntheticQuestion =
-    selectedBlock.kind === BlockKind.QUESTION && Boolean(selectedBlock.payload.synthetic);
-  const syntheticParentBlock = isSyntheticQuestion
-    ? experience?.blocks?.find((b) => b.id === selectedBlock.parent_block_id)
-    : undefined;
 
   return (
     <div className="space-y-6">
@@ -182,135 +162,96 @@ export default function BlockDetailPanel({
         </div>
       </div>
 
-      {syntheticParentBlock && (
-        <div className="mb-6">
-          <FamilyFeudManager
-            key={selectedBlock.id}
-            block={syntheticParentBlock}
-            focusQuestionId={selectedBlock.id}
-          />
-        </div>
-      )}
-
-      {!syntheticParentBlock && (
-        <div className="space-y-4">
-          <div className="flex items-center gap-4">
-            <fieldset
-              aria-label="Preview mode"
-              className="inline-flex items-center gap-1 p-1 bg-[hsl(var(--muted))] rounded-lg"
+      <div className="space-y-4">
+        <div className="border border-[hsl(var(--border))] rounded-lg overflow-hidden">
+          <fieldset aria-label="Preview mode" className="flex border-b border-[hsl(var(--border))]">
+            <Button
+              variant="ghost"
+              size="sm"
+              icon={<Monitor size={14} />}
+              aria-pressed={viewMode === 'monitor'}
+              onClick={() => onViewModeChange('monitor')}
             >
-              <Button
-                variant="ghost"
-                size="sm"
-                icon={<Monitor size={14} />}
-                aria-pressed={viewMode === 'monitor'}
-                onClick={() => onViewModeChange('monitor')}
-              >
-                Monitor
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                icon={<User size={14} />}
-                aria-pressed={viewMode === 'participant'}
-                onClick={() => onViewModeChange('participant')}
-              >
-                Participant
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                icon={<MessageSquare size={14} />}
-                aria-pressed={viewMode === 'responses'}
-                onClick={() => onViewModeChange('responses')}
-              >
-                Responses ({selectedBlock?.responses?.total ?? 0})
-              </Button>
-            </fieldset>
+              Monitor
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              icon={<User size={14} />}
+              aria-pressed={viewMode === 'participant'}
+              onClick={() => onViewModeChange('participant')}
+            >
+              Participant
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              aria-pressed={viewMode === 'block'}
+              onClick={() => onViewModeChange('block')}
+            >
+              Block
+            </Button>
+          </fieldset>
 
-            {viewMode === 'participant' && (
-              <select
-                aria-label="View as participant"
-                value={impersonatedParticipantId || ''}
-                onChange={(e) => onImpersonatedParticipantChange(e.target.value)}
-                className="px-3 py-1.5 text-sm rounded-md bg-[hsl(var(--muted))] border border-[hsl(var(--border))] text-white"
-              >
-                {participants.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name} ({p.role})
-                  </option>
-                ))}
-              </select>
+          <div className="p-4 bg-[hsl(var(--card))]">
+            {viewMode === 'block' ? (
+              <BlockContextTab block={selectedBlock} participants={participants} />
+            ) : viewMode === 'participant' ? (
+              <div className="space-y-3">
+                <select
+                  aria-label="View as participant"
+                  value={impersonatedParticipantId || ''}
+                  onChange={(e) => onImpersonatedParticipantChange(e.target.value)}
+                  className="px-3 py-1.5 text-sm rounded-md bg-[hsl(var(--muted))] border border-[hsl(var(--border))] text-white"
+                >
+                  {participants.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name} ({p.role})
+                    </option>
+                  ))}
+                </select>
+                {selectedBlock.id === currentOpenBlock?.id ? (
+                  <ContextView
+                    block={participantView?.blocks[0] ?? undefined}
+                    participant={participants.find((p) => p.id === impersonatedParticipantId)}
+                    emptyMessage="No block for participant"
+                    monitorView={monitorView}
+                    viewMode="participant"
+                    title="Participant"
+                  />
+                ) : (
+                  <BlockPreview
+                    block={selectedBlock}
+                    participant={participants.find((p) => p.id === impersonatedParticipantId)}
+                  />
+                )}
+              </div>
+            ) : // viewMode === 'monitor'
+            selectedBlock.id === currentOpenBlock?.id ? (
+              <ContextView
+                block={undefined}
+                participant={undefined}
+                emptyMessage={
+                  selectedBlock.kind === BlockKind.ANNOUNCEMENT &&
+                  selectedBlock.payload.show_on_monitor === false
+                    ? 'This block is not shown on the monitor'
+                    : 'No block on Monitor'
+                }
+                monitorView={monitorView}
+                viewMode="monitor"
+                title="Current"
+              />
+            ) : selectedBlock.kind === BlockKind.ANNOUNCEMENT &&
+              selectedBlock.payload.show_on_monitor === false ? (
+              <p className="text-sm text-[hsl(var(--muted-foreground))]">
+                This block is not shown on the monitor
+              </p>
+            ) : (
+              <BlockPreview block={selectedBlock} />
             )}
           </div>
-
-          {selectedBlock.kind === BlockKind.FAMILY_FEUD && (
-            <div className="mb-6">
-              <FamilyFeudManager block={selectedBlock} />
-            </div>
-          )}
-
-          {selectedBlock.kind === BlockKind.GUESS_WHO && (
-            <div className="mb-6">
-              <GuessWhoManager block={selectedBlock} />
-            </div>
-          )}
-
-          <div className="border border-[hsl(var(--border))] rounded-lg overflow-hidden">
-            <div className="px-4 py-2 bg-[hsl(var(--muted))] border-b border-[hsl(var(--border))]">
-              <span className="text-sm font-medium text-white">
-                {viewMode === 'monitor'
-                  ? 'Monitor Preview'
-                  : viewMode === 'participant'
-                    ? 'Participant Preview'
-                    : `All Responses (${selectedBlock?.responses?.total ?? 0})`}
-              </span>
-            </div>
-            <div className="p-4 bg-[hsl(var(--card))]">
-              {viewMode === 'responses' ? (
-                <BlockResponsesList block={selectedBlock} participants={participants} />
-              ) : selectedBlock.id === currentOpenBlock?.id ? (
-                <ContextView
-                  block={
-                    viewMode === 'monitor' ? undefined : (participantView?.blocks[0] ?? undefined)
-                  }
-                  participant={
-                    viewMode === 'participant'
-                      ? participants.find((p) => p.id === impersonatedParticipantId)
-                      : undefined
-                  }
-                  emptyMessage={
-                    viewMode === 'monitor'
-                      ? selectedBlock.kind === BlockKind.ANNOUNCEMENT &&
-                        selectedBlock.payload.show_on_monitor === false
-                        ? 'This block is not shown on the monitor'
-                        : 'No block on Monitor'
-                      : 'No block for participant'
-                  }
-                  monitorView={monitorView}
-                  viewMode={viewMode}
-                  title="Current"
-                />
-              ) : viewMode === 'monitor' &&
-                selectedBlock.kind === BlockKind.ANNOUNCEMENT &&
-                selectedBlock.payload.show_on_monitor === false ? (
-                <p className="text-sm text-[hsl(var(--muted-foreground))]">
-                  This block is not shown on the monitor
-                </p>
-              ) : (
-                <BlockPreview
-                  block={selectedBlock}
-                  participant={
-                    viewMode === 'participant'
-                      ? participants.find((p) => p.id === impersonatedParticipantId)
-                      : undefined
-                  }
-                />
-              )}
-            </div>
-          </div>
         </div>
-      )}
+      </div>
 
       <div className="grid grid-cols-2 gap-6">
         <div className="space-y-3">
