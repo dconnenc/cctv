@@ -11,7 +11,8 @@ class ExperienceBlock < ApplicationRecord
     GUESS_WHO = "guess_who",
     MINIGAME_ARITHMETIC = "minigame_arithmetic",
     MINIGAME_BALLOON_PUMP = "minigame_balloon_pump",
-    THE_SCENE = "the_scene"
+    THE_SCENE = "the_scene",
+    NEWSLETTER_SIGNUP = "newsletter_signup"
   ]
 
   # Sound effects are intrinsic to a block kind, not customized per block, so
@@ -39,6 +40,7 @@ class ExperienceBlock < ApplicationRecord
   has_many :experience_question_submissions, dependent: :destroy
   has_many :experience_photo_upload_submissions, dependent: :destroy
   has_many :experience_buzzer_submissions, dependent: :destroy
+  has_many :experience_newsletter_submissions, dependent: :destroy
   has_many :experience_minigame_submissions, dependent: :destroy
   has_many :experience_minigame_balloon_results, dependent: :destroy
   has_many :improv_suggestions, dependent: :destroy

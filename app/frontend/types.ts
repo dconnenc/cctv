@@ -35,6 +35,7 @@ export enum BlockKind {
   MINIGAME_ARITHMETIC = 'minigame_arithmetic',
   MINIGAME_BALLOON_PUMP = 'minigame_balloon_pump',
   THE_SCENE = 'the_scene',
+  NEWSLETTER_SIGNUP = 'newsletter_signup',
 }
 
 export const BLOCK_KIND_LABELS = {
@@ -48,6 +49,7 @@ export const BLOCK_KIND_LABELS = {
   [BlockKind.MINIGAME_ARITHMETIC]: 'Minigame: Arithmetic',
   [BlockKind.MINIGAME_BALLOON_PUMP]: 'Minigame: Balloon Pump',
   [BlockKind.THE_SCENE]: 'The Scene',
+  [BlockKind.NEWSLETTER_SIGNUP]: 'Newsletter Signup',
 } satisfies Record<BlockKind, string>;
 
 export interface ExperienceSegment {
@@ -129,6 +131,12 @@ export interface PhotoUploadPayload {
 export interface BuzzerPayload {
   label?: string;
   prompt?: string;
+}
+
+export interface NewsletterSignupPayload {
+  prompt?: string;
+  confirmationMessage?: string;
+  declineMessage?: string;
 }
 
 export interface GuessWhoClue {
@@ -328,6 +336,13 @@ export interface BuzzerApiPayload {
   prompt?: string;
 }
 
+export interface NewsletterSignupApiPayload {
+  type: 'newsletter_signup';
+  prompt?: string;
+  confirmationMessage?: string;
+  declineMessage?: string;
+}
+
 export interface GuessWhoApiPayload {
   type: 'guess_who';
   segment_id: string;
@@ -365,7 +380,8 @@ export type ApiPayload =
   | GuessWhoApiPayload
   | MinigameArithmeticApiPayload
   | MinigameBalloonPumpApiPayload
-  | TheSceneApiPayload;
+  | TheSceneApiPayload
+  | NewsletterSignupApiPayload;
 
 // ===== PLAYBILL TYPES =====
 
@@ -548,6 +564,21 @@ export interface BuzzerBlock extends BaseBlock {
   };
 }
 
+export interface NewsletterSignupBlock extends BaseBlock {
+  kind: BlockKind.NEWSLETTER_SIGNUP;
+  payload: NewsletterSignupPayload;
+  responses?: {
+    total: number;
+    subscribed_count?: number;
+    all_responses?: Array<{
+      id: string;
+      experience_participant_id: string;
+      answer: { subscribed?: boolean; submittedAt?: string };
+      created_at: string;
+    }>;
+  };
+}
+
 export interface GuessWhoBlock extends BaseBlock {
   kind: BlockKind.GUESS_WHO;
   payload: GuessWhoPayload;
@@ -590,7 +621,8 @@ export type Block =
   | GuessWhoBlock
   | MinigameArithmeticBlock
   | MinigameBalloonPumpBlock
-  | TheSceneBlock;
+  | TheSceneBlock
+  | NewsletterSignupBlock;
 
 export interface PlaybillRunningOrderEntry {
   id: string;
@@ -663,7 +695,8 @@ export interface CreateBlockPayload {
     | GuessWhoPayload
     | MinigameArithmeticPayload
     | MinigameBalloonPumpPayload
-    | TheScenePayload;
+    | TheScenePayload
+    | NewsletterSignupPayload;
   visible_to_segment_ids?: string[];
   status?: BlockStatus;
   open_immediately?: boolean;
@@ -1111,6 +1144,12 @@ export interface BuzzerData {
   prompt: string;
 }
 
+export interface NewsletterSignupData {
+  prompt: string;
+  confirmationMessage: string;
+  declineMessage: string;
+}
+
 export interface GuessWhoData {
   segment_id: string;
 }
@@ -1142,7 +1181,8 @@ export type BlockComponentData =
   | GuessWhoData
   | MinigameArithmeticData
   | MinigameBalloonPumpData
-  | TheSceneData;
+  | TheSceneData
+  | NewsletterSignupData;
 
 // Discriminated union for form block data
 export type FormBlockData =
@@ -1155,7 +1195,8 @@ export type FormBlockData =
   | { kind: BlockKind.GUESS_WHO; data: GuessWhoData }
   | { kind: BlockKind.MINIGAME_ARITHMETIC; data: MinigameArithmeticData }
   | { kind: BlockKind.MINIGAME_BALLOON_PUMP; data: MinigameBalloonPumpData }
-  | { kind: BlockKind.THE_SCENE; data: TheSceneData };
+  | { kind: BlockKind.THE_SCENE; data: TheSceneData }
+  | { kind: BlockKind.NEWSLETTER_SIGNUP; data: NewsletterSignupData };
 
 export interface UpdateBlockPayload {
   payload: ApiPayload | JsonObject;

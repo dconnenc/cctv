@@ -7,3 +7,4 @@ export { default as GuessWho } from './GuessWho/GuessWho';
 export { default as MinigameArithmetic } from './MinigameArithmetic/MinigameArithmetic';
 export { default as MinigameBalloonPump } from './MinigameBalloonPump/MinigameBalloonPump';
 export { default as TheScene } from './TheScene/TheScene';
+export { default as NewsletterSignup } from './NewsletterSignup/NewsletterSignup';

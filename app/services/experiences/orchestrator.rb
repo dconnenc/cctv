@@ -341,6 +341,22 @@ module Experiences
       block
     end
 
+    def submit_newsletter_response!(block:, answer:)
+      submission = ExperienceNewsletterSubmission.find_or_initialize_by(
+        experience_block_id: block.id,
+        experience_participant: current_participant
+      )
+
+      return submission unless submission.new_record?
+
+      submission.answer = answer
+      submission.save!
+
+      Newsletter::SubscribeJob.perform_later(submission.id) if submission.answer["subscribed"]
+
+      submission
+    end
+
     def add_family_feud_bucket!(question_id:, name:)
       question_block = experience.experience_blocks.find(question_id)
 

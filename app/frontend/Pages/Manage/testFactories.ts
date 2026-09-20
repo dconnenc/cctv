@@ -9,6 +9,7 @@ import {
   GuessWhoBlock,
   MinigameArithmeticBlock,
   MinigameBalloonPumpBlock,
+  NewsletterSignupBlock,
   PhotoUploadBlock,
   PollBlock,
   QuestionBlock,
@@ -147,6 +148,18 @@ export function theSceneBlock(overrides: Partial<TheSceneBlock> = {}): TheSceneB
   };
 }
 
+export function newsletterSignupBlock(
+  overrides: Partial<NewsletterSignupBlock> = {},
+): NewsletterSignupBlock {
+  return {
+    ...blockDefaults,
+    id: 'block-newsletter-signup',
+    kind: BlockKind.NEWSLETTER_SIGNUP,
+    payload: { prompt: 'Can we add you to our mailing list?' },
+    ...overrides,
+  };
+}
+
 export function blockOfKind(kind: BlockKind): Block {
   switch (kind) {
     case BlockKind.POLL:
@@ -169,6 +182,8 @@ export function blockOfKind(kind: BlockKind): Block {
       return minigameBalloonPumpBlock();
     case BlockKind.THE_SCENE:
       return theSceneBlock();
+    case BlockKind.NEWSLETTER_SIGNUP:
+      return newsletterSignupBlock();
     default: {
       const exhaustiveCheck: never = kind;
       throw new Error(`Unhandled block kind: ${exhaustiveCheck}`);

@@ -12,6 +12,7 @@ import CreateFamilyFeud from '../CreateBlock/CreateFamilyFeud/CreateFamilyFeud';
 import CreateGuessWho from '../CreateBlock/CreateGuessWho/CreateGuessWho';
 import CreateMinigameArithmetic from '../CreateBlock/CreateMinigameArithmetic/CreateMinigameArithmetic';
 import CreateMinigameBalloonPump from '../CreateBlock/CreateMinigameBalloonPump/CreateMinigameBalloonPump';
+import CreateNewsletterSignup from '../CreateBlock/CreateNewsletterSignup/CreateNewsletterSignup';
 import CreatePhotoUpload from '../CreateBlock/CreatePhotoUpload/CreatePhotoUpload';
 import CreatePoll from '../CreateBlock/CreatePoll/CreatePoll';
 import CreateQuestion from '../CreateBlock/CreateQuestion/CreateQuestion';
@@ -237,6 +238,19 @@ function BlockEditor() {
           onChange={(updates) =>
             setBlockData((prev) =>
               prev.kind === BlockKind.THE_SCENE
+                ? { ...prev, data: { ...prev.data, ...updates } }
+                : prev,
+            )
+          }
+        />
+      );
+    case BlockKind.NEWSLETTER_SIGNUP:
+      return (
+        <CreateNewsletterSignup
+          data={data}
+          onChange={(updates) =>
+            setBlockData((prev) =>
+              prev.kind === BlockKind.NEWSLETTER_SIGNUP
                 ? { ...prev, data: { ...prev.data, ...updates } }
                 : prev,
             )

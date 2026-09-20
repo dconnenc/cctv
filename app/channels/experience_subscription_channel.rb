@@ -318,6 +318,10 @@ class ExperienceSubscriptionChannel < ApplicationCable::Channel
       .where(experience_block_id: block_scope, experience_participant_id: participant.id)
       .each { |s| result[s.experience_block_id.to_s] = { id: s.id, answer: s.answer } }
 
+    ExperienceNewsletterSubmission
+      .where(experience_block_id: block_scope, experience_participant_id: participant.id)
+      .each { |s| result[s.experience_block_id.to_s] = { id: s.id, answer: s.answer } }
+
     ExperiencePhotoUploadSubmission
       .where(experience_block_id: block_scope, experience_participant_id: participant.id)
       .includes(photo_attachment: :blob)
