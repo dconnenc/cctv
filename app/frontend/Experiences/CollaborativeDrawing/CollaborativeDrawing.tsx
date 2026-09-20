@@ -337,6 +337,11 @@ const FULL_REGION = { x: 0, y: 0, w: 1, h: 1 };
 // around the stage; the stage takes whatever height is left in the viewport.
 const STAGE_CHROME_PX = 220;
 
+// The marker crop (and matching canvas) is never rendered narrower than this,
+// even if it means overflowing the viewport — a too-small memorize target is
+// worse than a scroll.
+const MIN_STAGE_W = 300;
+
 // Tracks the measured content width of the stage area and the viewport height,
 // updating on resize and element resize.
 function useStageArea(ref: React.RefObject<HTMLDivElement | null>) {
@@ -359,9 +364,10 @@ function useStageArea(ref: React.RefObject<HTMLDivElement | null>) {
 }
 
 // The largest box of the given aspect that fits the measured width and the
-// viewport height left over for the stage.
+// viewport height left over for the stage, but never narrower than MIN_STAGE_W.
 function fitBox(areaW: number, availH: number, aspectRatio: number) {
-  const w = Math.max(0, Math.min(areaW, availH * aspectRatio));
+  const fitted = Math.min(areaW, availH * aspectRatio);
+  const w = Math.max(MIN_STAGE_W, fitted);
   return { w, h: aspectRatio > 0 ? w / aspectRatio : 0 };
 }
 
