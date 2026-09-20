@@ -123,6 +123,7 @@ Rails.application.routes.draw do
           post 'minigame/balloon_pump/pump', action: :submit_minigame_balloon_pump_update
 
           post 'collaborative_drawing/photos', action: :submit_collaborative_drawing_photo
+          post 'collaborative_drawing/select_photos', action: :select_collaborative_drawing_photos
           post 'collaborative_drawing/start', action: :start_collaborative_drawing_round
           post 'collaborative_drawing/end', action: :end_collaborative_drawing_round
           post 'collaborative_drawing/restart', action: :restart_collaborative_drawing

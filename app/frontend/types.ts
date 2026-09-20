@@ -682,6 +682,10 @@ export interface CollaborativeDrawingBlock extends BaseBlock {
     total: number;
     assignment_count?: number;
     submission_count?: number;
+    // Host-only (round block): the intake photos to pick from, and the current
+    // selection.
+    photos?: Array<{ id: string; photo_url?: string }>;
+    selected_photo_ids?: string[];
   };
 }
 

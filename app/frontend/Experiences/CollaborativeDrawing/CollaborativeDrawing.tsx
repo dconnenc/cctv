@@ -7,6 +7,7 @@ import { DrawingCanvas, DrawingCanvasSubmission } from '@cctv/components';
 import { useExperienceState } from '@cctv/contexts/ExperienceStateContext';
 import { Button } from '@cctv/core';
 import {
+  useCollaborativeDrawing,
   useDirectUpload,
   useSubmitCollaborativeDrawing,
   useSubmitCollaborativeDrawingPhoto,
@@ -20,8 +21,8 @@ import {
   MARKER_SECONDS,
   MONITOR_COUNTDOWN_SECONDS,
   PREVIEW_SECONDS,
-  SLICE_DRAW_WIDTH,
   SubPhaseState,
+  sliceDrawSize,
 } from './collaborativeDrawingConstants';
 
 import styles from './CollaborativeDrawing.module.scss';
@@ -42,27 +43,36 @@ function useNow(active: boolean, intervalMs = 250) {
   return now;
 }
 
+function remainingSeconds(untilElapsed: number, elapsed: number): number {
+  return Math.max(0, Math.ceil(untilElapsed - elapsed));
+}
+
 function computeSubPhase(
   roundStartedAt: string | null,
   drawingTimeSeconds: number,
   endedAt: string | null,
   now: number,
 ): SubPhaseState {
-  if (!roundStartedAt)
-    return { subPhase: 'get_ready', drawRemaining: drawingTimeSeconds } satisfies SubPhaseState;
+  if (!roundStartedAt) return { subPhase: 'get_ready', phaseRemaining: 0 } satisfies SubPhaseState;
   const elapsed = (now - new Date(roundStartedAt).getTime()) / 1000;
   const drawStart = PREVIEW_SECONDS + MARKER_SECONDS;
   const drawEnd = drawStart + drawingTimeSeconds;
 
   if (endedAt || elapsed >= drawEnd)
-    return { subPhase: 'times_up', drawRemaining: 0 } satisfies SubPhaseState;
+    return { subPhase: 'times_up', phaseRemaining: 0 } satisfies SubPhaseState;
   if (elapsed < PREVIEW_SECONDS)
-    return { subPhase: 'preview', drawRemaining: drawingTimeSeconds } satisfies SubPhaseState;
+    return {
+      subPhase: 'preview',
+      phaseRemaining: remainingSeconds(PREVIEW_SECONDS, elapsed),
+    } satisfies SubPhaseState;
   if (elapsed < drawStart)
-    return { subPhase: 'marker', drawRemaining: drawingTimeSeconds } satisfies SubPhaseState;
+    return {
+      subPhase: 'marker',
+      phaseRemaining: remainingSeconds(drawStart, elapsed),
+    } satisfies SubPhaseState;
   return {
     subPhase: 'draw',
-    drawRemaining: Math.max(0, Math.ceil(drawEnd - elapsed)),
+    phaseRemaining: remainingSeconds(drawEnd, elapsed),
   } satisfies SubPhaseState;
 }
 
@@ -201,7 +211,7 @@ function RoundParticipantView({ block }: { block: CollaborativeDrawingBlock }) {
 
   const active = !!round_started_at && !ended_at;
   const now = useNow(active);
-  const { subPhase, drawRemaining } = computeSubPhase(
+  const { subPhase, phaseRemaining } = computeSubPhase(
     round_started_at,
     drawing_time_seconds,
     ended_at,
@@ -273,23 +283,36 @@ function RoundParticipantView({ block }: { block: CollaborativeDrawingBlock }) {
   }
 
   if (subPhase === 'preview' || subPhase === 'marker') {
-    return <SlicePreview assignment={assignment} showMarker={subPhase === 'marker'} />;
+    return (
+      <SlicePreview
+        assignment={assignment}
+        showMarker={subPhase === 'marker'}
+        secondsLeft={phaseRemaining}
+      />
+    );
   }
 
   // subPhase === 'draw'
   return (
-    <DrawSlice drawRemaining={drawRemaining} submitSignal={submitSignal} onSubmit={handleSubmit} />
+    <DrawSlice
+      sliceCount={assignment.slice_count}
+      secondsLeft={phaseRemaining}
+      submitSignal={submitSignal}
+      onSubmit={handleSubmit}
+    />
   );
 }
 
 function SlicePreview({
   assignment,
   showMarker,
+  secondsLeft,
 }: {
   assignment: NonNullable<
     ReturnType<typeof useExperienceState>['submissionState'][string]
   >['assignment'];
   showMarker: boolean;
+  secondsLeft: number;
 }) {
   if (!assignment) return null;
   const bandPct = 100 / assignment.slice_count;
@@ -300,6 +323,7 @@ function SlicePreview({
       <p className={styles.previewCaption}>
         {showMarker ? 'Remember your section!' : 'Memorize this image!'}
       </p>
+      <p className={styles.previewCountdown}>{secondsLeft}s</p>
       <div className={styles.previewImageFrame}>
         {assignment.source_photo_url && (
           <img src={assignment.source_photo_url} alt="Memorize" className={styles.previewImage} />
@@ -319,29 +343,36 @@ function SlicePreview({
   );
 }
 
-const SLICE_DRAW_SIZE = { w: SLICE_DRAW_WIDTH, h: SLICE_DRAW_WIDTH };
-
 function DrawSlice({
-  drawRemaining,
+  sliceCount,
+  secondsLeft,
   submitSignal,
   onSubmit,
 }: {
-  drawRemaining: number;
+  sliceCount: number;
+  secondsLeft: number;
   submitSignal: number;
   onSubmit: (submission: DrawingCanvasSubmission) => void;
 }) {
+  const drawSize = useMemo(() => sliceDrawSize(sliceCount), [sliceCount]);
+
   return (
     <motion.div
       className={styles.drawOverlay}
-      initial={{ opacity: 0, rotate: -90, scale: 0.6 }}
-      animate={{ opacity: 1, rotate: 0, scale: 1 }}
-      transition={{ type: 'spring', stiffness: 120, damping: 18 }}
+      initial={{ opacity: 0, scale: 0.94 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ type: 'spring', stiffness: 140, damping: 20 }}
     >
       <div className={styles.drawHeader}>
-        <span className={styles.drawTimer}>{drawRemaining}s</span>
-        <span className={styles.drawHint}>Recreate your section from memory</span>
+        <span className={styles.drawTimer}>{secondsLeft}s</span>
+        <span className={styles.drawHint}>Draw your section — turn your phone for more room</span>
       </div>
-      <DrawingCanvas drawSize={SLICE_DRAW_SIZE} submitSignal={submitSignal} onSubmit={onSubmit} />
+      <DrawingCanvas
+        drawSize={drawSize}
+        fitContainer
+        submitSignal={submitSignal}
+        onSubmit={onSubmit}
+      />
     </motion.div>
   );
 }
@@ -392,7 +423,13 @@ function MonitorView({
     return Math.max(0, Math.ceil(MONITOR_COUNTDOWN_SECONDS - elapsed));
   }, [round_started_at, now]);
 
-  const { drawRemaining } = computeSubPhase(round_started_at, drawing_time_seconds, ended_at, now);
+  const { subPhase, phaseRemaining } = computeSubPhase(
+    round_started_at,
+    drawing_time_seconds,
+    ended_at,
+    now,
+  );
+  const drawRemaining = subPhase === 'draw' ? phaseRemaining : drawing_time_seconds;
 
   useMonitorSound(sounds?.on_countdown, active && countdown > 0, 'monitor');
 
@@ -490,6 +527,64 @@ function ManageView({ block }: { block: CollaborativeDrawingBlock }) {
           </>
         )}
       </p>
+      {phase === 'round' && !ended_at && (
+        <PhotoSelector block={block} totalDrawings={total_drawings} />
+      )}
+    </div>
+  );
+}
+
+// Lets the host pick which intake photos feed the round. Selecting none falls
+// back to a random pick at start; picks beyond total_drawings are ignored.
+function PhotoSelector({
+  block,
+  totalDrawings,
+}: {
+  block: CollaborativeDrawingBlock;
+  totalDrawings: number;
+}) {
+  const { selectPhotos } = useCollaborativeDrawing();
+  const photos = block.responses?.photos ?? [];
+  const [selected, setSelected] = useState<string[]>(block.responses?.selected_photo_ids ?? []);
+
+  if (photos.length === 0) {
+    return <p className={styles.manageStat}>No photos submitted yet.</p>;
+  }
+
+  const toggle = (id: string) => {
+    setSelected((prev) => {
+      const next = prev.includes(id) ? prev.filter((p) => p !== id) : [...prev, id];
+      void selectPhotos(block.id, next);
+      return next;
+    });
+  };
+
+  return (
+    <div className={styles.selector}>
+      <p className={styles.manageStat}>
+        Choose up to {totalDrawings} photo{totalDrawings === 1 ? '' : 's'} for the round
+        {selected.length > 0 ? ` (${selected.length} selected)` : ' (random if none)'}
+      </p>
+      <div className={styles.selectorGrid}>
+        {photos.map((photo) => {
+          const isSelected = selected.includes(photo.id);
+          const order = selected.indexOf(photo.id);
+          return (
+            <button
+              key={photo.id}
+              type="button"
+              className={`${styles.selectorItem} ${isSelected ? styles.selectorItemActive : ''}`}
+              onClick={() => toggle(photo.id)}
+              aria-pressed={isSelected}
+            >
+              {photo.photo_url && (
+                <img src={photo.photo_url} alt="" className={styles.selectorImg} />
+              )}
+              {isSelected && <span className={styles.selectorBadge}>{order + 1}</span>}
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }

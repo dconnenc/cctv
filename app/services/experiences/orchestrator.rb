@@ -159,6 +159,7 @@ module Experiences
         # linked intake (photo-upload) block — see #add_block!.
         payload["phase"]                = "round"
         payload["intake_block_id"]      = nil
+        payload["selected_photo_ids"]   = []
         payload["subsection_count"]     = nil
         payload["pool"]                 = []
         payload["preview_started_at"]   = nil
@@ -1145,10 +1146,10 @@ module Experiences
 
     # Collaborative drawing ---------------------------------------------------
 
-    # Seconds a participant views the full source photo before the marker + draw.
+    # Seconds a participant views the full source photo before the marker.
     COLLABORATIVE_DRAWING_PREVIEW_SECONDS = 10
-    # Seconds for the slice marker highlight + rotate-to-landscape animation.
-    COLLABORATIVE_DRAWING_MARKER_SECONDS = 3
+    # Seconds the assigned slice is highlighted before drawing begins.
+    COLLABORATIVE_DRAWING_MARKER_SECONDS = 10
 
     def submit_collaborative_drawing_photo!(block:, photo_signed_id:, answer: {})
       raise ArgumentError, "Block is not a collaborative drawing" unless block.kind == ExperienceBlock::COLLABORATIVE_DRAWING
@@ -1242,6 +1243,21 @@ module Experiences
         block.update!(payload: payload)
       end
 
+      block
+    end
+
+    # Host picks which intake photos feed the round. Stored in order; invalid or
+    # unavailable ids are dropped. An empty selection means "choose randomly".
+    def select_collaborative_drawing_photos!(block:, photo_ids:)
+      raise ArgumentError, "Block is not a collaborative drawing" unless block.kind == ExperienceBlock::COLLABORATIVE_DRAWING
+
+      intake = collaborative_drawing_intake_block(block)
+      available = (intake&.experience_collaborative_drawing_photos&.pluck(:id) || []).map(&:to_s)
+      cleaned = Array(photo_ids).map(&:to_s).uniq.select { |id| available.include?(id) }
+
+      payload = block.payload || {}
+      payload["selected_photo_ids"] = cleaned
+      block.update!(payload: payload)
       block
     end
 
@@ -1660,13 +1676,15 @@ module Experiences
 
     # Builds the per-round plan for a collaborative drawing block: chooses how
     # many horizontal slices each photo is split into (within the configured
-    # range) so as many participants as possible get a slot, randomly selects the
-    # source photos, and maps each (group, slice) slot to a participant.
+    # range) so as many participants as possible get a slot, selects the source
+    # photos (host-picked if any, otherwise random), and maps each (group, slice)
+    # slot to a participant.
     def plan_collaborative_drawing_assignments(block)
       payload         = block.payload || {}
       min_subsections = payload["min_subsections"].to_i
       max_subsections = payload["max_subsections"].to_i
       total_drawings  = payload["total_drawings"].to_i
+      selected_ids    = Array(payload["selected_photo_ids"]).map(&:to_s)
 
       eligible = experience.experience_participants
         .where.not(role: %w[host moderator])
@@ -1674,11 +1692,19 @@ module Experiences
         .shuffle
 
       intake_block = collaborative_drawing_intake_block(block)
-      photos = (intake_block&.experience_collaborative_drawing_photos || ExperienceCollaborativeDrawingPhoto.none)
+      available = (intake_block&.experience_collaborative_drawing_photos || ExperienceCollaborativeDrawingPhoto.none)
         .includes(photo_attachment: :blob)
         .select { |p| p.photo.attached? }
-        .shuffle
-        .first(total_drawings)
+
+      photos =
+        if selected_ids.any?
+          # Honor the host's selection order, then take up to total_drawings.
+          available.select { |p| selected_ids.include?(p.id.to_s) }
+            .sort_by { |p| selected_ids.index(p.id.to_s) }
+            .first(total_drawings)
+        else
+          available.shuffle.first(total_drawings)
+        end
 
       return { subsection_count: min_subsections, pool: [], assignments: [] } if photos.empty?
 

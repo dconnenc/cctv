@@ -697,14 +697,26 @@ module Experiences
           # Round block: the photo pool lives on the linked intake block; the
           # `total` drives the "Start round" gate.
           intake_id   = block.payload["intake_block_id"]
-          photo_count = intake_id.present? ? ExperienceCollaborativeDrawingPhoto.where(experience_block_id: intake_id).count : 0
+          intake_photos = intake_id.present? ?
+            ExperienceCollaborativeDrawingPhoto.where(experience_block_id: intake_id).includes(photo_attachment: :blob).to_a :
+            []
           assignments = block.experience_collaborative_drawing_assignments.to_a
 
-          {
-            total: photo_count,
+          response = {
+            total: intake_photos.count,
             assignment_count: assignments.count,
             submission_count: assignments.count { |a| a.submitted_at.present? }
           }
+
+          if mod_or_host?(participant_role)
+            # The host picks which photos feed the round from this frame.
+            response[:photos] = intake_photos.map do |p|
+              { id: p.id, photo_url: attachment_url(p.photo) }
+            end
+            response[:selected_photo_ids] = Array(block.payload["selected_photo_ids"])
+          end
+
+          response
         end
 
       when ExperienceBlock::THE_SCENE

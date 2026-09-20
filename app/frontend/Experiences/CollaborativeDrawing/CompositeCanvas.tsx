@@ -4,6 +4,8 @@ import { Group, Image as KonvaImage, Layer, Line, Rect, Stage } from 'react-konv
 
 import { CollaborativeDrawingComposite } from '@cctv/types';
 
+import { COMPOSITE_HEIGHT, COMPOSITE_WIDTH } from './collaborativeDrawingConstants';
+
 interface CompositeCanvasProps {
   composite: CollaborativeDrawingComposite;
   width: number;
@@ -34,13 +36,13 @@ function useImages(urls: (string | null)[]): (HTMLImageElement | null)[] {
   return images;
 }
 
-// Stacks a group's submitted slices, in slice order, into a single recreation.
-// Each slice is a flattened square drawing; slices stack top-to-bottom.
+// Stacks a group's submitted slices, in slice order, into the portrait
+// recreation frame. Each slice is a full-width horizontal band.
 export default function CompositeCanvas({ composite, width }: CompositeCanvasProps) {
   const ordered = composite.slices.toSorted((a, b) => a.slice_index - b.slice_index);
   const sliceCount = composite.slice_count ?? ordered.length ?? 1;
-  const bandHeight = width;
-  const stageHeight = bandHeight * sliceCount;
+  const stageHeight = Math.round(width * (COMPOSITE_HEIGHT / COMPOSITE_WIDTH));
+  const bandHeight = stageHeight / sliceCount;
   const images = useImages(ordered.map((s) => s.image));
 
   return (

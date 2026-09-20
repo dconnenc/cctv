@@ -51,6 +51,9 @@ export interface DrawingCanvasProps {
   // Incrementing this from a parent force-submits the current drawing without a
   // button press — used to auto-dispatch when a timer expires.
   submitSignal?: number;
+  // Fill the parent (no max-width cap) instead of the default 480px square, so
+  // the drawing surface uses all available space at the `drawSize` aspect ratio.
+  fitContainer?: boolean;
 }
 
 const DEFAULT_PALETTE_VARS = [
@@ -105,6 +108,7 @@ export default function DrawingCanvas({
   onSubmit,
   onBack,
   submitSignal,
+  fitContainer = false,
 }: DrawingCanvasProps) {
   const [lines, setLines] = useState<CanvasStroke[]>(() => withRenderIds(initialStrokes));
   const [clearedLines, setClearedLines] = useState<CanvasStroke[] | null>(null);
@@ -365,15 +369,18 @@ export default function DrawingCanvas({
 
   useEffect(() => {
     const updateSize = () => {
-      if (drawWrapRef.current) {
-        const side = Math.floor(drawWrapRef.current.getBoundingClientRect().width);
-        setDrawStageSize({ w: side, h: side });
-      }
+      if (!drawWrapRef.current) return;
+      const rect = drawWrapRef.current.getBoundingClientRect();
+      const w = Math.floor(rect.width);
+      // The wrapper carries the drawSize aspect ratio, so its measured height
+      // tracks the width; fall back to deriving it if layout hasn't settled.
+      const h = Math.floor(rect.height) || Math.round(w * (drawSize.h / drawSize.w));
+      setDrawStageSize({ w, h });
     };
     updateSize();
     window.addEventListener('resize', updateSize);
     return () => window.removeEventListener('resize', updateSize);
-  }, []);
+  }, [drawSize.w, drawSize.h]);
 
   const drawScale = {
     x: drawStageSize.w / drawSize.w,
@@ -384,7 +391,8 @@ export default function DrawingCanvas({
     <div className={styles.root}>
       <div
         ref={drawWrapRef}
-        className={`${styles.stageWrap} ${styles.square}`}
+        className={`${styles.stageWrap} ${fitContainer ? styles.fit : ''}`}
+        style={{ aspectRatio: `${drawSize.w} / ${drawSize.h}` }}
         onDragOver={handleDragOver}
         onDrop={handleDrop}
       >

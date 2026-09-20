@@ -167,6 +167,25 @@ RSpec.describe Experiences::Orchestrator, "collaborative drawing" do
     end
   end
 
+  describe "#select_collaborative_drawing_photos!" do
+    let(:round) { create_round("total_drawings" => 1, "min_subsections" => 1, "max_subsections" => 2) }
+
+    it "uses the host's selection instead of a random pick" do
+      chosen = attach_photo(round, player_a)
+      attach_photo(round, player_b)
+
+      orchestrator.select_collaborative_drawing_photos!(block: round, photo_ids: [chosen.id])
+      orchestrator.start_collaborative_drawing_round!(block: round.reload)
+
+      expect(round.reload.payload["pool"].map { |p| p["photo_id"] }).to eq([chosen.id])
+    end
+
+    it "drops ids that are not available intake photos" do
+      orchestrator.select_collaborative_drawing_photos!(block: round, photo_ids: ["nope", SecureRandom.uuid])
+      expect(round.reload.payload["selected_photo_ids"]).to eq([])
+    end
+  end
+
   describe "monitor board" do
     let(:round) { create_round("total_drawings" => 1, "min_subsections" => 1, "max_subsections" => 2) }
 

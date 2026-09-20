@@ -134,7 +134,7 @@ export const RoundMarker = seeded(
 );
 
 export const RoundDraw = seeded(
-  build({ phase: 'round', subsection_count: 3, round_started_at: isoSecondsAgo(14) }),
+  build({ phase: 'round', subsection_count: 3, round_started_at: isoSecondsAgo(22) }),
   'participant',
   assignmentState(),
 );
@@ -192,3 +192,21 @@ const endedBlock = build({
 export const ParticipantComposite = seeded(endedBlock, 'participant', assignmentState());
 export const MonitorComposites = seeded(endedBlock, 'monitor');
 export const ManageEnded = seeded(endedBlock, 'manage');
+
+// Host picks which intake photos feed the round.
+const roundManageBlock: CollaborativeDrawingBlock = {
+  ...build({ phase: 'round', total_drawings: 2 }),
+  responses: {
+    total: 3,
+    assignment_count: 0,
+    submission_count: 0,
+    photos: [
+      { id: 'ph1', photo_url: PLACEHOLDER_PHOTO },
+      { id: 'ph2', photo_url: PLACEHOLDER_PHOTO },
+      { id: 'ph3', photo_url: PLACEHOLDER_PHOTO },
+    ],
+    selected_photo_ids: ['ph1'],
+  },
+};
+
+export const ManageRoundSelect = seeded(roundManageBlock, 'manage');
