@@ -55,6 +55,13 @@ import {
   validateMinigameBalloonPump,
 } from './CreateMinigameBalloonPump/CreateMinigameBalloonPump';
 import {
+  buildNewsletterSignupPayload,
+  canNewsletterSignupOpenImmediately,
+  getDefaultNewsletterSignupState,
+  processNewsletterSignupBeforeSubmit,
+  validateNewsletterSignup,
+} from './CreateNewsletterSignup/CreateNewsletterSignup';
+import {
   buildPhotoUploadPayload,
   canPhotoUploadOpenImmediately,
   getDefaultPhotoUploadState,
@@ -138,6 +145,11 @@ export function CreateBlockProvider({
         };
       case BlockKind.THE_SCENE:
         return { kind: BlockKind.THE_SCENE, data: getDefaultTheSceneState() };
+      case BlockKind.NEWSLETTER_SIGNUP:
+        return {
+          kind: BlockKind.NEWSLETTER_SIGNUP,
+          data: getDefaultNewsletterSignupState(),
+        };
       default: {
         const exhaustiveCheck: never = blockKind;
         throw new Error(`Unknown block kind: ${exhaustiveCheck}`);
@@ -205,6 +217,9 @@ export function CreateBlockProvider({
         case BlockKind.THE_SCENE:
           validationError = validateTheScene(blockData.data);
           break;
+        case BlockKind.NEWSLETTER_SIGNUP:
+          validationError = validateNewsletterSignup(blockData.data);
+          break;
         default: {
           const exhaustiveCheck: never = blockData;
           validationError = unknownBlockKindMessage(exhaustiveCheck);
@@ -247,6 +262,9 @@ export function CreateBlockProvider({
           break;
         case BlockKind.THE_SCENE:
           canOpenImmediately = canTheSceneOpenImmediately(blockData.data, participants);
+          break;
+        case BlockKind.NEWSLETTER_SIGNUP:
+          canOpenImmediately = canNewsletterSignupOpenImmediately(blockData.data, participants);
           break;
         default: {
           const exhaustiveCheck: never = blockData;
@@ -326,6 +344,12 @@ export function CreateBlockProvider({
             data: processTheSceneBeforeSubmit(blockData.data, status, participants),
           };
           break;
+        case BlockKind.NEWSLETTER_SIGNUP:
+          processedFormData = {
+            kind: BlockKind.NEWSLETTER_SIGNUP,
+            data: processNewsletterSignupBeforeSubmit(blockData.data, status, participants),
+          };
+          break;
         default: {
           const exhaustiveCheck: never = blockData;
           processedFormData = exhaustiveCheck;
@@ -364,6 +388,9 @@ export function CreateBlockProvider({
           break;
         case BlockKind.THE_SCENE:
           payload = buildTheScenePayload(processedFormData.data);
+          break;
+        case BlockKind.NEWSLETTER_SIGNUP:
+          payload = buildNewsletterSignupPayload(processedFormData.data);
           break;
         default: {
           const exhaustiveCheck: never = processedFormData;

@@ -19,6 +19,7 @@ class Api::ExperienceBlocksController < Api::BaseController
     submit_photo_upload_response submit_buzzer_response
     submit_minigame_arithmetic_response submit_minigame_balloon_pump_update
     submit_the_scene_suggestion submit_the_scene_vote press_the_scene_buzzer
+    submit_newsletter_response
   ].freeze
 
   before_action :authenticate_and_set_user_and_experience
@@ -299,6 +300,24 @@ class Api::ExperienceBlocksController < Api::BaseController
       Experiences::Broadcaster.enqueue_update(@experience)
 
       track_event(Analytics::Events::RESPONSE_SUBMITTED, block_id: @block.id, block_kind: @block.kind, response_kind: "buzzer")
+
+      render json: { success: true, submission: { id: submission.id, answer: submission.answer } }, status: 200
+    end
+  end
+
+  # POST /api/experiences/:experience_id/blocks/:id/submit_newsletter_response
+  def submit_newsletter_response
+    with_experience_orchestration do
+      submission = Experiences::Orchestrator.new(
+        experience: @experience, actor: @user
+      ).submit_newsletter_response!(
+        block: @block,
+        answer: params[:answer]
+      )
+
+      Experiences::Broadcaster.enqueue_update(@experience)
+
+      track_event(Analytics::Events::RESPONSE_SUBMITTED, block_id: @block.id, block_kind: @block.kind, response_kind: "newsletter_signup")
 
       render json: { success: true, submission: { id: submission.id, answer: submission.answer } }, status: 200
     end

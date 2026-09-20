@@ -24,6 +24,7 @@ export { useDirectUpload } from './useDirectUpload';
 export { useSubmitPhotoUploadResponse } from './useSubmitPhotoUploadResponse';
 export { useBlockPresentation } from './useBlockPresentation';
 export { useSubmitBuzzerResponse } from './useSubmitBuzzerResponse';
+export { useSubmitNewsletterResponse } from './useSubmitNewsletterResponse';
 export { useClearBuzzerResponses } from './useClearBuzzerResponses';
 export { useGuessWhoControls } from './useGuessWhoControls';
 export { useParticipantSubmissions } from './useParticipantSubmissions';

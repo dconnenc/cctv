@@ -13,6 +13,7 @@ import CreateFamilyFeud from './CreateFamilyFeud/CreateFamilyFeud';
 import CreateGuessWho from './CreateGuessWho/CreateGuessWho';
 import CreateMinigameArithmetic from './CreateMinigameArithmetic/CreateMinigameArithmetic';
 import CreateMinigameBalloonPump from './CreateMinigameBalloonPump/CreateMinigameBalloonPump';
+import CreateNewsletterSignup from './CreateNewsletterSignup/CreateNewsletterSignup';
 import CreatePhotoUpload from './CreatePhotoUpload/CreatePhotoUpload';
 import CreatePoll from './CreatePoll/CreatePoll';
 import CreateQuestion from './CreateQuestion/CreateQuestion';
@@ -123,6 +124,8 @@ function BlockEditor() {
       return <CreateMinigameBalloonPump data={blockData.data} onChange={onChange} />;
     case BlockKind.THE_SCENE:
       return <CreateTheScene data={blockData.data} onChange={onChange} />;
+    case BlockKind.NEWSLETTER_SIGNUP:
+      return <CreateNewsletterSignup data={blockData.data} onChange={onChange} />;
     default:
       const exhaustiveCheck: never = blockData;
       return <div className={styles.details}>Unknown block type: {exhaustiveCheck}</div>;

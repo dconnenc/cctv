@@ -109,6 +109,7 @@ module Experiences
           :experience_minigame_submissions,
           :experience_minigame_balloon_results,
           :experience_buzzer_submissions,
+          :experience_newsletter_submissions,
           experience_photo_upload_submissions: { photo_attachment: :blob },
           children: [
             :experience_segments,
@@ -119,6 +120,7 @@ module Experiences
             :experience_minigame_submissions,
             :experience_minigame_balloon_results,
             :experience_buzzer_submissions,
+            :experience_newsletter_submissions,
             experience_photo_upload_submissions: { photo_attachment: :blob }
           ]
         )
@@ -666,6 +668,17 @@ module Experiences
             entry[:avatar] = winner_avatar if i == 0 && winner_avatar
             entry
           end
+        end
+
+        response
+
+      when ExperienceBlock::NEWSLETTER_SIGNUP
+        submissions = block.experience_newsletter_submissions.to_a
+        response    = { total: submissions.count }
+
+        if mod_or_host?(participant_role)
+          response[:subscribed_count] = submissions.count { |s| s.answer["subscribed"] }
+          response[:all_responses]    = submissions.map { |s| submission_payload(s) }
         end
 
         response
