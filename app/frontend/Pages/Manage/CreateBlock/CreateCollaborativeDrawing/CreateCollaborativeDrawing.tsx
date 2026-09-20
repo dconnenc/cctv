@@ -99,14 +99,14 @@ export default function CreateCollaborativeDrawing({
         onChange={handleNumber('total_drawings')}
       />
       <TextInput
-        label="Minimum subsections (horizontal slices)"
+        label="Minimum subsections (grid cells)"
         type="number"
         min={1}
         value={data.min_subsections || ''}
         onChange={handleNumber('min_subsections')}
       />
       <TextInput
-        label="Maximum subsections (horizontal slices)"
+        label="Maximum subsections (grid cells)"
         type="number"
         min={1}
         value={data.max_subsections || ''}

@@ -335,6 +335,10 @@ function RoundParticipantView({ block }: { block: CollaborativeDrawingBlock }) {
 // canvas matches the participant's portion exactly.
 const SLICE_CANVAS_WIDTH = 1000;
 
+// The tallest a preview/crop/canvas stage may grow, leaving room for the
+// caption, countdown, and drawing tools within one viewport.
+const STAGE_MAX_VH = 58;
+
 const FULL_REGION = { x: 0, y: 0, w: 1, h: 1 };
 
 function SliceStage({
@@ -377,6 +381,12 @@ function SliceStage({
         ? 'This is your section!'
         : 'Draw your section from memory';
 
+  // Size each stage to the largest box that fits both the column width and the
+  // viewport-height cap at its aspect, so the crop and canvas fill the space
+  // (an absolutely-positioned crop image would otherwise collapse the frame).
+  const cropWidth = `min(100%, calc(${STAGE_MAX_VH}vh * ${cropAspect}))`;
+  const wholeWidth = `min(100%, calc(${STAGE_MAX_VH}vh * ${aspect.w / aspect.h}))`;
+
   // Position the full image inside the crop frame so only this slice's region
   // shows, scaled up to fill the frame at its natural aspect.
   const cropImageStyle = {
@@ -398,6 +408,7 @@ function SliceStage({
           <motion.div
             key="canvas"
             className={styles.sliceCanvasHost}
+            style={{ width: cropWidth }}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.45 }}
@@ -414,7 +425,10 @@ function SliceStage({
           <motion.div
             key="crop"
             className={styles.sliceFrame}
-            style={{ aspectRatio: `${region.w * aspect.w} / ${region.h * aspect.h}` }}
+            style={{
+              width: cropWidth,
+              aspectRatio: `${region.w * aspect.w} / ${region.h * aspect.h}`,
+            }}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -433,7 +447,7 @@ function SliceStage({
           <motion.div
             key="whole"
             className={styles.sliceFrame}
-            style={{ aspectRatio: `${aspect.w} / ${aspect.h}` }}
+            style={{ width: wholeWidth, aspectRatio: `${aspect.w} / ${aspect.h}` }}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -599,7 +613,7 @@ function ManageView({ block }: { block: CollaborativeDrawingBlock }) {
       </p>
       <p className={styles.manageStat}>Prompt: {prompt}</p>
       <p className={styles.manageStat}>
-        {total_drawings} drawings • {min_subsections}–{max_subsections} slices
+        {total_drawings} drawings • {min_subsections}–{max_subsections} cells
         {subsection_count ? ` (using ${subsection_count})` : ''} • {drawing_time_seconds}s to draw
       </p>
       <p className={styles.manageStat}>
