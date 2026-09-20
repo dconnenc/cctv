@@ -366,6 +366,7 @@ class ExperienceSubscriptionChannel < ApplicationCable::Channel
             group_index:      a.group_index,
             slice_index:      a.slice_index,
             slice_count:      a.slice_count,
+            region:           a.grid_region,
             source_photo_url: source_url
           },
           image:     a.drawing_image,

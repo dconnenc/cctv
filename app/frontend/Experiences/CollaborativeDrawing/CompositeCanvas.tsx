@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 
-import { Group, Image as KonvaImage, Layer, Line, Rect, Stage } from 'react-konva';
+import { Group, Image as KonvaImage, Layer, Rect, Stage } from 'react-konva';
 
 import { CollaborativeDrawingComposite } from '@cctv/types';
 
@@ -34,41 +34,60 @@ function useImages(urls: (string | null)[]): (HTMLImageElement | null)[] {
   return images;
 }
 
-// Stacks a group's submitted slices, in slice order, into the recreation. Each
-// slice is a full-width band whose height comes from the drawing's own aspect
-// (all slices of a group share the source aspect), so the stack reconstructs
-// the original image proportions.
+function useAspect(url: string | null): { w: number; h: number } | null {
+  const [aspect, setAspect] = useState<{ w: number; h: number } | null>(null);
+  useEffect(() => {
+    setAspect(null);
+    if (!url) return;
+    let cancelled = false;
+    const img = new window.Image();
+    img.addEventListener('load', () => {
+      if (cancelled) return;
+      if (img.naturalWidth > 0 && img.naturalHeight > 0) {
+        setAspect({ w: img.naturalWidth, h: img.naturalHeight });
+      }
+    });
+    img.src = url;
+    return () => {
+      cancelled = true;
+    };
+  }, [url]);
+  return aspect;
+}
+
+// Reconstructs a group's photo by placing each submitted slice into its grid
+// region. The canvas keeps the source photo's aspect so the regions tile it
+// exactly; each slice was drawn at its region's aspect, so it fills its cell.
 export default function CompositeCanvas({ composite, width }: CompositeCanvasProps) {
   const ordered = composite.slices.toSorted((a, b) => a.slice_index - b.slice_index);
-  const sliceCount = composite.slice_count ?? ordered.length ?? 1;
   const images = useImages(ordered.map((s) => s.image));
+  const sourceAspect = useAspect(composite.source_photo_url);
 
-  // Uniform band height derived from the first loaded slice's aspect; until any
-  // load resolves, fall back to a square-ish band so layout stays stable.
-  const loaded = images.find((img) => img && img.naturalWidth > 0) ?? null;
-  const bandHeight = loaded
-    ? Math.round(width * (loaded.naturalHeight / loaded.naturalWidth))
-    : Math.round(width / sliceCount);
-  const stageHeight = bandHeight * sliceCount;
+  const height = sourceAspect ? Math.round(width * (sourceAspect.h / sourceAspect.w)) : width;
 
   return (
-    <Stage width={width} height={stageHeight}>
+    <Stage width={width} height={height}>
       <Layer>
-        <Rect x={0} y={0} width={width} height={stageHeight} fill="hsl(var(--muted))" />
+        <Rect x={0} y={0} width={width} height={height} fill="hsl(var(--muted))" />
         {ordered.map((slice, i) => {
           const img = images[i];
-          const y = i * bandHeight;
+          const r = slice.region;
+          const x = r.x * width;
+          const y = r.y * height;
+          const w = r.w * width;
+          const h = r.h * height;
           return (
             <Group key={slice.slice_index}>
-              {img && <KonvaImage image={img} x={0} y={y} width={width} height={bandHeight} />}
-              {i > 0 && (
-                <Line
-                  points={[0, y, width, y]}
-                  stroke="hsl(var(--border))"
-                  strokeWidth={1}
-                  dash={[6, 6]}
-                />
-              )}
+              {img && <KonvaImage image={img} x={x} y={y} width={w} height={h} />}
+              <Rect
+                x={x}
+                y={y}
+                width={w}
+                height={h}
+                stroke="hsl(var(--border))"
+                strokeWidth={1}
+                dash={[6, 6]}
+              />
             </Group>
           );
         })}

@@ -124,28 +124,10 @@
   display: block;
 }
 
-.sliceMarker {
-  position: absolute;
-  left: 0;
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  pointer-events: none;
-}
-
-// Highlighted only during the marker beat; dims the rest of the image.
-.sliceMarkerActive {
-  border: 3px solid var(--phosphor);
-  background: color-mix(in srgb, var(--phosphor) 15%, transparent);
-  box-shadow: 0 0 0 100vmax color-mix(in srgb, var(--deep) 55%, transparent);
-}
-
-.sliceMarkerLabel {
-  font-family: var(--font-display);
-  color: var(--phosphor);
-  text-shadow: var(--tv-glow);
-  font-size: 1.1rem;
+// During the marker beat the frame crops to the assigned region: the full image
+// is scaled up and offset (inline styles) so only that portion is visible.
+.cropImage {
+  display: block;
 }
 
 // Hosts the band-proportioned drawing canvas; it fills width at the slice

@@ -1220,6 +1220,14 @@ module Experiences
         payload = block.payload || {}
         return block if payload["ended_at"].present?
 
+        # Capture whatever each drawer last auto-saved: any drawing with content
+        # that was never explicitly submitted counts as submitted when time runs
+        # out, so no one needs to tap submit.
+        block.experience_collaborative_drawing_assignments
+          .where.not(drawing_image: [nil, ""])
+          .where(submitted_at: nil)
+          .update_all(submitted_at: Time.current)
+
         payload["ended_at"]   = Time.current.iso8601
         payload["composites"] = assemble_collaborative_drawing_composites(block)
         block.update!(payload: payload)
@@ -1285,18 +1293,23 @@ module Experiences
       experience.experience_blocks.find_by(id: intake_id)
     end
 
-    # Drawings are recorded best-effort: a client submits when the user taps
-    # submit or when their timer expires, so a late dispatch landing after the
-    # round has ended must not raise. Returns nil when there is no assignment.
-    # The drawing is a flattened image data URL produced by DrawingCanvas.
-    def submit_collaborative_drawing!(block:, image:)
+    # Drawings are recorded best-effort: the client autosaves the canvas on a
+    # timer and on explicit submit, so a late dispatch landing after the round
+    # has ended must not raise. Returns nil when there is no assignment. The
+    # drawing is a flattened image data URL produced by DrawingCanvas.
+    def submit_collaborative_drawing!(block:, image:, finalize: true)
       raise ArgumentError, "Block is not a collaborative drawing" unless block.kind == ExperienceBlock::COLLABORATIVE_DRAWING
 
       assignment = block.experience_collaborative_drawing_assignments
         .find_by(experience_participant: current_participant)
       return nil unless assignment
 
-      assignment.update!(drawing_image: image.to_s, submitted_at: Time.current)
+      attrs = { drawing_image: image.to_s }
+      # Autosaves (finalize: false) keep the latest canvas without marking the
+      # drawer done, so the live board only ungreys on an explicit submit or when
+      # the round ends.
+      attrs[:submitted_at] = Time.current if finalize
+      assignment.update!(attrs)
       assignment
     end
 
@@ -1783,7 +1796,8 @@ module Experiences
           {
             "slice_index" => a.slice_index,
             "image"       => a.drawing_image,
-            "name"        => a.experience_participant&.name
+            "name"        => a.experience_participant&.name,
+            "region"      => a.grid_region
           }
         end
 

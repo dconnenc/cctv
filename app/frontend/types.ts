@@ -256,10 +256,20 @@ export interface CollaborativeDrawingPoolItem {
   url: string;
 }
 
+// Fractional (0–1) rectangle of the source photo a slice covers. Slices tile
+// the photo as an as-square-as-possible grid.
+export interface CollaborativeDrawingRegion {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
 export interface CollaborativeDrawingCompositeSlice {
   slice_index: number;
   image: string | null;
   name?: string | null;
+  region: CollaborativeDrawingRegion;
 }
 
 export interface CollaborativeDrawingComposite {
@@ -310,6 +320,7 @@ export interface CollaborativeDrawingAssignment {
   group_index: number;
   slice_index: number;
   slice_count: number;
+  region: CollaborativeDrawingRegion;
   source_photo_url: string | null;
 }
 

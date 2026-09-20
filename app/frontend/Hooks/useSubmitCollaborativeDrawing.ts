@@ -6,6 +6,9 @@ import { useExperienceState } from '@cctv/contexts/ExperienceStateContext';
 export interface SubmitCollaborativeDrawingParams {
   blockId: string;
   image: string;
+  // Autosaves (finalize: false) persist the canvas without flipping the drawer
+  // to the submitted view or broadcasting; defaults to a final submit.
+  finalize?: boolean;
 }
 
 export function useSubmitCollaborativeDrawing() {
@@ -15,7 +18,7 @@ export function useSubmitCollaborativeDrawing() {
   const [error, setError] = useState<string | null>(null);
 
   const submitDrawing = useCallback(
-    async ({ blockId, image }: SubmitCollaborativeDrawingParams) => {
+    async ({ blockId, image, finalize = true }: SubmitCollaborativeDrawingParams) => {
       if (!code) {
         setError('Missing experience code');
         return null;
@@ -24,19 +27,22 @@ export function useSubmitCollaborativeDrawing() {
       setIsLoading(true);
       setError(null);
 
-      // Optimistically mark submitted so the UI can advance immediately even if
-      // the round has already closed server-side (best-effort dispatch).
-      setSubmissionState((prev) => ({
-        ...prev,
-        [blockId]: { ...prev[blockId], image, submitted: true },
-      }));
+      // A final submit optimistically advances the UI even if the round already
+      // closed server-side (best-effort dispatch); autosaves keep the drawer on
+      // the canvas.
+      if (finalize) {
+        setSubmissionState((prev) => ({
+          ...prev,
+          [blockId]: { ...prev[blockId], image, submitted: true },
+        }));
+      }
 
       try {
         const res = await experienceFetch(
           `/api/experiences/${encodeURIComponent(code)}/blocks/${encodeURIComponent(blockId)}/collaborative_drawing/drawings`,
           {
             method: 'POST',
-            body: JSON.stringify({ image }),
+            body: JSON.stringify({ image, finalize }),
           },
         );
 

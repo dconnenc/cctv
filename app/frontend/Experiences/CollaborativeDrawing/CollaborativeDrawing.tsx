@@ -17,6 +17,7 @@ import { CollaborativeDrawingBlock, CollaborativeDrawingBoardGroup } from '@cctv
 import Avatar from '../GuessWho/Avatar';
 import CompositeCanvas from './CompositeCanvas';
 import {
+  AUTOSAVE_INTERVAL_MS,
   MARKER_SECONDS,
   MONITOR_COUNTDOWN_SECONDS,
   PREVIEW_SECONDS,
@@ -243,7 +244,7 @@ function RoundParticipantView({ block }: { block: CollaborativeDrawingBlock }) {
   // Hooks must run unconditionally, before any early return below.
   const aspect = useImageAspect(assignment?.source_photo_url);
 
-  const [submitSignal, setSubmitSignal] = useState(0);
+  const [autosaveSignal, setAutosaveSignal] = useState(0);
   const submittedRef = useRef(false);
 
   const handleSubmit = useCallback(
@@ -255,11 +256,19 @@ function RoundParticipantView({ block }: { block: CollaborativeDrawingBlock }) {
     [block.id, submitDrawing],
   );
 
-  // Auto-dispatch whatever is on the canvas the moment the draw window ends.
+  const handleAutosave = useCallback(
+    (submission: DrawingCanvasSubmission) => {
+      void submitDrawing({ blockId: block.id, image: submission.image, finalize: false });
+    },
+    [block.id, submitDrawing],
+  );
+
+  // Autosave the canvas on a timer while drawing so the latest state is captured
+  // without a submit; the round end finalizes whatever was last saved.
   useEffect(() => {
-    if (subPhase === 'times_up' && !submittedRef.current) {
-      setSubmitSignal((s) => s + 1);
-    }
+    if (subPhase !== 'draw') return;
+    const id = window.setInterval(() => setAutosaveSignal((s) => s + 1), AUTOSAVE_INTERVAL_MS);
+    return () => window.clearInterval(id);
   }, [subPhase]);
 
   // Ended → show this participant's group composite.
@@ -315,22 +324,26 @@ function RoundParticipantView({ block }: { block: CollaborativeDrawingBlock }) {
       aspect={aspect ?? DEFAULT_ASPECT}
       subPhase={subPhase}
       secondsLeft={phaseRemaining}
-      submitSignal={submitSignal}
+      autosaveSignal={autosaveSignal}
+      onAutosave={handleAutosave}
       onSubmit={handleSubmit}
     />
   );
 }
 
-// Canonical slice drawing width; height derives from the source aspect so the
-// canvas matches the participant's band exactly.
+// Canonical slice drawing width; height derives from the crop aspect so the
+// canvas matches the participant's portion exactly.
 const SLICE_CANVAS_WIDTH = 1000;
+
+const FULL_REGION = { x: 0, y: 0, w: 1, h: 1 };
 
 function SliceStage({
   assignment,
   aspect,
   subPhase,
   secondsLeft,
-  submitSignal,
+  autosaveSignal,
+  onAutosave,
   onSubmit,
 }: {
   assignment: NonNullable<
@@ -339,30 +352,41 @@ function SliceStage({
   aspect: { w: number; h: number };
   subPhase: 'preview' | 'marker' | 'draw';
   secondsLeft: number;
-  submitSignal: number;
+  autosaveSignal: number;
+  onAutosave: (submission: DrawingCanvasSubmission) => void;
   onSubmit: (submission: DrawingCanvasSubmission) => void;
 }) {
-  const sliceCount = assignment?.slice_count ?? 1;
-  // Canvas coordinate space matches the participant's band, so the drawing
-  // scales to its slice and stacks cleanly into the composite.
+  const region = assignment?.region ?? FULL_REGION;
+  // The crop's pixel aspect drives both the previewed portion and the drawing
+  // canvas, so they line up and the drawing stitches back into the composite.
+  const cropAspect = (region.w * aspect.w) / (region.h * aspect.h);
   const drawSize = useMemo(
     () => ({
       w: SLICE_CANVAS_WIDTH,
-      h: Math.max(1, Math.round((SLICE_CANVAS_WIDTH * (aspect.h / aspect.w)) / sliceCount)),
+      h: Math.max(1, Math.round(SLICE_CANVAS_WIDTH / cropAspect)),
     }),
-    [aspect.w, aspect.h, sliceCount],
+    [cropAspect],
   );
 
   if (!assignment) return null;
 
-  const bandPct = 100 / sliceCount;
-  const topPct = assignment.slice_index * bandPct;
   const caption =
     subPhase === 'preview'
       ? 'Memorize this image!'
       : subPhase === 'marker'
         ? 'This is your section!'
         : 'Draw your section from memory';
+
+  // Position the full image inside the crop frame so only this slice's region
+  // shows, scaled up to fill the frame at its natural aspect.
+  const cropImageStyle = {
+    position: 'absolute' as const,
+    width: `${100 / region.w}%`,
+    height: `${100 / region.h}%`,
+    left: `${(-100 * region.x) / region.w}%`,
+    top: `${(-100 * region.y) / region.h}%`,
+    maxWidth: 'none',
+  };
 
   return (
     <div className={styles.container}>
@@ -381,13 +405,33 @@ function SliceStage({
             <DrawingCanvas
               drawSize={drawSize}
               fitContainer
-              submitSignal={submitSignal}
+              autosaveSignal={autosaveSignal}
+              onAutosave={onAutosave}
               onSubmit={onSubmit}
             />
           </motion.div>
+        ) : subPhase === 'marker' ? (
+          <motion.div
+            key="crop"
+            className={styles.sliceFrame}
+            style={{ aspectRatio: `${region.w * aspect.w} / ${region.h * aspect.h}` }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.45 }}
+          >
+            {assignment.source_photo_url && (
+              <img
+                src={assignment.source_photo_url}
+                alt="Your assigned section"
+                className={styles.cropImage}
+                style={cropImageStyle}
+              />
+            )}
+          </motion.div>
         ) : (
           <motion.div
-            key="image"
+            key="whole"
             className={styles.sliceFrame}
             style={{ aspectRatio: `${aspect.w} / ${aspect.h}` }}
             initial={{ opacity: 0 }}
@@ -398,18 +442,10 @@ function SliceStage({
             {assignment.source_photo_url && (
               <img
                 src={assignment.source_photo_url}
-                alt="Your assigned section"
+                alt="The full scene to memorize"
                 className={styles.sliceImage}
               />
             )}
-            <div
-              className={`${styles.sliceMarker} ${subPhase === 'marker' ? styles.sliceMarkerActive : ''}`}
-              style={{ top: `${topPct}%`, height: `${bandPct}%` }}
-            >
-              {subPhase === 'marker' && (
-                <span className={styles.sliceMarkerLabel}>Your section</span>
-              )}
-            </div>
           </motion.div>
         )}
       </AnimatePresence>

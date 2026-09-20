@@ -144,6 +144,33 @@ RSpec.describe Experiences::Orchestrator, "collaborative drawing" do
         .submit_collaborative_drawing!(block: round, image: "x")
       expect(result).to be_nil
     end
+
+    it "autosaves the canvas without marking the drawer submitted" do
+      drawer = described_class.new(actor: player_a.user, experience: experience)
+      drawer.submit_collaborative_drawing!(block: round, image: "data:image/png;base64,DRAFT", finalize: false)
+
+      assignment = round.experience_collaborative_drawing_assignments.find_by(experience_participant: player_a)
+      expect(assignment.drawing_image).to eq("data:image/png;base64,DRAFT")
+      expect(assignment.submitted_at).to be_nil
+    end
+  end
+
+  describe "#end_collaborative_drawing_round! capturing autosaves" do
+    let(:round) { create_round }
+
+    before do
+      attach_photo(round, player_a)
+      orchestrator.start_collaborative_drawing_round!(block: round)
+      described_class.new(actor: player_a.user, experience: experience)
+        .submit_collaborative_drawing!(block: round, image: "data:image/png;base64,DRAFT", finalize: false)
+    end
+
+    it "finalizes drawings that were only autosaved so no one needs to submit" do
+      orchestrator.end_collaborative_drawing_round!(block: round)
+
+      assignment = round.experience_collaborative_drawing_assignments.find_by(experience_participant: player_a)
+      expect(assignment.submitted_at).to be_present
+    end
   end
 
   describe "#end_collaborative_drawing_round! composites" do

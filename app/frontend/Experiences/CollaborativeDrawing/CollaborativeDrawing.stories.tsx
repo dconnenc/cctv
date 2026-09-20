@@ -10,6 +10,7 @@ import {
 import { ExperienceSeeder } from '../../../../.storybook/ExperienceSeeder';
 import { lobbyExperience, mockParticipant } from '../../../../.storybook/fixtures';
 import CollaborativeDrawing from './CollaborativeDrawing';
+import { gridRegion } from './collaborativeDrawingConstants';
 
 const BLOCK_ID = 'collab-draw-1';
 
@@ -37,9 +38,9 @@ const composite = (groupIndex: number): CollaborativeDrawingComposite => ({
   slice_count: 3,
   source_photo_url: PLACEHOLDER_PHOTO,
   slices: [
-    { slice_index: 0, image: sliceImage('#202020'), name: 'Alice' },
-    { slice_index: 1, image: sliceImage('#282828'), name: 'Bob' },
-    { slice_index: 2, image: sliceImage('#303030'), name: 'Charlie' },
+    { slice_index: 0, image: sliceImage('#202020'), name: 'Alice', region: gridRegion(0, 3) },
+    { slice_index: 1, image: sliceImage('#282828'), name: 'Bob', region: gridRegion(1, 3) },
+    { slice_index: 2, image: sliceImage('#303030'), name: 'Charlie', region: gridRegion(2, 3) },
   ],
 });
 
@@ -76,6 +77,7 @@ const assignmentState = (): SubmissionState => ({
       group_index: 0,
       slice_index: 1,
       slice_count: 3,
+      region: gridRegion(1, 3),
       source_photo_url: PLACEHOLDER_PHOTO,
     },
     image: null,

@@ -957,14 +957,19 @@ class Api::ExperienceBlocksController < Api::BaseController
   # POST /api/experiences/:experience_id/blocks/:id/collaborative_drawing/drawings
   def submit_collaborative_drawing
     with_experience_orchestration do
+      finalize = params.key?(:finalize) ? ActiveModel::Type::Boolean.new.cast(params[:finalize]) : true
+
       submission = Experiences::Orchestrator.new(
         experience: @experience, actor: @user
       ).submit_collaborative_drawing!(
         block: @block,
-        image: params[:image]
+        image: params[:image],
+        finalize: finalize
       )
 
-      Experiences::Broadcaster.enqueue_update(@experience)
+      # Autosaves change no shared view (the board ungreys only on submit), so
+      # they skip the broadcast to avoid churn while everyone draws.
+      Experiences::Broadcaster.enqueue_update(@experience) if finalize
 
       answer = submission ? { image: submission.drawing_image } : nil
       render json: { success: true, submission: submission && { id: submission.id, answer: answer } }, status: 200

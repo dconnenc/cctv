@@ -51,6 +51,11 @@ export interface DrawingCanvasProps {
   // Incrementing this from a parent force-submits the current drawing without a
   // button press — used to auto-dispatch when a timer expires.
   submitSignal?: number;
+  // Incrementing this persists the current canvas without marking the drawing
+  // as submitted — used to autosave on a timer so nothing is lost if the drawer
+  // never taps submit. Skipped when the canvas is empty.
+  autosaveSignal?: number;
+  onAutosave?: (submission: DrawingCanvasSubmission) => void;
   // Fill the parent (no max-width cap) instead of the default 480px square, so
   // the drawing surface uses all available space at the `drawSize` aspect ratio.
   fitContainer?: boolean;
@@ -108,6 +113,8 @@ export default function DrawingCanvas({
   onSubmit,
   onBack,
   submitSignal,
+  autosaveSignal,
+  onAutosave,
   fitContainer = false,
 }: DrawingCanvasProps) {
   const [lines, setLines] = useState<CanvasStroke[]>(() => withRenderIds(initialStrokes));
@@ -348,6 +355,19 @@ export default function DrawingCanvas({
     void onSubmit(buildSubmission());
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [submitSignal]);
+
+  // Autosave the current canvas when the parent bumps autosaveSignal, without
+  // marking the drawing submitted. Empty canvases are skipped so idle drawers
+  // stay ungreyed on the board.
+  const lastAutosaveSignalRef = useRef(autosaveSignal);
+  useEffect(() => {
+    if (autosaveSignal === undefined) return;
+    if (autosaveSignal === lastAutosaveSignalRef.current) return;
+    lastAutosaveSignalRef.current = autosaveSignal;
+    if (lines.length === 0 && !baseImage && !backgroundColor) return;
+    onAutosave?.(buildSubmission());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autosaveSignal]);
 
   const updateCosmetic = (index: number, next: CosmeticPlacement) => {
     onCosmeticsChange?.(cosmetics.map((c, i) => (i === index ? next : c)));
