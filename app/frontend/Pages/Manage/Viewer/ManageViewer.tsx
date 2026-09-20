@@ -2,20 +2,11 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { useNavigate } from 'react-router-dom';
 
-import { BookOpen, Bug, Columns3, Focus, MoreHorizontal, X } from 'lucide-react';
+import { ArrowRight, ChevronLeft, ChevronRight, CircleDot, Square, X } from 'lucide-react';
 
 import { trackManageAction } from '@cctv/analytics';
 import { useExperience } from '@cctv/contexts/ExperienceContext';
-import {
-  Button,
-  Drawer,
-  DrawerBody,
-  DrawerContent,
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@cctv/core';
+import { Button, Drawer, DrawerBody, DrawerContent } from '@cctv/core';
 import { Pill } from '@cctv/core/Pill/Pill';
 import { useBlockPresentation } from '@cctv/hooks/useBlockPresentation';
 import { useDeleteExperienceBlock } from '@cctv/hooks/useDeleteExperienceBlock';
@@ -24,25 +15,32 @@ import { useExperiencePause } from '@cctv/hooks/useExperiencePause';
 import { useExperienceResume } from '@cctv/hooks/useExperienceResume';
 import { useExperienceStart } from '@cctv/hooks/useExperienceStart';
 import { useReorderBlock } from '@cctv/hooks/useReorderBlock';
-import { Block, ParticipantSummary } from '@cctv/types';
+import { BLOCK_KIND_LABELS, Block, ParticipantSummary } from '@cctv/types';
 
 import CreateBlock from '../CreateBlock/CreateBlock';
 import EditBlock from '../EditBlock/EditBlock';
 import ExperienceActionButton from '../ExperienceActionButton';
-import { getManageMode, setManageMode } from '../Focus/useManageMode';
+import { getManageMode } from '../Focus/useManageMode';
 import ParticipantsTab from '../ParticipantsTab/ParticipantsTab';
-import PlaybillTab from '../PlaybillTab/PlaybillTab';
 import BlockDetailPanel from './BlockDetailPanel';
 import BlockSidebar from './BlockSidebar';
-import DebugPanel from './DebugPanel/DebugPanel';
+
+function getBlockStatusColor(status: string): string {
+  switch (status) {
+    case 'open':
+      return 'bg-green-500';
+    case 'closed':
+      return 'bg-gray-400';
+    default:
+      return 'bg-gray-600';
+  }
+}
 
 export default function ManageViewer() {
   const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
   const [showParticipantDetails, setShowParticipantDetails] = useState(false);
-  const [showDebugPanel, setShowDebugPanel] = useState(false);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [editingBlock, setEditingBlock] = useState<Block | null>(null);
-  const [isPlaybillDialogOpen, setIsPlaybillDialogOpen] = useState(false);
   const [dismissedError, setDismissedError] = useState(false);
   const [viewMode, setViewMode] = useState<'monitor' | 'participant' | 'block'>('block');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(
@@ -221,44 +219,60 @@ export default function ManageViewer() {
             </div>
             <div className="flex items-center gap-2">
               <ExperienceActionButton />
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="secondary" title="More options">
-                    <MoreHorizontal size={16} />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem
-                    onSelect={() => {
-                      setManageMode('focus');
-                      navigate(`/experiences/${code}/manage/focus`);
-                    }}
-                  >
-                    <Focus size={14} />
-                    Focus
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onSelect={() => navigate(`/experiences/${experience?.code}/timeline`)}
-                  >
-                    <Columns3 size={14} />
-                    Timeline
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onSelect={() => setIsPlaybillDialogOpen(true)}>
-                    <BookOpen size={14} />
-                    Playbill
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onSelect={() => setShowDebugPanel((prev) => !prev)}>
-                    <Bug size={14} />
-                    Debug
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              {selectedBlock && (
+                <>
+                  <span className="border-l border-[hsl(var(--border))] h-6 mx-1" />
+                  <span className="text-sm text-[hsl(var(--muted-foreground))]">
+                    {BLOCK_KIND_LABELS[selectedBlock.kind]}
+                  </span>
+                  <span
+                    className={`w-2 h-2 rounded-full ${getBlockStatusColor(selectedBlock.status)}`}
+                  />
+                  {selectedBlock.status === 'open' ? (
+                    <>
+                      <Button
+                        variant="secondary"
+                        onClick={() => handleStopPresenting(selectedBlock)}
+                        loading={busyBlockId === selectedBlock.id}
+                        loadingText="Closing..."
+                      >
+                        <Square size={16} />
+                        <span>Close</span>
+                      </Button>
+                      <Button
+                        onClick={onPlayNext}
+                        loading={busyBlockId === selectedBlock.id}
+                        loadingText="Next..."
+                      >
+                        <ArrowRight size={16} />
+                        <span>Next</span>
+                      </Button>
+                    </>
+                  ) : (
+                    <Button
+                      onClick={() => handlePresent(selectedBlock)}
+                      loading={busyBlockId === selectedBlock.id}
+                      loadingText="Opening..."
+                    >
+                      <CircleDot size={16} />
+                      <span>Open</span>
+                    </Button>
+                  )}
+                </>
+              )}
+              <span className="border-l border-[hsl(var(--border))] h-6 mx-1" />
               <Button
+                variant="ghost"
+                size="sm"
+                aria-label="Participants"
+                title="Participants"
+                hideLabel
+                icon={
+                  showParticipantDetails ? <ChevronLeft size={16} /> : <ChevronRight size={16} />
+                }
                 onClick={() => setShowParticipantDetails((prev) => !prev)}
-                variant="secondary"
-                title={showParticipantDetails ? 'Hide Participants' : 'Participants'}
               >
-                {showParticipantDetails ? 'Hide Participants' : 'Participants'}
+                Participants
               </Button>
             </div>
           </div>
@@ -283,15 +297,11 @@ export default function ManageViewer() {
               <BlockDetailPanel
                 selectedBlock={selectedBlock}
                 currentOpenBlock={currentOpenBlock}
-                busyBlockId={busyBlockId}
                 viewMode={viewMode}
                 monitorView={monitorView}
                 participantView={participantView}
                 impersonatedParticipantId={impersonatedParticipantId}
                 participants={participantsCombined}
-                onPresent={handlePresent}
-                onStopPresenting={handleStopPresenting}
-                onPlayNext={onPlayNext}
                 onViewModeChange={setViewMode}
                 onImpersonatedParticipantChange={setImpersonatedParticipantId}
                 onEdit={setEditingBlock}
@@ -363,25 +373,6 @@ export default function ManageViewer() {
                 participants={participantsCombined}
               />
             )}
-          </DrawerBody>
-        </DrawerContent>
-      </Drawer>
-
-      <Drawer open={showDebugPanel} onOpenChange={setShowDebugPanel}>
-        <DrawerContent style={{ maxWidth: '36rem' }}>
-          <DrawerBody>
-            <DebugPanel selectedBlock={selectedBlock} />
-          </DrawerBody>
-        </DrawerContent>
-      </Drawer>
-
-      <Drawer open={isPlaybillDialogOpen} onOpenChange={setIsPlaybillDialogOpen}>
-        <DrawerContent style={{ maxWidth: '36rem' }}>
-          <DrawerBody>
-            <PlaybillTab
-              playbill={experience?.playbill || []}
-              playbillEnabled={experience?.playbill_enabled !== false}
-            />
           </DrawerBody>
         </DrawerContent>
       </Drawer>

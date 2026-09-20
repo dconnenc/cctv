@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-import { ArrowRight, CircleDot, Square, Trash2 } from 'lucide-react';
+import { Trash2 } from 'lucide-react';
 
 import { useExperience } from '@cctv/contexts/ExperienceContext';
 import { Button } from '@cctv/core/Button/Button';
@@ -65,15 +65,11 @@ function VisibilityDetails({ block }: { block: Block }) {
 interface BlockDetailPanelProps {
   selectedBlock: Block;
   currentOpenBlock?: Block;
-  busyBlockId?: string;
   viewMode: 'monitor' | 'participant' | 'block';
   monitorView?: Experience;
   participantView?: Experience;
   impersonatedParticipantId?: string;
   participants: ParticipantSummary[];
-  onPresent: (block: Block) => void;
-  onStopPresenting: (block: Block) => void;
-  onPlayNext: () => void;
   onViewModeChange: (mode: 'monitor' | 'participant' | 'block') => void;
   onImpersonatedParticipantChange: (id: string) => void;
   onEdit: (block: Block) => void;
@@ -86,15 +82,11 @@ interface BlockDetailPanelProps {
 export default function BlockDetailPanel({
   selectedBlock,
   currentOpenBlock,
-  busyBlockId,
   viewMode,
   monitorView,
   participantView,
   impersonatedParticipantId,
   participants,
-  onPresent,
-  onStopPresenting,
-  onPlayNext,
   onViewModeChange,
   onImpersonatedParticipantChange,
   onEdit,
@@ -123,38 +115,7 @@ export default function BlockDetailPanel({
             {hasTargetingRules(selectedBlock) && <VisibilityDetails block={selectedBlock} />}
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          {selectedBlock.status === 'open' ? (
-            <>
-              <Button
-                variant="secondary"
-                onClick={() => onStopPresenting(selectedBlock)}
-                loading={busyBlockId === selectedBlock.id}
-                loadingText="Closing..."
-              >
-                <Square size={16} />
-                <span>Close</span>
-              </Button>
-              <Button
-                onClick={onPlayNext}
-                loading={busyBlockId === selectedBlock.id}
-                loadingText="Next..."
-              >
-                <ArrowRight size={16} />
-                <span>Next</span>
-              </Button>
-            </>
-          ) : (
-            <Button
-              onClick={() => onPresent(selectedBlock)}
-              loading={busyBlockId === selectedBlock.id}
-              loadingText="Opening..."
-            >
-              <CircleDot size={16} />
-              <span>Open</span>
-            </Button>
-          )}
-        </div>
+        {/* block controls live in the ManageViewer command bar */}
       </div>
 
       <div className="flex items-center gap-2 -mt-4">
