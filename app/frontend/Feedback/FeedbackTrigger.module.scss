@@ -1,0 +1,70 @@
+/*
+ * The experience page already anchors a playbill FAB in the bottom-right corner
+ * at this exact size, so the feedback trigger stacks directly above it rather
+ * than sitting underneath it. The offset is unconditional to keep the trigger in
+ * the same place on every route, and the z-index clears that FAB's 100.
+ */
+$page-fab-size: 48px;
+
+.trigger {
+  position: fixed;
+  right: calc(var(--space-sm) + env(safe-area-inset-right, 0px));
+  bottom: calc(
+    var(--space-sm) + env(safe-area-inset-bottom, 0px) + #{$page-fab-size} + var(--space-xs)
+  );
+  z-index: 101;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 3rem;
+  height: 3rem;
+  padding: 0;
+  border: 1px solid hsl(var(--border));
+  border-radius: 999px;
+  background: hsl(var(--card));
+  color: hsl(var(--foreground));
+  box-shadow: var(--shadow-lg);
+  cursor: pointer;
+  transition:
+    transform 0.12s ease,
+    border-color 0.12s ease,
+    box-shadow 0.12s ease;
+
+  &:hover {
+    transform: translateY(-2px);
+    border-color: var(--phosphor);
+    box-shadow: var(--tv-glow);
+  }
+
+  &:focus-visible {
+    outline: none;
+    border-color: var(--phosphor);
+    box-shadow: 0 0 0 2px var(--phosphor-glow-medium);
+  }
+}
+
+.icon {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .trigger {
+    transition: none;
+
+    &:hover {
+      transform: none;
+    }
+  }
+}
+
+/* Phones put a bottom nav where the trigger sits, so lift it clear — and the
+ * playbill FAB lifts with it, so keep stacking above that too. */
+@media (max-width: 48rem) {
+  .trigger {
+    bottom: calc(
+      var(--bottom-nav-h) + env(safe-area-inset-bottom, 0px) + var(--space-sm) + #{$page-fab-size} +
+        var(--space-xs)
+    );
+  }
+}

@@ -36,6 +36,7 @@ export enum BlockKind {
   MINIGAME_BALLOON_PUMP = 'minigame_balloon_pump',
   COLLABORATIVE_DRAWING = 'collaborative_drawing',
   THE_SCENE = 'the_scene',
+  FEEDBACK = 'feedback',
   NEWSLETTER_SIGNUP = 'newsletter_signup',
 }
 
@@ -51,6 +52,7 @@ export const BLOCK_KIND_LABELS = {
   [BlockKind.MINIGAME_BALLOON_PUMP]: 'Minigame: Balloon Pump',
   [BlockKind.COLLABORATIVE_DRAWING]: 'Collaborative Drawing',
   [BlockKind.THE_SCENE]: 'The Scene',
+  [BlockKind.FEEDBACK]: 'Feedback',
   [BlockKind.NEWSLETTER_SIGNUP]: 'Newsletter Signup',
 } satisfies Record<BlockKind, string>;
 
@@ -82,6 +84,35 @@ export interface QuestionPayload {
 
 export interface AnnouncementPayload {
   message: string;
+  show_on_monitor?: boolean;
+}
+
+/** Feedback types offered to the reporter, shared by the block and the global panel. */
+export enum FeedbackType {
+  BUG = 'bug',
+  EXPERIENCE = 'experience',
+  GENERAL = 'general',
+  OTHER = 'other',
+}
+
+export const FEEDBACK_TYPE_LABELS = {
+  [FeedbackType.BUG]: 'Bug',
+  [FeedbackType.EXPERIENCE]: 'Experience',
+  [FeedbackType.GENERAL]: 'General',
+  [FeedbackType.OTHER]: 'Other',
+} satisfies Record<FeedbackType, string>;
+
+/** Where a report originated. Determines how it is grouped in Linear. */
+export enum FeedbackSource {
+  MANUAL = 'manual',
+  ERROR = 'error',
+  BLOCK = 'block',
+}
+
+export interface FeedbackPayload {
+  prompt: string;
+  allowed_types?: FeedbackType[];
+  require_title?: boolean;
   show_on_monitor?: boolean;
 }
 
@@ -440,6 +471,13 @@ export interface TheSceneApiPayload {
   performer_participant_ids: string[];
 }
 
+export interface FeedbackApiPayload {
+  type: 'feedback';
+  prompt: string;
+  allowed_types: FeedbackType[];
+  require_title: boolean;
+}
+
 export interface MinigameBalloonPumpApiPayload {
   type: 'minigame_balloon_pump';
   variant: 'balloon_pump';
@@ -468,6 +506,7 @@ export type ApiPayload =
   | MinigameBalloonPumpApiPayload
   | CollaborativeDrawingApiPayload
   | TheSceneApiPayload
+  | FeedbackApiPayload
   | NewsletterSignupApiPayload;
 
 // ===== PLAYBILL TYPES =====
@@ -689,6 +728,14 @@ export interface MinigameBalloonPumpBlock extends BaseBlock {
   };
 }
 
+export interface FeedbackBlock extends BaseBlock {
+  kind: BlockKind.FEEDBACK;
+  payload: FeedbackPayload;
+  responses?: {
+    total: number;
+  };
+}
+
 export interface CollaborativeDrawingBlock extends BaseBlock {
   kind: BlockKind.COLLABORATIVE_DRAWING;
   payload: CollaborativeDrawingPayload;
@@ -724,6 +771,7 @@ export type Block =
   | MinigameBalloonPumpBlock
   | CollaborativeDrawingBlock
   | TheSceneBlock
+  | FeedbackBlock
   | NewsletterSignupBlock;
 
 export interface PlaybillRunningOrderEntry {
@@ -799,6 +847,7 @@ export interface CreateBlockPayload {
     | MinigameBalloonPumpPayload
     | CollaborativeDrawingPayload
     | TheScenePayload
+    | FeedbackPayload
     | NewsletterSignupPayload;
   visible_to_segment_ids?: string[];
   status?: BlockStatus;
@@ -1285,6 +1334,12 @@ export interface TheSceneData {
   performer_participant_ids: string[];
 }
 
+export interface FeedbackData {
+  prompt: string;
+  allowed_types: FeedbackType[];
+  require_title: boolean;
+}
+
 // Union type for all block component data
 export type BlockComponentData =
   | PollData
@@ -1298,6 +1353,7 @@ export type BlockComponentData =
   | MinigameBalloonPumpData
   | CollaborativeDrawingData
   | TheSceneData
+  | FeedbackData
   | NewsletterSignupData;
 
 // Discriminated union for form block data
@@ -1313,6 +1369,7 @@ export type FormBlockData =
   | { kind: BlockKind.MINIGAME_BALLOON_PUMP; data: MinigameBalloonPumpData }
   | { kind: BlockKind.COLLABORATIVE_DRAWING; data: CollaborativeDrawingData }
   | { kind: BlockKind.THE_SCENE; data: TheSceneData }
+  | { kind: BlockKind.FEEDBACK; data: FeedbackData }
   | { kind: BlockKind.NEWSLETTER_SIGNUP; data: NewsletterSignupData };
 
 export interface UpdateBlockPayload {

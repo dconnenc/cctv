@@ -41,6 +41,13 @@ import {
   validateFamilyFeud,
 } from './CreateFamilyFeud/CreateFamilyFeud';
 import {
+  buildFeedbackPayload,
+  canFeedbackOpenImmediately,
+  getDefaultFeedbackState,
+  processFeedbackBeforeSubmit,
+  validateFeedback,
+} from './CreateFeedback/CreateFeedback';
+import {
   buildGuessWhoPayload,
   canGuessWhoOpenImmediately,
   getDefaultGuessWhoState,
@@ -157,6 +164,8 @@ export function CreateBlockProvider({
         };
       case BlockKind.THE_SCENE:
         return { kind: BlockKind.THE_SCENE, data: getDefaultTheSceneState() };
+      case BlockKind.FEEDBACK:
+        return { kind: BlockKind.FEEDBACK, data: getDefaultFeedbackState() };
       case BlockKind.NEWSLETTER_SIGNUP:
         return {
           kind: BlockKind.NEWSLETTER_SIGNUP,
@@ -232,6 +241,9 @@ export function CreateBlockProvider({
         case BlockKind.THE_SCENE:
           validationError = validateTheScene(blockData.data);
           break;
+        case BlockKind.FEEDBACK:
+          validationError = validateFeedback(blockData.data);
+          break;
         case BlockKind.NEWSLETTER_SIGNUP:
           validationError = validateNewsletterSignup(blockData.data);
           break;
@@ -280,6 +292,9 @@ export function CreateBlockProvider({
           break;
         case BlockKind.THE_SCENE:
           canOpenImmediately = canTheSceneOpenImmediately(blockData.data, participants);
+          break;
+        case BlockKind.FEEDBACK:
+          canOpenImmediately = canFeedbackOpenImmediately(blockData.data, participants);
           break;
         case BlockKind.NEWSLETTER_SIGNUP:
           canOpenImmediately = canNewsletterSignupOpenImmediately(blockData.data, participants);
@@ -368,6 +383,12 @@ export function CreateBlockProvider({
             data: processTheSceneBeforeSubmit(blockData.data, status, participants),
           };
           break;
+        case BlockKind.FEEDBACK:
+          processedFormData = {
+            kind: BlockKind.FEEDBACK,
+            data: processFeedbackBeforeSubmit(blockData.data, status, participants),
+          };
+          break;
         case BlockKind.NEWSLETTER_SIGNUP:
           processedFormData = {
             kind: BlockKind.NEWSLETTER_SIGNUP,
@@ -415,6 +436,9 @@ export function CreateBlockProvider({
           break;
         case BlockKind.THE_SCENE:
           payload = buildTheScenePayload(processedFormData.data);
+          break;
+        case BlockKind.FEEDBACK:
+          payload = buildFeedbackPayload(processedFormData.data);
           break;
         case BlockKind.NEWSLETTER_SIGNUP:
           payload = buildNewsletterSignupPayload(processedFormData.data);

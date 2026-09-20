@@ -356,6 +356,9 @@ class ExperienceSubscriptionChannel < ApplicationCable::Channel
       .where(experience_block_id: block_scope, experience_participant_id: participant.id)
       .each { |r| result[r.experience_block_id.to_s] = { fill_amount: r.fill_amount } }
 
+    Feedback
+      .where(experience_block_id: block_scope, experience_participant_id: participant.id)
+      .each { |f| result[f.experience_block_id.to_s] = { id: f.id, answer: { submitted: true } } }
     ExperienceCollaborativeDrawingAssignment
       .where(experience_block_id: block_scope, experience_participant_id: participant.id)
       .includes(source_photo: { photo_attachment: :blob })

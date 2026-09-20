@@ -7,6 +7,7 @@ import Announcement from '../Announcement/Announcement';
 import Buzzer from '../Buzzer/Buzzer';
 import CollaborativeDrawing from '../CollaborativeDrawing/CollaborativeDrawing';
 import FamilyFeud from '../FamilyFeud/FamilyFeud';
+import FeedbackBlock from '../FeedbackBlock/FeedbackBlock';
 import GuessWho from '../GuessWho/GuessWho';
 import MinigameArithmetic from '../MinigameArithmetic/MinigameArithmetic';
 import MinigameBalloonPump from '../MinigameBalloonPump/MinigameBalloonPump';
@@ -105,6 +106,8 @@ export default function ExperienceBlockContainer({
       return <CollaborativeDrawing block={block} viewContext={viewContext} sounds={block.sounds} />;
     case BlockKind.THE_SCENE:
       return <TheScene block={block} viewContext={viewContext} />;
+    case BlockKind.FEEDBACK:
+      return <FeedbackBlock block={block} disabled={disabled} viewContext={viewContext} />;
     case BlockKind.NEWSLETTER_SIGNUP:
       return (
         <NewsletterSignup

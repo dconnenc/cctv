@@ -11,6 +11,7 @@ import { CreateBlockProvider, useCreateBlockContext } from './CreateBlockContext
 import CreateBuzzer from './CreateBuzzer/CreateBuzzer';
 import CreateCollaborativeDrawing from './CreateCollaborativeDrawing/CreateCollaborativeDrawing';
 import CreateFamilyFeud from './CreateFamilyFeud/CreateFamilyFeud';
+import CreateFeedback from './CreateFeedback/CreateFeedback';
 import CreateGuessWho from './CreateGuessWho/CreateGuessWho';
 import CreateMinigameArithmetic from './CreateMinigameArithmetic/CreateMinigameArithmetic';
 import CreateMinigameBalloonPump from './CreateMinigameBalloonPump/CreateMinigameBalloonPump';
@@ -127,6 +128,8 @@ function BlockEditor() {
       return <CreateCollaborativeDrawing data={blockData.data} onChange={onChange} />;
     case BlockKind.THE_SCENE:
       return <CreateTheScene data={blockData.data} onChange={onChange} />;
+    case BlockKind.FEEDBACK:
+      return <CreateFeedback data={blockData.data} onChange={onChange} />;
     case BlockKind.NEWSLETTER_SIGNUP:
       return <CreateNewsletterSignup data={blockData.data} onChange={onChange} />;
     default:

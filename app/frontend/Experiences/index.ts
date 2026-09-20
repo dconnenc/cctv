@@ -9,4 +9,5 @@ export { default as MinigameBalloonPump } from './MinigameBalloonPump/MinigameBa
 export { default as CollaborativeDrawing } from './CollaborativeDrawing/CollaborativeDrawing';
 export { default as CompositeCanvas } from './CollaborativeDrawing/CompositeCanvas';
 export { default as TheScene } from './TheScene/TheScene';
+export { default as FeedbackBlock } from './FeedbackBlock/FeedbackBlock';
 export { default as NewsletterSignup } from './NewsletterSignup/NewsletterSignup';

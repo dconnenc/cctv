@@ -7,6 +7,8 @@ import {
   Experience,
   ExperienceParticipant,
   FamilyFeudBlock,
+  FeedbackBlock,
+  FeedbackType,
   GuessWhoBlock,
   MinigameArithmeticBlock,
   MinigameBalloonPumpBlock,
@@ -128,6 +130,20 @@ export function minigameBalloonPumpBlock(
   };
 }
 
+export function feedbackBlock(overrides: Partial<FeedbackBlock> = {}): FeedbackBlock {
+  return {
+    ...blockDefaults,
+    id: 'block-feedback',
+    kind: BlockKind.FEEDBACK,
+    payload: {
+      prompt: 'How was the show?',
+      allowed_types: [FeedbackType.EXPERIENCE, FeedbackType.BUG, FeedbackType.GENERAL],
+      require_title: false,
+    },
+    ...overrides,
+  };
+}
+
 export function collaborativeDrawingBlock(
   overrides: Partial<CollaborativeDrawingBlock> = {},
 ): CollaborativeDrawingBlock {
@@ -210,6 +226,8 @@ export function blockOfKind(kind: BlockKind): Block {
       return collaborativeDrawingBlock();
     case BlockKind.THE_SCENE:
       return theSceneBlock();
+    case BlockKind.FEEDBACK:
+      return feedbackBlock();
     case BlockKind.NEWSLETTER_SIGNUP:
       return newsletterSignupBlock();
     default: {

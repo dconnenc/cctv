@@ -13,6 +13,7 @@ class ExperienceBlock < ApplicationRecord
     MINIGAME_BALLOON_PUMP = "minigame_balloon_pump",
     COLLABORATIVE_DRAWING = "collaborative_drawing",
     THE_SCENE = "the_scene",
+    FEEDBACK = "feedback",
     NEWSLETTER_SIGNUP = "newsletter_signup"
   ]
 
@@ -45,6 +46,7 @@ class ExperienceBlock < ApplicationRecord
   has_many :experience_newsletter_submissions, dependent: :destroy
   has_many :experience_minigame_submissions, dependent: :destroy
   has_many :experience_minigame_balloon_results, dependent: :destroy
+  has_many :feedbacks, dependent: :destroy
   has_many :experience_collaborative_drawing_photos, dependent: :destroy
   has_many :experience_collaborative_drawing_assignments, dependent: :destroy
   has_many :improv_suggestions, dependent: :destroy

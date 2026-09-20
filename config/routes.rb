@@ -9,6 +9,7 @@ Rails.application.routes.draw do
   scope :rails do
     scope :active_storage do
       post "direct_uploads", to: "api/direct_uploads#create"
+      post "feedback_direct_uploads", to: "api/feedback_direct_uploads#create"
     end
   end
 
@@ -26,6 +27,8 @@ Rails.application.routes.draw do
 
   namespace :api do
     get "discover", to: "discover#index"
+
+    resources :feedbacks, only: [:create, :update]
 
     resources :users, only: [] do
       get "me", on: :collection

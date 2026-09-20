@@ -1,0 +1,22 @@
+.confirmation {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-xs);
+  min-height: 12rem;
+  text-align: center;
+}
+
+.confirmationIcon {
+  width: 2.5rem;
+  height: 2.5rem;
+  color: var(--phosphor);
+}
+
+.confirmationText {
+  margin: 0;
+  font-family: var(--font-ui);
+  font-size: 1.125rem;
+  color: hsl(var(--foreground));
+}

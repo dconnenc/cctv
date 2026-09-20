@@ -655,6 +655,11 @@ module Experiences
       when ExperienceBlock::ANNOUNCEMENT
         {}
 
+      when ExperienceBlock::FEEDBACK
+        # Feedback bodies are triaged in Linear, never surfaced back into the
+        # experience, so even hosts only see the count here.
+        { total: block.feedbacks.count }
+
       when ExperienceBlock::PHOTO_UPLOAD
         submissions = block.experience_photo_upload_submissions.includes(photo_attachment: :blob).to_a
         response    = { total: submissions.count }

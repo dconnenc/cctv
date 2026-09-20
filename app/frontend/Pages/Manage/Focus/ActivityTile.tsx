@@ -42,6 +42,7 @@ export function blockSummary(block: Block): string {
     case BlockKind.FAMILY_FEUD:
       return block.payload.title.trim();
     case BlockKind.PHOTO_UPLOAD:
+    case BlockKind.FEEDBACK:
       return block.payload.prompt.trim();
     case BlockKind.COLLABORATIVE_DRAWING:
       return block.payload.phase === 'intake'

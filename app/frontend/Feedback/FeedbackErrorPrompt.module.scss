@@ -1,0 +1,78 @@
+.prompt {
+  position: fixed;
+  right: var(--space-sm);
+  bottom: calc(4.5rem + env(safe-area-inset-bottom, 0px));
+  left: var(--space-sm);
+  z-index: 45;
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-xs);
+  max-width: 26rem;
+  margin-left: auto;
+  padding: var(--space-sm);
+  border: 1px solid hsl(var(--border));
+  border-left: 3px solid var(--destructive);
+  border-radius: var(--radius);
+  background: hsl(var(--card));
+  box-shadow: var(--shadow-lg);
+}
+
+.icon {
+  flex-shrink: 0;
+  width: 1.25rem;
+  height: 1.25rem;
+  color: var(--destructive);
+}
+
+.body {
+  flex: 1;
+  min-width: 0;
+}
+
+.title {
+  margin: 0;
+  font-family: var(--font-ui);
+  font-size: 1rem;
+  font-weight: 600;
+  color: hsl(var(--foreground));
+}
+
+.message {
+  margin: 0.25rem 0 0;
+  overflow: hidden;
+  font-size: 0.8125rem;
+  color: hsl(var(--muted-foreground));
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.actions {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.dismiss {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius);
+  background: transparent;
+  color: hsl(var(--muted-foreground));
+  cursor: pointer;
+
+  &:hover {
+    color: hsl(var(--foreground));
+  }
+}
+
+@media (max-width: 48rem) {
+  .prompt {
+    bottom: calc(var(--bottom-nav-h) + 3.5rem + env(safe-area-inset-bottom, 0px));
+  }
+}

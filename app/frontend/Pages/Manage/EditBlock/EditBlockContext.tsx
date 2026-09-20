@@ -40,6 +40,11 @@ import {
   validateFamilyFeud,
 } from '../CreateBlock/CreateFamilyFeud/CreateFamilyFeud';
 import {
+  buildFeedbackPayload,
+  feedbackPayloadToFormData,
+  validateFeedback,
+} from '../CreateBlock/CreateFeedback/CreateFeedback';
+import {
   buildGuessWhoPayload,
   guessWhoPayloadToFormData,
   validateGuessWho,
@@ -146,6 +151,11 @@ function blockToFormData(block: Block): FormBlockData {
         kind: BlockKind.THE_SCENE,
         data: theScenePayloadToFormData(payload),
       };
+    case BlockKind.FEEDBACK:
+      return {
+        kind: BlockKind.FEEDBACK,
+        data: feedbackPayloadToFormData(payload),
+      };
     case BlockKind.NEWSLETTER_SIGNUP:
       return {
         kind: BlockKind.NEWSLETTER_SIGNUP,
@@ -186,6 +196,8 @@ function buildUpdatePayload(blockData: FormBlockData): BlockUpdateFields {
       return { payload: buildCollaborativeDrawingPayload(data) };
     case BlockKind.THE_SCENE:
       return { payload: buildTheScenePayload(data) };
+    case BlockKind.FEEDBACK:
+      return { payload: buildFeedbackPayload(data) };
     case BlockKind.NEWSLETTER_SIGNUP:
       return { payload: buildNewsletterSignupPayload(data) };
     default: {
@@ -277,6 +289,9 @@ export function EditBlockProvider({
         break;
       case BlockKind.THE_SCENE:
         validationError = validateTheScene(data);
+        break;
+      case BlockKind.FEEDBACK:
+        validationError = validateFeedback(data);
         break;
       case BlockKind.NEWSLETTER_SIGNUP:
         validationError = validateNewsletterSignup(data);

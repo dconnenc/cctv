@@ -10,6 +10,7 @@ import CreateAnnouncement from '../CreateBlock/CreateAnnouncement/CreateAnnounce
 import CreateBuzzer from '../CreateBlock/CreateBuzzer/CreateBuzzer';
 import CreateCollaborativeDrawing from '../CreateBlock/CreateCollaborativeDrawing/CreateCollaborativeDrawing';
 import CreateFamilyFeud from '../CreateBlock/CreateFamilyFeud/CreateFamilyFeud';
+import CreateFeedback from '../CreateBlock/CreateFeedback/CreateFeedback';
 import CreateGuessWho from '../CreateBlock/CreateGuessWho/CreateGuessWho';
 import CreateMinigameArithmetic from '../CreateBlock/CreateMinigameArithmetic/CreateMinigameArithmetic';
 import CreateMinigameBalloonPump from '../CreateBlock/CreateMinigameBalloonPump/CreateMinigameBalloonPump';
@@ -252,6 +253,19 @@ function BlockEditor() {
           onChange={(updates) =>
             setBlockData((prev) =>
               prev.kind === BlockKind.THE_SCENE
+                ? { ...prev, data: { ...prev.data, ...updates } }
+                : prev,
+            )
+          }
+        />
+      );
+    case BlockKind.FEEDBACK:
+      return (
+        <CreateFeedback
+          data={data}
+          onChange={(updates) =>
+            setBlockData((prev) =>
+              prev.kind === BlockKind.FEEDBACK
                 ? { ...prev, data: { ...prev.data, ...updates } }
                 : prev,
             )
