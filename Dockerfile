@@ -31,7 +31,7 @@ FROM base AS build
 # Install packages needed to build gems AND Node.js for Vite
 RUN apt-get update -qq && \
     apt-get install --no-install-recommends -y build-essential git libpq-dev pkg-config curl && \
-    curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
+    curl -fsSL https://deb.nodesource.com/setup_22.x | bash - && \
     apt-get install -y nodejs && \
     npm install -g yarn && \
     rm -rf /var/lib/apt/lists /var/cache/apt/archives
