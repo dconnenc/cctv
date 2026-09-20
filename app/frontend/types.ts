@@ -859,6 +859,7 @@ export type GetExperienceApiResponse = GetExperienceSuccessResponse | GetExperie
 
 export interface JoinExperienceRegisteredResponse {
   type: 'success';
+  jwt: string;
   url: string;
   status: 'registered';
   experience_name: string;
