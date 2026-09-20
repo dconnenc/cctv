@@ -49,7 +49,7 @@ RSpec.describe "Question Block", type: :system do
     # Manage view reflects the submitted response
     visit current_path
     select_block(1, kind: "question")
-    within("[aria-label='Preview mode']") { click_button "Responses" }
+    within("[aria-label='Preview mode']") { click_button "Block" }
     expect(page).to have_text(/Responses \(1\)/i)
   end
 
