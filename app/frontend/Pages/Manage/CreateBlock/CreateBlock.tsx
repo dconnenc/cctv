@@ -129,7 +129,7 @@ function BlockEditor() {
     case BlockKind.THE_SCENE:
       return <CreateTheScene data={blockData.data} onChange={onChange} />;
     case BlockKind.FEEDBACK:
-      return <CreateFeedback data={blockData.data} onChange={onChange} />
+      return <CreateFeedback data={blockData.data} onChange={onChange} />;
     case BlockKind.NEWSLETTER_SIGNUP:
       return <CreateNewsletterSignup data={blockData.data} onChange={onChange} />;
     default:

@@ -227,7 +227,7 @@ export function blockOfKind(kind: BlockKind): Block {
     case BlockKind.THE_SCENE:
       return theSceneBlock();
     case BlockKind.FEEDBACK:
-      return feedbackBlock()
+      return feedbackBlock();
     case BlockKind.NEWSLETTER_SIGNUP:
       return newsletterSignupBlock();
     default: {

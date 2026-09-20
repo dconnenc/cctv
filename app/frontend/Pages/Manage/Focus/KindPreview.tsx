@@ -113,7 +113,7 @@ function renderPreview(kind: BlockKind) {
         </>
       );
     case BlockKind.FEEDBACK:
-      return <Lines widths={['70%', '90%', '40%']} />
+      return <Lines widths={['70%', '90%', '40%']} />;
     case BlockKind.NEWSLETTER_SIGNUP:
       return (
         <>

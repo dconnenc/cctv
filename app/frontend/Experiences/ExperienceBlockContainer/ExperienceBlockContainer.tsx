@@ -107,7 +107,7 @@ export default function ExperienceBlockContainer({
     case BlockKind.THE_SCENE:
       return <TheScene block={block} viewContext={viewContext} />;
     case BlockKind.FEEDBACK:
-      return <FeedbackBlock block={block} disabled={disabled} viewContext={viewContext} />
+      return <FeedbackBlock block={block} disabled={disabled} viewContext={viewContext} />;
     case BlockKind.NEWSLETTER_SIGNUP:
       return (
         <NewsletterSignup
