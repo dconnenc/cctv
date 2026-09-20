@@ -50,15 +50,7 @@ export default function About() {
         >
           OpenStreetMap
         </a>{' '}
-        contributors, &copy;{' '}
-        <a
-          className="link"
-          href="https://carto.com/attributions"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          CARTO
-        </a>
+        contributors
       </p>
     </section>
   );
