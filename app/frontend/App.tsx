@@ -15,6 +15,7 @@ import EditEvent from '@cctv/pages/Events/EditEvent';
 import EventDetail from '@cctv/pages/Events/EventDetail';
 import Avatar from '@cctv/pages/Experience/Avatar';
 import Experience from '@cctv/pages/Experience/Experience';
+import ExperiencesList from '@cctv/pages/Experiences/ExperiencesList';
 import Monitor from '@cctv/pages/Monitor/Monitor';
 import CreatePerformer from '@cctv/pages/Performers/CreatePerformer';
 import EditPerformer from '@cctv/pages/Performers/EditPerformer';
@@ -89,6 +90,7 @@ function App() {
 
                 {/* Admin-only */}
                 <Route element={<RequireAdmin />}>
+                  <Route path="/experiences" element={<ExperiencesList />} />
                   <Route path="/create" element={<Create />} />
                   <Route path="/events/new" element={<CreateEvent />} />
                   <Route path="/events/:slug/edit" element={<EditEvent />} />

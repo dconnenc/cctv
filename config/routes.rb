@@ -45,7 +45,7 @@ Rails.application.routes.draw do
         delete :follow, action: :unfollow
       end
     end
-    resources :experiences, only: [:create, :show] do
+    resources :experiences, only: [:index, :create, :show] do
       collection do
         post :join
       end

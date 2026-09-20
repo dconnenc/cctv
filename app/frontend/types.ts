@@ -687,6 +687,18 @@ export interface ApiResponse<T = unknown> {
   message?: string;
 }
 
+export interface ExperienceSummary {
+  id: string;
+  name: string;
+  code_slug: string;
+  status: ExperienceStatus;
+  created_at: string;
+}
+
+export interface ExperiencesIndexResponse {
+  experiences: ExperienceSummary[];
+}
+
 export interface CreateExperienceSuccessResponse {
   type: 'success';
   success: true;

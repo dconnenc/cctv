@@ -10,11 +10,29 @@ class Api::ExperiencesController < Api::BaseController
       :update_playbill
     ]
 
+  before_action -> { authorize! Experience, to: :index? }, only: [:index]
   before_action -> { authorize! Experience, to: :create? }, only: [:create]
   before_action :authorize_experience_action!, only: [:open_lobby, :start, :pause, :resume]
   before_action -> { authorize! @experience, to: :manage? }, only: [:admin_token, :clear_avatars, :update_playbill]
 
   after_action :verify_authorized, except: [:join, :registration_info]
+
+  # GET /api/experiences
+  def index
+    experiences = Experience.order(created_at: :desc)
+
+    render json: {
+      experiences: experiences.map do |e|
+        {
+          id: e.id,
+          name: e.name,
+          code_slug: e.code_slug,
+          status: e.status,
+          created_at: e.created_at
+        }
+      end
+    }
+  end
 
   # POST /api/experiences
   def create

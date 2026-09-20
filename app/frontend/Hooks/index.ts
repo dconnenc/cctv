@@ -35,6 +35,7 @@ export {
   useAssignSegment,
 } from './useSegments';
 export { useEvents } from './useEvents';
+export { useExperiences } from './useExperiences';
 export { useEvent } from './useEvent';
 export { useDiscover } from './useDiscover';
 export { useMediaQuery } from './useMediaQuery';
