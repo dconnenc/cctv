@@ -66,6 +66,10 @@ export default defineConfig({
         fileURLToPath(new URL('.', import.meta.url)),
         'app/frontend/Analytics',
       ),
+      '@cctv/feedback': path.resolve(
+        fileURLToPath(new URL('.', import.meta.url)),
+        'app/frontend/Feedback',
+      ),
     },
   },
 });

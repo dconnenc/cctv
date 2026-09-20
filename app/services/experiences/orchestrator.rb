@@ -106,6 +106,15 @@ module Experiences
         payload["phase"]                     = "idle"
         payload["scene_started_at"]          = nil
         payload["winner_revealed_at"]        = nil
+      when ExperienceBlock::FEEDBACK
+        prompt = payload["prompt"].to_s.strip
+        raise ArgumentError, "prompt is required" if prompt.blank?
+
+        allowed = Array(payload["allowed_types"]).map(&:to_s) & Feedback::TYPES
+
+        payload["prompt"]        = prompt
+        payload["allowed_types"] = allowed.presence || Feedback::DEFAULT_BLOCK_TYPES
+        payload["require_title"] = ActiveModel::Type::Boolean.new.cast(payload["require_title"]) == true
       when ExperienceBlock::GUESS_WHO
         payload["eligibility_threshold"] ||= 0.10
         payload["monitor_view"]            = "idle"

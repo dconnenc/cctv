@@ -28,6 +28,17 @@ FactoryBot.define do
       payload { { "message" => "Hello", "show_on_monitor" => false } }
     end
 
+    trait :feedback do
+      kind { ExperienceBlock::FEEDBACK }
+      payload do
+        {
+          "prompt" => "How was the show?",
+          "allowed_types" => Feedback::DEFAULT_BLOCK_TYPES,
+          "require_title" => false
+        }
+      end
+    end
+
     trait :family_feud do
       kind { ExperienceBlock::FAMILY_FEUD }
       

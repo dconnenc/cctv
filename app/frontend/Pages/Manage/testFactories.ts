@@ -6,6 +6,8 @@ import {
   Experience,
   ExperienceParticipant,
   FamilyFeudBlock,
+  FeedbackBlock,
+  FeedbackType,
   GuessWhoBlock,
   MinigameArithmeticBlock,
   MinigameBalloonPumpBlock,
@@ -126,6 +128,20 @@ export function minigameBalloonPumpBlock(
   };
 }
 
+export function feedbackBlock(overrides: Partial<FeedbackBlock> = {}): FeedbackBlock {
+  return {
+    ...blockDefaults,
+    id: 'block-feedback',
+    kind: BlockKind.FEEDBACK,
+    payload: {
+      prompt: 'How was the show?',
+      allowed_types: [FeedbackType.EXPERIENCE, FeedbackType.BUG, FeedbackType.GENERAL],
+      require_title: false,
+    },
+    ...overrides,
+  };
+}
+
 export function theSceneBlock(overrides: Partial<TheSceneBlock> = {}): TheSceneBlock {
   return {
     ...blockDefaults,
@@ -169,6 +185,8 @@ export function blockOfKind(kind: BlockKind): Block {
       return minigameBalloonPumpBlock();
     case BlockKind.THE_SCENE:
       return theSceneBlock();
+    case BlockKind.FEEDBACK:
+      return feedbackBlock();
     default: {
       const exhaustiveCheck: never = kind;
       throw new Error(`Unhandled block kind: ${exhaustiveCheck}`);

@@ -21,5 +21,6 @@ module Analytics
     PERFORMER_UNFOLLOWED = "performer_unfollowed".freeze
     BLOCK_CREATED = "block_created".freeze
     PARTICIPANT_KICKED = "participant_kicked".freeze
+    FEEDBACK_SUBMITTED = "feedback submitted".freeze
   end
 end

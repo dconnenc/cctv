@@ -40,6 +40,8 @@ export const AnalyticsEvent = {
   PerformerUnfollowed: 'performer_unfollowed',
   BlockCreated: 'block_created',
   ParticipantKicked: 'participant_kicked',
+  FeedbackSubmitted: 'feedback submitted',
+  FeedbackOpened: 'feedback opened',
 } as const;
 
 export type AnalyticsEventName = (typeof AnalyticsEvent)[keyof typeof AnalyticsEvent];

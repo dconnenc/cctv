@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_07_07_000003) do
+ActiveRecord::Schema[7.2].define(version: 2026_09_20_000001) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "citext"
   enable_extension "plpgsql"
@@ -22,6 +22,9 @@ ActiveRecord::Schema[7.2].define(version: 2026_07_07_000003) do
   create_enum "experience_block_statuses", ["hidden", "open", "closed"]
   create_enum "experience_participant_roles", ["audience", "player", "moderator", "host"]
   create_enum "experience_statuses", ["draft", "lobby", "live", "paused", "finished", "archived"]
+  create_enum "feedback_sources", ["manual", "error", "block"]
+  create_enum "feedback_sync_statuses", ["pending", "synced", "failed", "skipped"]
+  create_enum "feedback_types", ["bug", "experience", "general", "other"]
   create_enum "participant_status", ["registered", "active"]
   create_enum "user_roles", ["user", "admin", "superadmin"]
 
@@ -279,6 +282,36 @@ ActiveRecord::Schema[7.2].define(version: 2026_07_07_000003) do
     t.index ["status"], name: "index_experiences_on_status"
   end
 
+  create_table "feedbacks", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "user_id"
+    t.uuid "experience_id"
+    t.uuid "experience_participant_id"
+    t.uuid "experience_block_id"
+    t.enum "feedback_type", default: "general", null: false, enum_type: "feedback_types"
+    t.enum "source", default: "manual", null: false, enum_type: "feedback_sources"
+    t.string "title"
+    t.text "description"
+    t.jsonb "context", default: {}, null: false
+    t.jsonb "console_logs", default: [], null: false
+    t.string "error_fingerprint"
+    t.integer "occurrence_count", default: 1, null: false
+    t.uuid "linear_parent_feedback_id"
+    t.enum "sync_status", default: "pending", null: false, enum_type: "feedback_sync_statuses"
+    t.text "sync_error"
+    t.string "linear_issue_id"
+    t.string "linear_issue_identifier"
+    t.string "linear_issue_url"
+    t.datetime "linear_synced_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["error_fingerprint", "created_at"], name: "index_feedbacks_on_error_fingerprint_and_created_at"
+    t.index ["experience_block_id"], name: "index_feedbacks_on_experience_block_id"
+    t.index ["experience_id"], name: "index_feedbacks_on_experience_id"
+    t.index ["linear_parent_feedback_id"], name: "index_feedbacks_on_linear_parent_feedback_id"
+    t.index ["sync_status"], name: "index_feedbacks_on_sync_status"
+    t.index ["user_id"], name: "index_feedbacks_on_user_id"
+  end
+
   create_table "follows", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.uuid "user_id", null: false
     t.uuid "performer_id", null: false
@@ -392,6 +425,11 @@ ActiveRecord::Schema[7.2].define(version: 2026_07_07_000003) do
   add_foreign_key "experience_segments", "experiences", on_delete: :cascade
   add_foreign_key "experiences", "experience_segments", column: "default_segment_id", on_delete: :nullify
   add_foreign_key "experiences", "users", column: "creator_id", on_delete: :cascade
+  add_foreign_key "feedbacks", "experience_blocks", on_delete: :cascade
+  add_foreign_key "feedbacks", "experience_participants", on_delete: :nullify
+  add_foreign_key "feedbacks", "experiences", on_delete: :cascade
+  add_foreign_key "feedbacks", "feedbacks", column: "linear_parent_feedback_id", on_delete: :nullify
+  add_foreign_key "feedbacks", "users", on_delete: :nullify
   add_foreign_key "follows", "performers", on_delete: :cascade
   add_foreign_key "follows", "users", on_delete: :cascade
   add_foreign_key "improv_suggestions", "experience_blocks", on_delete: :cascade

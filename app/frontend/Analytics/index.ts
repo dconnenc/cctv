@@ -11,6 +11,8 @@ export {
   setPersonProperties,
 } from './client';
 export { instrumentedFetch } from './instrumentedFetch';
+export { onClientError, publishClientError } from './clientErrors';
+export type { ClientErrorEvent, ClientErrorOrigin } from './clientErrors';
 export {
   trackBlockSeen,
   millisecondsSinceSeen,

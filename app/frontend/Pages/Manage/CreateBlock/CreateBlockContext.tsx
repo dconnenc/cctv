@@ -34,6 +34,13 @@ import {
   validateFamilyFeud,
 } from './CreateFamilyFeud/CreateFamilyFeud';
 import {
+  buildFeedbackPayload,
+  canFeedbackOpenImmediately,
+  getDefaultFeedbackState,
+  processFeedbackBeforeSubmit,
+  validateFeedback,
+} from './CreateFeedback/CreateFeedback';
+import {
   buildGuessWhoPayload,
   canGuessWhoOpenImmediately,
   getDefaultGuessWhoState,
@@ -138,6 +145,8 @@ export function CreateBlockProvider({
         };
       case BlockKind.THE_SCENE:
         return { kind: BlockKind.THE_SCENE, data: getDefaultTheSceneState() };
+      case BlockKind.FEEDBACK:
+        return { kind: BlockKind.FEEDBACK, data: getDefaultFeedbackState() };
       default: {
         const exhaustiveCheck: never = blockKind;
         throw new Error(`Unknown block kind: ${exhaustiveCheck}`);
@@ -205,6 +214,9 @@ export function CreateBlockProvider({
         case BlockKind.THE_SCENE:
           validationError = validateTheScene(blockData.data);
           break;
+        case BlockKind.FEEDBACK:
+          validationError = validateFeedback(blockData.data);
+          break;
         default: {
           const exhaustiveCheck: never = blockData;
           validationError = unknownBlockKindMessage(exhaustiveCheck);
@@ -247,6 +259,9 @@ export function CreateBlockProvider({
           break;
         case BlockKind.THE_SCENE:
           canOpenImmediately = canTheSceneOpenImmediately(blockData.data, participants);
+          break;
+        case BlockKind.FEEDBACK:
+          canOpenImmediately = canFeedbackOpenImmediately(blockData.data, participants);
           break;
         default: {
           const exhaustiveCheck: never = blockData;
@@ -326,6 +341,12 @@ export function CreateBlockProvider({
             data: processTheSceneBeforeSubmit(blockData.data, status, participants),
           };
           break;
+        case BlockKind.FEEDBACK:
+          processedFormData = {
+            kind: BlockKind.FEEDBACK,
+            data: processFeedbackBeforeSubmit(blockData.data, status, participants),
+          };
+          break;
         default: {
           const exhaustiveCheck: never = blockData;
           processedFormData = exhaustiveCheck;
@@ -364,6 +385,9 @@ export function CreateBlockProvider({
           break;
         case BlockKind.THE_SCENE:
           payload = buildTheScenePayload(processedFormData.data);
+          break;
+        case BlockKind.FEEDBACK:
+          payload = buildFeedbackPayload(processedFormData.data);
           break;
         default: {
           const exhaustiveCheck: never = processedFormData;

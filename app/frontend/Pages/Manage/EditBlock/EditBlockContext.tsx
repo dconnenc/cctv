@@ -35,6 +35,11 @@ import {
   validateFamilyFeud,
 } from '../CreateBlock/CreateFamilyFeud/CreateFamilyFeud';
 import {
+  buildFeedbackPayload,
+  feedbackPayloadToFormData,
+  validateFeedback,
+} from '../CreateBlock/CreateFeedback/CreateFeedback';
+import {
   buildGuessWhoPayload,
   guessWhoPayloadToFormData,
   validateGuessWho,
@@ -131,6 +136,11 @@ function blockToFormData(block: Block): FormBlockData {
         kind: BlockKind.THE_SCENE,
         data: theScenePayloadToFormData(payload),
       };
+    case BlockKind.FEEDBACK:
+      return {
+        kind: BlockKind.FEEDBACK,
+        data: feedbackPayloadToFormData(payload),
+      };
     default: {
       const exhaustiveCheck: never = kind;
       throw new Error(`Unknown block kind: ${exhaustiveCheck}`);
@@ -164,6 +174,8 @@ function buildUpdatePayload(blockData: FormBlockData): BlockUpdateFields {
       return { payload: buildMinigameBalloonPumpPayload(data) };
     case BlockKind.THE_SCENE:
       return { payload: buildTheScenePayload(data) };
+    case BlockKind.FEEDBACK:
+      return { payload: buildFeedbackPayload(data) };
     default: {
       const exhaustiveCheck: never = kind;
       throw new Error(`Unknown block kind: ${exhaustiveCheck}`);
@@ -250,6 +262,9 @@ export function EditBlockProvider({
         break;
       case BlockKind.THE_SCENE:
         validationError = validateTheScene(data);
+        break;
+      case BlockKind.FEEDBACK:
+        validationError = validateFeedback(data);
         break;
       default: {
         const exhaustiveCheck: never = kind;

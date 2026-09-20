@@ -3,6 +3,7 @@ import { Component, type ErrorInfo, type ReactNode } from 'react';
 import { TriangleAlert } from 'lucide-react';
 
 import { captureException } from './client';
+import { publishClientError } from './clientErrors';
 
 import styles from './AnalyticsErrorBoundary.module.scss';
 
@@ -29,6 +30,12 @@ export class AnalyticsErrorBoundary extends Component<Props, State> {
   componentDidCatch(error: Error, info: ErrorInfo): void {
     captureException(error, {
       react_component_stack: info.componentStack,
+      source: 'react_error_boundary',
+    });
+
+    publishClientError({
+      message: error.message,
+      stack: error.stack,
       source: 'react_error_boundary',
     });
   }

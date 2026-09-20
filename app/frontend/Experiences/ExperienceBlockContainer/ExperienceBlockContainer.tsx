@@ -6,6 +6,7 @@ import { Block, BlockKind, ParticipantSummary } from '@cctv/types';
 import Announcement from '../Announcement/Announcement';
 import Buzzer from '../Buzzer/Buzzer';
 import FamilyFeud from '../FamilyFeud/FamilyFeud';
+import FeedbackBlock from '../FeedbackBlock/FeedbackBlock';
 import GuessWho from '../GuessWho/GuessWho';
 import MinigameArithmetic from '../MinigameArithmetic/MinigameArithmetic';
 import MinigameBalloonPump from '../MinigameBalloonPump/MinigameBalloonPump';
@@ -101,6 +102,8 @@ export default function ExperienceBlockContainer({
       return <MinigameBalloonPump block={block} viewContext={viewContext} />;
     case BlockKind.THE_SCENE:
       return <TheScene block={block} viewContext={viewContext} />;
+    case BlockKind.FEEDBACK:
+      return <FeedbackBlock block={block} disabled={disabled} viewContext={viewContext} />;
     default:
       const exhaustiveCheck: never = block;
       return (

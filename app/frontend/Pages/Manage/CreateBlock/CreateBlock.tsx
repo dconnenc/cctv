@@ -10,6 +10,7 @@ import CreateAnnouncement from './CreateAnnouncement/CreateAnnouncement';
 import { CreateBlockProvider, useCreateBlockContext } from './CreateBlockContext';
 import CreateBuzzer from './CreateBuzzer/CreateBuzzer';
 import CreateFamilyFeud from './CreateFamilyFeud/CreateFamilyFeud';
+import CreateFeedback from './CreateFeedback/CreateFeedback';
 import CreateGuessWho from './CreateGuessWho/CreateGuessWho';
 import CreateMinigameArithmetic from './CreateMinigameArithmetic/CreateMinigameArithmetic';
 import CreateMinigameBalloonPump from './CreateMinigameBalloonPump/CreateMinigameBalloonPump';
@@ -123,6 +124,8 @@ function BlockEditor() {
       return <CreateMinigameBalloonPump data={blockData.data} onChange={onChange} />;
     case BlockKind.THE_SCENE:
       return <CreateTheScene data={blockData.data} onChange={onChange} />;
+    case BlockKind.FEEDBACK:
+      return <CreateFeedback data={blockData.data} onChange={onChange} />;
     default:
       const exhaustiveCheck: never = blockData;
       return <div className={styles.details}>Unknown block type: {exhaustiveCheck}</div>;

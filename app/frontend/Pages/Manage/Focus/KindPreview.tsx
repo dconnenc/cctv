@@ -110,6 +110,8 @@ function renderPreview(kind: BlockKind) {
           <Lines widths={['55%']} />
         </>
       );
+    case BlockKind.FEEDBACK:
+      return <Lines widths={['70%', '90%', '40%']} />;
     default: {
       const exhaustiveCheck: never = kind;
       return <div className={styles.glyph}>{exhaustiveCheck}</div>;
