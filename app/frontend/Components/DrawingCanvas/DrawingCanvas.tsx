@@ -330,7 +330,7 @@ export default function DrawingCanvas({
   // Flatten the background + drawing layers to a fixed-size raster; cosmetics
   // stay a separate layer and are submitted as structured placements.
   const buildSubmission = () => ({
-    image: flattenStrokesToDataUrl(lines, drawSize.w, backgroundColor, baseImage),
+    image: flattenStrokesToDataUrl(lines, drawSize.w, backgroundColor, baseImage, drawSize.h),
     cosmetics,
   });
 

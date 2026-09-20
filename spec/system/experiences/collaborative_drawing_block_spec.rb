@@ -88,7 +88,7 @@ RSpec.describe "Collaborative Drawing Block", type: :system do
     # The round start pushes Alice her slice assignment (via re-subscribe) and
     # she drops into the memorize-your-photo preview.
     using_session(:participant) do
-      expect(page).to have_text(/Memorize this image!|Remember your section!/, wait: 10)
+      expect(page).to have_text(/Memorize this image!|This is your section!/, wait: 10)
     end
 
     # The monitor counts the audience down to "draw". (The live team board that
@@ -98,15 +98,19 @@ RSpec.describe "Collaborative Drawing Block", type: :system do
       expect(page).to have_text(/Get ready to draw!|Drawing on phones/, wait: 10)
     end
 
-    # End the round from the host: composites assemble and are shown back.
+    # End the round from the host: composites assemble and are shown back to the
+    # participant immediately; the monitor only shows them once dispatched.
     click_button "End round now"
-
-    using_session(:monitor) do
-      expect(page).to have_text("The masterpieces", wait: 10)
-    end
 
     using_session(:participant) do
       expect(page).to have_text("Your group's masterpiece", wait: 10)
+    end
+
+    expect(page).to have_button("Dispatch to monitor", wait: 10)
+    click_button "Dispatch to monitor"
+
+    using_session(:monitor) do
+      expect(page).to have_text("The masterpieces", wait: 10)
     end
   end
 end

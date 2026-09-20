@@ -297,6 +297,9 @@ export interface CollaborativeDrawingPayload {
   round_started_at: string | null;
   ended_at: string | null;
   composites: CollaborativeDrawingComposite[] | null;
+  // The host dispatches composites to the monitor; until then they only show
+  // in the manage preview.
+  composites_revealed?: boolean;
   // Present on monitor/manage payloads while the round runs.
   board?: CollaborativeDrawingBoardGroup[];
 }

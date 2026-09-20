@@ -187,6 +187,7 @@ const endedBlock = build({
   round_started_at: isoSecondsAgo(80),
   ended_at: isoSecondsAgo(1),
   composites: [composite(0), composite(1)],
+  composites_revealed: true,
 });
 
 export const ParticipantComposite = seeded(endedBlock, 'participant', assignmentState());

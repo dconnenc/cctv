@@ -186,6 +186,26 @@ RSpec.describe Experiences::Orchestrator, "collaborative drawing" do
     end
   end
 
+  describe "#reveal_collaborative_drawing_composites!" do
+    let(:round) { create_round("total_drawings" => 1, "min_subsections" => 2, "max_subsections" => 2) }
+
+    before do
+      attach_photo(round, player_a)
+      orchestrator.start_collaborative_drawing_round!(block: round)
+      orchestrator.end_collaborative_drawing_round!(block: round)
+    end
+
+    it "flags composites for the monitor and keeps them assembled" do
+      expect(round.reload.payload["composites_revealed"]).to be(false)
+
+      orchestrator.reveal_collaborative_drawing_composites!(block: round)
+
+      payload = round.reload.payload
+      expect(payload["composites_revealed"]).to be(true)
+      expect(payload["composites"]).to be_present
+    end
+  end
+
   describe "monitor board" do
     let(:round) { create_round("total_drawings" => 1, "min_subsections" => 1, "max_subsections" => 2) }
 

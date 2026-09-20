@@ -106,21 +106,21 @@
   text-shadow: var(--tv-glow);
 }
 
-.previewImageFrame {
+// The image fits its own aspect ratio (set inline) — nothing is clipped.
+.sliceFrame {
   position: relative;
-  width: 100%;
-  max-width: 360px;
-  // Match the composite recreation frame so the marker band lines up with the
-  // slice the participant will draw.
-  aspect-ratio: 3 / 4;
+  width: auto;
+  max-width: 100%;
+  max-height: 62vh;
   border-radius: 12px;
   overflow: hidden;
+  margin: 0 auto;
 }
 
-.previewImage {
+.sliceImage {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
   display: block;
 }
 
@@ -128,12 +128,17 @@
   position: absolute;
   left: 0;
   width: 100%;
-  border: 3px solid var(--phosphor);
-  background: color-mix(in srgb, var(--phosphor) 15%, transparent);
-  box-shadow: 0 0 0 100vmax color-mix(in srgb, var(--deep) 55%, transparent);
   display: flex;
   align-items: center;
   justify-content: center;
+  pointer-events: none;
+}
+
+// Highlighted only during the marker beat; dims the rest of the image.
+.sliceMarkerActive {
+  border: 3px solid var(--phosphor);
+  background: color-mix(in srgb, var(--phosphor) 15%, transparent);
+  box-shadow: 0 0 0 100vmax color-mix(in srgb, var(--deep) 55%, transparent);
 }
 
 .sliceMarkerLabel {
@@ -143,41 +148,16 @@
   font-size: 1.1rem;
 }
 
-/* ---- Draw overlay ---- */
-
-.drawOverlay {
-  position: fixed;
-  inset: 0;
-  z-index: 50;
+// Hosts the band-proportioned drawing canvas; it fills width at the slice
+// aspect so the surface matches the participant's portion.
+.sliceCanvasHost {
+  width: 100%;
+  max-width: 640px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--space-xs);
-  padding: var(--space-sm);
-  background: hsl(var(--background));
-}
-
-.drawHeader {
-  display: flex;
-  align-items: center;
-  gap: var(--space-sm);
-  width: 100%;
-  justify-content: space-between;
-  max-width: 640px;
-}
-
-.drawTimer {
-  font-family: var(--font-display);
-  font-size: 2rem;
-  color: var(--phosphor);
-  text-shadow: var(--tv-glow);
-}
-
-.drawHint {
-  font-family: var(--font-body);
-  font-size: 0.9rem;
-  color: var(--foreground);
-  opacity: 0.8;
+  flex: 1;
+  min-height: 0;
 }
 
 /* ---- Composite ---- */
@@ -303,59 +283,4 @@
   display: flex;
   gap: var(--space-xs);
   margin-top: var(--space-xs);
-}
-
-/* ---- Host photo selector ---- */
-
-.selector {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-xs);
-  margin-top: var(--space-xs);
-}
-
-.selectorGrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
-  gap: var(--space-xs);
-}
-
-.selectorItem {
-  position: relative;
-  aspect-ratio: 1 / 1;
-  padding: 0;
-  border: 2px solid hsl(var(--border));
-  border-radius: 8px;
-  overflow: hidden;
-  background: hsl(var(--muted));
-  cursor: pointer;
-}
-
-.selectorItemActive {
-  border-color: var(--phosphor);
-  box-shadow: 0 0 0 2px var(--phosphor-glow, transparent);
-}
-
-.selectorImg {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-}
-
-.selectorBadge {
-  position: absolute;
-  top: 2px;
-  right: 2px;
-  min-width: 20px;
-  height: 20px;
-  padding: 0 4px;
-  border-radius: 10px;
-  background: var(--phosphor);
-  color: hsl(var(--background));
-  font-family: var(--font-display);
-  font-size: 0.8rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
 }

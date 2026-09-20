@@ -166,6 +166,7 @@ module Experiences
         payload["round_started_at"]     = nil
         payload["ended_at"]             = nil
         payload["composites"]           = nil
+        payload["composites_revealed"]  = false
       end
 
       payload
@@ -1238,8 +1239,23 @@ module Experiences
         payload["preview_started_at"] = nil
         payload["ended_at"]           = nil
         payload["composites"]         = nil
+        payload["composites_revealed"] = false
 
         block.experience_collaborative_drawing_assignments.delete_all
+        block.update!(payload: payload)
+      end
+
+      block
+    end
+
+    # Assemble (if needed) and push the composites to the monitor.
+    def reveal_collaborative_drawing_composites!(block:)
+      raise ArgumentError, "Block is not a collaborative drawing" unless block.kind == ExperienceBlock::COLLABORATIVE_DRAWING
+
+      transaction do
+        payload = block.payload || {}
+        payload["composites"] ||= assemble_collaborative_drawing_composites(block)
+        payload["composites_revealed"] = true
         block.update!(payload: payload)
       end
 

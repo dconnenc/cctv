@@ -127,6 +127,7 @@ Rails.application.routes.draw do
           post 'collaborative_drawing/start', action: :start_collaborative_drawing_round
           post 'collaborative_drawing/end', action: :end_collaborative_drawing_round
           post 'collaborative_drawing/restart', action: :restart_collaborative_drawing
+          post 'collaborative_drawing/reveal_composites', action: :reveal_collaborative_drawing_composites
           post 'collaborative_drawing/drawings', action: :submit_collaborative_drawing
 
           post 'the_scene/start', action: :start_the_scene

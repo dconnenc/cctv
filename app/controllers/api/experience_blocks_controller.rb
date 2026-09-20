@@ -11,7 +11,7 @@ class Api::ExperienceBlocksController < Api::BaseController
     start_minigame_arithmetic end_minigame_arithmetic restart_minigame_arithmetic
     start_minigame_balloon_pump end_minigame_balloon_pump restart_minigame_balloon_pump
     start_collaborative_drawing_round end_collaborative_drawing_round restart_collaborative_drawing
-    select_collaborative_drawing_photos
+    select_collaborative_drawing_photos reveal_collaborative_drawing_composites
     start_the_scene end_the_scene force_next_the_scene update_the_scene_performers
     clear_the_scene_top clear_the_scene_suggestion clear_the_scene_all
   ].freeze
@@ -934,6 +934,19 @@ class Api::ExperienceBlocksController < Api::BaseController
         block: @block,
         photo_ids: params[:photo_ids]
       )
+
+      Experiences::Broadcaster.enqueue_update(@experience)
+
+      render json: { success: true, data: block }, status: 200
+    end
+  end
+
+  # POST /api/experiences/:experience_id/blocks/:id/collaborative_drawing/reveal_composites
+  def reveal_collaborative_drawing_composites
+    with_experience_orchestration do
+      block = Experiences::Orchestrator.new(
+        experience: @experience, actor: @user
+      ).reveal_collaborative_drawing_composites!(block: @block)
 
       Experiences::Broadcaster.enqueue_update(@experience)
 

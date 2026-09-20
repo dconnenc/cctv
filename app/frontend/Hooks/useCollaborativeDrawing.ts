@@ -14,7 +14,10 @@ export function useCollaborativeDrawing() {
   const [error, setError] = useState<string | null>(null);
 
   const runAction = useCallback(
-    async (blockId: string, action: 'start' | 'end' | 'restart'): Promise<ActionResult> => {
+    async (
+      blockId: string,
+      action: 'start' | 'end' | 'restart' | 'reveal_composites',
+    ): Promise<ActionResult> => {
       if (!code) return { success: false, error: 'Missing experience code' };
       setError(null);
       const res = await adminFetch(
@@ -35,6 +38,10 @@ export function useCollaborativeDrawing() {
   const startRound = useCallback((blockId: string) => runAction(blockId, 'start'), [runAction]);
   const endRound = useCallback((blockId: string) => runAction(blockId, 'end'), [runAction]);
   const restart = useCallback((blockId: string) => runAction(blockId, 'restart'), [runAction]);
+  const revealComposites = useCallback(
+    (blockId: string) => runAction(blockId, 'reveal_composites'),
+    [runAction],
+  );
 
   const selectPhotos = useCallback(
     async (blockId: string, photoIds: string[]): Promise<ActionResult> => {
@@ -55,5 +62,5 @@ export function useCollaborativeDrawing() {
     [code, adminFetch],
   );
 
-  return { startRound, endRound, restart, selectPhotos, error };
+  return { startRound, endRound, restart, revealComposites, selectPhotos, error };
 }

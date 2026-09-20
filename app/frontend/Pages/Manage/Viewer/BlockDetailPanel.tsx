@@ -16,6 +16,7 @@ import { Button } from '@cctv/core/Button/Button';
 import { SegmentBadge } from '@cctv/core/SegmentBadge/SegmentBadge';
 import { BLOCK_KIND_LABELS, Block, BlockKind, Experience, ParticipantSummary } from '@cctv/types';
 
+import CollaborativeDrawingManager from '../../Block/CollaborativeDrawingManager/CollaborativeDrawingManager';
 import FamilyFeudManager from '../../Block/FamilyFeudManager/FamilyFeudManager';
 import GuessWhoManager from '../../Block/GuessWhoManager/GuessWhoManager';
 import BlockPreview from '../BlockPreview/BlockPreview';
@@ -265,6 +266,12 @@ export default function BlockDetailPanel({
           {selectedBlock.kind === BlockKind.GUESS_WHO && (
             <div className="mb-6">
               <GuessWhoManager block={selectedBlock} />
+            </div>
+          )}
+
+          {selectedBlock.kind === BlockKind.COLLABORATIVE_DRAWING && (
+            <div className="mb-6">
+              <CollaborativeDrawingManager block={selectedBlock} />
             </div>
           )}
 

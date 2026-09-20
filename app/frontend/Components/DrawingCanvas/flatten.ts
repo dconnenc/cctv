@@ -9,10 +9,12 @@ export function flattenStrokesToDataUrl(
   size = 320,
   backgroundColor?: string | null,
   baseImage?: HTMLImageElement | null,
+  height = size,
 ): string {
+  const width = size;
   const canvas = document.createElement('canvas');
-  canvas.width = size;
-  canvas.height = size;
+  canvas.width = width;
+  canvas.height = height;
   let ctx: CanvasRenderingContext2D | null = null;
   try {
     ctx = canvas.getContext('2d');
@@ -23,14 +25,14 @@ export function flattenStrokesToDataUrl(
 
   if (backgroundColor) {
     ctx.fillStyle = backgroundColor;
-    ctx.fillRect(0, 0, size, size);
+    ctx.fillRect(0, 0, width, height);
   }
 
   // A previously flattened avatar (drawing + its own background) sits below the
   // new strokes so re-editing keeps prior work.
   if (baseImage) {
     try {
-      ctx.drawImage(baseImage, 0, 0, size, size);
+      ctx.drawImage(baseImage, 0, 0, width, height);
     } catch {
       // ignore images that fail to draw (e.g. not fully decoded)
     }

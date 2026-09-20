@@ -1,13 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { Camera, Check } from 'lucide-react';
-import { motion } from 'motion/react';
+import { AnimatePresence, motion } from 'motion/react';
 
 import { DrawingCanvas, DrawingCanvasSubmission } from '@cctv/components';
 import { useExperienceState } from '@cctv/contexts/ExperienceStateContext';
 import { Button } from '@cctv/core';
 import {
-  useCollaborativeDrawing,
   useDirectUpload,
   useSubmitCollaborativeDrawing,
   useSubmitCollaborativeDrawingPhoto,
@@ -22,7 +21,6 @@ import {
   MONITOR_COUNTDOWN_SECONDS,
   PREVIEW_SECONDS,
   SubPhaseState,
-  sliceDrawSize,
 } from './collaborativeDrawingConstants';
 
 import styles from './CollaborativeDrawing.module.scss';
@@ -45,6 +43,31 @@ function useNow(active: boolean, intervalMs = 250) {
 
 function remainingSeconds(untilElapsed: number, elapsed: number): number {
   return Math.max(0, Math.ceil(untilElapsed - elapsed));
+}
+
+// The source photo's natural aspect drives the fitted frame and the slice-band
+// canvas so nothing is clipped and the drawing matches its portion.
+const DEFAULT_ASPECT = { w: 3, h: 4 };
+
+function useImageAspect(url: string | null | undefined) {
+  const [aspect, setAspect] = useState<{ w: number; h: number } | null>(null);
+  useEffect(() => {
+    setAspect(null);
+    if (!url) return;
+    let cancelled = false;
+    const img = new window.Image();
+    img.addEventListener('load', () => {
+      if (cancelled) return;
+      if (img.naturalWidth > 0 && img.naturalHeight > 0) {
+        setAspect({ w: img.naturalWidth, h: img.naturalHeight });
+      }
+    });
+    img.src = url;
+    return () => {
+      cancelled = true;
+    };
+  }, [url]);
+  return aspect;
 }
 
 function computeSubPhase(
@@ -217,6 +240,8 @@ function RoundParticipantView({ block }: { block: CollaborativeDrawingBlock }) {
     ended_at,
     now,
   );
+  // Hooks must run unconditionally, before any early return below.
+  const aspect = useImageAspect(assignment?.source_photo_url);
 
   const [submitSignal, setSubmitSignal] = useState(0);
   const submittedRef = useRef(false);
@@ -282,20 +307,13 @@ function RoundParticipantView({ block }: { block: CollaborativeDrawingBlock }) {
     );
   }
 
-  if (subPhase === 'preview' || subPhase === 'marker') {
-    return (
-      <SlicePreview
-        assignment={assignment}
-        showMarker={subPhase === 'marker'}
-        secondsLeft={phaseRemaining}
-      />
-    );
-  }
-
-  // subPhase === 'draw'
+  // preview | marker | draw all render the same fitted-image stage so the
+  // slice highlight cross-fades into the drawing canvas over the same portion.
   return (
-    <DrawSlice
-      sliceCount={assignment.slice_count}
+    <SliceStage
+      assignment={assignment}
+      aspect={aspect ?? DEFAULT_ASPECT}
+      subPhase={subPhase}
       secondsLeft={phaseRemaining}
       submitSignal={submitSignal}
       onSubmit={handleSubmit}
@@ -303,77 +321,99 @@ function RoundParticipantView({ block }: { block: CollaborativeDrawingBlock }) {
   );
 }
 
-function SlicePreview({
+// Canonical slice drawing width; height derives from the source aspect so the
+// canvas matches the participant's band exactly.
+const SLICE_CANVAS_WIDTH = 1000;
+
+function SliceStage({
   assignment,
-  showMarker,
-  secondsLeft,
-}: {
-  assignment: NonNullable<
-    ReturnType<typeof useExperienceState>['submissionState'][string]
-  >['assignment'];
-  showMarker: boolean;
-  secondsLeft: number;
-}) {
-  if (!assignment) return null;
-  const bandPct = 100 / assignment.slice_count;
-  const topPct = assignment.slice_index * bandPct;
-
-  return (
-    <div className={styles.container}>
-      <p className={styles.previewCaption}>
-        {showMarker ? 'Remember your section!' : 'Memorize this image!'}
-      </p>
-      <p className={styles.previewCountdown}>{secondsLeft}s</p>
-      <div className={styles.previewImageFrame}>
-        {assignment.source_photo_url && (
-          <img src={assignment.source_photo_url} alt="Memorize" className={styles.previewImage} />
-        )}
-        {showMarker && (
-          <motion.div
-            className={styles.sliceMarker}
-            style={{ top: `${topPct}%`, height: `${bandPct}%` }}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-          >
-            <span className={styles.sliceMarkerLabel}>Your section</span>
-          </motion.div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function DrawSlice({
-  sliceCount,
+  aspect,
+  subPhase,
   secondsLeft,
   submitSignal,
   onSubmit,
 }: {
-  sliceCount: number;
+  assignment: NonNullable<
+    ReturnType<typeof useExperienceState>['submissionState'][string]
+  >['assignment'];
+  aspect: { w: number; h: number };
+  subPhase: 'preview' | 'marker' | 'draw';
   secondsLeft: number;
   submitSignal: number;
   onSubmit: (submission: DrawingCanvasSubmission) => void;
 }) {
-  const drawSize = useMemo(() => sliceDrawSize(sliceCount), [sliceCount]);
+  const sliceCount = assignment?.slice_count ?? 1;
+  // Canvas coordinate space matches the participant's band, so the drawing
+  // scales to its slice and stacks cleanly into the composite.
+  const drawSize = useMemo(
+    () => ({
+      w: SLICE_CANVAS_WIDTH,
+      h: Math.max(1, Math.round((SLICE_CANVAS_WIDTH * (aspect.h / aspect.w)) / sliceCount)),
+    }),
+    [aspect.w, aspect.h, sliceCount],
+  );
+
+  if (!assignment) return null;
+
+  const bandPct = 100 / sliceCount;
+  const topPct = assignment.slice_index * bandPct;
+  const caption =
+    subPhase === 'preview'
+      ? 'Memorize this image!'
+      : subPhase === 'marker'
+        ? 'This is your section!'
+        : 'Draw your section from memory';
 
   return (
-    <motion.div
-      className={styles.drawOverlay}
-      initial={{ opacity: 0, scale: 0.94 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ type: 'spring', stiffness: 140, damping: 20 }}
-    >
-      <div className={styles.drawHeader}>
-        <span className={styles.drawTimer}>{secondsLeft}s</span>
-        <span className={styles.drawHint}>Draw your section — turn your phone for more room</span>
-      </div>
-      <DrawingCanvas
-        drawSize={drawSize}
-        fitContainer
-        submitSignal={submitSignal}
-        onSubmit={onSubmit}
-      />
-    </motion.div>
+    <div className={styles.container}>
+      <p className={styles.previewCaption}>{caption}</p>
+      <p className={styles.previewCountdown}>{secondsLeft}s</p>
+
+      <AnimatePresence mode="wait" initial={false}>
+        {subPhase === 'draw' ? (
+          <motion.div
+            key="canvas"
+            className={styles.sliceCanvasHost}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.45 }}
+          >
+            <DrawingCanvas
+              drawSize={drawSize}
+              fitContainer
+              submitSignal={submitSignal}
+              onSubmit={onSubmit}
+            />
+          </motion.div>
+        ) : (
+          <motion.div
+            key="image"
+            className={styles.sliceFrame}
+            style={{ aspectRatio: `${aspect.w} / ${aspect.h}` }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.45 }}
+          >
+            {assignment.source_photo_url && (
+              <img
+                src={assignment.source_photo_url}
+                alt="Your assigned section"
+                className={styles.sliceImage}
+              />
+            )}
+            <div
+              className={`${styles.sliceMarker} ${subPhase === 'marker' ? styles.sliceMarkerActive : ''}`}
+              style={{ top: `${topPct}%`, height: `${bandPct}%` }}
+            >
+              {subPhase === 'marker' && (
+                <span className={styles.sliceMarkerLabel}>Your section</span>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
   );
 }
 
@@ -411,8 +451,16 @@ function MonitorView({
   block: CollaborativeDrawingBlock;
   sounds?: Partial<Record<string, SoundKey>>;
 }) {
-  const { phase, prompt, round_started_at, ended_at, composites, drawing_time_seconds, board } =
-    block.payload;
+  const {
+    phase,
+    prompt,
+    round_started_at,
+    ended_at,
+    composites,
+    composites_revealed,
+    drawing_time_seconds,
+    board,
+  } = block.payload;
   const photoCount = block.responses?.total ?? 0;
   const active = !!round_started_at && !ended_at;
   const now = useNow(active);
@@ -444,7 +492,7 @@ function MonitorView({
     );
   }
 
-  if (ended_at && composites) {
+  if (composites_revealed && composites) {
     return (
       <div className={styles.monitorRoot}>
         <p className={styles.monitorIndicator}>The masterpieces</p>
@@ -527,64 +575,6 @@ function ManageView({ block }: { block: CollaborativeDrawingBlock }) {
           </>
         )}
       </p>
-      {phase === 'round' && !ended_at && (
-        <PhotoSelector block={block} totalDrawings={total_drawings} />
-      )}
-    </div>
-  );
-}
-
-// Lets the host pick which intake photos feed the round. Selecting none falls
-// back to a random pick at start; picks beyond total_drawings are ignored.
-function PhotoSelector({
-  block,
-  totalDrawings,
-}: {
-  block: CollaborativeDrawingBlock;
-  totalDrawings: number;
-}) {
-  const { selectPhotos } = useCollaborativeDrawing();
-  const photos = block.responses?.photos ?? [];
-  const [selected, setSelected] = useState<string[]>(block.responses?.selected_photo_ids ?? []);
-
-  if (photos.length === 0) {
-    return <p className={styles.manageStat}>No photos submitted yet.</p>;
-  }
-
-  const toggle = (id: string) => {
-    setSelected((prev) => {
-      const next = prev.includes(id) ? prev.filter((p) => p !== id) : [...prev, id];
-      void selectPhotos(block.id, next);
-      return next;
-    });
-  };
-
-  return (
-    <div className={styles.selector}>
-      <p className={styles.manageStat}>
-        Choose up to {totalDrawings} photo{totalDrawings === 1 ? '' : 's'} for the round
-        {selected.length > 0 ? ` (${selected.length} selected)` : ' (random if none)'}
-      </p>
-      <div className={styles.selectorGrid}>
-        {photos.map((photo) => {
-          const isSelected = selected.includes(photo.id);
-          const order = selected.indexOf(photo.id);
-          return (
-            <button
-              key={photo.id}
-              type="button"
-              className={`${styles.selectorItem} ${isSelected ? styles.selectorItemActive : ''}`}
-              onClick={() => toggle(photo.id)}
-              aria-pressed={isSelected}
-            >
-              {photo.photo_url && (
-                <img src={photo.photo_url} alt="" className={styles.selectorImg} />
-              )}
-              {isSelected && <span className={styles.selectorBadge}>{order + 1}</span>}
-            </button>
-          );
-        })}
-      </div>
     </div>
   );
 }
