@@ -331,15 +331,39 @@ function RoundParticipantView({ block }: { block: CollaborativeDrawingBlock }) {
   );
 }
 
-// Canonical slice drawing width; height derives from the crop aspect so the
-// canvas matches the participant's portion exactly.
-const SLICE_CANVAS_WIDTH = 1000;
-
-// The tallest a preview/crop/canvas stage may grow, leaving room for the
-// caption, countdown, and drawing tools within one viewport.
-const STAGE_MAX_VH = 64;
-
 const FULL_REGION = { x: 0, y: 0, w: 1, h: 1 };
+
+// Vertical space (px) the caption, countdown, drawing tools, and padding need
+// around the stage; the stage takes whatever height is left in the viewport.
+const STAGE_CHROME_PX = 220;
+
+// Tracks the measured content width of the stage area and the viewport height,
+// updating on resize and element resize.
+function useStageArea(ref: React.RefObject<HTMLDivElement | null>) {
+  const [size, setSize] = useState({ areaW: 0, viewportH: 0 });
+  useEffect(() => {
+    const update = () => {
+      const el = ref.current;
+      setSize({ areaW: el ? el.clientWidth : 0, viewportH: window.innerHeight });
+    };
+    update();
+    window.addEventListener('resize', update);
+    const observer = new ResizeObserver(update);
+    if (ref.current) observer.observe(ref.current);
+    return () => {
+      window.removeEventListener('resize', update);
+      observer.disconnect();
+    };
+  }, [ref]);
+  return size;
+}
+
+// The largest box of the given aspect that fits the measured width and the
+// viewport height left over for the stage.
+function fitBox(areaW: number, availH: number, aspectRatio: number) {
+  const w = Math.max(0, Math.min(areaW, availH * aspectRatio));
+  return { w, h: aspectRatio > 0 ? w / aspectRatio : 0 };
+}
 
 function SliceStage({
   assignment,
@@ -364,13 +388,21 @@ function SliceStage({
   // The crop's pixel aspect drives both the previewed portion and the drawing
   // canvas, so they line up and the drawing stitches back into the composite.
   const cropAspect = (region.w * aspect.w) / (region.h * aspect.h);
-  const drawSize = useMemo(
-    () => ({
-      w: SLICE_CANVAS_WIDTH,
-      h: Math.max(1, Math.round(SLICE_CANVAS_WIDTH / cropAspect)),
-    }),
-    [cropAspect],
-  );
+
+  const areaRef = useRef<HTMLDivElement>(null);
+  const { areaW, viewportH } = useStageArea(areaRef);
+  // Reserve the same chrome height for the crop and the canvas so both size to
+  // an identical box — the canvas fades in exactly where the crop was.
+  const availH = Math.max(160, viewportH - STAGE_CHROME_PX);
+  const cropBox = fitBox(areaW, availH, cropAspect);
+  const wholeBox = fitBox(areaW, availH, aspect.w / aspect.h);
+
+  // The drawing coordinate space matches the on-screen box, so the canvas aspect
+  // is identical to the crop's, with no rounding delta.
+  const drawSize = {
+    w: Math.max(1, Math.round(cropBox.w)),
+    h: Math.max(1, Math.round(cropBox.h)),
+  };
 
   if (!assignment) return null;
 
@@ -380,12 +412,6 @@ function SliceStage({
       : subPhase === 'marker'
         ? 'This is your section!'
         : 'Draw your section from memory';
-
-  // Size each stage to the largest box that fits both the column width and the
-  // viewport-height cap at its aspect, so the crop and canvas fill the space
-  // (an absolutely-positioned crop image would otherwise collapse the frame).
-  const cropWidth = `min(100%, calc(${STAGE_MAX_VH}vh * ${cropAspect}))`;
-  const wholeWidth = `min(100%, calc(${STAGE_MAX_VH}vh * ${aspect.w / aspect.h}))`;
 
   // Position the full image inside the crop frame so only this slice's region
   // shows, scaled up to fill the frame at its natural aspect.
@@ -403,66 +429,65 @@ function SliceStage({
       <p className={styles.previewCaption}>{caption}</p>
       <p className={styles.previewCountdown}>{secondsLeft}s</p>
 
-      <AnimatePresence mode="wait" initial={false}>
-        {subPhase === 'draw' ? (
-          <motion.div
-            key="canvas"
-            className={styles.sliceCanvasHost}
-            style={{ width: cropWidth }}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.45 }}
-          >
-            <DrawingCanvas
-              drawSize={drawSize}
-              fitContainer
-              autosaveSignal={autosaveSignal}
-              onAutosave={onAutosave}
-              onSubmit={onSubmit}
-            />
-          </motion.div>
-        ) : subPhase === 'marker' ? (
-          <motion.div
-            key="crop"
-            className={styles.cropFrame}
-            style={{
-              width: cropWidth,
-              aspectRatio: `${region.w * aspect.w} / ${region.h * aspect.h}`,
-            }}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.45 }}
-          >
-            {assignment.source_photo_url && (
-              <img
-                src={assignment.source_photo_url}
-                alt="Your assigned section"
-                className={styles.cropImage}
-                style={cropImageStyle}
+      <div className={styles.stageArea} ref={areaRef}>
+        <AnimatePresence mode="wait" initial={false}>
+          {subPhase === 'draw' ? (
+            <motion.div
+              key="canvas"
+              className={styles.sliceCanvasHost}
+              style={{ width: cropBox.w }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.35 }}
+            >
+              <DrawingCanvas
+                drawSize={drawSize}
+                fitContainer
+                autosaveSignal={autosaveSignal}
+                onAutosave={onAutosave}
+                onSubmit={onSubmit}
               />
-            )}
-          </motion.div>
-        ) : (
-          <motion.div
-            key="whole"
-            className={styles.sliceFrame}
-            style={{ width: wholeWidth, aspectRatio: `${aspect.w} / ${aspect.h}` }}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.45 }}
-          >
-            {assignment.source_photo_url && (
-              <img
-                src={assignment.source_photo_url}
-                alt="The full scene to memorize"
-                className={styles.sliceImage}
-              />
-            )}
-          </motion.div>
-        )}
-      </AnimatePresence>
+            </motion.div>
+          ) : subPhase === 'marker' ? (
+            <motion.div
+              key="crop"
+              className={styles.cropFrame}
+              style={{ width: cropBox.w, height: cropBox.h }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.35 }}
+            >
+              {assignment.source_photo_url && (
+                <img
+                  src={assignment.source_photo_url}
+                  alt="Your assigned section"
+                  className={styles.cropImage}
+                  style={cropImageStyle}
+                />
+              )}
+            </motion.div>
+          ) : (
+            <motion.div
+              key="whole"
+              className={styles.sliceFrame}
+              style={{ width: wholeBox.w, height: wholeBox.h }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.35 }}
+            >
+              {assignment.source_photo_url && (
+                <img
+                  src={assignment.source_photo_url}
+                  alt="The full scene to memorize"
+                  className={styles.sliceImage}
+                />
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
     </div>
   );
 }

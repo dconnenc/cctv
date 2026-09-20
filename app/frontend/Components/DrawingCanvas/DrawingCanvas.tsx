@@ -390,11 +390,13 @@ export default function DrawingCanvas({
   useEffect(() => {
     const updateSize = () => {
       if (!drawWrapRef.current) return;
-      const rect = drawWrapRef.current.getBoundingClientRect();
-      const w = Math.floor(rect.width);
+      const el = drawWrapRef.current;
+      // Measure the content box (clientWidth/Height excludes the border) so the
+      // Konva stage fills exactly inside the frame border, with no overflow clip.
+      const w = el.clientWidth;
       // The wrapper carries the drawSize aspect ratio, so its measured height
       // tracks the width; fall back to deriving it if layout hasn't settled.
-      const h = Math.floor(rect.height) || Math.round(w * (drawSize.h / drawSize.w));
+      const h = el.clientHeight || Math.round(w * (drawSize.h / drawSize.w));
       setDrawStageSize({ w, h });
     };
     updateSize();
