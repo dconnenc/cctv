@@ -2,11 +2,20 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { useNavigate } from 'react-router-dom';
 
-import { BookOpen, Bug, Columns3, Focus, X } from 'lucide-react';
+import { BookOpen, Bug, Columns3, Focus, MoreHorizontal, X } from 'lucide-react';
 
 import { trackManageAction } from '@cctv/analytics';
 import { useExperience } from '@cctv/contexts/ExperienceContext';
-import { Button, Drawer, DrawerBody, DrawerContent } from '@cctv/core';
+import {
+  Button,
+  Drawer,
+  DrawerBody,
+  DrawerContent,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@cctv/core';
 import { Pill } from '@cctv/core/Pill/Pill';
 import { useBlockPresentation } from '@cctv/hooks/useBlockPresentation';
 import { useDeleteExperienceBlock } from '@cctv/hooks/useDeleteExperienceBlock';
@@ -212,40 +221,38 @@ export default function ManageViewer() {
             </div>
             <div className="flex items-center gap-2">
               <ExperienceActionButton />
-              <Button
-                onClick={() => {
-                  setManageMode('focus');
-                  navigate(`/experiences/${code}/manage/focus`);
-                }}
-                variant="secondary"
-                title="Focus mode"
-              >
-                <Focus size={16} />
-                <span>Focus</span>
-              </Button>
-              <Button
-                to={`/experiences/${experience?.code}/timeline`}
-                variant="secondary"
-                title="Timeline view"
-                type="link"
-              >
-                <Columns3 size={16} />
-                <span>Timeline</span>
-              </Button>
-              <Button
-                onClick={() => setShowDebugPanel((prev) => !prev)}
-                variant={showDebugPanel ? 'primary' : 'secondary'}
-                title="Debug Panel"
-              >
-                <Bug size={16} />
-              </Button>
-              <Button
-                onClick={() => setIsPlaybillDialogOpen(true)}
-                variant="secondary"
-                title="Edit Playbill"
-              >
-                <BookOpen size={16} />
-              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="secondary" title="More options">
+                    <MoreHorizontal size={16} />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem
+                    onSelect={() => {
+                      setManageMode('focus');
+                      navigate(`/experiences/${code}/manage/focus`);
+                    }}
+                  >
+                    <Focus size={14} />
+                    Focus
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onSelect={() => navigate(`/experiences/${experience?.code}/timeline`)}
+                  >
+                    <Columns3 size={14} />
+                    Timeline
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onSelect={() => setIsPlaybillDialogOpen(true)}>
+                    <BookOpen size={14} />
+                    Playbill
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onSelect={() => setShowDebugPanel((prev) => !prev)}>
+                    <Bug size={14} />
+                    Debug
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
               <Button
                 onClick={() => setShowParticipantDetails((prev) => !prev)}
                 variant="secondary"
