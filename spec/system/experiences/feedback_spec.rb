@@ -3,6 +3,20 @@ require "rails_helper"
 RSpec.describe "Feedback", type: :system do
   let(:admin) { create(:user, :admin) }
 
+  # Capybara reports a button as present even when another fixed element covers
+  # it, so overlap is checked by asking the page what is actually at that point.
+  def feedback_trigger_state
+    page.evaluate_script(<<~JS)
+      (() => {
+        const el = document.querySelector("button[aria-label='Give feedback']");
+        if (!el) return "missing";
+        const r = el.getBoundingClientRect();
+        const hit = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+        return el === hit || el.contains(hit) ? "reachable" : "covered";
+      })()
+    JS
+  end
+
   it "lets a participant send feedback without leaving the experience" do
     sign_in(admin)
     create_experience_and_go_to_manage(name: "Test Experience", code: "test-exp")
@@ -31,6 +45,11 @@ RSpec.describe "Feedback", type: :system do
       expect(page).to have_text("Welcome to the show")
 
       expect(page).to have_button("Give feedback")
+
+      # The experience page anchors its own playbill FAB in this corner, so the
+      # trigger has to stack clear of it rather than sit underneath.
+      expect(feedback_trigger_state).to eq("reachable")
+
       click_button "Give feedback"
 
       expect(page).to have_text("Tell us what is broken, confusing, or missing.")
