@@ -1,4 +1,8 @@
 class ExperiencePolicy < ApplicationPolicy
+  def index?
+    user&.admin? || user&.superadmin?
+  end
+
   def create?
     user&.admin? || user&.superadmin?
   end
