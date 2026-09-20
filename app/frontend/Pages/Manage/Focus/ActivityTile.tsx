@@ -44,6 +44,10 @@ export function blockSummary(block: Block): string {
     case BlockKind.PHOTO_UPLOAD:
     case BlockKind.FEEDBACK:
       return block.payload.prompt.trim();
+    case BlockKind.COLLABORATIVE_DRAWING:
+      return block.payload.phase === 'intake'
+        ? `Photo intake — ${block.payload.prompt.trim()}`
+        : 'Drawing round';
     case BlockKind.BUZZER:
       return (block.payload.prompt ?? block.payload.label ?? '').trim();
     case BlockKind.NEWSLETTER_SIGNUP:

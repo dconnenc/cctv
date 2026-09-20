@@ -3,7 +3,11 @@ import { useState } from 'react';
 import { Pause, Play, RotateCcw } from 'lucide-react';
 
 import { Button } from '@cctv/core/Button/Button';
-import { useMinigameArithmetic, useMinigameBalloonPump } from '@cctv/hooks';
+import {
+  useCollaborativeDrawing,
+  useMinigameArithmetic,
+  useMinigameBalloonPump,
+} from '@cctv/hooks';
 import { Block, BlockKind } from '@cctv/types';
 
 type MinigameAction = 'start' | 'end' | 'restart';
@@ -17,19 +21,40 @@ interface MinigameActions {
 export default function MinigameControls({ block }: { block: Block }) {
   const balloon = useMinigameBalloonPump();
   const arithmetic = useMinigameArithmetic();
+  const collaborativeDrawing = useCollaborativeDrawing();
   const [pending, setPending] = useState<MinigameAction | null>(null);
 
-  if (
-    block.kind !== BlockKind.MINIGAME_BALLOON_PUMP &&
-    block.kind !== BlockKind.MINIGAME_ARITHMETIC
+  let game: MinigameActions;
+  let status: 'queued' | 'running' | 'ended';
+  let startLabel = 'Start minigame';
+  let endLabel = 'End minigame';
+  let startDisabled = false;
+
+  if (block.kind === BlockKind.COLLABORATIVE_DRAWING) {
+    // The intake (photo-upload) block is driven by the normal Present/close
+    // controls; only the round block exposes start/end/restart.
+    if (block.payload.phase !== 'round') return null;
+
+    game = {
+      start: collaborativeDrawing.startRound,
+      end: collaborativeDrawing.endRound,
+      restart: collaborativeDrawing.restart,
+    };
+    const { ended_at } = block.payload;
+    status = !block.payload.round_started_at ? 'queued' : ended_at ? 'ended' : 'running';
+    startLabel = 'Start round';
+    endLabel = 'End round now';
+    startDisabled = (block.responses?.total ?? 0) === 0;
+  } else if (
+    block.kind === BlockKind.MINIGAME_BALLOON_PUMP ||
+    block.kind === BlockKind.MINIGAME_ARITHMETIC
   ) {
+    game = block.kind === BlockKind.MINIGAME_BALLOON_PUMP ? balloon : arithmetic;
+    const { started_at, ended_at } = block.payload;
+    status = !started_at ? 'queued' : ended_at ? 'ended' : 'running';
+  } else {
     return null;
   }
-
-  const game: MinigameActions =
-    block.kind === BlockKind.MINIGAME_BALLOON_PUMP ? balloon : arithmetic;
-  const { started_at, ended_at } = block.payload;
-  const status = !started_at ? 'queued' : ended_at ? 'ended' : 'running';
 
   const run = (action: MinigameAction) => async () => {
     setPending(action);
@@ -50,7 +75,7 @@ export default function MinigameControls({ block }: { block: Block }) {
           loading={pending === 'end'}
           loadingText="Ending..."
         >
-          End minigame
+          {endLabel}
         </Button>
       ) : (
         <Button
@@ -58,8 +83,9 @@ export default function MinigameControls({ block }: { block: Block }) {
           onClick={run('start')}
           loading={pending === 'start'}
           loadingText="Starting..."
+          disabled={startDisabled}
         >
-          Start minigame
+          {startLabel}
         </Button>
       )}
       {status !== 'queued' && (

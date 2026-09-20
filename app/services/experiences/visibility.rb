@@ -312,8 +312,43 @@ module Experiences
         shape_minigame_balloon_pump_payload(block, participant_role, view_context)
       when ExperienceBlock::THE_SCENE
         shape_the_scene_payload(block, participant_role, view_context)
+      when ExperienceBlock::COLLABORATIVE_DRAWING
+        shape_collaborative_drawing_payload(block, view_context)
       else
         block.payload
+      end
+    end
+
+    # The monitor (and manage preview) show a live team board while the round
+    # runs: each group's assigned participants in slice order, greyed until they
+    # submit. Avatars are public, so the board is safe on these shared streams.
+    def shape_collaborative_drawing_payload(block, view_context)
+      payload = block.payload.deep_dup || {}
+      if view_context == :monitor || view_context == :admin
+        payload["board"] = collaborative_drawing_board(block)
+      end
+      payload
+    end
+
+    def collaborative_drawing_board(block)
+      assignments = block.experience_collaborative_drawing_assignments
+        .includes(:experience_participant)
+        .to_a
+
+      assignments.group_by(&:group_index).sort.map do |group_index, group|
+        {
+          "group_index" => group_index,
+          "slices" => group.sort_by(&:slice_index).map do |a|
+            participant = a.experience_participant
+            {
+              "slice_index"    => a.slice_index,
+              "participant_id" => a.experience_participant_id,
+              "name"           => participant&.name,
+              "avatar"         => participant&.avatar.presence,
+              "submitted"      => a.submitted_at.present?
+            }
+          end
+        }
       end
     end
 
@@ -649,6 +684,45 @@ module Experiences
       when ExperienceBlock::MINIGAME_BALLOON_PUMP
         results = block.experience_minigame_balloon_results.to_a
         { total: results.count }
+
+      when ExperienceBlock::COLLABORATIVE_DRAWING
+        if block.payload["phase"] == "intake"
+          # Intake block: photos submitted to this block.
+          photos   = block.experience_collaborative_drawing_photos.includes(photo_attachment: :blob).to_a
+          response = { total: photos.count }
+
+          if mod_or_host?(participant_role)
+            response[:all_responses] = photos.map do |p|
+              { id: p.id, photo_url: attachment_url(p.photo) }
+            end
+          end
+
+          response
+        else
+          # Round block: the photo pool lives on the linked intake block; the
+          # `total` drives the "Start round" gate.
+          intake_id   = block.payload["intake_block_id"]
+          intake_photos = intake_id.present? ?
+            ExperienceCollaborativeDrawingPhoto.where(experience_block_id: intake_id).includes(photo_attachment: :blob).to_a :
+            []
+          assignments = block.experience_collaborative_drawing_assignments.to_a
+
+          response = {
+            total: intake_photos.count,
+            assignment_count: assignments.count,
+            submission_count: assignments.count { |a| a.submitted_at.present? }
+          }
+
+          if mod_or_host?(participant_role)
+            # The host picks which photos feed the round from this frame.
+            response[:photos] = intake_photos.map do |p|
+              { id: p.id, photo_url: attachment_url(p.photo) }
+            end
+            response[:selected_photo_ids] = Array(block.payload["selected_photo_ids"])
+          end
+
+          response
+        end
 
       when ExperienceBlock::THE_SCENE
         suggestion_count = block.improv_suggestions.active.count

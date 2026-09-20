@@ -26,6 +26,13 @@ import {
   validateBuzzer,
 } from './CreateBuzzer/CreateBuzzer';
 import {
+  buildCollaborativeDrawingPayload,
+  canCollaborativeDrawingOpenImmediately,
+  getDefaultCollaborativeDrawingState,
+  processCollaborativeDrawingBeforeSubmit,
+  validateCollaborativeDrawing,
+} from './CreateCollaborativeDrawing/CreateCollaborativeDrawing';
+import {
   buildFamilyFeudPayload,
   buildFamilyFeudQuestions,
   canFamilyFeudOpenImmediately,
@@ -150,6 +157,11 @@ export function CreateBlockProvider({
           kind: BlockKind.MINIGAME_BALLOON_PUMP,
           data: getDefaultMinigameBalloonPumpState(),
         };
+      case BlockKind.COLLABORATIVE_DRAWING:
+        return {
+          kind: BlockKind.COLLABORATIVE_DRAWING,
+          data: getDefaultCollaborativeDrawingState(),
+        };
       case BlockKind.THE_SCENE:
         return { kind: BlockKind.THE_SCENE, data: getDefaultTheSceneState() };
       case BlockKind.FEEDBACK:
@@ -223,6 +235,9 @@ export function CreateBlockProvider({
         case BlockKind.MINIGAME_BALLOON_PUMP:
           validationError = validateMinigameBalloonPump(blockData.data);
           break;
+        case BlockKind.COLLABORATIVE_DRAWING:
+          validationError = validateCollaborativeDrawing(blockData.data);
+          break;
         case BlockKind.THE_SCENE:
           validationError = validateTheScene(blockData.data);
           break;
@@ -271,6 +286,9 @@ export function CreateBlockProvider({
           break;
         case BlockKind.MINIGAME_BALLOON_PUMP:
           canOpenImmediately = canMinigameBalloonPumpOpenImmediately(blockData.data, participants);
+          break;
+        case BlockKind.COLLABORATIVE_DRAWING:
+          canOpenImmediately = canCollaborativeDrawingOpenImmediately(blockData.data, participants);
           break;
         case BlockKind.THE_SCENE:
           canOpenImmediately = canTheSceneOpenImmediately(blockData.data, participants);
@@ -353,6 +371,12 @@ export function CreateBlockProvider({
             data: processMinigameBalloonPumpBeforeSubmit(blockData.data, status, participants),
           };
           break;
+        case BlockKind.COLLABORATIVE_DRAWING:
+          processedFormData = {
+            kind: BlockKind.COLLABORATIVE_DRAWING,
+            data: processCollaborativeDrawingBeforeSubmit(blockData.data, status, participants),
+          };
+          break;
         case BlockKind.THE_SCENE:
           processedFormData = {
             kind: BlockKind.THE_SCENE,
@@ -406,6 +430,9 @@ export function CreateBlockProvider({
           break;
         case BlockKind.MINIGAME_BALLOON_PUMP:
           payload = buildMinigameBalloonPumpPayload(processedFormData.data);
+          break;
+        case BlockKind.COLLABORATIVE_DRAWING:
+          payload = buildCollaborativeDrawingPayload(processedFormData.data);
           break;
         case BlockKind.THE_SCENE:
           payload = buildTheScenePayload(processedFormData.data);

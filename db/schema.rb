@@ -163,6 +163,34 @@ ActiveRecord::Schema[7.2].define(version: 2026_09_20_000001) do
     t.index ["experience_participant_id"], name: "index_buzzer_submissions_on_participant_id"
   end
 
+  create_table "experience_collaborative_drawing_assignments", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "experience_block_id", null: false
+    t.uuid "experience_participant_id", null: false
+    t.uuid "source_photo_id"
+    t.integer "group_index", null: false
+    t.integer "slice_index", null: false
+    t.integer "slice_count", null: false
+    t.text "drawing_image"
+    t.datetime "submitted_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["experience_block_id", "experience_participant_id"], name: "index_collab_drawing_assignments_unique", unique: true
+    t.index ["experience_block_id", "group_index", "slice_index"], name: "index_collab_drawing_assignments_on_slot"
+    t.index ["experience_block_id"], name: "index_collab_drawing_assignments_on_block_id"
+    t.index ["experience_participant_id"], name: "index_collab_drawing_assignments_on_participant_id"
+  end
+
+  create_table "experience_collaborative_drawing_photos", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "experience_block_id", null: false
+    t.uuid "experience_participant_id", null: false
+    t.jsonb "answer", default: {}, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["experience_block_id", "experience_participant_id"], name: "index_collab_drawing_photos_unique", unique: true
+    t.index ["experience_block_id"], name: "index_collab_drawing_photos_on_block_id"
+    t.index ["experience_participant_id"], name: "index_collab_drawing_photos_on_participant_id"
+  end
+
   create_table "experience_minigame_balloon_results", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.uuid "experience_block_id", null: false
     t.integer "fill_amount", default: 0, null: false

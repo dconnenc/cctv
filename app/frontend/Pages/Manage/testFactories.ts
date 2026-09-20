@@ -3,6 +3,7 @@ import {
   Block,
   BlockKind,
   BuzzerBlock,
+  CollaborativeDrawingBlock,
   Experience,
   ExperienceParticipant,
   FamilyFeudBlock,
@@ -143,6 +144,31 @@ export function feedbackBlock(overrides: Partial<FeedbackBlock> = {}): FeedbackB
   };
 }
 
+export function collaborativeDrawingBlock(
+  overrides: Partial<CollaborativeDrawingBlock> = {},
+): CollaborativeDrawingBlock {
+  return {
+    ...blockDefaults,
+    id: 'block-collaborative-drawing',
+    kind: BlockKind.COLLABORATIVE_DRAWING,
+    payload: {
+      prompt: 'Submit a photo of your pet',
+      min_subsections: 3,
+      max_subsections: 6,
+      drawing_time_seconds: 60,
+      total_drawings: 4,
+      phase: 'intake',
+      subsection_count: null,
+      pool: [],
+      preview_started_at: null,
+      round_started_at: null,
+      ended_at: null,
+      composites: null,
+    },
+    ...overrides,
+  };
+}
+
 export function theSceneBlock(overrides: Partial<TheSceneBlock> = {}): TheSceneBlock {
   return {
     ...blockDefaults,
@@ -196,6 +222,8 @@ export function blockOfKind(kind: BlockKind): Block {
       return minigameArithmeticBlock();
     case BlockKind.MINIGAME_BALLOON_PUMP:
       return minigameBalloonPumpBlock();
+    case BlockKind.COLLABORATIVE_DRAWING:
+      return collaborativeDrawingBlock();
     case BlockKind.THE_SCENE:
       return theSceneBlock();
     case BlockKind.FEEDBACK:

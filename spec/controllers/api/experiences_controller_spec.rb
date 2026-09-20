@@ -157,6 +157,24 @@ RSpec.describe Api::ExperiencesController, type: :controller do
     end
   end
 
+  describe "POST #join" do
+    let(:participant_user) { create(:user, :user) }
+
+    before do
+      experience.register_user(participant_user, name: "Alice")
+      sign_in(create_passwordless_session(participant_user))
+    end
+
+    it "returns a participant JWT for an already-registered user so the lobby admits them" do
+      post :join, params: { code: experience.code_slug }
+
+      body = JSON.parse(response.body)
+      expect(body["type"]).to eq("success")
+      expect(body["status"]).to eq("registered")
+      expect(body["jwt"]).to be_present
+    end
+  end
+
   describe "POST #create" do
     let(:code) { "SHOW#{rand(100_000)}" }
     let(:params) { { experience: { name: "Show", code: code } } }

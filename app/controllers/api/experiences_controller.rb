@@ -227,6 +227,7 @@ class Api::ExperiencesController < Api::BaseController
     if current_user && experience.user_registered?(current_user)
       render json: {
         type: 'success',
+        jwt: experience.jwt_for_participant(current_user),
         url: experience_lobby_path(code: experience.code_slug),
         status: "registered",
         experience_name: experience.name,
