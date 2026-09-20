@@ -37,11 +37,7 @@ export default function BlockContextTab({ block, participants }: BlockContextTab
         </div>
       );
     case BlockKind.ANNOUNCEMENT:
-      return (
-        <p className="text-sm text-[hsl(var(--muted-foreground))]">
-          No responses for announcements.
-        </p>
-      );
+      return null;
     default:
       return <BlockResponsesList block={block} participants={participants} />;
   }

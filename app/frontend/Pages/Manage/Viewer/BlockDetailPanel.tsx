@@ -1,14 +1,8 @@
 import { useState } from 'react';
 
-import { ArrowRight, CircleDot, MoreHorizontal, Square, Trash2 } from 'lucide-react';
+import { ArrowRight, CircleDot, Square, Trash2 } from 'lucide-react';
 
 import { useExperience } from '@cctv/contexts/ExperienceContext';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@cctv/core';
 import { Button } from '@cctv/core/Button/Button';
 import { SegmentBadge } from '@cctv/core/SegmentBadge/SegmentBadge';
 import { BLOCK_KIND_LABELS, Block, BlockKind, Experience, ParticipantSummary } from '@cctv/types';
@@ -28,6 +22,44 @@ function getStatusColor(status: string) {
     default:
       return 'bg-gray-400';
   }
+}
+
+function hasTargetingRules(block: Block): boolean {
+  return (
+    (block.visible_to_roles?.length ?? 0) > 0 ||
+    (block.visible_to_segments?.length ?? 0) > 0 ||
+    (block.target_user_ids?.length ?? 0) > 0
+  );
+}
+
+function VisibilityDetails({ block }: { block: Block }) {
+  const { experience } = useExperience();
+  const definedSegments = experience?.segments || [];
+
+  return (
+    <details className="inline">
+      <summary className="cursor-pointer text-xs text-[hsl(var(--muted-foreground))] bg-[hsl(var(--muted))] px-1.5 py-0.5 rounded select-none">
+        Targeted
+      </summary>
+      <div className="mt-1 text-xs text-[hsl(var(--muted-foreground))] space-y-0.5">
+        {(block.visible_to_roles?.length ?? 0) > 0 && (
+          <div>Roles: {block.visible_to_roles!.join(', ')}</div>
+        )}
+        {(block.visible_to_segments?.length ?? 0) > 0 && (
+          <div>
+            Segments:{' '}
+            {block.visible_to_segments!.map((name) => {
+              const seg = definedSegments.find((s) => s.name === name);
+              return <SegmentBadge key={name} name={name} color={seg?.color || '#6B7280'} />;
+            })}
+          </div>
+        )}
+        {(block.target_user_ids?.length ?? 0) > 0 && (
+          <div>Targeted users: {block.target_user_ids!.length}</div>
+        )}
+      </div>
+    </details>
+  );
 }
 
 interface BlockDetailPanelProps {
@@ -88,6 +120,7 @@ export default function BlockDetailPanel({
             <span className="text-sm text-[hsl(var(--muted-foreground))] capitalize">
               {selectedBlock.status}
             </span>
+            {hasTargetingRules(selectedBlock) && <VisibilityDetails block={selectedBlock} />}
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -121,45 +154,54 @@ export default function BlockDetailPanel({
               <span>Open</span>
             </Button>
           )}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="secondary" title="Block options" aria-label="Block options">
-                <MoreHorizontal size={16} />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              {!selectedBlock.parent_block_id && (
-                <DropdownMenuItem onSelect={() => onEdit(selectedBlock)}>Edit</DropdownMenuItem>
-              )}
-              {selectedBlock.parent_block_id && onDetach && (
-                <DropdownMenuItem onSelect={() => onDetach(selectedBlock)} disabled={isDetaching}>
-                  {isDetaching ? 'Detaching...' : 'Detach'}
-                </DropdownMenuItem>
-              )}
-              {confirmingDelete ? (
-                <>
-                  <DropdownMenuItem
-                    onSelect={() => {
-                      onDelete(selectedBlock);
-                      setConfirmingDelete(false);
-                    }}
-                  >
-                    <Trash2 size={14} />
-                    {isDeleting ? 'Deleting...' : 'Confirm Delete'}
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onSelect={() => setConfirmingDelete(false)}>
-                    Cancel
-                  </DropdownMenuItem>
-                </>
-              ) : (
-                <DropdownMenuItem onSelect={() => setConfirmingDelete(true)} disabled={!canDelete}>
-                  <Trash2 size={14} />
-                  {canDelete ? 'Delete' : 'Stop presenting before deleting'}
-                </DropdownMenuItem>
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
         </div>
+      </div>
+
+      <div className="flex items-center gap-2 -mt-4">
+        {!selectedBlock.parent_block_id && (
+          <Button variant="ghost" size="sm" onClick={() => onEdit(selectedBlock)}>
+            Edit
+          </Button>
+        )}
+        {selectedBlock.parent_block_id && onDetach && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => onDetach(selectedBlock)}
+            disabled={isDetaching}
+          >
+            {isDetaching ? 'Detaching...' : 'Detach'}
+          </Button>
+        )}
+        {confirmingDelete ? (
+          <>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                onDelete(selectedBlock);
+                setConfirmingDelete(false);
+              }}
+            >
+              <Trash2 size={14} />
+              {isDeleting ? 'Deleting...' : 'Confirm Delete'}
+            </Button>
+            <Button variant="ghost" size="sm" onClick={() => setConfirmingDelete(false)}>
+              Cancel
+            </Button>
+          </>
+        ) : (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setConfirmingDelete(true)}
+            disabled={!canDelete}
+            title={canDelete ? undefined : 'Stop presenting before deleting'}
+          >
+            <Trash2 size={14} />
+            Delete
+          </Button>
+        )}
       </div>
 
       <div className="space-y-4">
@@ -270,62 +312,6 @@ export default function BlockDetailPanel({
             )}
           </div>
         </div>
-      </div>
-
-      <div className="grid grid-cols-2 gap-6">
-        <div className="space-y-3">
-          <div>
-            <div className="text-xs text-[hsl(var(--muted-foreground))] uppercase tracking-wide">
-              Responses
-            </div>
-            <div className="text-lg font-semibold text-white">
-              {selectedBlock.responses?.total ?? 0}
-            </div>
-          </div>
-          <div>
-            <div className="text-xs text-[hsl(var(--muted-foreground))] uppercase tracking-wide">
-              Visible to Roles
-            </div>
-            <div className="text-sm text-white">
-              {selectedBlock.visible_to_roles?.length
-                ? selectedBlock.visible_to_roles.join(', ')
-                : 'All'}
-            </div>
-          </div>
-        </div>
-        <div className="space-y-3">
-          <VisibleSegments segments={selectedBlock.visible_to_segments} />
-          <div>
-            <div className="text-xs text-[hsl(var(--muted-foreground))] uppercase tracking-wide">
-              Targeted Users
-            </div>
-            <div className="text-sm text-white">{selectedBlock.target_user_ids?.length ?? 0}</div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function VisibleSegments({ segments }: { segments?: string[] }) {
-  const { experience } = useExperience();
-  const definedSegments = experience?.segments || [];
-
-  return (
-    <div>
-      <div className="text-xs text-[hsl(var(--muted-foreground))] uppercase tracking-wide">
-        Visible to Segments
-      </div>
-      <div
-        className="text-sm text-white mt-1"
-        style={{ display: 'flex', flexWrap: 'wrap', gap: '0.25rem' }}
-      >
-        {segments?.length
-          ? segments.map((name) => {
-              const seg = definedSegments.find((s) => s.name === name);
-              return <SegmentBadge key={name} name={name} color={seg?.color || '#6B7280'} />;
-            })
-          : 'All'}
       </div>
     </div>
   );
