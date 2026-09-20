@@ -193,3 +193,15 @@ jobs:
 
       - name: Run typecheck
         run: yarn typecheck
+
+  dockerfile-node-version:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Verify Dockerfile Node version matches .node-version
+        run: |
+          NODE_MAJOR=$(cut -d. -f1 .node-version)
+          grep -q "setup_${NODE_MAJOR}.x" Dockerfile || \
+            (echo "Dockerfile uses a different Node major version than .node-version (expected ${NODE_MAJOR})" && exit 1)
