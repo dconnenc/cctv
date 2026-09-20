@@ -36,8 +36,8 @@ FactoryBot.define do
     trait :synced do
       sync_status { :synced }
       linear_issue_id { "issue-#{SecureRandom.uuid}" }
-      linear_issue_identifier { "CCT-1" }
-      linear_issue_url { "https://linear.app/chicago-comedy-tv/issue/CCT-1" }
+      linear_issue_identifier { "CHI-1" }
+      linear_issue_url { "https://linear.app/chicago-comedy-tv/issue/CHI-1" }
       linear_synced_at { Time.current }
     end
   end

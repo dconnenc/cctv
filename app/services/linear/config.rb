@@ -23,7 +23,7 @@ module Linear
     end
 
     # Resolved by the team's short key — the prefix on issue identifiers, e.g.
-    # "CCT" for CCT-142 — rather than a UUID, so the value stays readable.
+    # "CHI" for CHI-142 — rather than a UUID, so the value stays readable.
     # Deliberately has no default: guessing it would produce issues filed against
     # the wrong team, or a retry loop against a team that does not exist.
     def team_key

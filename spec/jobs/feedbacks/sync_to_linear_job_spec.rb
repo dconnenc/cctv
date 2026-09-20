@@ -3,12 +3,12 @@ require "rails_helper"
 RSpec.describe Feedbacks::SyncToLinearJob do
   let(:client) { instance_double(Linear::Client) }
   let(:issue) do
-    { "id" => "issue-1", "identifier" => "CCT-42", "url" => "https://linear.app/i/CCT-42" }
+    { "id" => "issue-1", "identifier" => "CHI-42", "url" => "https://linear.app/i/CHI-42" }
   end
 
   before do
     allow(Linear::Config).to receive(:enabled?).and_return(true)
-    allow(Linear::Config).to receive(:team_key).and_return("CCT")
+    allow(Linear::Config).to receive(:team_key).and_return("CHI")
     allow(Linear::Config).to receive(:project_id).and_return(nil)
     allow(Linear::Client).to receive(:new).and_return(client)
     allow(client).to receive(:team_id).and_return("team-1")
@@ -27,8 +27,8 @@ RSpec.describe Feedbacks::SyncToLinearJob do
     )
     expect(feedback.reload).to have_attributes(
       sync_status: "synced",
-      linear_issue_identifier: "CCT-42",
-      linear_issue_url: "https://linear.app/i/CCT-42",
+      linear_issue_identifier: "CHI-42",
+      linear_issue_url: "https://linear.app/i/CHI-42",
     )
   end
 
