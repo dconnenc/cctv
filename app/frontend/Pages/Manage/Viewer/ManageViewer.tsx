@@ -44,7 +44,7 @@ export default function ManageViewer() {
   const [editingBlock, setEditingBlock] = useState<Block | null>(null);
   const [isPlaybillDialogOpen, setIsPlaybillDialogOpen] = useState(false);
   const [dismissedError, setDismissedError] = useState(false);
-  const [viewMode, setViewMode] = useState<'monitor' | 'participant' | 'block'>('monitor');
+  const [viewMode, setViewMode] = useState<'monitor' | 'participant' | 'block'>('block');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(
     () => 'window' in globalThis && window.innerWidth < 768,
   );

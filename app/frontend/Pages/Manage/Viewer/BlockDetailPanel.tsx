@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-import { ArrowRight, CircleDot, Monitor, MoreHorizontal, Square, Trash2, User } from 'lucide-react';
+import { ArrowRight, CircleDot, MoreHorizontal, Square, Trash2 } from 'lucide-react';
 
 import { useExperience } from '@cctv/contexts/ExperienceContext';
 import {
@@ -168,86 +168,105 @@ export default function BlockDetailPanel({
             <Button
               variant="ghost"
               size="sm"
-              icon={<Monitor size={14} />}
-              aria-pressed={viewMode === 'monitor'}
-              onClick={() => onViewModeChange('monitor')}
+              aria-pressed={viewMode === 'monitor' || viewMode === 'participant'}
+              className={
+                viewMode === 'monitor' || viewMode === 'participant' ? 'bg-[hsl(var(--muted))]' : ''
+              }
+              onClick={() => {
+                if (viewMode === 'block') onViewModeChange('monitor');
+              }}
             >
-              Monitor
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              icon={<User size={14} />}
-              aria-pressed={viewMode === 'participant'}
-              onClick={() => onViewModeChange('participant')}
-            >
-              Participant
+              Screens
             </Button>
             <Button
               variant="ghost"
               size="sm"
               aria-pressed={viewMode === 'block'}
+              className={viewMode === 'block' ? 'bg-[hsl(var(--muted))]' : ''}
               onClick={() => onViewModeChange('block')}
             >
               Block
             </Button>
           </fieldset>
 
-          <div className="p-4 bg-[hsl(var(--card))]">
+          <div className="p-4 bg-[hsl(var(--card))] min-h-[420px]">
             {viewMode === 'block' ? (
               <BlockContextTab block={selectedBlock} participants={participants} />
-            ) : viewMode === 'participant' ? (
+            ) : (
               <div className="space-y-3">
-                <select
-                  aria-label="View as participant"
-                  value={impersonatedParticipantId || ''}
-                  onChange={(e) => onImpersonatedParticipantChange(e.target.value)}
-                  className="px-3 py-1.5 text-sm rounded-md bg-[hsl(var(--muted))] border border-[hsl(var(--border))] text-white"
-                >
-                  {participants.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.name} ({p.role})
-                    </option>
-                  ))}
-                </select>
-                {selectedBlock.id === currentOpenBlock?.id ? (
+                <div className="flex gap-1">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    aria-pressed={viewMode === 'monitor'}
+                    className={viewMode === 'monitor' ? 'bg-[hsl(var(--muted))]' : ''}
+                    onClick={() => onViewModeChange('monitor')}
+                  >
+                    Monitor
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    aria-pressed={viewMode === 'participant'}
+                    className={viewMode === 'participant' ? 'bg-[hsl(var(--muted))]' : ''}
+                    onClick={() => onViewModeChange('participant')}
+                  >
+                    Participant
+                  </Button>
+                </div>
+                {viewMode === 'participant' ? (
+                  <div className="space-y-3">
+                    <select
+                      aria-label="View as participant"
+                      value={impersonatedParticipantId || ''}
+                      onChange={(e) => onImpersonatedParticipantChange(e.target.value)}
+                      className="px-3 py-1.5 text-sm rounded-md bg-[hsl(var(--muted))] border border-[hsl(var(--border))] text-white"
+                    >
+                      {participants.map((p) => (
+                        <option key={p.id} value={p.id}>
+                          {p.name} ({p.role})
+                        </option>
+                      ))}
+                    </select>
+                    {selectedBlock.id === currentOpenBlock?.id ? (
+                      <ContextView
+                        block={participantView?.blocks[0] ?? undefined}
+                        participant={participants.find((p) => p.id === impersonatedParticipantId)}
+                        emptyMessage="No block for participant"
+                        monitorView={monitorView}
+                        viewMode="participant"
+                        title="Participant"
+                      />
+                    ) : (
+                      <BlockPreview
+                        block={selectedBlock}
+                        participant={participants.find((p) => p.id === impersonatedParticipantId)}
+                      />
+                    )}
+                  </div>
+                ) : selectedBlock.id === currentOpenBlock?.id ? (
                   <ContextView
-                    block={participantView?.blocks[0] ?? undefined}
-                    participant={participants.find((p) => p.id === impersonatedParticipantId)}
-                    emptyMessage="No block for participant"
+                    block={undefined}
+                    participant={undefined}
+                    emptyMessage={
+                      selectedBlock.kind === BlockKind.ANNOUNCEMENT &&
+                      selectedBlock.payload.show_on_monitor === false
+                        ? 'This block is not shown on the monitor'
+                        : 'No block on Monitor'
+                    }
                     monitorView={monitorView}
-                    viewMode="participant"
-                    title="Participant"
+                    viewMode="monitor"
+                    title="Current"
                   />
+                ) : selectedBlock.kind === BlockKind.ANNOUNCEMENT &&
+                  selectedBlock.payload.show_on_monitor === false ? (
+                  <p className="text-sm text-[hsl(var(--muted-foreground))]">
+                    This block is not shown on the monitor
+                  </p>
                 ) : (
-                  <BlockPreview
-                    block={selectedBlock}
-                    participant={participants.find((p) => p.id === impersonatedParticipantId)}
-                  />
+                  <BlockPreview block={selectedBlock} />
                 )}
               </div>
-            ) : // viewMode === 'monitor'
-            selectedBlock.id === currentOpenBlock?.id ? (
-              <ContextView
-                block={undefined}
-                participant={undefined}
-                emptyMessage={
-                  selectedBlock.kind === BlockKind.ANNOUNCEMENT &&
-                  selectedBlock.payload.show_on_monitor === false
-                    ? 'This block is not shown on the monitor'
-                    : 'No block on Monitor'
-                }
-                monitorView={monitorView}
-                viewMode="monitor"
-                title="Current"
-              />
-            ) : selectedBlock.kind === BlockKind.ANNOUNCEMENT &&
-              selectedBlock.payload.show_on_monitor === false ? (
-              <p className="text-sm text-[hsl(var(--muted-foreground))]">
-                This block is not shown on the monitor
-              </p>
-            ) : (
-              <BlockPreview block={selectedBlock} />
             )}
           </div>
         </div>
