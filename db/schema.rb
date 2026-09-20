@@ -189,6 +189,17 @@ ActiveRecord::Schema[7.2].define(version: 2026_09_20_000001) do
     t.index ["experience_participant_id"], name: "index_minigame_submissions_on_participant_id"
   end
 
+  create_table "experience_newsletter_submissions", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "experience_block_id", null: false
+    t.uuid "experience_participant_id", null: false
+    t.jsonb "answer", default: {}, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["experience_block_id", "experience_participant_id"], name: "index_newsletter_submissions_on_block_and_participant", unique: true
+    t.index ["experience_block_id"], name: "index_experience_newsletter_submissions_on_experience_block_id"
+    t.index ["experience_participant_id"], name: "idx_on_experience_participant_id_00a6732869"
+  end
+
   create_table "experience_participant_segments", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.uuid "experience_participant_id", null: false
     t.uuid "experience_segment_id", null: false
@@ -412,6 +423,8 @@ ActiveRecord::Schema[7.2].define(version: 2026_09_20_000001) do
   add_foreign_key "experience_minigame_balloon_results", "experience_participants", on_delete: :cascade
   add_foreign_key "experience_minigame_submissions", "experience_blocks", on_delete: :cascade
   add_foreign_key "experience_minigame_submissions", "experience_participants", on_delete: :cascade
+  add_foreign_key "experience_newsletter_submissions", "experience_blocks", on_delete: :cascade
+  add_foreign_key "experience_newsletter_submissions", "experience_participants", on_delete: :cascade
   add_foreign_key "experience_participant_segments", "experience_participants", on_delete: :cascade
   add_foreign_key "experience_participant_segments", "experience_segments", on_delete: :cascade
   add_foreign_key "experience_participants", "experiences", on_delete: :cascade

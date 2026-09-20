@@ -55,6 +55,11 @@ import {
   validateMinigameBalloonPump,
 } from '../CreateBlock/CreateMinigameBalloonPump/CreateMinigameBalloonPump';
 import {
+  buildNewsletterSignupPayload,
+  newsletterSignupPayloadToFormData,
+  validateNewsletterSignup,
+} from '../CreateBlock/CreateNewsletterSignup/CreateNewsletterSignup';
+import {
   buildPhotoUploadPayload,
   photoUploadPayloadToFormData,
   validatePhotoUpload,
@@ -141,6 +146,11 @@ function blockToFormData(block: Block): FormBlockData {
         kind: BlockKind.FEEDBACK,
         data: feedbackPayloadToFormData(payload),
       };
+    case BlockKind.NEWSLETTER_SIGNUP:
+      return {
+        kind: BlockKind.NEWSLETTER_SIGNUP,
+        data: newsletterSignupPayloadToFormData(payload),
+      };
     default: {
       const exhaustiveCheck: never = kind;
       throw new Error(`Unknown block kind: ${exhaustiveCheck}`);
@@ -176,6 +186,8 @@ function buildUpdatePayload(blockData: FormBlockData): BlockUpdateFields {
       return { payload: buildTheScenePayload(data) };
     case BlockKind.FEEDBACK:
       return { payload: buildFeedbackPayload(data) };
+    case BlockKind.NEWSLETTER_SIGNUP:
+      return { payload: buildNewsletterSignupPayload(data) };
     default: {
       const exhaustiveCheck: never = kind;
       throw new Error(`Unknown block kind: ${exhaustiveCheck}`);
@@ -266,6 +278,9 @@ export function EditBlockProvider({
       case BlockKind.FEEDBACK:
         validationError = validateFeedback(data);
         break;
+      case BlockKind.NEWSLETTER_SIGNUP:
+        validationError = validateNewsletterSignup(data);
+        break;
       default: {
         const exhaustiveCheck: never = kind;
         validationError = `Unknown block kind: ${exhaustiveCheck}`;
@@ -289,6 +304,7 @@ export function EditBlockProvider({
       BlockKind.PHOTO_UPLOAD,
       BlockKind.ANNOUNCEMENT,
       BlockKind.POLL,
+      BlockKind.NEWSLETTER_SIGNUP,
     ];
     const hasSubmissions = submissionCount > 0 && submissionWarnKinds.includes(blockData.kind);
 

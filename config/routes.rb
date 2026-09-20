@@ -84,6 +84,7 @@ Rails.application.routes.draw do
           post :submit_photo_upload_response
           post :submit_buzzer_response
           delete :clear_buzzer_responses
+          post :submit_newsletter_response
 
           post 'family_feud/auto_categorize', action: :auto_categorize
           post 'family_feud/generate_synthetic_answers', action: :generate_synthetic_answers

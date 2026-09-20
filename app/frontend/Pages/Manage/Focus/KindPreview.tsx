@@ -111,7 +111,14 @@ function renderPreview(kind: BlockKind) {
         </>
       );
     case BlockKind.FEEDBACK:
-      return <Lines widths={['70%', '90%', '40%']} />;
+      return <Lines widths={['70%', '90%', '40%']} />
+    case BlockKind.NEWSLETTER_SIGNUP:
+      return (
+        <>
+          <div className={styles.glyph}>✉</div>
+          <Bars widths={['70%', '45%']} filled={0} />
+        </>
+      );
     default: {
       const exhaustiveCheck: never = kind;
       return <div className={styles.glyph}>{exhaustiveCheck}</div>;
