@@ -5,15 +5,11 @@ import { announcementBlock, pollBlock } from '../testFactories';
 import BlockDetailPanel from './BlockDetailPanel';
 
 const sharedArgs = {
-  busyBlockId: undefined,
   viewMode: 'block' as const,
   monitorView: undefined,
   participantView: undefined,
   impersonatedParticipantId: undefined,
   participants: [],
-  onPresent: fn(),
-  onStopPresenting: fn(),
-  onPlayNext: fn(),
   onViewModeChange: fn(),
   onImpersonatedParticipantChange: fn(),
   onEdit: fn(),
@@ -30,14 +26,12 @@ export default meta;
 
 type Story = StoryObj<typeof BlockDetailPanel>;
 
-// Hidden block — shows "Open" button, no visibility badge, Edit + Delete row
 export const Default: Story = {
   args: {
     selectedBlock: pollBlock({ id: 'b1', status: 'hidden' }),
   },
 };
 
-// Open block — shows "Close" and "Next" buttons
 export const OpenBlock: Story = {
   args: {
     selectedBlock: announcementBlock({ id: 'b2', status: 'open' }),

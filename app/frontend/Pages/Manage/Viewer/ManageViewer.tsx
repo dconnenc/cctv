@@ -234,7 +234,7 @@ export default function ManageViewer() {
                     <span>Next</span>
                   </Button>
                   <Button
-                    variant={selectedBlock.status === 'open' ? 'secondary' : 'default'}
+                    variant={selectedBlock.status === 'open' ? 'secondary' : 'primary'}
                     onClick={() =>
                       selectedBlock.status === 'open'
                         ? handleStopPresenting(selectedBlock)
