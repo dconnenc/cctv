@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useState } from 'react';
 
 import { useExperience } from '@cctv/contexts/ExperienceContext';
 import { Block } from '@cctv/types';
@@ -13,28 +13,12 @@ export function useBlockPresentation() {
     setError: setStatusError,
   } = useChangeBlockStatus();
   const [busyBlockId, setBusyBlockId] = useState<string>();
-  // Tracks the block status at the moment an operation was initiated.
-  // When set, the WebSocket effect below clears busyBlockId once the status
-  // changes — avoiding the double-render caused by HTTP and WebSocket settling
-  // at different times.
-  const busyStartStatusRef = useRef<string | undefined>(undefined);
-
-  useEffect(() => {
-    if (!busyBlockId || busyStartStatusRef.current === undefined) return;
-    const block = experience?.blocks?.find((b) => b.id === busyBlockId);
-    if (!block) return;
-    if (block.status !== busyStartStatusRef.current) {
-      busyStartStatusRef.current = undefined;
-      setBusyBlockId(undefined);
-    }
-  }, [experience?.blocks, busyBlockId]);
 
   const handlePresent = useCallback(
     async (block: Block) => {
       if (!code) return;
 
       setBusyBlockId(block.id);
-      busyStartStatusRef.current = block.status;
       setStatusError(null);
 
       const openBlocks = experience?.blocks ?? [];
@@ -45,17 +29,10 @@ export function useBlockPresentation() {
       );
 
       if (block.status !== 'open') {
-        const result = await changeStatus(block, 'open');
-        if (!result?.success) {
-          busyStartStatusRef.current = undefined;
-          setBusyBlockId(undefined);
-        }
-        // On success the WebSocket broadcast triggers the effect above, which
-        // clears busyBlockId once the status change is confirmed.
-      } else {
-        busyStartStatusRef.current = undefined;
-        setBusyBlockId(undefined);
+        await changeStatus(block, 'open');
       }
+
+      setBusyBlockId(undefined);
     },
     [code, experience, changeStatus, setStatusError],
   );
@@ -65,15 +42,10 @@ export function useBlockPresentation() {
       if (!code) return;
 
       setBusyBlockId(block.id);
-      busyStartStatusRef.current = block.status;
       setStatusError(null);
 
-      const result = await changeStatus(block, 'closed');
-      if (!result?.success) {
-        busyStartStatusRef.current = undefined;
-        setBusyBlockId(undefined);
-      }
-      // On success the WebSocket broadcast triggers the effect above.
+      await changeStatus(block, 'closed');
+      setBusyBlockId(undefined);
     },
     [code, changeStatus, setStatusError],
   );

@@ -212,24 +212,27 @@ export default function ManageViewer() {
                     <ArrowRight size={16} />
                     <span>Next</span>
                   </Button>
-                  {selectedBlock.status === 'open' ? (
-                    <Button
-                      variant="secondary"
-                      onClick={() => handleStopPresenting(selectedBlock)}
-                      disabled={busyBlockId === selectedBlock.id}
-                    >
-                      <Square size={16} />
-                      <span>Close</span>
-                    </Button>
-                  ) : (
-                    <Button
-                      onClick={() => handlePresent(selectedBlock)}
-                      disabled={busyBlockId === selectedBlock.id}
-                    >
-                      <CircleDot size={16} />
-                      <span>Open</span>
-                    </Button>
-                  )}
+                  <Button
+                    variant={selectedBlock.status === 'open' ? 'secondary' : 'default'}
+                    onClick={() =>
+                      selectedBlock.status === 'open'
+                        ? handleStopPresenting(selectedBlock)
+                        : handlePresent(selectedBlock)
+                    }
+                    disabled={busyBlockId === selectedBlock.id}
+                  >
+                    {selectedBlock.status === 'open' ? (
+                      <>
+                        <Square size={16} />
+                        <span>Close</span>
+                      </>
+                    ) : (
+                      <>
+                        <CircleDot size={16} />
+                        <span>Open</span>
+                      </>
+                    )}
+                  </Button>
                   <span className="border-l border-[hsl(var(--border))] h-6 mx-1" />
                 </>
               )}
