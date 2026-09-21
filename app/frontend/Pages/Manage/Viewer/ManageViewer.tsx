@@ -7,7 +7,6 @@ import { ArrowRight, ChevronLeft, ChevronRight, CircleDot, Square, X } from 'luc
 import { trackManageAction } from '@cctv/analytics';
 import { useExperience } from '@cctv/contexts/ExperienceContext';
 import { Button, Drawer, DrawerBody, DrawerContent } from '@cctv/core';
-import { Pill } from '@cctv/core/Pill/Pill';
 import { useBlockPresentation } from '@cctv/hooks/useBlockPresentation';
 import { useDeleteExperienceBlock } from '@cctv/hooks/useDeleteExperienceBlock';
 import { useDetachBlockFromParent } from '@cctv/hooks/useDetachBlockFromParent';
@@ -15,7 +14,7 @@ import { useExperiencePause } from '@cctv/hooks/useExperiencePause';
 import { useExperienceResume } from '@cctv/hooks/useExperienceResume';
 import { useExperienceStart } from '@cctv/hooks/useExperienceStart';
 import { useReorderBlock } from '@cctv/hooks/useReorderBlock';
-import { BLOCK_KIND_LABELS, Block, ParticipantSummary } from '@cctv/types';
+import { Block, ParticipantSummary } from '@cctv/types';
 
 import CreateBlock from '../CreateBlock/CreateBlock';
 import EditBlock from '../EditBlock/EditBlock';
@@ -24,17 +23,6 @@ import { getManageMode } from '../Focus/useManageMode';
 import ParticipantsTab from '../ParticipantsTab/ParticipantsTab';
 import BlockDetailPanel from './BlockDetailPanel';
 import BlockSidebar from './BlockSidebar';
-
-function getBlockStatusColor(status: string): string {
-  switch (status) {
-    case 'open':
-      return 'bg-green-500';
-    case 'closed':
-      return 'bg-gray-400';
-    default:
-      return 'bg-gray-600';
-  }
-}
 
 export default function ManageViewer() {
   const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
@@ -191,9 +179,6 @@ export default function ManageViewer() {
       statusError ||
       detachError ||
       deleteError);
-  const statusLabel = experience?.status
-    ? experience.status.charAt(0).toUpperCase() + experience.status.slice(1)
-    : '';
 
   return (
     <>
@@ -212,42 +197,31 @@ export default function ManageViewer() {
         <main className="flex-1 flex flex-col w-full h-full z-10 overflow-hidden bg-[hsl(var(--background))]">
           <div className="flex items-center justify-between p-4 h-20 border-b border-[hsl(var(--border))]">
             <div className="flex items-center gap-3">
+              <ExperienceActionButton />
               <div className="text-lg font-semibold text-white">
                 {experience?.name || 'Experience'}
               </div>
-              {statusLabel && <Pill label={statusLabel} />}
             </div>
             <div className="flex items-center gap-2">
-              <ExperienceActionButton />
               {selectedBlock && (
                 <>
-                  <span className="border-l border-[hsl(var(--border))] h-6 mx-1" />
-                  <span className="text-sm text-[hsl(var(--muted-foreground))]">
-                    {BLOCK_KIND_LABELS[selectedBlock.kind]}
-                  </span>
-                  <span
-                    className={`w-2 h-2 rounded-full ${getBlockStatusColor(selectedBlock.status)}`}
-                  />
+                  <Button
+                    onClick={onPlayNext}
+                    disabled={selectedBlock.status !== 'open' || busyBlockId === selectedBlock.id}
+                  >
+                    <ArrowRight size={16} />
+                    <span>Next</span>
+                  </Button>
                   {selectedBlock.status === 'open' ? (
-                    <>
-                      <Button
-                        variant="secondary"
-                        onClick={() => handleStopPresenting(selectedBlock)}
-                        loading={busyBlockId === selectedBlock.id}
-                        loadingText="Closing..."
-                      >
-                        <Square size={16} />
-                        <span>Close</span>
-                      </Button>
-                      <Button
-                        onClick={onPlayNext}
-                        loading={busyBlockId === selectedBlock.id}
-                        loadingText="Next..."
-                      >
-                        <ArrowRight size={16} />
-                        <span>Next</span>
-                      </Button>
-                    </>
+                    <Button
+                      variant="secondary"
+                      onClick={() => handleStopPresenting(selectedBlock)}
+                      loading={busyBlockId === selectedBlock.id}
+                      loadingText="Closing..."
+                    >
+                      <Square size={16} />
+                      <span>Close</span>
+                    </Button>
                   ) : (
                     <Button
                       onClick={() => handlePresent(selectedBlock)}
@@ -258,9 +232,9 @@ export default function ManageViewer() {
                       <span>Open</span>
                     </Button>
                   )}
+                  <span className="border-l border-[hsl(var(--border))] h-6 mx-1" />
                 </>
               )}
-              <span className="border-l border-[hsl(var(--border))] h-6 mx-1" />
               <Button
                 variant="ghost"
                 size="sm"
@@ -268,7 +242,7 @@ export default function ManageViewer() {
                 title="Participants"
                 hideLabel
                 icon={
-                  showParticipantDetails ? <ChevronLeft size={16} /> : <ChevronRight size={16} />
+                  showParticipantDetails ? <ChevronRight size={16} /> : <ChevronLeft size={16} />
                 }
                 onClick={() => setShowParticipantDetails((prev) => !prev)}
               >
@@ -325,8 +299,8 @@ export default function ManageViewer() {
               <Button
                 variant="ghost"
                 size="sm"
-                icon={<X size={16} />}
                 hideLabel
+                icon={<ChevronRight size={16} />}
                 onClick={() => setShowParticipantDetails(false)}
               >
                 Close participants panel
