@@ -2,11 +2,12 @@ import { type MouseEvent, useEffect, useMemo, useState } from 'react';
 
 import { DragDropContext, Draggable, type DropResult, Droppable } from '@hello-pangea/dnd';
 import classNames from 'classnames';
-import { ChevronLeft, ChevronRight, GripVertical, Link2, Plus, Sparkles } from 'lucide-react';
+import { GripVertical, Link2, Plus, Sparkles } from 'lucide-react';
 
 import { Button } from '@cctv/core/Button/Button';
 import { BLOCK_KIND_LABELS, Block, BlockKind } from '@cctv/types';
 
+import PanelSidebar from './PanelSidebar';
 import styles from './BlockSidebar.module.scss';
 
 const isSyntheticQuestion = (block: Block): boolean =>
@@ -65,173 +66,155 @@ export default function BlockSidebar({
     onReorderBlock(draggableId, destination.index);
   };
 
-  return (
-    <aside
-      className={classNames(styles.sidebar, {
-        [styles.collapsed]: sidebarCollapsed,
-        [styles.expanded]: !sidebarCollapsed,
-      })}
-    >
-      <div className={styles.header}>
-        {!sidebarCollapsed && <div className={styles.headerTitle}>Blocks</div>}
-        <div
-          className={classNames(styles.headerActions, {
-            [styles.collapsedActions]: sidebarCollapsed,
-          })}
-        >
-          {!sidebarCollapsed && (
-            <Button
-              variant="ghost"
-              size="sm"
-              icon={<Plus size={16} />}
-              hideLabel
-              onClick={onCreateBlock}
-              title="Create Block"
-            >
-              Create Block
-            </Button>
-          )}
+  const collapsedContent = (
+    <ul className={styles.collapsedList}>
+      {localBlocks.map((block, index) => (
+        <li key={block.id}>
           <Button
-            variant="ghost"
-            size="sm"
-            icon={sidebarCollapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
-            hideLabel
-            onClick={onToggleSidebar}
-            title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-            aria-expanded={!sidebarCollapsed}
+            variant="outline"
+            className={classNames(styles.iconButton, {
+              [styles.selected]: selectedBlockId === block.id,
+              [styles.hiddenBlock]: block.status === 'hidden',
+              [styles.childItem]: Boolean(block.parent_block_id),
+            })}
+            onClick={() => onSelectBlock(block.id)}
+            title={`${BLOCK_KIND_LABELS[block.kind]} - ${block.status}`}
           >
-            {sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            <span className={styles.statusBadge} data-status={block.status}>
+              <span className="sr-only">
+                {BLOCK_KIND_LABELS[block.kind]} - {block.status}
+              </span>
+              <span className={styles.statusBadgeIndex}>{index + 1}</span>
+            </span>
           </Button>
-        </div>
-      </div>
+        </li>
+      ))}
+      <li>
+        <Button
+          variant="outline"
+          size="lg"
+          icon={<Plus size={20} />}
+          hideLabel
+          onClick={onCreateBlock}
+          title="Create Block"
+        >
+          Create Block
+        </Button>
+      </li>
+    </ul>
+  );
 
-      <div className={styles.content}>
-        {sidebarCollapsed ? (
-          <ul className={styles.collapsedList}>
-            {localBlocks.map((block, index) => (
-              <li key={block.id}>
-                <Button
-                  variant="outline"
-                  className={classNames(styles.iconButton, {
-                    [styles.selected]: selectedBlockId === block.id,
-                    [styles.hiddenBlock]: block.status === 'hidden',
-                    [styles.childItem]: Boolean(block.parent_block_id),
-                  })}
-                  onClick={() => onSelectBlock(block.id)}
-                  title={`${BLOCK_KIND_LABELS[block.kind]} - ${block.status}`}
-                >
-                  <span className={styles.statusBadge} data-status={block.status}>
-                    <span className="sr-only">
-                      {BLOCK_KIND_LABELS[block.kind]} - {block.status}
-                    </span>
-                    <span className={styles.statusBadgeIndex}>{index + 1}</span>
-                  </span>
-                </Button>
-              </li>
-            ))}
-            <li>
-              <Button
-                variant="outline"
-                size="lg"
-                icon={<Plus size={20} />}
-                hideLabel
-                onClick={onCreateBlock}
-                title="Create Block"
-              >
-                Create Block
-              </Button>
-            </li>
-          </ul>
-        ) : (
-          <DragDropContext onDragEnd={handleDragEnd}>
-            <Droppable droppableId="blocks" type="BLOCK">
-              {(provided) => (
-                <ul
-                  className={styles.expandedList}
-                  ref={provided.innerRef}
-                  {...provided.droppableProps}
-                >
-                  {localBlocks.map((block, index) => {
-                    const parentKindLabel = block.parent_block_id
-                      ? parentLabelById.get(block.parent_block_id)
-                      : undefined;
+  const expandedContent = (
+    <DragDropContext onDragEnd={handleDragEnd}>
+      <Droppable droppableId="blocks" type="BLOCK">
+        {(provided) => (
+          <ul
+            className={styles.expandedList}
+            ref={provided.innerRef}
+            {...provided.droppableProps}
+          >
+            {localBlocks.map((block, index) => {
+              const parentKindLabel = block.parent_block_id
+                ? parentLabelById.get(block.parent_block_id)
+                : undefined;
 
-                    return (
-                      <Draggable key={block.id} draggableId={block.id} index={index}>
-                        {(dragProvided, snapshot) => (
-                          <li
-                            ref={dragProvided.innerRef}
-                            {...dragProvided.draggableProps}
-                            style={dragProvided.draggableProps.style}
-                            aria-label={`block ${index + 1}`}
-                            data-block-id={block.id}
-                            className={classNames({ [styles.childItem]: Boolean(parentKindLabel) })}
+              return (
+                <Draggable key={block.id} draggableId={block.id} index={index}>
+                  {(dragProvided, snapshot) => (
+                    <li
+                      ref={dragProvided.innerRef}
+                      {...dragProvided.draggableProps}
+                      style={dragProvided.draggableProps.style}
+                      aria-label={`block ${index + 1}`}
+                      data-block-id={block.id}
+                      className={classNames({ [styles.childItem]: Boolean(parentKindLabel) })}
+                    >
+                      <Button
+                        variant="outline"
+                        className={classNames(styles.blockButton, {
+                          [styles.selected]: selectedBlockId === block.id,
+                          [styles.hiddenBlock]: block.status === 'hidden',
+                          [styles.dragging]: snapshot.isDragging,
+                        })}
+                        onClick={(event) => {
+                          if (isDragHandleClick(event)) return;
+                          onSelectBlock(block.id);
+                        }}
+                      >
+                        <div className={styles.blockRow}>
+                          <span
+                            {...dragProvided.dragHandleProps}
+                            data-drag-handle
+                            aria-label={`Reorder block ${index + 1}`}
+                            className={styles.dragHandle}
                           >
-                            <Button
-                              variant="outline"
-                              className={classNames(styles.blockButton, {
-                                [styles.selected]: selectedBlockId === block.id,
-                                [styles.hiddenBlock]: block.status === 'hidden',
-                                [styles.dragging]: snapshot.isDragging,
-                              })}
-                              onClick={(event) => {
-                                if (isDragHandleClick(event)) return;
-                                onSelectBlock(block.id);
-                              }}
-                            >
-                              <div className={styles.blockRow}>
-                                <span
-                                  {...dragProvided.dragHandleProps}
-                                  data-drag-handle
-                                  aria-label={`Reorder block ${index + 1}`}
-                                  className={styles.dragHandle}
-                                >
-                                  <GripVertical size={14} />
-                                </span>
-                                <span className={styles.blockIndex}>{index + 1}</span>
-                                <span className={styles.statusDot} data-status={block.status} />
-                                <span className={styles.blockKind}>
-                                  {isSyntheticQuestion(block)
-                                    ? 'Synthetic Question'
-                                    : BLOCK_KIND_LABELS[block.kind]}
-                                </span>
-                                {isSyntheticQuestion(block) && (
-                                  <Sparkles
-                                    size={12}
-                                    className={styles.syntheticIcon}
-                                    aria-hidden="true"
-                                  />
-                                )}
-                                {block.status === 'open' && (
-                                  <span className={styles.liveBadge}>Live</span>
-                                )}
-                              </div>
-                              {parentKindLabel && (
-                                <div className={styles.childContext}>
-                                  <Link2 size={11} aria-hidden="true" />
-                                  <span>{parentKindLabel}</span>
-                                </div>
-                              )}
-                              {block.responses && block.responses.total > 0 && (
-                                <div className={styles.responseCount}>
-                                  {block.responses.total} response
-                                  {block.responses.total !== 1 ? 's' : ''}
-                                </div>
-                              )}
-                            </Button>
-                          </li>
+                            <GripVertical size={14} />
+                          </span>
+                          <span className={styles.blockIndex}>{index + 1}</span>
+                          <span className={styles.statusDot} data-status={block.status} />
+                          <span className={styles.blockKind}>
+                            {isSyntheticQuestion(block)
+                              ? 'Synthetic Question'
+                              : BLOCK_KIND_LABELS[block.kind]}
+                          </span>
+                          {isSyntheticQuestion(block) && (
+                            <Sparkles
+                              size={12}
+                              className={styles.syntheticIcon}
+                              aria-hidden="true"
+                            />
+                          )}
+                          {block.status === 'open' && (
+                            <span className={styles.liveBadge}>Live</span>
+                          )}
+                        </div>
+                        {parentKindLabel && (
+                          <div className={styles.childContext}>
+                            <Link2 size={11} aria-hidden="true" />
+                            <span>{parentKindLabel}</span>
+                          </div>
                         )}
-                      </Draggable>
-                    );
-                  })}
-                  {provided.placeholder}
-                  {!hasBlocks && <li className={styles.emptyState}>No blocks yet</li>}
-                </ul>
-              )}
-            </Droppable>
-          </DragDropContext>
+                        {block.responses && block.responses.total > 0 && (
+                          <div className={styles.responseCount}>
+                            {block.responses.total} response
+                            {block.responses.total !== 1 ? 's' : ''}
+                          </div>
+                        )}
+                      </Button>
+                    </li>
+                  )}
+                </Draggable>
+              );
+            })}
+            {provided.placeholder}
+            {!hasBlocks && <li className={styles.emptyState}>No blocks yet</li>}
+          </ul>
         )}
-      </div>
-    </aside>
+      </Droppable>
+    </DragDropContext>
+  );
+
+  return (
+    <PanelSidebar
+      side="left"
+      collapsed={sidebarCollapsed}
+      onToggle={onToggleSidebar}
+      title="Blocks"
+      headerActions={
+        <Button
+          variant="ghost"
+          size="sm"
+          icon={<Plus size={16} />}
+          hideLabel
+          onClick={onCreateBlock}
+          title="Create Block"
+        >
+          Create Block
+        </Button>
+      }
+      collapsedContent={collapsedContent}
+    >
+      {expandedContent}
+    </PanelSidebar>
   );
 }

@@ -6,8 +6,6 @@ import {
   ArrowRight,
   BookOpen,
   Bug,
-  ChevronLeft,
-  ChevronRight,
   CircleDot,
   Columns3,
   Focus,
@@ -41,13 +39,15 @@ import CreateBlock from '../CreateBlock/CreateBlock';
 import EditBlock from '../EditBlock/EditBlock';
 import ExperienceActionButton from '../ExperienceActionButton';
 import { getManageMode, setManageMode } from '../Focus/useManageMode';
-import ParticipantsTab from '../ParticipantsTab/ParticipantsTab';
+import ParticipantsSidebar from '../ParticipantsTab/ParticipantsSidebar';
 import BlockDetailPanel from './BlockDetailPanel';
 import BlockSidebar from './BlockSidebar';
 
 export default function ManageViewer() {
   const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
-  const [showParticipantDetails, setShowParticipantDetails] = useState(false);
+  const [participantsSidebarCollapsed, setParticipantsSidebarCollapsed] = useState(
+    () => 'window' in globalThis && window.innerWidth < 768,
+  );
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [editingBlock, setEditingBlock] = useState<Block | null>(null);
   const [dismissedError, setDismissedError] = useState(false);
@@ -60,6 +60,7 @@ export default function ManageViewer() {
     const handleResize = () => {
       if (window.innerWidth < 768) {
         setSidebarCollapsed(true);
+        setParticipantsSidebarCollapsed(true);
       }
     };
 
@@ -291,19 +292,6 @@ export default function ManageViewer() {
                   <span className="border-l border-[hsl(var(--border))] h-6 mx-1" />
                 </>
               )}
-              <Button
-                variant="ghost"
-                size="sm"
-                aria-label="Participants"
-                title="Participants"
-                hideLabel
-                icon={
-                  showParticipantDetails ? <ChevronRight size={16} /> : <ChevronLeft size={16} />
-                }
-                onClick={() => setShowParticipantDetails((prev) => !prev)}
-              >
-                Participants
-              </Button>
             </div>
           </div>
 
@@ -348,29 +336,13 @@ export default function ManageViewer() {
           </div>
         </main>
 
-        {showParticipantDetails && (
-          <aside className="z-10 absolute h-full top-0 right-0 w-[420px] shrink-0 border-l border-[hsl(var(--border))] bg-[hsl(var(--card))] flex flex-col">
-            <div className="p-4 h-20 border-b border-[hsl(var(--border))] flex items-center justify-between">
-              <div className="text-sm font-semibold text-white">Participants</div>
-              <Button
-                variant="ghost"
-                size="sm"
-                hideLabel
-                icon={<ChevronRight size={16} />}
-                onClick={() => setShowParticipantDetails(false)}
-              >
-                Close participants panel
-              </Button>
-            </div>
-            <div className="flex-1 overflow-y-auto">
-              <ParticipantsTab
-                participants={participantsCombined}
-                segments={experience?.segments || []}
-                defaultSegmentId={experience?.default_segment_id ?? null}
-              />
-            </div>
-          </aside>
-        )}
+        <ParticipantsSidebar
+          participants={participantsCombined}
+          segments={experience?.segments || []}
+          defaultSegmentId={experience?.default_segment_id ?? null}
+          collapsed={participantsSidebarCollapsed}
+          onToggle={() => setParticipantsSidebarCollapsed((prev) => !prev)}
+        />
       </section>
 
       <Drawer open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
