@@ -103,11 +103,22 @@ function renderPreview(kind: BlockKind) {
           <div className={classNames(styles.balloon, styles.balloonSmall)} />
         </div>
       );
+    case BlockKind.COLLABORATIVE_DRAWING:
+      return <div className={styles.glyph}>✎▦</div>;
     case BlockKind.THE_SCENE:
       return (
         <>
           <div className={styles.spotlight} />
           <Lines widths={['55%']} />
+        </>
+      );
+    case BlockKind.FEEDBACK:
+      return <Lines widths={['70%', '90%', '40%']} />;
+    case BlockKind.NEWSLETTER_SIGNUP:
+      return (
+        <>
+          <div className={styles.glyph}>✉</div>
+          <Bars widths={['70%', '45%']} filled={0} />
         </>
       );
     default: {

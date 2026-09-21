@@ -86,7 +86,13 @@ function blockLabel(block: Block): string {
       return block.payload.title || block.kind;
     case BlockKind.PHOTO_UPLOAD:
     case BlockKind.BUZZER:
+    case BlockKind.FEEDBACK:
+    case BlockKind.NEWSLETTER_SIGNUP:
       return block.payload.prompt || block.kind;
+    case BlockKind.COLLABORATIVE_DRAWING:
+      return block.payload.phase === 'intake'
+        ? `Photo intake — ${block.payload.prompt || ''}`.trim()
+        : 'Drawing round';
     case BlockKind.GUESS_WHO:
     case BlockKind.MINIGAME_ARITHMETIC:
     case BlockKind.MINIGAME_BALLOON_PUMP:

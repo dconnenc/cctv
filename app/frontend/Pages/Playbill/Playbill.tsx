@@ -28,7 +28,10 @@ const BLOCK_KIND_DESCRIPTIONS = {
   [BlockKind.GUESS_WHO]: 'Guess-who reveal',
   [BlockKind.MINIGAME_ARITHMETIC]: 'Speed-math minigame',
   [BlockKind.MINIGAME_BALLOON_PUMP]: 'Balloon-pump minigame',
+  [BlockKind.COLLABORATIVE_DRAWING]: 'Group photo redraw',
   [BlockKind.THE_SCENE]: 'Improv suggestion + voting',
+  [BlockKind.FEEDBACK]: 'Audience feedback prompt',
+  [BlockKind.NEWSLETTER_SIGNUP]: 'Mailing list signup',
 } satisfies Record<BlockKind, string>;
 
 export default function Playbill() {

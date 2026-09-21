@@ -3,12 +3,16 @@ import {
   Block,
   BlockKind,
   BuzzerBlock,
+  CollaborativeDrawingBlock,
   Experience,
   ExperienceParticipant,
   FamilyFeudBlock,
+  FeedbackBlock,
+  FeedbackType,
   GuessWhoBlock,
   MinigameArithmeticBlock,
   MinigameBalloonPumpBlock,
+  NewsletterSignupBlock,
   PhotoUploadBlock,
   PollBlock,
   QuestionBlock,
@@ -126,6 +130,45 @@ export function minigameBalloonPumpBlock(
   };
 }
 
+export function feedbackBlock(overrides: Partial<FeedbackBlock> = {}): FeedbackBlock {
+  return {
+    ...blockDefaults,
+    id: 'block-feedback',
+    kind: BlockKind.FEEDBACK,
+    payload: {
+      prompt: 'How was the show?',
+      allowed_types: [FeedbackType.EXPERIENCE, FeedbackType.BUG, FeedbackType.GENERAL],
+      require_title: false,
+    },
+    ...overrides,
+  };
+}
+
+export function collaborativeDrawingBlock(
+  overrides: Partial<CollaborativeDrawingBlock> = {},
+): CollaborativeDrawingBlock {
+  return {
+    ...blockDefaults,
+    id: 'block-collaborative-drawing',
+    kind: BlockKind.COLLABORATIVE_DRAWING,
+    payload: {
+      prompt: 'Submit a photo of your pet',
+      min_subsections: 3,
+      max_subsections: 6,
+      drawing_time_seconds: 60,
+      total_drawings: 4,
+      phase: 'intake',
+      subsection_count: null,
+      pool: [],
+      preview_started_at: null,
+      round_started_at: null,
+      ended_at: null,
+      composites: null,
+    },
+    ...overrides,
+  };
+}
+
 export function theSceneBlock(overrides: Partial<TheSceneBlock> = {}): TheSceneBlock {
   return {
     ...blockDefaults,
@@ -143,6 +186,18 @@ export function theSceneBlock(overrides: Partial<TheSceneBlock> = {}): TheSceneB
       leaderboard: [],
       performers: [],
     },
+    ...overrides,
+  };
+}
+
+export function newsletterSignupBlock(
+  overrides: Partial<NewsletterSignupBlock> = {},
+): NewsletterSignupBlock {
+  return {
+    ...blockDefaults,
+    id: 'block-newsletter-signup',
+    kind: BlockKind.NEWSLETTER_SIGNUP,
+    payload: { prompt: 'Can we add you to our mailing list?' },
     ...overrides,
   };
 }
@@ -167,8 +222,14 @@ export function blockOfKind(kind: BlockKind): Block {
       return minigameArithmeticBlock();
     case BlockKind.MINIGAME_BALLOON_PUMP:
       return minigameBalloonPumpBlock();
+    case BlockKind.COLLABORATIVE_DRAWING:
+      return collaborativeDrawingBlock();
     case BlockKind.THE_SCENE:
       return theSceneBlock();
+    case BlockKind.FEEDBACK:
+      return feedbackBlock();
+    case BlockKind.NEWSLETTER_SIGNUP:
+      return newsletterSignupBlock();
     default: {
       const exhaustiveCheck: never = kind;
       throw new Error(`Unhandled block kind: ${exhaustiveCheck}`);

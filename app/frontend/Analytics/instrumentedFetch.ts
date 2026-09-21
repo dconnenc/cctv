@@ -1,6 +1,7 @@
 import type { Properties } from 'posthog-js';
 
 import { capture } from './client';
+import { publishClientError } from './clientErrors';
 import { AnalyticsEvent } from './events';
 import { apiPathPattern } from './routes';
 
@@ -36,6 +37,17 @@ export async function instrumentedFetch(
       source: context.source,
     };
     if (!response.ok) properties.failure_kind = 'http_status';
+
+    // Only server faults: a 4xx is usually a deliberate rejection the UI already
+    // renders, and reporting those would bury real defects.
+    if (response.status >= 500) {
+      publishClientError({
+        message: `${method} ${path} failed with ${response.status}`,
+        source: 'api_server_error',
+        httpStatus: response.status,
+        httpUrl: path,
+      });
+    }
 
     capture(
       response.ok ? AnalyticsEvent.ApiRequestCompleted : AnalyticsEvent.ApiRequestFailed,

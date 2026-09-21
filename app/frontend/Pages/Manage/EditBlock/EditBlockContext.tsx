@@ -30,10 +30,20 @@ import {
   validateBuzzer,
 } from '../CreateBlock/CreateBuzzer/CreateBuzzer';
 import {
+  buildCollaborativeDrawingPayload,
+  collaborativeDrawingPayloadToFormData,
+  validateCollaborativeDrawing,
+} from '../CreateBlock/CreateCollaborativeDrawing/CreateCollaborativeDrawing';
+import {
   buildFamilyFeudPayload,
   familyFeudPayloadToFormData,
   validateFamilyFeud,
 } from '../CreateBlock/CreateFamilyFeud/CreateFamilyFeud';
+import {
+  buildFeedbackPayload,
+  feedbackPayloadToFormData,
+  validateFeedback,
+} from '../CreateBlock/CreateFeedback/CreateFeedback';
 import {
   buildGuessWhoPayload,
   guessWhoPayloadToFormData,
@@ -49,6 +59,11 @@ import {
   minigameBalloonPumpPayloadToFormData,
   validateMinigameBalloonPump,
 } from '../CreateBlock/CreateMinigameBalloonPump/CreateMinigameBalloonPump';
+import {
+  buildNewsletterSignupPayload,
+  newsletterSignupPayloadToFormData,
+  validateNewsletterSignup,
+} from '../CreateBlock/CreateNewsletterSignup/CreateNewsletterSignup';
 import {
   buildPhotoUploadPayload,
   photoUploadPayloadToFormData,
@@ -126,10 +141,25 @@ function blockToFormData(block: Block): FormBlockData {
         kind: BlockKind.MINIGAME_BALLOON_PUMP,
         data: minigameBalloonPumpPayloadToFormData(payload),
       };
+    case BlockKind.COLLABORATIVE_DRAWING:
+      return {
+        kind: BlockKind.COLLABORATIVE_DRAWING,
+        data: collaborativeDrawingPayloadToFormData(block.payload),
+      };
     case BlockKind.THE_SCENE:
       return {
         kind: BlockKind.THE_SCENE,
         data: theScenePayloadToFormData(payload),
+      };
+    case BlockKind.FEEDBACK:
+      return {
+        kind: BlockKind.FEEDBACK,
+        data: feedbackPayloadToFormData(payload),
+      };
+    case BlockKind.NEWSLETTER_SIGNUP:
+      return {
+        kind: BlockKind.NEWSLETTER_SIGNUP,
+        data: newsletterSignupPayloadToFormData(payload),
       };
     default: {
       const exhaustiveCheck: never = kind;
@@ -162,8 +192,14 @@ function buildUpdatePayload(blockData: FormBlockData): BlockUpdateFields {
       return { payload: buildMinigameArithmeticPayload(data) };
     case BlockKind.MINIGAME_BALLOON_PUMP:
       return { payload: buildMinigameBalloonPumpPayload(data) };
+    case BlockKind.COLLABORATIVE_DRAWING:
+      return { payload: buildCollaborativeDrawingPayload(data) };
     case BlockKind.THE_SCENE:
       return { payload: buildTheScenePayload(data) };
+    case BlockKind.FEEDBACK:
+      return { payload: buildFeedbackPayload(data) };
+    case BlockKind.NEWSLETTER_SIGNUP:
+      return { payload: buildNewsletterSignupPayload(data) };
     default: {
       const exhaustiveCheck: never = kind;
       throw new Error(`Unknown block kind: ${exhaustiveCheck}`);
@@ -248,8 +284,17 @@ export function EditBlockProvider({
       case BlockKind.MINIGAME_BALLOON_PUMP:
         validationError = validateMinigameBalloonPump(data);
         break;
+      case BlockKind.COLLABORATIVE_DRAWING:
+        validationError = validateCollaborativeDrawing(blockData.data);
+        break;
       case BlockKind.THE_SCENE:
         validationError = validateTheScene(data);
+        break;
+      case BlockKind.FEEDBACK:
+        validationError = validateFeedback(data);
+        break;
+      case BlockKind.NEWSLETTER_SIGNUP:
+        validationError = validateNewsletterSignup(data);
         break;
       default: {
         const exhaustiveCheck: never = kind;
@@ -274,6 +319,7 @@ export function EditBlockProvider({
       BlockKind.PHOTO_UPLOAD,
       BlockKind.ANNOUNCEMENT,
       BlockKind.POLL,
+      BlockKind.NEWSLETTER_SIGNUP,
     ];
     const hasSubmissions = submissionCount > 0 && submissionWarnKinds.includes(blockData.kind);
 

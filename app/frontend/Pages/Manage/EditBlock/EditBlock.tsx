@@ -8,10 +8,13 @@ import { BLOCK_KIND_LABELS, Block, BlockKind, ParticipantSummary } from '@cctv/t
 
 import CreateAnnouncement from '../CreateBlock/CreateAnnouncement/CreateAnnouncement';
 import CreateBuzzer from '../CreateBlock/CreateBuzzer/CreateBuzzer';
+import CreateCollaborativeDrawing from '../CreateBlock/CreateCollaborativeDrawing/CreateCollaborativeDrawing';
 import CreateFamilyFeud from '../CreateBlock/CreateFamilyFeud/CreateFamilyFeud';
+import CreateFeedback from '../CreateBlock/CreateFeedback/CreateFeedback';
 import CreateGuessWho from '../CreateBlock/CreateGuessWho/CreateGuessWho';
 import CreateMinigameArithmetic from '../CreateBlock/CreateMinigameArithmetic/CreateMinigameArithmetic';
 import CreateMinigameBalloonPump from '../CreateBlock/CreateMinigameBalloonPump/CreateMinigameBalloonPump';
+import CreateNewsletterSignup from '../CreateBlock/CreateNewsletterSignup/CreateNewsletterSignup';
 import CreatePhotoUpload from '../CreateBlock/CreatePhotoUpload/CreatePhotoUpload';
 import CreatePoll from '../CreateBlock/CreatePoll/CreatePoll';
 import CreateQuestion from '../CreateBlock/CreateQuestion/CreateQuestion';
@@ -230,6 +233,19 @@ function BlockEditor() {
           }
         />
       );
+    case BlockKind.COLLABORATIVE_DRAWING:
+      return (
+        <CreateCollaborativeDrawing
+          data={data}
+          onChange={(updates) =>
+            setBlockData((prev) =>
+              prev.kind === BlockKind.COLLABORATIVE_DRAWING
+                ? { ...prev, data: { ...prev.data, ...updates } }
+                : prev,
+            )
+          }
+        />
+      );
     case BlockKind.THE_SCENE:
       return (
         <CreateTheScene
@@ -237,6 +253,32 @@ function BlockEditor() {
           onChange={(updates) =>
             setBlockData((prev) =>
               prev.kind === BlockKind.THE_SCENE
+                ? { ...prev, data: { ...prev.data, ...updates } }
+                : prev,
+            )
+          }
+        />
+      );
+    case BlockKind.FEEDBACK:
+      return (
+        <CreateFeedback
+          data={data}
+          onChange={(updates) =>
+            setBlockData((prev) =>
+              prev.kind === BlockKind.FEEDBACK
+                ? { ...prev, data: { ...prev.data, ...updates } }
+                : prev,
+            )
+          }
+        />
+      );
+    case BlockKind.NEWSLETTER_SIGNUP:
+      return (
+        <CreateNewsletterSignup
+          data={data}
+          onChange={(updates) =>
+            setBlockData((prev) =>
+              prev.kind === BlockKind.NEWSLETTER_SIGNUP
                 ? { ...prev, data: { ...prev.data, ...updates } }
                 : prev,
             )

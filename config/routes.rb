@@ -9,6 +9,7 @@ Rails.application.routes.draw do
   scope :rails do
     scope :active_storage do
       post "direct_uploads", to: "api/direct_uploads#create"
+      post "feedback_direct_uploads", to: "api/feedback_direct_uploads#create"
     end
   end
 
@@ -26,6 +27,8 @@ Rails.application.routes.draw do
 
   namespace :api do
     get "discover", to: "discover#index"
+
+    resources :feedbacks, only: [:create, :update]
 
     resources :users, only: [] do
       get "me", on: :collection
@@ -81,6 +84,7 @@ Rails.application.routes.draw do
           post :submit_photo_upload_response
           post :submit_buzzer_response
           delete :clear_buzzer_responses
+          post :submit_newsletter_response
 
           post 'family_feud/auto_categorize', action: :auto_categorize
           post 'family_feud/generate_synthetic_answers', action: :generate_synthetic_answers
@@ -120,6 +124,14 @@ Rails.application.routes.draw do
           post 'minigame/balloon_pump/end', action: :end_minigame_balloon_pump
           post 'minigame/balloon_pump/restart', action: :restart_minigame_balloon_pump
           post 'minigame/balloon_pump/pump', action: :submit_minigame_balloon_pump_update
+
+          post 'collaborative_drawing/photos', action: :submit_collaborative_drawing_photo
+          post 'collaborative_drawing/select_photos', action: :select_collaborative_drawing_photos
+          post 'collaborative_drawing/start', action: :start_collaborative_drawing_round
+          post 'collaborative_drawing/end', action: :end_collaborative_drawing_round
+          post 'collaborative_drawing/restart', action: :restart_collaborative_drawing
+          post 'collaborative_drawing/reveal_composites', action: :reveal_collaborative_drawing_composites
+          post 'collaborative_drawing/drawings', action: :submit_collaborative_drawing
 
           post 'the_scene/start', action: :start_the_scene
           post 'the_scene/end', action: :end_the_scene

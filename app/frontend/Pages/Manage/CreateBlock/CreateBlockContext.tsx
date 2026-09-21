@@ -26,6 +26,13 @@ import {
   validateBuzzer,
 } from './CreateBuzzer/CreateBuzzer';
 import {
+  buildCollaborativeDrawingPayload,
+  canCollaborativeDrawingOpenImmediately,
+  getDefaultCollaborativeDrawingState,
+  processCollaborativeDrawingBeforeSubmit,
+  validateCollaborativeDrawing,
+} from './CreateCollaborativeDrawing/CreateCollaborativeDrawing';
+import {
   buildFamilyFeudPayload,
   buildFamilyFeudQuestions,
   canFamilyFeudOpenImmediately,
@@ -33,6 +40,13 @@ import {
   processFamilyFeudBeforeSubmit,
   validateFamilyFeud,
 } from './CreateFamilyFeud/CreateFamilyFeud';
+import {
+  buildFeedbackPayload,
+  canFeedbackOpenImmediately,
+  getDefaultFeedbackState,
+  processFeedbackBeforeSubmit,
+  validateFeedback,
+} from './CreateFeedback/CreateFeedback';
 import {
   buildGuessWhoPayload,
   canGuessWhoOpenImmediately,
@@ -54,6 +68,13 @@ import {
   processMinigameBalloonPumpBeforeSubmit,
   validateMinigameBalloonPump,
 } from './CreateMinigameBalloonPump/CreateMinigameBalloonPump';
+import {
+  buildNewsletterSignupPayload,
+  canNewsletterSignupOpenImmediately,
+  getDefaultNewsletterSignupState,
+  processNewsletterSignupBeforeSubmit,
+  validateNewsletterSignup,
+} from './CreateNewsletterSignup/CreateNewsletterSignup';
 import {
   buildPhotoUploadPayload,
   canPhotoUploadOpenImmediately,
@@ -136,8 +157,20 @@ export function CreateBlockProvider({
           kind: BlockKind.MINIGAME_BALLOON_PUMP,
           data: getDefaultMinigameBalloonPumpState(),
         };
+      case BlockKind.COLLABORATIVE_DRAWING:
+        return {
+          kind: BlockKind.COLLABORATIVE_DRAWING,
+          data: getDefaultCollaborativeDrawingState(),
+        };
       case BlockKind.THE_SCENE:
         return { kind: BlockKind.THE_SCENE, data: getDefaultTheSceneState() };
+      case BlockKind.FEEDBACK:
+        return { kind: BlockKind.FEEDBACK, data: getDefaultFeedbackState() };
+      case BlockKind.NEWSLETTER_SIGNUP:
+        return {
+          kind: BlockKind.NEWSLETTER_SIGNUP,
+          data: getDefaultNewsletterSignupState(),
+        };
       default: {
         const exhaustiveCheck: never = blockKind;
         throw new Error(`Unknown block kind: ${exhaustiveCheck}`);
@@ -202,8 +235,17 @@ export function CreateBlockProvider({
         case BlockKind.MINIGAME_BALLOON_PUMP:
           validationError = validateMinigameBalloonPump(blockData.data);
           break;
+        case BlockKind.COLLABORATIVE_DRAWING:
+          validationError = validateCollaborativeDrawing(blockData.data);
+          break;
         case BlockKind.THE_SCENE:
           validationError = validateTheScene(blockData.data);
+          break;
+        case BlockKind.FEEDBACK:
+          validationError = validateFeedback(blockData.data);
+          break;
+        case BlockKind.NEWSLETTER_SIGNUP:
+          validationError = validateNewsletterSignup(blockData.data);
           break;
         default: {
           const exhaustiveCheck: never = blockData;
@@ -245,8 +287,17 @@ export function CreateBlockProvider({
         case BlockKind.MINIGAME_BALLOON_PUMP:
           canOpenImmediately = canMinigameBalloonPumpOpenImmediately(blockData.data, participants);
           break;
+        case BlockKind.COLLABORATIVE_DRAWING:
+          canOpenImmediately = canCollaborativeDrawingOpenImmediately(blockData.data, participants);
+          break;
         case BlockKind.THE_SCENE:
           canOpenImmediately = canTheSceneOpenImmediately(blockData.data, participants);
+          break;
+        case BlockKind.FEEDBACK:
+          canOpenImmediately = canFeedbackOpenImmediately(blockData.data, participants);
+          break;
+        case BlockKind.NEWSLETTER_SIGNUP:
+          canOpenImmediately = canNewsletterSignupOpenImmediately(blockData.data, participants);
           break;
         default: {
           const exhaustiveCheck: never = blockData;
@@ -320,10 +371,28 @@ export function CreateBlockProvider({
             data: processMinigameBalloonPumpBeforeSubmit(blockData.data, status, participants),
           };
           break;
+        case BlockKind.COLLABORATIVE_DRAWING:
+          processedFormData = {
+            kind: BlockKind.COLLABORATIVE_DRAWING,
+            data: processCollaborativeDrawingBeforeSubmit(blockData.data, status, participants),
+          };
+          break;
         case BlockKind.THE_SCENE:
           processedFormData = {
             kind: BlockKind.THE_SCENE,
             data: processTheSceneBeforeSubmit(blockData.data, status, participants),
+          };
+          break;
+        case BlockKind.FEEDBACK:
+          processedFormData = {
+            kind: BlockKind.FEEDBACK,
+            data: processFeedbackBeforeSubmit(blockData.data, status, participants),
+          };
+          break;
+        case BlockKind.NEWSLETTER_SIGNUP:
+          processedFormData = {
+            kind: BlockKind.NEWSLETTER_SIGNUP,
+            data: processNewsletterSignupBeforeSubmit(blockData.data, status, participants),
           };
           break;
         default: {
@@ -362,8 +431,17 @@ export function CreateBlockProvider({
         case BlockKind.MINIGAME_BALLOON_PUMP:
           payload = buildMinigameBalloonPumpPayload(processedFormData.data);
           break;
+        case BlockKind.COLLABORATIVE_DRAWING:
+          payload = buildCollaborativeDrawingPayload(processedFormData.data);
+          break;
         case BlockKind.THE_SCENE:
           payload = buildTheScenePayload(processedFormData.data);
+          break;
+        case BlockKind.FEEDBACK:
+          payload = buildFeedbackPayload(processedFormData.data);
+          break;
+        case BlockKind.NEWSLETTER_SIGNUP:
+          payload = buildNewsletterSignupPayload(processedFormData.data);
           break;
         default: {
           const exhaustiveCheck: never = processedFormData;

@@ -5,10 +5,13 @@ import { Block, BlockKind, ParticipantSummary } from '@cctv/types';
 
 import Announcement from '../Announcement/Announcement';
 import Buzzer from '../Buzzer/Buzzer';
+import CollaborativeDrawing from '../CollaborativeDrawing/CollaborativeDrawing';
 import FamilyFeud from '../FamilyFeud/FamilyFeud';
+import FeedbackBlock from '../FeedbackBlock/FeedbackBlock';
 import GuessWho from '../GuessWho/GuessWho';
 import MinigameArithmetic from '../MinigameArithmetic/MinigameArithmetic';
 import MinigameBalloonPump from '../MinigameBalloonPump/MinigameBalloonPump';
+import NewsletterSignup from '../NewsletterSignup/NewsletterSignup';
 import PhotoUpload from '../PhotoUpload/PhotoUpload';
 import Poll from '../Poll/Poll';
 import Question from '../Question/Question';
@@ -99,8 +102,21 @@ export default function ExperienceBlockContainer({
       return <MinigameArithmetic block={block} viewContext={viewContext} />;
     case BlockKind.MINIGAME_BALLOON_PUMP:
       return <MinigameBalloonPump block={block} viewContext={viewContext} />;
+    case BlockKind.COLLABORATIVE_DRAWING:
+      return <CollaborativeDrawing block={block} viewContext={viewContext} sounds={block.sounds} />;
     case BlockKind.THE_SCENE:
       return <TheScene block={block} viewContext={viewContext} />;
+    case BlockKind.FEEDBACK:
+      return <FeedbackBlock block={block} disabled={disabled} viewContext={viewContext} />;
+    case BlockKind.NEWSLETTER_SIGNUP:
+      return (
+        <NewsletterSignup
+          {...block.payload}
+          blockId={block.id}
+          disabled={disabled}
+          viewContext={viewContext}
+        />
+      );
     default:
       const exhaustiveCheck: never = block;
       return (

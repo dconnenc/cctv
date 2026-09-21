@@ -1,6 +1,7 @@
 import { useExperience } from '@cctv/contexts/ExperienceContext';
 import { Block, BlockKind, ParticipantSummary } from '@cctv/types';
 
+import CollaborativeDrawingManager from '../../Block/CollaborativeDrawingManager/CollaborativeDrawingManager';
 import FamilyFeudManager from '../../Block/FamilyFeudManager/FamilyFeudManager';
 import GuessWhoManager from '../../Block/GuessWhoManager/GuessWhoManager';
 import BlockResponsesList from './BlockResponsesList';
@@ -92,6 +93,8 @@ export default function BlockContextTab({ block, participants }: BlockContextTab
       return <FamilyFeudManager block={block} />;
     case BlockKind.GUESS_WHO:
       return <GuessWhoManager block={block} />;
+    case BlockKind.COLLABORATIVE_DRAWING:
+      return <CollaborativeDrawingManager block={block} />;
     case BlockKind.MINIGAME_BALLOON_PUMP:
     case BlockKind.MINIGAME_ARITHMETIC:
       return (

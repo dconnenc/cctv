@@ -42,9 +42,16 @@ export function blockSummary(block: Block): string {
     case BlockKind.FAMILY_FEUD:
       return block.payload.title.trim();
     case BlockKind.PHOTO_UPLOAD:
+    case BlockKind.FEEDBACK:
       return block.payload.prompt.trim();
+    case BlockKind.COLLABORATIVE_DRAWING:
+      return block.payload.phase === 'intake'
+        ? `Photo intake — ${block.payload.prompt.trim()}`
+        : 'Drawing round';
     case BlockKind.BUZZER:
       return (block.payload.prompt ?? block.payload.label ?? '').trim();
+    case BlockKind.NEWSLETTER_SIGNUP:
+      return (block.payload.prompt ?? '').trim();
     case BlockKind.GUESS_WHO:
     case BlockKind.MINIGAME_ARITHMETIC:
     case BlockKind.MINIGAME_BALLOON_PUMP:

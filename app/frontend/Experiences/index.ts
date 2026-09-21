@@ -6,4 +6,8 @@ export { default as Buzzer } from './Buzzer/Buzzer';
 export { default as GuessWho } from './GuessWho/GuessWho';
 export { default as MinigameArithmetic } from './MinigameArithmetic/MinigameArithmetic';
 export { default as MinigameBalloonPump } from './MinigameBalloonPump/MinigameBalloonPump';
+export { default as CollaborativeDrawing } from './CollaborativeDrawing/CollaborativeDrawing';
+export { default as CompositeCanvas } from './CollaborativeDrawing/CompositeCanvas';
 export { default as TheScene } from './TheScene/TheScene';
+export { default as FeedbackBlock } from './FeedbackBlock/FeedbackBlock';
+export { default as NewsletterSignup } from './NewsletterSignup/NewsletterSignup';

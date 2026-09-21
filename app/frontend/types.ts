@@ -34,7 +34,10 @@ export enum BlockKind {
   GUESS_WHO = 'guess_who',
   MINIGAME_ARITHMETIC = 'minigame_arithmetic',
   MINIGAME_BALLOON_PUMP = 'minigame_balloon_pump',
+  COLLABORATIVE_DRAWING = 'collaborative_drawing',
   THE_SCENE = 'the_scene',
+  FEEDBACK = 'feedback',
+  NEWSLETTER_SIGNUP = 'newsletter_signup',
 }
 
 export const BLOCK_KIND_LABELS = {
@@ -47,7 +50,10 @@ export const BLOCK_KIND_LABELS = {
   [BlockKind.GUESS_WHO]: 'Guess Who',
   [BlockKind.MINIGAME_ARITHMETIC]: 'Minigame: Arithmetic',
   [BlockKind.MINIGAME_BALLOON_PUMP]: 'Minigame: Balloon Pump',
+  [BlockKind.COLLABORATIVE_DRAWING]: 'Collaborative Drawing',
   [BlockKind.THE_SCENE]: 'The Scene',
+  [BlockKind.FEEDBACK]: 'Feedback',
+  [BlockKind.NEWSLETTER_SIGNUP]: 'Newsletter Signup',
 } satisfies Record<BlockKind, string>;
 
 export interface ExperienceSegment {
@@ -78,6 +84,35 @@ export interface QuestionPayload {
 
 export interface AnnouncementPayload {
   message: string;
+  show_on_monitor?: boolean;
+}
+
+/** Feedback types offered to the reporter, shared by the block and the global panel. */
+export enum FeedbackType {
+  BUG = 'bug',
+  EXPERIENCE = 'experience',
+  GENERAL = 'general',
+  OTHER = 'other',
+}
+
+export const FEEDBACK_TYPE_LABELS = {
+  [FeedbackType.BUG]: 'Bug',
+  [FeedbackType.EXPERIENCE]: 'Experience',
+  [FeedbackType.GENERAL]: 'General',
+  [FeedbackType.OTHER]: 'Other',
+} satisfies Record<FeedbackType, string>;
+
+/** Where a report originated. Determines how it is grouped in Linear. */
+export enum FeedbackSource {
+  MANUAL = 'manual',
+  ERROR = 'error',
+  BLOCK = 'block',
+}
+
+export interface FeedbackPayload {
+  prompt: string;
+  allowed_types?: FeedbackType[];
+  require_title?: boolean;
   show_on_monitor?: boolean;
 }
 
@@ -129,6 +164,12 @@ export interface PhotoUploadPayload {
 export interface BuzzerPayload {
   label?: string;
   prompt?: string;
+}
+
+export interface NewsletterSignupPayload {
+  prompt?: string;
+  confirmationMessage?: string;
+  declineMessage?: string;
 }
 
 export interface GuessWhoClue {
@@ -239,6 +280,81 @@ export interface MinigameBalloonPumpPodiumEntry {
   fill_amount: number;
 }
 
+export type CollaborativeDrawingPhase = 'intake' | 'round';
+
+export interface CollaborativeDrawingPoolItem {
+  photo_id: string;
+  url: string;
+}
+
+// Fractional (0–1) rectangle of the source photo a slice covers. Slices tile
+// the photo as an as-square-as-possible grid.
+export interface CollaborativeDrawingRegion {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
+export interface CollaborativeDrawingCompositeSlice {
+  slice_index: number;
+  image: string | null;
+  name?: string | null;
+  region: CollaborativeDrawingRegion;
+}
+
+export interface CollaborativeDrawingComposite {
+  group_index: number;
+  slice_count: number | null;
+  source_photo_url: string | null;
+  slices: CollaborativeDrawingCompositeSlice[];
+}
+
+export interface CollaborativeDrawingBoardSlice {
+  slice_index: number;
+  participant_id: string;
+  name?: string | null;
+  avatar?: AvatarData | null;
+  submitted: boolean;
+}
+
+export interface CollaborativeDrawingBoardGroup {
+  group_index: number;
+  slices: CollaborativeDrawingBoardSlice[];
+}
+
+export interface CollaborativeDrawingPayload {
+  prompt: string;
+  min_subsections: number;
+  max_subsections: number;
+  drawing_time_seconds: number;
+  total_drawings: number;
+  phase: CollaborativeDrawingPhase;
+  // Set on the round block: the linked photo-intake block it draws its pool from.
+  intake_block_id?: string | null;
+  subsection_count: number | null;
+  pool: CollaborativeDrawingPoolItem[];
+  preview_started_at: string | null;
+  round_started_at: string | null;
+  ended_at: string | null;
+  composites: CollaborativeDrawingComposite[] | null;
+  // The host dispatches composites to the monitor; until then they only show
+  // in the manage preview.
+  composites_revealed?: boolean;
+  // Present on monitor/manage payloads while the round runs.
+  board?: CollaborativeDrawingBoardGroup[];
+}
+
+// Per-participant slice assignment, delivered via client submission state
+// (never in a shared broadcast payload).
+export interface CollaborativeDrawingAssignment {
+  group_index: number;
+  slice_index: number;
+  slice_count: number;
+  region: CollaborativeDrawingRegion;
+  source_photo_url: string | null;
+}
+
 export type TheScenePhase = 'idle' | 'collecting' | 'winner_reveal' | 'ended';
 
 export interface TheSceneSuggestion {
@@ -328,6 +444,13 @@ export interface BuzzerApiPayload {
   prompt?: string;
 }
 
+export interface NewsletterSignupApiPayload {
+  type: 'newsletter_signup';
+  prompt?: string;
+  confirmationMessage?: string;
+  declineMessage?: string;
+}
+
 export interface GuessWhoApiPayload {
   type: 'guess_who';
   segment_id: string;
@@ -348,10 +471,26 @@ export interface TheSceneApiPayload {
   performer_participant_ids: string[];
 }
 
+export interface FeedbackApiPayload {
+  type: 'feedback';
+  prompt: string;
+  allowed_types: FeedbackType[];
+  require_title: boolean;
+}
+
 export interface MinigameBalloonPumpApiPayload {
   type: 'minigame_balloon_pump';
   variant: 'balloon_pump';
   target_units: number;
+}
+
+export interface CollaborativeDrawingApiPayload {
+  type: 'collaborative_drawing';
+  prompt: string;
+  min_subsections: number;
+  max_subsections: number;
+  drawing_time_seconds: number;
+  total_drawings: number;
 }
 
 // Discriminated union for API payloads (what gets sent to backend)
@@ -365,7 +504,10 @@ export type ApiPayload =
   | GuessWhoApiPayload
   | MinigameArithmeticApiPayload
   | MinigameBalloonPumpApiPayload
-  | TheSceneApiPayload;
+  | CollaborativeDrawingApiPayload
+  | TheSceneApiPayload
+  | FeedbackApiPayload
+  | NewsletterSignupApiPayload;
 
 // ===== PLAYBILL TYPES =====
 
@@ -548,6 +690,21 @@ export interface BuzzerBlock extends BaseBlock {
   };
 }
 
+export interface NewsletterSignupBlock extends BaseBlock {
+  kind: BlockKind.NEWSLETTER_SIGNUP;
+  payload: NewsletterSignupPayload;
+  responses?: {
+    total: number;
+    subscribed_count?: number;
+    all_responses?: Array<{
+      id: string;
+      experience_participant_id: string;
+      answer: { subscribed?: boolean; submittedAt?: string };
+      created_at: string;
+    }>;
+  };
+}
+
 export interface GuessWhoBlock extends BaseBlock {
   kind: BlockKind.GUESS_WHO;
   payload: GuessWhoPayload;
@@ -571,6 +728,28 @@ export interface MinigameBalloonPumpBlock extends BaseBlock {
   };
 }
 
+export interface FeedbackBlock extends BaseBlock {
+  kind: BlockKind.FEEDBACK;
+  payload: FeedbackPayload;
+  responses?: {
+    total: number;
+  };
+}
+
+export interface CollaborativeDrawingBlock extends BaseBlock {
+  kind: BlockKind.COLLABORATIVE_DRAWING;
+  payload: CollaborativeDrawingPayload;
+  responses?: {
+    total: number;
+    assignment_count?: number;
+    submission_count?: number;
+    // Host-only (round block): the intake photos to pick from, and the current
+    // selection.
+    photos?: Array<{ id: string; photo_url?: string }>;
+    selected_photo_ids?: string[];
+  };
+}
+
 export interface TheSceneBlock extends BaseBlock {
   kind: BlockKind.THE_SCENE;
   payload: TheScenePayload;
@@ -590,7 +769,10 @@ export type Block =
   | GuessWhoBlock
   | MinigameArithmeticBlock
   | MinigameBalloonPumpBlock
-  | TheSceneBlock;
+  | CollaborativeDrawingBlock
+  | TheSceneBlock
+  | FeedbackBlock
+  | NewsletterSignupBlock;
 
 export interface PlaybillRunningOrderEntry {
   id: string;
@@ -663,7 +845,10 @@ export interface CreateBlockPayload {
     | GuessWhoPayload
     | MinigameArithmeticPayload
     | MinigameBalloonPumpPayload
-    | TheScenePayload;
+    | CollaborativeDrawingPayload
+    | TheScenePayload
+    | FeedbackPayload
+    | NewsletterSignupPayload;
   visible_to_segment_ids?: string[];
   status?: BlockStatus;
   open_immediately?: boolean;
@@ -737,6 +922,7 @@ export type GetExperienceApiResponse = GetExperienceSuccessResponse | GetExperie
 
 export interface JoinExperienceRegisteredResponse {
   type: 'success';
+  jwt: string;
   url: string;
   status: 'registered';
   experience_name: string;
@@ -926,6 +1112,9 @@ export type SubmissionState = Record<
     current_question?: { index: number; prompt: string } | null;
     score?: { correct: number; completed: number };
     fill_amount?: number;
+    assignment?: CollaborativeDrawingAssignment;
+    image?: string | null;
+    submitted?: boolean;
   }
 >;
 
@@ -1111,6 +1300,12 @@ export interface BuzzerData {
   prompt: string;
 }
 
+export interface NewsletterSignupData {
+  prompt: string;
+  confirmationMessage: string;
+  declineMessage: string;
+}
+
 export interface GuessWhoData {
   segment_id: string;
 }
@@ -1125,10 +1320,24 @@ export interface MinigameBalloonPumpData {
   target_units: number;
 }
 
+export interface CollaborativeDrawingData {
+  prompt: string;
+  min_subsections: number;
+  max_subsections: number;
+  drawing_time_seconds: number;
+  total_drawings: number;
+}
+
 export interface TheSceneData {
   leaderboard_size: number;
   prompt_input_count: number;
   performer_participant_ids: string[];
+}
+
+export interface FeedbackData {
+  prompt: string;
+  allowed_types: FeedbackType[];
+  require_title: boolean;
 }
 
 // Union type for all block component data
@@ -1142,7 +1351,10 @@ export type BlockComponentData =
   | GuessWhoData
   | MinigameArithmeticData
   | MinigameBalloonPumpData
-  | TheSceneData;
+  | CollaborativeDrawingData
+  | TheSceneData
+  | FeedbackData
+  | NewsletterSignupData;
 
 // Discriminated union for form block data
 export type FormBlockData =
@@ -1155,7 +1367,10 @@ export type FormBlockData =
   | { kind: BlockKind.GUESS_WHO; data: GuessWhoData }
   | { kind: BlockKind.MINIGAME_ARITHMETIC; data: MinigameArithmeticData }
   | { kind: BlockKind.MINIGAME_BALLOON_PUMP; data: MinigameBalloonPumpData }
-  | { kind: BlockKind.THE_SCENE; data: TheSceneData };
+  | { kind: BlockKind.COLLABORATIVE_DRAWING; data: CollaborativeDrawingData }
+  | { kind: BlockKind.THE_SCENE; data: TheSceneData }
+  | { kind: BlockKind.FEEDBACK; data: FeedbackData }
+  | { kind: BlockKind.NEWSLETTER_SIGNUP; data: NewsletterSignupData };
 
 export interface UpdateBlockPayload {
   payload: ApiPayload | JsonObject;
