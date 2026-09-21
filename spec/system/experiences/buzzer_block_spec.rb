@@ -31,7 +31,7 @@ RSpec.describe "Buzzer Block", type: :system do
     select_and_present(1, kind: "buzzer")
 
     # Monitor impersonation view shows the custom prompt
-    within("[aria-label='Preview mode']") { click_button "Monitor" }
+    switch_to_monitor_preview
     expect(page).to have_text("Get ready to buzz in!")
 
     # Actual monitor page shows the custom prompt

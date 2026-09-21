@@ -60,7 +60,7 @@ RSpec.describe "Poll Block", type: :system do
     select_and_present(1, kind: "poll")
 
     # Monitor impersonation shows the question
-    within("[aria-label='Preview mode']") { click_button "Monitor" }
+    switch_to_monitor_preview
     expect(page).to have_text("Pick your team")
 
     # Actual monitor page shows the question

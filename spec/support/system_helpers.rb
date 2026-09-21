@@ -220,6 +220,16 @@ module SystemHelpers
     visit current_path
   end
 
+  def switch_to_monitor_preview
+    within("[aria-label='Preview mode']") { click_button 'Screens' } unless page.has_css?("button[aria-pressed='true']", text: /screens/i)
+    click_button 'Monitor'
+  end
+
+  def switch_to_participant_preview
+    within("[aria-label='Preview mode']") { click_button 'Screens' } unless page.has_css?("button[aria-pressed='true']", text: /screens/i)
+    click_button 'Participant'
+  end
+
   # Opens the participants panel, yields, then closes it.
   # Requires the manage page (/manage) to be the current path.
   def within_participants_panel(&block)

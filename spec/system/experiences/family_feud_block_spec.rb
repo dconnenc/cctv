@@ -18,7 +18,7 @@ RSpec.describe "Family Feud Block", type: :system do
 
     select_and_present(1, kind: "family.feud")
 
-    within("[aria-label='Preview mode']") { click_button "Monitor" }
+    switch_to_monitor_preview
     expect(page).to have_text("Jun 7th FF")
 
     using_session(:monitor) do
@@ -65,7 +65,7 @@ RSpec.describe "Family Feud Block", type: :system do
       within("li[aria-label='block 3']") { expect(page).to have_text("LIVE") }
 
       # Monitor (both preview and live page) shows the gathering-phase title
-      within("[aria-label='Preview mode']") { click_button "Monitor" }
+      switch_to_monitor_preview
       expect(page).to have_text("Name Something")
 
       using_session(:monitor) do

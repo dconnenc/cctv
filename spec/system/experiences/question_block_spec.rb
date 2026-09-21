@@ -28,7 +28,7 @@ RSpec.describe "Question Block", type: :system do
     select_and_present(1, kind: "question")
 
     # Monitor impersonation shows the question
-    within("[aria-label='Preview mode']") { click_button "Monitor" }
+    switch_to_monitor_preview
     expect(page).to have_text("What is your favorite color?")
 
     # Actual monitor page shows the question
