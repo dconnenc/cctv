@@ -19,27 +19,18 @@ RSpec.describe 'Manage page UI', type: :system do
 
     select_block(1, kind: 'question')
 
-    click_button 'More options'
-    expect(page).to have_text('Focus')
-    expect(page).to have_text('Timeline')
-    expect(page).to have_text('Playbill')
-    expect(page).to have_text('Debug')
-    send_keys(:escape)
-
+    # Block tab is default — metadata row shows config text
     expect(page).to have_text('What is your favourite colour?')
-
-    within("[aria-label='Preview mode']") do
-      expect(page).to have_css("button[aria-pressed='true']", text: /block/i)
-      expect(page).to have_css("button[aria-pressed='false']", text: /screens/i)
-    end
-
     expect(page).to have_text('Public')
 
-    within("[aria-label='Preview mode']") { click_button 'Screens' }
+    # Screens tab reveals Monitor and Participant sub-tabs
+    click_button 'Screens'
     expect(page).to have_button('Monitor')
     expect(page).to have_button('Participant')
 
-    within("[aria-label='Preview mode']") { click_button 'Block' }
+    # Block tab restores metadata view
+    click_button 'Block'
+    expect(page).to have_text('What is your favourite colour?')
 
     within('main > div:first-child') do
       expect(page).to have_button('Open')

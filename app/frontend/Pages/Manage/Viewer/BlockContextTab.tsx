@@ -37,7 +37,7 @@ function configText(block: Block): string | null {
   return null;
 }
 
-function MetadataRow({ block }: { block: Block }) {
+export function MetadataRow({ block }: { block: Block }) {
   const text = configText(block);
   const count = responseCount(block);
   const showCount =
@@ -89,64 +89,20 @@ export default function BlockContextTab({ block, participants }: BlockContextTab
 
   switch (block.kind) {
     case BlockKind.FAMILY_FEUD:
-      return (
-        <div className="space-y-3">
-          <MetadataRow block={block} />
-          <FamilyFeudManager block={block} />
-        </div>
-      );
+      return <FamilyFeudManager block={block} />;
     case BlockKind.GUESS_WHO:
-      return (
-        <div className="space-y-3">
-          <MetadataRow block={block} />
-          <GuessWhoManager block={block} />
-        </div>
-      );
+      return <GuessWhoManager block={block} />;
     case BlockKind.MINIGAME_BALLOON_PUMP:
     case BlockKind.MINIGAME_ARITHMETIC:
       return (
         <div className="space-y-4">
-          <MetadataRow block={block} />
           <MinigameControls block={block} />
           <BlockResponsesList block={block} participants={participants} />
         </div>
       );
     case BlockKind.ANNOUNCEMENT:
-      return <MetadataRow block={block} />;
-    case BlockKind.POLL:
-      return (
-        <div className="space-y-3">
-          <MetadataRow block={block} />
-          <BlockResponsesList block={block} participants={participants} />
-        </div>
-      );
-    case BlockKind.QUESTION:
-      return (
-        <div className="space-y-3">
-          <MetadataRow block={block} />
-          <BlockResponsesList block={block} participants={participants} />
-        </div>
-      );
-    case BlockKind.PHOTO_UPLOAD:
-      return (
-        <div className="space-y-3">
-          <MetadataRow block={block} />
-          <BlockResponsesList block={block} participants={participants} />
-        </div>
-      );
-    case BlockKind.BUZZER:
-      return (
-        <div className="space-y-3">
-          <MetadataRow block={block} />
-          <BlockResponsesList block={block} participants={participants} />
-        </div>
-      );
+      return null;
     default:
-      return (
-        <div className="space-y-3">
-          <MetadataRow block={block} />
-          <BlockResponsesList block={block} participants={participants} />
-        </div>
-      );
+      return <BlockResponsesList block={block} participants={participants} />;
   }
 }

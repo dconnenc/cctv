@@ -79,8 +79,6 @@ export default function ManageViewer() {
     wsReady,
     impersonatedParticipantId,
     setImpersonatedParticipantId,
-    monitorView,
-    participantView,
   } = useExperience();
 
   const { error: startError } = useExperienceStart();
@@ -314,10 +312,7 @@ export default function ManageViewer() {
             {selectedBlock ? (
               <BlockDetailPanel
                 selectedBlock={selectedBlock}
-                currentOpenBlock={currentOpenBlock}
                 viewMode={viewMode}
-                monitorView={monitorView}
-                participantView={participantView}
                 impersonatedParticipantId={impersonatedParticipantId}
                 participants={participantsCombined}
                 onViewModeChange={setViewMode}

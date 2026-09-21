@@ -6,8 +6,6 @@ import BlockDetailPanel from './BlockDetailPanel';
 
 const sharedArgs = {
   viewMode: 'block' as const,
-  monitorView: undefined,
-  participantView: undefined,
   impersonatedParticipantId: undefined,
   participants: [],
   onViewModeChange: fn(),
@@ -35,7 +33,6 @@ export const Default: Story = {
 export const OpenBlock: Story = {
   args: {
     selectedBlock: announcementBlock({ id: 'b2', status: 'open' }),
-    currentOpenBlock: announcementBlock({ id: 'b2', status: 'open' }),
   },
 };
 
