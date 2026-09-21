@@ -19,6 +19,15 @@ RSpec.describe 'Manage page UI', type: :system do
 
     select_block(1, kind: 'question')
 
+    click_button 'More options'
+    expect(page).to have_text('Focus')
+    expect(page).to have_text('Timeline')
+    expect(page).to have_text('Playbill')
+    expect(page).to have_text('Debug')
+    send_keys(:escape)
+
+    expect(page).to have_text('What is your favourite colour?')
+
     within("[aria-label='Preview mode']") do
       expect(page).to have_css("button[aria-pressed='true']", text: /block/i)
       expect(page).to have_css("button[aria-pressed='false']", text: /screens/i)
@@ -51,7 +60,7 @@ RSpec.describe 'Manage page UI', type: :system do
     end
 
     select_block(2, kind: 'announcement')
-    expect(page).to have_text('Message')
     expect(page).to have_text('Welcome everyone!')
+    expect(page).to have_text('Monitor: Yes')
   end
 end
