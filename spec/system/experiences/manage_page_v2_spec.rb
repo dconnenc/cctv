@@ -54,4 +54,33 @@ RSpec.describe 'Manage page v2 UI', type: :system do
       expect(page).to have_text('Participants')
     end
   end
+
+  it 'shows Public visibility badge in the Block tab for an untargeted block' do
+    create_experience_and_go_to_manage(name: 'Vis Test', code: 'vis001')
+
+    queue_block(n: 1) do
+      select 'Question', from: 'Kind'
+      fill_in 'Question', with: 'Favourite colour?'
+    end
+    select_block(1, kind: 'question')
+
+    within("[aria-label='Preview mode']") do
+      expect(page).to have_css("button[aria-pressed='true']", text: /block/i)
+    end
+
+    expect(page).to have_text('Public')
+  end
+
+  it 'shows the announcement message in the Block tab' do
+    create_experience_and_go_to_manage(name: 'Ann Test', code: 'ann001')
+
+    queue_block(n: 1) do
+      select 'Announcement', from: 'Kind'
+      fill_in 'Announcement Message', with: 'Welcome everyone!'
+    end
+    select_block(1, kind: 'announcement')
+
+    expect(page).to have_text('Message')
+    expect(page).to have_text('Welcome everyone!')
+  end
 end
