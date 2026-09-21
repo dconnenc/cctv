@@ -2,11 +2,32 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { useNavigate } from 'react-router-dom';
 
-import { ArrowRight, ChevronLeft, ChevronRight, CircleDot, Square, X } from 'lucide-react';
+import {
+  ArrowRight,
+  BookOpen,
+  Bug,
+  ChevronLeft,
+  ChevronRight,
+  CircleDot,
+  Columns3,
+  Focus,
+  MoreHorizontal,
+  Square,
+  X,
+} from 'lucide-react';
 
 import { trackManageAction } from '@cctv/analytics';
 import { useExperience } from '@cctv/contexts/ExperienceContext';
-import { Button, Drawer, DrawerBody, DrawerContent } from '@cctv/core';
+import {
+  Button,
+  Drawer,
+  DrawerBody,
+  DrawerContent,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@cctv/core';
 import { useBlockPresentation } from '@cctv/hooks/useBlockPresentation';
 import { useDeleteExperienceBlock } from '@cctv/hooks/useDeleteExperienceBlock';
 import { useDetachBlockFromParent } from '@cctv/hooks/useDetachBlockFromParent';
@@ -19,7 +40,7 @@ import { Block, ParticipantSummary } from '@cctv/types';
 import CreateBlock from '../CreateBlock/CreateBlock';
 import EditBlock from '../EditBlock/EditBlock';
 import ExperienceActionButton from '../ExperienceActionButton';
-import { getManageMode } from '../Focus/useManageMode';
+import { getManageMode, setManageMode } from '../Focus/useManageMode';
 import ParticipantsTab from '../ParticipantsTab/ParticipantsTab';
 import BlockDetailPanel from './BlockDetailPanel';
 import BlockSidebar from './BlockSidebar';
@@ -233,6 +254,40 @@ export default function ManageViewer() {
                       </>
                     )}
                   </Button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="secondary" aria-label="More options" title="More options">
+                        <MoreHorizontal size={16} />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem
+                        onSelect={() => {
+                          setManageMode('focus');
+                          navigate(`/experiences/${code}/manage/focus`);
+                        }}
+                      >
+                        <Focus size={14} />
+                        Focus
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onSelect={() => navigate(`/experiences/${code}/timeline`)}>
+                        <Columns3 size={14} />
+                        Timeline
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onSelect={() => navigate(`/experiences/${code}/manage/playbill`)}
+                      >
+                        <BookOpen size={14} />
+                        Playbill
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onSelect={() => navigate(`/experiences/${code}/manage/debug`)}
+                      >
+                        <Bug size={14} />
+                        Debug
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                   <span className="border-l border-[hsl(var(--border))] h-6 mx-1" />
                 </>
               )}
