@@ -58,9 +58,7 @@ export default function PanelSidebar({
         </div>
       </div>
 
-      <div className={styles.content}>
-        {collapsed ? collapsedContent : children}
-      </div>
+      <div className={styles.content}>{collapsed ? collapsedContent : children}</div>
     </aside>
   );
 }

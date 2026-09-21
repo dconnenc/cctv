@@ -2,6 +2,7 @@ import { ExperienceSegment, ParticipantSummary } from '@cctv/types';
 
 import PanelSidebar from '../Viewer/PanelSidebar';
 import ParticipantsTab from './ParticipantsTab';
+
 import styles from './ParticipantsSidebar.module.scss';
 
 interface ParticipantsSidebarProps {

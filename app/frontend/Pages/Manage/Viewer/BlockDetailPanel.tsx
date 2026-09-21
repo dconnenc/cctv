@@ -9,6 +9,7 @@ import { BLOCK_KIND_LABELS, Block, BlockKind, ParticipantSummary } from '@cctv/t
 import BlockPreview from '../BlockPreview/BlockPreview';
 import BlockContextTab, { MetadataRow } from './BlockContextTab';
 import { VisibilityDetails, hasTargetingRules } from './BlockVisibility';
+
 import styles from './BlockDetailPanel.module.scss';
 
 function getStatusColor(status: string) {
@@ -122,7 +123,9 @@ export default function BlockDetailPanel({
         <div className={styles.tabBar}>
           <button
             className={classNames(styles.tab, { [styles.selected]: viewMode !== 'block' })}
-            onClick={() => { if (viewMode === 'block') onViewModeChange('monitor'); }}
+            onClick={() => {
+              if (viewMode === 'block') onViewModeChange('monitor');
+            }}
           >
             Screens
           </button>
@@ -148,7 +151,9 @@ export default function BlockDetailPanel({
                 Monitor
               </button>
               <button
-                className={classNames(styles.tab, { [styles.selected]: viewMode === 'participant' })}
+                className={classNames(styles.tab, {
+                  [styles.selected]: viewMode === 'participant',
+                })}
                 onClick={() => onViewModeChange('participant')}
               >
                 Participant

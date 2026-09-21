@@ -8,6 +8,7 @@ import { Button } from '@cctv/core/Button/Button';
 import { BLOCK_KIND_LABELS, Block, BlockKind } from '@cctv/types';
 
 import PanelSidebar from './PanelSidebar';
+
 import styles from './BlockSidebar.module.scss';
 
 const isSyntheticQuestion = (block: Block): boolean =>
@@ -108,11 +109,7 @@ export default function BlockSidebar({
     <DragDropContext onDragEnd={handleDragEnd}>
       <Droppable droppableId="blocks" type="BLOCK">
         {(provided) => (
-          <ul
-            className={styles.expandedList}
-            ref={provided.innerRef}
-            {...provided.droppableProps}
-          >
+          <ul className={styles.expandedList} ref={provided.innerRef} {...provided.droppableProps}>
             {localBlocks.map((block, index) => {
               const parentKindLabel = block.parent_block_id
                 ? parentLabelById.get(block.parent_block_id)
