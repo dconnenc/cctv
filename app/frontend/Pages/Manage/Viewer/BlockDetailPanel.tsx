@@ -2,14 +2,13 @@ import { useState } from 'react';
 
 import { Trash2 } from 'lucide-react';
 
-import { useExperience } from '@cctv/contexts/ExperienceContext';
 import { Button } from '@cctv/core/Button/Button';
-import { SegmentBadge } from '@cctv/core/SegmentBadge/SegmentBadge';
 import { BLOCK_KIND_LABELS, Block, BlockKind, Experience, ParticipantSummary } from '@cctv/types';
 
 import BlockPreview from '../BlockPreview/BlockPreview';
 import ContextView from '../ContextView/ContextView';
 import BlockContextTab from './BlockContextTab';
+import { VisibilityDetails, hasTargetingRules } from './BlockVisibility';
 
 function getStatusColor(status: string) {
   switch (status) {
@@ -22,44 +21,6 @@ function getStatusColor(status: string) {
     default:
       return 'bg-gray-400';
   }
-}
-
-function hasTargetingRules(block: Block): boolean {
-  return (
-    (block.visible_to_roles?.length ?? 0) > 0 ||
-    (block.visible_to_segments?.length ?? 0) > 0 ||
-    (block.target_user_ids?.length ?? 0) > 0
-  );
-}
-
-function VisibilityDetails({ block }: { block: Block }) {
-  const { experience } = useExperience();
-  const definedSegments = experience?.segments || [];
-
-  return (
-    <details className="inline-block">
-      <summary className="cursor-pointer text-xs text-[hsl(var(--muted-foreground))] bg-[hsl(var(--muted))] px-1.5 py-0.5 rounded select-none">
-        Targeted
-      </summary>
-      <div className="mt-1 text-xs text-[hsl(var(--muted-foreground))] space-y-0.5">
-        {(block.visible_to_roles?.length ?? 0) > 0 && (
-          <div>Roles: {block.visible_to_roles!.join(', ')}</div>
-        )}
-        {(block.visible_to_segments?.length ?? 0) > 0 && (
-          <div>
-            Segments:{' '}
-            {block.visible_to_segments!.map((name) => {
-              const seg = definedSegments.find((s) => s.name === name);
-              return <SegmentBadge key={name} name={name} color={seg?.color || '#6B7280'} />;
-            })}
-          </div>
-        )}
-        {(block.target_user_ids?.length ?? 0) > 0 && (
-          <div>Targeted users: {block.target_user_ids!.length}</div>
-        )}
-      </div>
-    </details>
-  );
 }
 
 interface BlockDetailPanelProps {
@@ -103,65 +64,63 @@ export default function BlockDetailPanel({
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-xl font-semibold text-white">
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-medium uppercase tracking-wide text-[hsl(var(--muted-foreground))]">
             {BLOCK_KIND_LABELS[selectedBlock.kind]}
-          </h2>
-          <div className="flex items-center gap-2 mt-1">
-            <span className={`w-2 h-2 rounded-full ${getStatusColor(selectedBlock.status)}`} />
-            <span className="text-sm text-[hsl(var(--muted-foreground))] capitalize">
-              {selectedBlock.status}
-            </span>
-            {hasTargetingRules(selectedBlock) && <VisibilityDetails block={selectedBlock} />}
-          </div>
+          </span>
+          <span className="text-[hsl(var(--muted-foreground))]">·</span>
+          <span className={`w-2 h-2 rounded-full ${getStatusColor(selectedBlock.status)}`} />
+          <span className="text-sm text-[hsl(var(--muted-foreground))] capitalize">
+            {selectedBlock.status}
+          </span>
+          {hasTargetingRules(selectedBlock) && <VisibilityDetails block={selectedBlock} />}
         </div>
-      </div>
-
-      <div className="flex items-center gap-2 -mt-4">
-        {!selectedBlock.parent_block_id && (
-          <Button variant="ghost" size="sm" onClick={() => onEdit(selectedBlock)}>
-            Edit
-          </Button>
-        )}
-        {selectedBlock.parent_block_id && onDetach && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => onDetach(selectedBlock)}
-            disabled={isDetaching}
-          >
-            {isDetaching ? 'Detaching...' : 'Detach'}
-          </Button>
-        )}
-        {confirmingDelete ? (
-          <>
+        <div className="flex items-center gap-2">
+          {!selectedBlock.parent_block_id && (
+            <Button variant="ghost" size="sm" onClick={() => onEdit(selectedBlock)}>
+              Edit
+            </Button>
+          )}
+          {selectedBlock.parent_block_id && onDetach && (
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => {
-                onDelete(selectedBlock);
-                setConfirmingDelete(false);
-              }}
+              onClick={() => onDetach(selectedBlock)}
+              disabled={isDetaching}
+            >
+              {isDetaching ? 'Detaching...' : 'Detach'}
+            </Button>
+          )}
+          {confirmingDelete ? (
+            <>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  onDelete(selectedBlock);
+                  setConfirmingDelete(false);
+                }}
+              >
+                <Trash2 size={14} />
+                {isDeleting ? 'Deleting...' : 'Confirm Delete'}
+              </Button>
+              <Button variant="ghost" size="sm" onClick={() => setConfirmingDelete(false)}>
+                Cancel
+              </Button>
+            </>
+          ) : (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setConfirmingDelete(true)}
+              disabled={!canDelete}
+              title={canDelete ? undefined : 'Stop presenting before deleting'}
             >
               <Trash2 size={14} />
-              {isDeleting ? 'Deleting...' : 'Confirm Delete'}
+              Delete
             </Button>
-            <Button variant="ghost" size="sm" onClick={() => setConfirmingDelete(false)}>
-              Cancel
-            </Button>
-          </>
-        ) : (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setConfirmingDelete(true)}
-            disabled={!canDelete}
-            title={canDelete ? undefined : 'Stop presenting before deleting'}
-          >
-            <Trash2 size={14} />
-            Delete
-          </Button>
-        )}
+          )}
+        </div>
       </div>
 
       <div className="space-y-4">
@@ -171,9 +130,11 @@ export default function BlockDetailPanel({
               variant="ghost"
               size="sm"
               aria-pressed={viewMode === 'monitor' || viewMode === 'participant'}
-              className={
-                viewMode === 'monitor' || viewMode === 'participant' ? 'bg-[hsl(var(--muted))]' : ''
-              }
+              className={`rounded-none -mb-px ${
+                viewMode === 'monitor' || viewMode === 'participant'
+                  ? 'border-b-2 border-[hsl(var(--primary))] text-white font-medium'
+                  : 'text-[hsl(var(--muted-foreground))]'
+              }`}
               onClick={() => {
                 if (viewMode === 'block') onViewModeChange('monitor');
               }}
@@ -184,7 +145,11 @@ export default function BlockDetailPanel({
               variant="ghost"
               size="sm"
               aria-pressed={viewMode === 'block'}
-              className={viewMode === 'block' ? 'bg-[hsl(var(--muted))]' : ''}
+              className={`rounded-none -mb-px ${
+                viewMode === 'block'
+                  ? 'border-b-2 border-[hsl(var(--primary))] text-white font-medium'
+                  : 'text-[hsl(var(--muted-foreground))]'
+              }`}
               onClick={() => onViewModeChange('block')}
             >
               Block
@@ -196,28 +161,36 @@ export default function BlockDetailPanel({
               <BlockContextTab block={selectedBlock} participants={participants} />
             ) : (
               <div className="space-y-3">
-                <div className="flex gap-1">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    aria-pressed={viewMode === 'monitor'}
-                    className={viewMode === 'monitor' ? 'bg-[hsl(var(--muted))]' : ''}
-                    onClick={() => onViewModeChange('monitor')}
-                  >
-                    Monitor
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    aria-pressed={viewMode === 'participant'}
-                    className={viewMode === 'participant' ? 'bg-[hsl(var(--muted))]' : ''}
-                    onClick={() => onViewModeChange('participant')}
-                  >
-                    Participant
-                  </Button>
-                </div>
-                {viewMode === 'participant' ? (
-                  <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex gap-1">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      aria-pressed={viewMode === 'monitor'}
+                      className={`rounded-none -mb-px ${
+                        viewMode === 'monitor'
+                          ? 'border-b-2 border-[hsl(var(--primary))] text-white font-medium'
+                          : 'text-[hsl(var(--muted-foreground))]'
+                      }`}
+                      onClick={() => onViewModeChange('monitor')}
+                    >
+                      Monitor
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      aria-pressed={viewMode === 'participant'}
+                      className={`rounded-none -mb-px ${
+                        viewMode === 'participant'
+                          ? 'border-b-2 border-[hsl(var(--primary))] text-white font-medium'
+                          : 'text-[hsl(var(--muted-foreground))]'
+                      }`}
+                      onClick={() => onViewModeChange('participant')}
+                    >
+                      Participant
+                    </Button>
+                  </div>
+                  {viewMode === 'participant' && (
                     <select
                       aria-label="View as participant"
                       value={impersonatedParticipantId || ''}
@@ -230,6 +203,10 @@ export default function BlockDetailPanel({
                         </option>
                       ))}
                     </select>
+                  )}
+                </div>
+                {viewMode === 'participant' ? (
+                  <>
                     {selectedBlock.id === currentOpenBlock?.id ? (
                       <ContextView
                         block={participantView?.blocks[0] ?? undefined}
@@ -245,7 +222,7 @@ export default function BlockDetailPanel({
                         participant={participants.find((p) => p.id === impersonatedParticipantId)}
                       />
                     )}
-                  </div>
+                  </>
                 ) : selectedBlock.id === currentOpenBlock?.id ? (
                   <ContextView
                     block={undefined}
