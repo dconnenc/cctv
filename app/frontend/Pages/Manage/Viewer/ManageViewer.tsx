@@ -216,8 +216,7 @@ export default function ManageViewer() {
                     <Button
                       variant="secondary"
                       onClick={() => handleStopPresenting(selectedBlock)}
-                      loading={busyBlockId === selectedBlock.id}
-                      loadingText="Closing..."
+                      disabled={busyBlockId === selectedBlock.id}
                     >
                       <Square size={16} />
                       <span>Close</span>
@@ -225,8 +224,7 @@ export default function ManageViewer() {
                   ) : (
                     <Button
                       onClick={() => handlePresent(selectedBlock)}
-                      loading={busyBlockId === selectedBlock.id}
-                      loadingText="Opening..."
+                      disabled={busyBlockId === selectedBlock.id}
                     >
                       <CircleDot size={16} />
                       <span>Open</span>
