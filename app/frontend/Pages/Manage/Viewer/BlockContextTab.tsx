@@ -94,7 +94,12 @@ export default function BlockContextTab({ block, participants }: BlockContextTab
     case BlockKind.GUESS_WHO:
       return <GuessWhoManager block={block} />;
     case BlockKind.COLLABORATIVE_DRAWING:
-      return <CollaborativeDrawingManager block={block} />;
+      return (
+        <div className="space-y-4">
+          <MinigameControls block={block} />
+          <CollaborativeDrawingManager block={block} />
+        </div>
+      );
     case BlockKind.MINIGAME_BALLOON_PUMP:
     case BlockKind.MINIGAME_ARITHMETIC:
       return (
