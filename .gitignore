@@ -17,3 +17,4 @@ storage/
 storybook-static
 
 evals/family_feud/results/
+docs/*
