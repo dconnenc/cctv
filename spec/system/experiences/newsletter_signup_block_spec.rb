@@ -9,7 +9,7 @@ RSpec.describe "Newsletter Signup Block", type: :system do
     allow(Newsletter::SenderClient).to receive(:subscribe).and_return(true)
   end
 
-  it "lets a participant subscribe, shows a confirmation that survives reconnect, and calls Sender" do
+  it "lets a participant subscribe, persists the confirmation after a page reload, and calls Sender" do
     sign_in(admin)
     create_experience_and_go_to_manage(name: "Test Experience", code: "test-exp")
 
@@ -45,7 +45,10 @@ RSpec.describe "Newsletter Signup Block", type: :system do
       click_button "Yes, sign me up"
       expect(page).to have_text("You are subscribed!")
 
-      # Reconnect — the confirmation is rehydrated from submission_state
+      # A full page reload triggers a WebSocket reconnect. On subscribe the server
+      # sends a submission_state message with all prior submissions keyed by block
+      # ID; the frontend rehydrates the confirmation from that, so the "Yes, sign
+      # me up" button never appears.
       visit current_path
       expect(page).to have_text("You are subscribed!")
       expect(page).to have_no_button("Yes, sign me up")
@@ -60,7 +63,7 @@ RSpec.describe "Newsletter Signup Block", type: :system do
     # Host sees the aggregate response count on the manage program table
     visit current_path
     select_block(1, kind: "newsletter_signup")
-    expect(page).to have_text(/Responses \(1\)/i)
+    expect(page).to have_text("1 response")
   end
 
   it "records a decline without subscribing to Sender" do

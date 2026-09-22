@@ -4,8 +4,8 @@ development:
   channel_prefix: cctv_development
 
 test:
-  adapter: <%= ENV.fetch("ACTION_CABLE_ADAPTER", "test") %>
-  url: <%= ENV.fetch("REDIS_URL") { "redis://localhost:6379/1" } %>
+  adapter: test
+  url: <%= ENV.fetch("REDIS_URL") { "redis://localhost:6379/2" } %>
   channel_prefix: cctv_test
 
 production:
