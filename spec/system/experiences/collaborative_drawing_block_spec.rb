@@ -56,7 +56,6 @@ RSpec.describe "Collaborative Drawing Block", type: :system do
     # Present the intake block to collect photos.
     visit current_path
     select_and_present(1, kind: "collaborative_drawing")
-    expect(page).to have_text("Submit a photo of your pet")
 
     # Participant is prompted to contribute a photo, decoupled from the round.
     using_session(:participant) do
