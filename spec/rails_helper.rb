@@ -71,6 +71,16 @@ RSpec.configure do |config|
     RSpec.configuration.add_setting :sidekiq_embedded
     next unless RSpec.configuration.files_to_run.any? { |f| f.include?("spec/system") }
 
+    # Use Redis for ActionCable in system specs so pub/sub matches production
+    # behaviour. Non-system specs (channel specs) keep the :test adapter, which
+    # is required for have_broadcasted_to assertions.
+    redis_url = ENV.fetch("REDIS_URL", "redis://localhost:6379/2")
+    ActionCable.server.config.cable = {
+      "adapter" => "redis",
+      "url" => redis_url,
+      "channel_prefix" => "cctv_test"
+    }
+
     # Mimic reading the config file and creating the queues in our embedded
     # process
     sidekiq_yml = YAML.load_file(

@@ -48,7 +48,7 @@ RSpec.describe "Announcement Block", type: :system do
     visit current_path
     select_block(1, kind: "announcement")
 
-    within("[aria-label='Preview mode']") { click_button "Participant" }
+    switch_to_participant_preview
     expect(page).to have_select("View as participant")
     select "Alice (audience)", from: "View as participant"
     expect(page).to have_text("Welcome Alice to the show!")
@@ -56,7 +56,7 @@ RSpec.describe "Announcement Block", type: :system do
     select "Bob (audience)", from: "View as participant"
     expect(page).to have_text("Welcome Bob to the show!")
 
-    within("[aria-label='Preview mode']") { click_button "Monitor" }
+    switch_to_monitor_preview
     expect(page).to have_text("Welcome friend to the show!")
 
     using_session(:monitor) do

@@ -52,7 +52,7 @@ RSpec.describe "The Scene Block", type: :system do
     # The ManageView is accessed via the Participant preview tab, where TheScene
     # renders its manage UI (phase controls, performers, suggestions) and buttons
     # remain interactive.
-    within("[aria-label='Preview mode']") { find("button", text: /Participant/i).click }
+    switch_to_participant_preview
     expect(page).to have_text("Phase: idle")
 
     # Admin: assign Alex as performer.

@@ -27,21 +27,21 @@ export default function ExperienceActionButton() {
       case 'lobby':
         return {
           onClick: startExperience,
-          icon: <Play size={16} />,
+          icon: <Play size={22} />,
           label: 'Start',
           variant: 'primary',
         };
       case 'live':
         return {
           onClick: pauseExperience,
-          icon: <Pause size={16} />,
+          icon: <Pause size={22} />,
           label: 'Pause',
           variant: 'secondary',
         };
       case 'paused':
         return {
           onClick: resumeExperience,
-          icon: <Play size={16} />,
+          icon: <Play size={22} />,
           label: 'Resume',
           variant: 'primary',
         };
@@ -53,9 +53,15 @@ export default function ExperienceActionButton() {
   if (!config) return null;
 
   return (
-    <Button title={config.label} variant={config.variant} onClick={config.onClick}>
-      {config.icon}
-      <span>{config.label}</span>
+    <Button
+      title={config.label}
+      aria-label={config.label}
+      variant={config.variant}
+      onClick={config.onClick}
+      hideLabel
+      icon={config.icon}
+    >
+      {config.label}
     </Button>
   );
 }

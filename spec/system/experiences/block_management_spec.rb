@@ -43,8 +43,7 @@ RSpec.describe "Managing Blocks", type: :system do
 
       select_block(1, kind: "announcement")
 
-      click_button "Edit"
-      expect(page).to have_text("Edit Block")
+      edit_block
       click_button "View Additional Details"
       expect(page).to have_field("Show on monitor", checked: true)
       uncheck "Show on monitor"
@@ -52,23 +51,23 @@ RSpec.describe "Managing Blocks", type: :system do
       expect(page).to have_no_text("Edit Block")
 
       # Monitor impersonation view shows empty state even when block is queued but not live
-      within("[aria-label='Preview mode']") { click_button "Monitor" }
+      switch_to_monitor_preview
       expect(page).to have_text("This block is not shown on the monitor")
 
       present_block
 
       # Monitor impersonation view still shows empty state after block goes live
-      within("[aria-label='Preview mode']") { click_button "Monitor" }
+      switch_to_monitor_preview
       expect(page).to have_text("This block is not shown on the monitor")
 
       # Participant impersonation view shows the announcement
-      within("[aria-label='Preview mode']") { click_button "Participant" }
+      switch_to_participant_preview
       expect(page).to have_select("View as participant")
       select "#{participant_name} (player)", from: "View as participant"
       expect(page).to have_text("Hidden announcement #{participant_name}")
 
       # Monitor impersonation view shows empty state
-      within("[aria-label='Preview mode']") { click_button "Monitor" }
+      switch_to_monitor_preview
       expect(page).to have_text("This block is not shown on the monitor")
 
       # Actual monitor page still shows lobby state with participant notification
@@ -107,11 +106,11 @@ RSpec.describe "Managing Blocks", type: :system do
       select_and_present(1, kind: "announcement")
 
       # Assert impersonation and monitor views
-      within("[aria-label='Preview mode']") { click_button "Participant" }
+      switch_to_participant_preview
       expect(page).to have_select("View as participant")
       select "#{participant_name} (player)", from: "View as participant"
       expect(page).to have_text("Welcome #{participant_name}")
-      within("[aria-label='Preview mode']") { click_button "Monitor" }
+      switch_to_monitor_preview
       expect(page).to have_text("Welcome friend")
 
       # Queue new block
@@ -124,7 +123,7 @@ RSpec.describe "Managing Blocks", type: :system do
       end
 
       # Assert original block is still displayed. New block is only enqueued
-      within("[aria-label='Preview mode']") { click_button "Monitor" }
+      switch_to_monitor_preview
       expect(page).to have_text("Welcome friend")
 
       # Present new block
@@ -132,11 +131,11 @@ RSpec.describe "Managing Blocks", type: :system do
       present_block
 
       # Assert new block is now visible in the impersonation views
-      within("[aria-label='Preview mode']") { click_button "Participant" }
+      switch_to_participant_preview
       expect(page).to have_select("View as participant")
       select "#{participant_name} (player)", from: "View as participant"
       expect(page).to have_text("Welcome #{participant_name} again")
-      within("[aria-label='Preview mode']") { click_button "Monitor" }
+      switch_to_monitor_preview
       expect(page).to have_text("Welcome friend again")
     end
   end

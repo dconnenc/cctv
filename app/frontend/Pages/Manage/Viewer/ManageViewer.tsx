@@ -2,12 +2,30 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { useNavigate } from 'react-router-dom';
 
-import { BookOpen, Bug, Columns3, Focus, X } from 'lucide-react';
+import {
+  ArrowRight,
+  BookOpen,
+  Bug,
+  CircleDot,
+  Columns3,
+  Focus,
+  MoreHorizontal,
+  Square,
+  X,
+} from 'lucide-react';
 
 import { trackManageAction } from '@cctv/analytics';
 import { useExperience } from '@cctv/contexts/ExperienceContext';
-import { Button, Drawer, DrawerBody, DrawerContent } from '@cctv/core';
-import { Pill } from '@cctv/core/Pill/Pill';
+import {
+  Button,
+  Drawer,
+  DrawerBody,
+  DrawerContent,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@cctv/core';
 import { useBlockPresentation } from '@cctv/hooks/useBlockPresentation';
 import { useDeleteExperienceBlock } from '@cctv/hooks/useDeleteExperienceBlock';
 import { useDetachBlockFromParent } from '@cctv/hooks/useDetachBlockFromParent';
@@ -21,21 +39,19 @@ import CreateBlock from '../CreateBlock/CreateBlock';
 import EditBlock from '../EditBlock/EditBlock';
 import ExperienceActionButton from '../ExperienceActionButton';
 import { getManageMode, setManageMode } from '../Focus/useManageMode';
-import ParticipantsTab from '../ParticipantsTab/ParticipantsTab';
-import PlaybillTab from '../PlaybillTab/PlaybillTab';
+import ParticipantsSidebar from '../ParticipantsTab/ParticipantsSidebar';
 import BlockDetailPanel from './BlockDetailPanel';
 import BlockSidebar from './BlockSidebar';
-import DebugPanel from './DebugPanel/DebugPanel';
 
 export default function ManageViewer() {
   const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
-  const [showParticipantDetails, setShowParticipantDetails] = useState(false);
-  const [showDebugPanel, setShowDebugPanel] = useState(false);
+  const [participantsSidebarCollapsed, setParticipantsSidebarCollapsed] = useState(
+    () => 'window' in globalThis && window.innerWidth < 768,
+  );
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [editingBlock, setEditingBlock] = useState<Block | null>(null);
-  const [isPlaybillDialogOpen, setIsPlaybillDialogOpen] = useState(false);
   const [dismissedError, setDismissedError] = useState(false);
-  const [viewMode, setViewMode] = useState<'monitor' | 'participant' | 'responses'>('monitor');
+  const [viewMode, setViewMode] = useState<'monitor' | 'participant' | 'block'>('block');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(
     () => 'window' in globalThis && window.innerWidth < 768,
   );
@@ -44,6 +60,7 @@ export default function ManageViewer() {
     const handleResize = () => {
       if (window.innerWidth < 768) {
         setSidebarCollapsed(true);
+        setParticipantsSidebarCollapsed(true);
       }
     };
 
@@ -62,8 +79,6 @@ export default function ManageViewer() {
     wsReady,
     impersonatedParticipantId,
     setImpersonatedParticipantId,
-    monitorView,
-    participantView,
   } = useExperience();
 
   const { error: startError } = useExperienceStart();
@@ -184,9 +199,6 @@ export default function ManageViewer() {
       statusError ||
       detachError ||
       deleteError);
-  const statusLabel = experience?.status
-    ? experience.status.charAt(0).toUpperCase() + experience.status.slice(1)
-    : '';
 
   return (
     <>
@@ -205,54 +217,79 @@ export default function ManageViewer() {
         <main className="flex-1 flex flex-col w-full h-full z-10 overflow-hidden bg-[hsl(var(--background))]">
           <div className="flex items-center justify-between p-4 h-20 border-b border-[hsl(var(--border))]">
             <div className="flex items-center gap-3">
+              <ExperienceActionButton />
               <div className="text-lg font-semibold text-white">
                 {experience?.name || 'Experience'}
               </div>
-              {statusLabel && <Pill label={statusLabel} />}
             </div>
             <div className="flex items-center gap-2">
-              <ExperienceActionButton />
-              <Button
-                onClick={() => {
-                  setManageMode('focus');
-                  navigate(`/experiences/${code}/manage/focus`);
-                }}
-                variant="secondary"
-                title="Focus mode"
-              >
-                <Focus size={16} />
-                <span>Focus</span>
-              </Button>
-              <Button
-                to={`/experiences/${experience?.code}/timeline`}
-                variant="secondary"
-                title="Timeline view"
-                type="link"
-              >
-                <Columns3 size={16} />
-                <span>Timeline</span>
-              </Button>
-              <Button
-                onClick={() => setShowDebugPanel((prev) => !prev)}
-                variant={showDebugPanel ? 'primary' : 'secondary'}
-                title="Debug Panel"
-              >
-                <Bug size={16} />
-              </Button>
-              <Button
-                onClick={() => setIsPlaybillDialogOpen(true)}
-                variant="secondary"
-                title="Edit Playbill"
-              >
-                <BookOpen size={16} />
-              </Button>
-              <Button
-                onClick={() => setShowParticipantDetails((prev) => !prev)}
-                variant="secondary"
-                title={showParticipantDetails ? 'Hide Participants' : 'Participants'}
-              >
-                {showParticipantDetails ? 'Hide Participants' : 'Participants'}
-              </Button>
+              {selectedBlock && (
+                <>
+                  <Button
+                    onClick={onPlayNext}
+                    disabled={selectedBlock.status !== 'open' || busyBlockId === selectedBlock.id}
+                  >
+                    <ArrowRight size={16} />
+                    <span>Next</span>
+                  </Button>
+                  <Button
+                    variant={selectedBlock.status === 'open' ? 'secondary' : 'primary'}
+                    onClick={() =>
+                      selectedBlock.status === 'open'
+                        ? handleStopPresenting(selectedBlock)
+                        : handlePresent(selectedBlock)
+                    }
+                    disabled={busyBlockId === selectedBlock.id}
+                  >
+                    {selectedBlock.status === 'open' ? (
+                      <>
+                        <Square size={16} />
+                        <span>Close</span>
+                      </>
+                    ) : (
+                      <>
+                        <CircleDot size={16} />
+                        <span>Open</span>
+                      </>
+                    )}
+                  </Button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="secondary" aria-label="More options" title="More options">
+                        <MoreHorizontal size={16} />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem
+                        onSelect={() => {
+                          setManageMode('focus');
+                          navigate(`/experiences/${code}/manage/focus`);
+                        }}
+                      >
+                        <Focus size={14} />
+                        Focus
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onSelect={() => navigate(`/experiences/${code}/timeline`)}>
+                        <Columns3 size={14} />
+                        Timeline
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onSelect={() => navigate(`/experiences/${code}/manage/playbill`)}
+                      >
+                        <BookOpen size={14} />
+                        Playbill
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onSelect={() => navigate(`/experiences/${code}/manage/debug`)}
+                      >
+                        <Bug size={14} />
+                        Debug
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                  <span className="border-l border-[hsl(var(--border))] h-6 mx-1" />
+                </>
+              )}
             </div>
           </div>
 
@@ -275,16 +312,9 @@ export default function ManageViewer() {
             {selectedBlock ? (
               <BlockDetailPanel
                 selectedBlock={selectedBlock}
-                currentOpenBlock={currentOpenBlock}
-                busyBlockId={busyBlockId}
                 viewMode={viewMode}
-                monitorView={monitorView}
-                participantView={participantView}
                 impersonatedParticipantId={impersonatedParticipantId}
                 participants={participantsCombined}
-                onPresent={handlePresent}
-                onStopPresenting={handleStopPresenting}
-                onPlayNext={onPlayNext}
                 onViewModeChange={setViewMode}
                 onImpersonatedParticipantChange={setImpersonatedParticipantId}
                 onEdit={setEditingBlock}
@@ -301,29 +331,13 @@ export default function ManageViewer() {
           </div>
         </main>
 
-        {showParticipantDetails && (
-          <aside className="z-10 absolute h-full top-0 right-0 w-[420px] shrink-0 border-l border-[hsl(var(--border))] bg-[hsl(var(--card))] flex flex-col">
-            <div className="p-4 h-20 border-b border-[hsl(var(--border))] flex items-center justify-between">
-              <div className="text-sm font-semibold text-white">Participants</div>
-              <Button
-                variant="ghost"
-                size="sm"
-                icon={<X size={16} />}
-                hideLabel
-                onClick={() => setShowParticipantDetails(false)}
-              >
-                Close participants panel
-              </Button>
-            </div>
-            <div className="flex-1 overflow-y-auto">
-              <ParticipantsTab
-                participants={participantsCombined}
-                segments={experience?.segments || []}
-                defaultSegmentId={experience?.default_segment_id ?? null}
-              />
-            </div>
-          </aside>
-        )}
+        <ParticipantsSidebar
+          participants={participantsCombined}
+          segments={experience?.segments || []}
+          defaultSegmentId={experience?.default_segment_id ?? null}
+          collapsed={participantsSidebarCollapsed}
+          onToggle={() => setParticipantsSidebarCollapsed((prev) => !prev)}
+        />
       </section>
 
       <Drawer open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
@@ -356,25 +370,6 @@ export default function ManageViewer() {
                 participants={participantsCombined}
               />
             )}
-          </DrawerBody>
-        </DrawerContent>
-      </Drawer>
-
-      <Drawer open={showDebugPanel} onOpenChange={setShowDebugPanel}>
-        <DrawerContent style={{ maxWidth: '36rem' }}>
-          <DrawerBody>
-            <DebugPanel selectedBlock={selectedBlock} />
-          </DrawerBody>
-        </DrawerContent>
-      </Drawer>
-
-      <Drawer open={isPlaybillDialogOpen} onOpenChange={setIsPlaybillDialogOpen}>
-        <DrawerContent style={{ maxWidth: '36rem' }}>
-          <DrawerBody>
-            <PlaybillTab
-              playbill={experience?.playbill || []}
-              playbillEnabled={experience?.playbill_enabled !== false}
-            />
           </DrawerBody>
         </DrawerContent>
       </Drawer>

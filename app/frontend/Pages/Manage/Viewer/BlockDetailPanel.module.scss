@@ -1,0 +1,46 @@
+.tabBar {
+  display: flex;
+  border-bottom: 1px solid hsl(var(--border));
+}
+
+.tab {
+  padding: 0 0.75rem;
+  height: 2rem;
+  font-family: var(--font-ui);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: hsl(var(--muted-foreground));
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  margin-bottom: -1px;
+  cursor: pointer;
+
+  &:hover {
+    color: hsl(var(--foreground));
+  }
+
+  &.selected {
+    color: var(--phosphor);
+    border-bottom-color: var(--phosphor);
+  }
+}
+
+.subNav {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0 0.5rem;
+  min-height: 2rem;
+  border-bottom: 1px solid hsl(var(--border));
+}
+
+.subNavMeta {
+  display: flex;
+  align-items: center;
+  padding: 0 0.25rem;
+  width: 100%;
+}

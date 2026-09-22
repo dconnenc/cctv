@@ -1,0 +1,59 @@
+.sidebar {
+  z-index: 10;
+  height: 100%;
+  flex-shrink: 0;
+  background: hsl(var(--card));
+  display: flex;
+  flex-direction: column;
+  transition: width 0.3s ease-in-out;
+
+  &.left {
+    border-right: 1px solid hsl(var(--border));
+  }
+
+  &.right {
+    border-left: 1px solid hsl(var(--border));
+  }
+
+  &.collapsed {
+    width: 3rem;
+  }
+
+  &.expanded {
+    width: 20rem;
+  }
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem;
+  height: 5rem;
+  border-bottom: 1px solid hsl(var(--border));
+  flex-shrink: 0;
+
+  &.collapsedHeader {
+    flex-direction: column;
+    justify-content: center;
+    gap: 0.25rem;
+  }
+}
+
+.headerTitle {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: hsl(var(--foreground));
+  padding-left: 0.5rem;
+}
+
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.content {
+  flex: 1;
+  overflow-y: auto;
+}

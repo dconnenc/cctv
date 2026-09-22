@@ -148,7 +148,7 @@ module SystemHelpers
   # Opens the "Create Block" form, yields for block-specific field filling,
   # clicks "Queue block", and asserts block N appears in the sidebar.
   def queue_block(n:, &block)
-    click_button "Block"
+    click_button "Create Block"
     expect(page).to have_text("Create Block")
     yield
     click_button "Queue block"
@@ -168,19 +168,19 @@ module SystemHelpers
   end
 
   # Presents the currently selected block.
-  # Pre-asserts "Present" is available; post-asserts "Stop Presenting" appears.
+  # Pre-asserts "Open" is available; post-asserts "Close" appears.
   def present_block
-    expect(page).to have_button("Present")
-    click_button "Present"
-    expect(page).to have_button("Stop Presenting")
+    expect(page).to have_button("Open")
+    click_button "Open"
+    expect(page).to have_button("Close")
   end
 
   # Stops presenting the currently selected block.
-  # Pre-asserts "Stop Presenting" is available; post-asserts "Present" appears.
+  # Pre-asserts "Close" is available; post-asserts "Open" appears.
   def stop_presenting_block
-    expect(page).to have_button("Stop Presenting")
-    click_button "Stop Presenting"
-    expect(page).to have_button("Present")
+    expect(page).to have_button("Close")
+    click_button "Close"
+    expect(page).to have_button("Open")
   end
 
   # Selects block N in the sidebar and presents it in one step.
@@ -190,9 +190,8 @@ module SystemHelpers
   end
 
   # Opens the edit form for the currently selected block.
-  # Pre-asserts "Edit" is available; post-asserts "Edit Block" heading appears.
+  # Clicks the Edit button directly in the panel body, then asserts the Edit Block heading.
   def edit_block
-    expect(page).to have_button("Edit")
     click_button "Edit"
     expect(page).to have_text("Edit Block")
   end
@@ -221,15 +220,25 @@ module SystemHelpers
     visit current_path
   end
 
+  def switch_to_monitor_preview
+    click_button 'Screens' unless page.has_button?('Monitor', wait: 0)
+    click_button 'Monitor'
+  end
+
+  def switch_to_participant_preview
+    click_button 'Screens' unless page.has_button?('Participant', exact: true, wait: 0)
+    click_button 'Participant', exact: true
+  end
+
   # Opens the participants panel, yields, then closes it.
   # Requires the manage page (/manage) to be the current path.
   def within_participants_panel(&block)
     expect(page).to have_current_path(/\/manage$/)
-    click_button "Participants"
-    expect(page).to have_button("Close participants panel")
+    click_button "Expand Participants" unless page.has_button?("Collapse Participants", wait: 0)
+    expect(page).to have_button("Collapse Participants")
     yield
-    click_button "Close participants panel"
-    expect(page).to have_button("Participants", exact: true)
+    click_button "Collapse Participants"
+    expect(page).to have_button("Expand Participants")
     page.evaluate_script("document.activeElement.blur()")
   end
 end

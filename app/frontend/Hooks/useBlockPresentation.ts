@@ -45,7 +45,6 @@ export function useBlockPresentation() {
       setStatusError(null);
 
       await changeStatus(block, 'closed');
-
       setBusyBlockId(undefined);
     },
     [code, changeStatus, setStatusError],

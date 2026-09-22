@@ -1,53 +1,3 @@
-.sidebar {
-  z-index: 10;
-  height: 100%;
-  flex-shrink: 0;
-  border-right: 1px solid hsl(var(--border));
-  background: hsl(var(--card));
-  display: flex;
-  flex-direction: column;
-  transition: width 0.3s ease-in-out;
-
-  &.collapsed {
-    width: 3rem;
-  }
-
-  &.expanded {
-    width: 16rem;
-  }
-}
-
-.header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0.5rem;
-  height: 5rem;
-  border-bottom: 1px solid hsl(var(--border));
-}
-
-.headerTitle {
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: hsl(var(--foreground));
-  padding-left: 0.5rem;
-}
-
-.headerActions {
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-
-  &.collapsedActions {
-    flex-direction: column;
-  }
-}
-
-.content {
-  flex: 1;
-  overflow-y: auto;
-}
-
 // --- Collapsed view ---
 
 .collapsedList {
@@ -67,43 +17,6 @@
   justify-content: center;
   padding: 0;
   font-size: 0.75rem;
-
-  &.selected {
-    background: hsl(var(--muted));
-    box-shadow: inset 0 0 0 2px hsl(var(--accent));
-  }
-
-  &.hiddenBlock {
-    opacity: 0.5;
-  }
-}
-
-.groupedContainer {
-  border: 1px solid hsl(var(--border));
-  border-radius: var(--radius);
-  overflow: hidden;
-  list-style: none;
-  transition: border-color 0.15s ease;
-
-  &:has(button:hover) {
-    border-color: hsl(var(--foreground) / 0.45);
-  }
-}
-
-.groupedList {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-
-.groupedButton {
-  width: 100%;
-  height: 2.5rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-  border-radius: 0;
 
   &.selected {
     background: hsl(var(--muted));
@@ -233,13 +146,6 @@
 
 .childItem {
   list-style: none;
-}
-
-.childMarker {
-  display: inline-block;
-  vertical-align: middle;
-  margin-right: 0.25rem;
-  color: hsl(var(--muted-foreground));
 }
 
 .childContext {

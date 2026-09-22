@@ -28,7 +28,7 @@ RSpec.describe "Question Block", type: :system do
     select_and_present(1, kind: "question")
 
     # Monitor impersonation shows the question
-    within("[aria-label='Preview mode']") { click_button "Monitor" }
+    switch_to_monitor_preview
     expect(page).to have_text("What is your favorite color?")
 
     # Actual monitor page shows the question
@@ -49,8 +49,7 @@ RSpec.describe "Question Block", type: :system do
     # Manage view reflects the submitted response
     visit current_path
     select_block(1, kind: "question")
-    within("[aria-label='Preview mode']") { click_button "Responses" }
-    expect(page).to have_text(/Responses \(1\)/i)
+    expect(page).to have_text("1 response")
   end
 
   describe "editing a question block" do

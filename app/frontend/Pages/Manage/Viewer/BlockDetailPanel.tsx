@@ -1,28 +1,16 @@
 import { useState } from 'react';
 
-import {
-  CornerLeftUp,
-  MessageSquare,
-  Monitor,
-  Pause,
-  Play,
-  SkipForward,
-  Trash2,
-  User,
-} from 'lucide-react';
+import classNames from 'classnames';
+import { Trash2 } from 'lucide-react';
 
-import { useExperience } from '@cctv/contexts/ExperienceContext';
 import { Button } from '@cctv/core/Button/Button';
-import { SegmentBadge } from '@cctv/core/SegmentBadge/SegmentBadge';
-import { BLOCK_KIND_LABELS, Block, BlockKind, Experience, ParticipantSummary } from '@cctv/types';
+import { BLOCK_KIND_LABELS, Block, BlockKind, ParticipantSummary } from '@cctv/types';
 
-import CollaborativeDrawingManager from '../../Block/CollaborativeDrawingManager/CollaborativeDrawingManager';
-import FamilyFeudManager from '../../Block/FamilyFeudManager/FamilyFeudManager';
-import GuessWhoManager from '../../Block/GuessWhoManager/GuessWhoManager';
 import BlockPreview from '../BlockPreview/BlockPreview';
-import ContextView from '../ContextView/ContextView';
-import BlockResponsesList from './BlockResponsesList';
-import MinigameControls from './MinigameControls';
+import BlockContextTab, { MetadataRow } from './BlockContextTab';
+import { VisibilityDetails, hasTargetingRules } from './BlockVisibility';
+
+import styles from './BlockDetailPanel.module.scss';
 
 function getStatusColor(status: string) {
   switch (status) {
@@ -39,17 +27,10 @@ function getStatusColor(status: string) {
 
 interface BlockDetailPanelProps {
   selectedBlock: Block;
-  currentOpenBlock?: Block;
-  busyBlockId?: string;
-  viewMode: 'monitor' | 'participant' | 'responses';
-  monitorView?: Experience;
-  participantView?: Experience;
+  viewMode: 'monitor' | 'participant' | 'block';
   impersonatedParticipantId?: string;
   participants: ParticipantSummary[];
-  onPresent: (block: Block) => void;
-  onStopPresenting: (block: Block) => void;
-  onPlayNext: () => void;
-  onViewModeChange: (mode: 'monitor' | 'participant' | 'responses') => void;
+  onViewModeChange: (mode: 'monitor' | 'participant' | 'block') => void;
   onImpersonatedParticipantChange: (id: string) => void;
   onEdit: (block: Block) => void;
   onDetach?: (block: Block) => void;
@@ -60,16 +41,9 @@ interface BlockDetailPanelProps {
 
 export default function BlockDetailPanel({
   selectedBlock,
-  currentOpenBlock,
-  busyBlockId,
   viewMode,
-  monitorView,
-  participantView,
   impersonatedParticipantId,
   participants,
-  onPresent,
-  onStopPresenting,
-  onPlayNext,
   onViewModeChange,
   onImpersonatedParticipantChange,
   onEdit,
@@ -78,313 +52,147 @@ export default function BlockDetailPanel({
   onDelete,
   deletingBlockId,
 }: BlockDetailPanelProps) {
-  const { experience } = useExperience();
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const isDetaching = detachingBlockId === selectedBlock.id;
   const isDeleting = deletingBlockId === selectedBlock.id;
   const canDelete = selectedBlock.status !== 'open';
 
-  // A synthetic question has no participant/monitor view; selecting it opens the
-  // Family Feud manager (focused on that question) so it can be sent to the agent.
-  const isSyntheticQuestion =
-    selectedBlock.kind === BlockKind.QUESTION && Boolean(selectedBlock.payload.synthetic);
-  const syntheticParentBlock = isSyntheticQuestion
-    ? experience?.blocks?.find((b) => b.id === selectedBlock.parent_block_id)
-    : undefined;
-
   return (
-    <div className="space-y-6">
+    <div className="space-y-2">
       <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-xl font-semibold text-white">
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-medium uppercase tracking-wide text-[hsl(var(--muted-foreground))]">
             {BLOCK_KIND_LABELS[selectedBlock.kind]}
-          </h2>
-          <div className="flex items-center gap-2 mt-1">
-            <span className={`w-2 h-2 rounded-full ${getStatusColor(selectedBlock.status)}`} />
-            <span className="text-sm text-[hsl(var(--muted-foreground))] capitalize">
-              {selectedBlock.status}
-            </span>
-          </div>
+          </span>
+          <span className="text-[hsl(var(--muted-foreground))]">·</span>
+          <span className={`w-2 h-2 rounded-full ${getStatusColor(selectedBlock.status)}`} />
+          <span className="text-sm text-[hsl(var(--muted-foreground))] capitalize">
+            {selectedBlock.status}
+          </span>
+          {hasTargetingRules(selectedBlock) && <VisibilityDetails block={selectedBlock} />}
         </div>
         <div className="flex items-center gap-2">
-          {selectedBlock.parent_block_id && onDetach && (
-            <Button
-              variant="secondary"
-              onClick={() => onDetach(selectedBlock)}
-              loading={isDetaching}
-              loadingText="Detaching..."
-              icon={<CornerLeftUp size={16} />}
-              title="Detach from parent (promote to top-level)"
-            >
-              Detach
-            </Button>
-          )}
           {!selectedBlock.parent_block_id && (
-            <Button variant="secondary" onClick={() => onEdit(selectedBlock)}>
+            <Button variant="ghost" size="sm" onClick={() => onEdit(selectedBlock)}>
               Edit
             </Button>
           )}
-          {selectedBlock.status === 'open' ? (
-            <>
-              <Button
-                variant="secondary"
-                onClick={() => onStopPresenting(selectedBlock)}
-                loading={busyBlockId === selectedBlock.id}
-                loadingText="Stopping..."
-              >
-                <span className="flex items-center gap-2">
-                  <Pause size={16} /> <span>Stop Presenting</span>
-                </span>
-              </Button>
-              <Button
-                onClick={onPlayNext}
-                loading={busyBlockId === selectedBlock.id}
-                loadingText="Next..."
-              >
-                <span className="flex items-center gap-2">
-                  <SkipForward size={16} /> <span>Play Next</span>
-                </span>
-              </Button>
-            </>
-          ) : (
+          {selectedBlock.parent_block_id && onDetach && (
             <Button
-              onClick={() => onPresent(selectedBlock)}
-              loading={busyBlockId === selectedBlock.id}
-              loadingText="Starting..."
+              variant="ghost"
+              size="sm"
+              onClick={() => onDetach(selectedBlock)}
+              disabled={isDetaching}
             >
-              <span className="flex items-center gap-2">
-                <Play size={16} />
-                <span>Present</span>
-              </span>
+              {isDetaching ? 'Detaching...' : 'Detach'}
             </Button>
           )}
-          <MinigameControls block={selectedBlock} />
           {confirmingDelete ? (
             <>
               <Button
-                variant="destructive"
+                variant="ghost"
+                size="sm"
                 onClick={() => {
                   onDelete(selectedBlock);
                   setConfirmingDelete(false);
                 }}
-                loading={isDeleting}
-                loadingText="Deleting..."
               >
-                Confirm Delete
+                <Trash2 size={14} />
+                {isDeleting ? 'Deleting...' : 'Confirm Delete'}
               </Button>
-              <Button
-                variant="ghost"
-                onClick={() => setConfirmingDelete(false)}
-                disabled={isDeleting}
-              >
+              <Button variant="ghost" size="sm" onClick={() => setConfirmingDelete(false)}>
                 Cancel
               </Button>
             </>
           ) : (
             <Button
-              variant="destructive"
+              variant="ghost"
+              size="sm"
               onClick={() => setConfirmingDelete(true)}
-              disabled={!canDelete || isDeleting}
-              title={canDelete ? 'Delete block' : 'Stop presenting before deleting'}
-              icon={<Trash2 size={16} />}
-              hideLabel
+              disabled={!canDelete}
+              title={canDelete ? undefined : 'Stop presenting before deleting'}
             >
+              <Trash2 size={14} />
               Delete
             </Button>
           )}
         </div>
       </div>
 
-      {syntheticParentBlock && (
-        <div className="mb-6">
-          <FamilyFeudManager
-            key={selectedBlock.id}
-            block={syntheticParentBlock}
-            focusQuestionId={selectedBlock.id}
-          />
+      <div className="border border-[hsl(var(--border))] rounded-lg overflow-hidden">
+        <div className={styles.tabBar}>
+          <button
+            className={classNames(styles.tab, { [styles.selected]: viewMode !== 'block' })}
+            onClick={() => {
+              if (viewMode === 'block') onViewModeChange('monitor');
+            }}
+          >
+            Screens
+          </button>
+          <button
+            className={classNames(styles.tab, { [styles.selected]: viewMode === 'block' })}
+            onClick={() => onViewModeChange('block')}
+          >
+            Block
+          </button>
         </div>
-      )}
 
-      {!syntheticParentBlock && (
-        <div className="space-y-4">
-          <div className="flex items-center gap-4">
-            <fieldset
-              aria-label="Preview mode"
-              className="inline-flex items-center gap-1 p-1 bg-[hsl(var(--muted))] rounded-lg"
-            >
-              <Button
-                variant="ghost"
-                size="sm"
-                icon={<Monitor size={14} />}
-                aria-pressed={viewMode === 'monitor'}
+        <div className={styles.subNav}>
+          {viewMode === 'block' ? (
+            <div className={styles.subNavMeta}>
+              <MetadataRow block={selectedBlock} />
+            </div>
+          ) : (
+            <>
+              <button
+                className={classNames(styles.tab, { [styles.selected]: viewMode === 'monitor' })}
                 onClick={() => onViewModeChange('monitor')}
               >
                 Monitor
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                icon={<User size={14} />}
-                aria-pressed={viewMode === 'participant'}
+              </button>
+              <button
+                className={classNames(styles.tab, {
+                  [styles.selected]: viewMode === 'participant',
+                })}
                 onClick={() => onViewModeChange('participant')}
               >
                 Participant
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                icon={<MessageSquare size={14} />}
-                aria-pressed={viewMode === 'responses'}
-                onClick={() => onViewModeChange('responses')}
-              >
-                Responses ({selectedBlock?.responses?.total ?? 0})
-              </Button>
-            </fieldset>
-
-            {viewMode === 'participant' && (
-              <select
-                aria-label="View as participant"
-                value={impersonatedParticipantId || ''}
-                onChange={(e) => onImpersonatedParticipantChange(e.target.value)}
-                className="px-3 py-1.5 text-sm rounded-md bg-[hsl(var(--muted))] border border-[hsl(var(--border))] text-white"
-              >
-                {participants.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name} ({p.role})
-                  </option>
-                ))}
-              </select>
-            )}
-          </div>
-
-          {selectedBlock.kind === BlockKind.FAMILY_FEUD && (
-            <div className="mb-6">
-              <FamilyFeudManager block={selectedBlock} />
-            </div>
-          )}
-
-          {selectedBlock.kind === BlockKind.GUESS_WHO && (
-            <div className="mb-6">
-              <GuessWhoManager block={selectedBlock} />
-            </div>
-          )}
-
-          {selectedBlock.kind === BlockKind.COLLABORATIVE_DRAWING && (
-            <div className="mb-6">
-              <CollaborativeDrawingManager block={selectedBlock} />
-            </div>
-          )}
-
-          <div className="border border-[hsl(var(--border))] rounded-lg overflow-hidden">
-            <div className="px-4 py-2 bg-[hsl(var(--muted))] border-b border-[hsl(var(--border))]">
-              <span className="text-sm font-medium text-white">
-                {viewMode === 'monitor'
-                  ? 'Monitor Preview'
-                  : viewMode === 'participant'
-                    ? 'Participant Preview'
-                    : `All Responses (${selectedBlock?.responses?.total ?? 0})`}
-              </span>
-            </div>
-            <div className="p-4 bg-[hsl(var(--card))]">
-              {viewMode === 'responses' ? (
-                <BlockResponsesList block={selectedBlock} participants={participants} />
-              ) : selectedBlock.id === currentOpenBlock?.id ? (
-                <ContextView
-                  block={
-                    viewMode === 'monitor' ? undefined : (participantView?.blocks[0] ?? undefined)
-                  }
-                  participant={
-                    viewMode === 'participant'
-                      ? participants.find((p) => p.id === impersonatedParticipantId)
-                      : undefined
-                  }
-                  emptyMessage={
-                    viewMode === 'monitor'
-                      ? selectedBlock.kind === BlockKind.ANNOUNCEMENT &&
-                        selectedBlock.payload.show_on_monitor === false
-                        ? 'This block is not shown on the monitor'
-                        : 'No block on Monitor'
-                      : 'No block for participant'
-                  }
-                  monitorView={monitorView}
-                  viewMode={viewMode}
-                  title="Current"
-                />
-              ) : viewMode === 'monitor' &&
-                selectedBlock.kind === BlockKind.ANNOUNCEMENT &&
-                selectedBlock.payload.show_on_monitor === false ? (
-                <p className="text-sm text-[hsl(var(--muted-foreground))]">
-                  This block is not shown on the monitor
-                </p>
-              ) : (
-                <BlockPreview
-                  block={selectedBlock}
-                  participant={
-                    viewMode === 'participant'
-                      ? participants.find((p) => p.id === impersonatedParticipantId)
-                      : undefined
-                  }
-                />
+              </button>
+              {viewMode === 'participant' && (
+                <select
+                  aria-label="View as participant"
+                  value={impersonatedParticipantId || ''}
+                  onChange={(e) => onImpersonatedParticipantChange(e.target.value)}
+                  className="ml-2 px-3 py-1 text-sm rounded-md bg-[hsl(var(--muted))] border border-[hsl(var(--border))] text-white"
+                >
+                  {participants.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name} ({p.role})
+                    </option>
+                  ))}
+                </select>
               )}
-            </div>
-          </div>
+            </>
+          )}
         </div>
-      )}
 
-      <div className="grid grid-cols-2 gap-6">
-        <div className="space-y-3">
-          <div>
-            <div className="text-xs text-[hsl(var(--muted-foreground))] uppercase tracking-wide">
-              Responses
-            </div>
-            <div className="text-lg font-semibold text-white">
-              {selectedBlock.responses?.total ?? 0}
-            </div>
-          </div>
-          <div>
-            <div className="text-xs text-[hsl(var(--muted-foreground))] uppercase tracking-wide">
-              Visible to Roles
-            </div>
-            <div className="text-sm text-white">
-              {selectedBlock.visible_to_roles?.length
-                ? selectedBlock.visible_to_roles.join(', ')
-                : 'All'}
-            </div>
-          </div>
+        <div className="p-4 bg-[hsl(var(--card))] min-h-[420px]">
+          {viewMode === 'block' ? (
+            <BlockContextTab block={selectedBlock} participants={participants} />
+          ) : viewMode === 'participant' ? (
+            <BlockPreview
+              block={selectedBlock}
+              participant={participants.find((p) => p.id === impersonatedParticipantId)}
+            />
+          ) : selectedBlock.kind === BlockKind.ANNOUNCEMENT &&
+            selectedBlock.payload.show_on_monitor === false ? (
+            <p className="text-sm text-[hsl(var(--muted-foreground))]">
+              This block is not shown on the monitor
+            </p>
+          ) : (
+            <BlockPreview block={selectedBlock} />
+          )}
         </div>
-        <div className="space-y-3">
-          <VisibleSegments segments={selectedBlock.visible_to_segments} />
-          <div>
-            <div className="text-xs text-[hsl(var(--muted-foreground))] uppercase tracking-wide">
-              Targeted Users
-            </div>
-            <div className="text-sm text-white">{selectedBlock.target_user_ids?.length ?? 0}</div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function VisibleSegments({ segments }: { segments?: string[] }) {
-  const { experience } = useExperience();
-  const definedSegments = experience?.segments || [];
-
-  return (
-    <div>
-      <div className="text-xs text-[hsl(var(--muted-foreground))] uppercase tracking-wide">
-        Visible to Segments
-      </div>
-      <div
-        className="text-sm text-white mt-1"
-        style={{ display: 'flex', flexWrap: 'wrap', gap: '0.25rem' }}
-      >
-        {segments?.length
-          ? segments.map((name) => {
-              const seg = definedSegments.find((s) => s.name === name);
-              return <SegmentBadge key={name} name={name} color={seg?.color || '#6B7280'} />;
-            })
-          : 'All'}
       </div>
     </div>
   );
