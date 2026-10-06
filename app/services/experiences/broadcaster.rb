@@ -56,7 +56,11 @@ class Experiences::Broadcaster
         stream_key = self.class.profile_stream_key(experience, fingerprint)
         message    = WebsocketMessageService.resubscribe_required(participant_id: rep.id, reason: "client_state_changed")
         Rails.logger.info("[Broadcaster] Broadcasting to stream #{stream_key}: #{message[:type]}")
-        ActionCable.server.broadcast(stream_key, message)
+        begin
+          ActionCable.server.broadcast(stream_key, message)
+        rescue => e
+          Rails.logger.error("[Broadcaster] Failed to broadcast resubscribe to #{stream_key}: #{e.message}")
+        end
       end
   end
 
