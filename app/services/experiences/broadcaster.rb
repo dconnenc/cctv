@@ -52,11 +52,11 @@ class Experiences::Broadcaster
     experience.experience_participants.includes(:experience_segments)
       .group_by { |p| self.class.visibility_fingerprint(experience, p, targeted_block_data: targeted_block_data) }
       .each do |fingerprint, participants|
-        rep = participants.first
-        send_broadcast(
-          self.class.profile_stream_key(experience, fingerprint),
-          WebsocketMessageService.resubscribe_required(participant_id: rep.id, reason: "client_state_changed")
-        )
+        rep        = participants.first
+        stream_key = self.class.profile_stream_key(experience, fingerprint)
+        message    = WebsocketMessageService.resubscribe_required(participant_id: rep.id, reason: "client_state_changed")
+        Rails.logger.info("[Broadcaster] Broadcasting to stream #{stream_key}: #{message[:type]}")
+        ActionCable.server.broadcast(stream_key, message)
       end
   end
 
@@ -96,21 +96,27 @@ class Experiences::Broadcaster
       block_id: block_id,
       leader_fill: leader_fill
     )
-    send_broadcast(self.class.admin_stream_key(experience), message)
+    stream_key = self.class.admin_stream_key(experience)
+    Rails.logger.info("[Broadcaster] Broadcasting to stream #{stream_key}: #{message[:type]}")
+    ActionCable.server.broadcast(stream_key, message)
+  rescue => e
+    Rails.logger.error("[Broadcaster] Failed to broadcast to #{stream_key}: #{e.message}")
   end
 
   def broadcast_family_feud_update(block_id:, operation:, data:)
     Rails.logger.info(
       "[Broadcaster] Broadcasting family_feud_updated to experience #{experience.code}"
     )
-
     message = WebsocketMessageService.family_feud_updated(
       block_id: block_id,
       operation: operation,
       data: data
     )
-
-    send_broadcast(self.class.admin_stream_key(experience), message)
+    stream_key = self.class.admin_stream_key(experience)
+    Rails.logger.info("[Broadcaster] Broadcasting to stream #{stream_key}: #{message[:type]}")
+    ActionCable.server.broadcast(stream_key, message)
+  rescue => e
+    Rails.logger.error("[Broadcaster] Failed to broadcast to #{stream_key}: #{e.message}")
   end
 
   def self.monitor_stream_key(experience)
@@ -123,108 +129,75 @@ class Experiences::Broadcaster
 
   private
 
+  def broadcast_to_profile(stream_key, role:, segments:, user_id: nil, visibility:)
+    payload = visibility.for_profile(role: role, segments: segments, user_id: user_id)
+    message = WebsocketMessageService.experience_updated(
+      payload,
+      stream_key: stream_key,
+      stream_type: :profile,
+      participant_id: nil,
+      role: role.to_sym,
+      segments: segments
+    )
+    Rails.logger.info("[Broadcaster] Broadcasting to stream #{stream_key}: #{message[:type]}")
+    begin
+      ActionCable.server.broadcast(stream_key, message)
+    rescue => e
+      Rails.logger.error("[Broadcaster] Failed to broadcast to #{stream_key}: #{e.message}")
+    end
+  end
+
+  def broadcast_monitor_view(visibility:)
+    payload    = visibility.for_monitor
+    message    = WebsocketMessageService.experience_updated(
+      payload,
+      stream_key: "monitor_view",
+      stream_type: :monitor,
+      participant_id: nil,
+      role: :host,
+      segments: []
+    )
+    stream_key = self.class.monitor_stream_key(experience)
+    Rails.logger.info("[Broadcaster] Broadcasting to stream #{stream_key}: #{message[:type]}")
+    begin
+      ActionCable.server.broadcast(stream_key, message)
+    rescue => e
+      Rails.logger.error("[Broadcaster] Failed to broadcast monitor view: #{e.message}")
+    end
+  end
+
+  def broadcast_admin_view(visibility:)
+    payload    = visibility.for_admin
+    message    = WebsocketMessageService.experience_updated(
+      payload,
+      stream_key: "admin_view",
+      stream_type: :admin,
+      participant_id: nil,
+      role: :host,
+      segments: []
+    )
+    stream_key = self.class.admin_stream_key(experience)
+    Rails.logger.info("[Broadcaster] Broadcasting to stream #{stream_key}: #{message[:type]}")
+    begin
+      ActionCable.server.broadcast(stream_key, message)
+    rescue => e
+      Rails.logger.error("[Broadcaster] Failed to broadcast admin view: #{e.message}")
+      Rails.logger.error("[Broadcaster] Backtrace: #{e.backtrace&.first(3)&.join(', ')}")
+    end
+  end
+
   def broadcast_resubscribe_if_profile_changed(participant:, old_fingerprint:)
     participant.experience_segments.reload
     new_fingerprint = self.class.visibility_fingerprint(experience, participant)
     return if old_fingerprint == new_fingerprint
 
     old_stream = self.class.profile_stream_key(experience, old_fingerprint)
-    send_broadcast(
-      old_stream,
-      WebsocketMessageService.resubscribe_required(participant_id: participant.id)
-    )
-  end
-
-  def broadcast_monitor_view(visibility:)
+    message    = WebsocketMessageService.resubscribe_required(participant_id: participant.id)
+    Rails.logger.info("[Broadcaster] Broadcasting to stream #{old_stream}: #{message[:type]}")
     begin
-      payload = visibility.for_monitor
-
-      send_broadcast(
-        self.class.monitor_stream_key(experience),
-        WebsocketMessageService.experience_updated(
-          payload,
-          stream_key: "monitor_view",
-          stream_type: :monitor,
-          participant_id: nil,
-          role: :host,
-          segments: []
-        )
-      )
+      ActionCable.server.broadcast(old_stream, message)
     rescue => e
-      Rails.logger.error(
-        "Error broadcasting to Monitor view: #{e.message}"
-      )
-
-      return
+      Rails.logger.error("[Broadcaster] Failed to broadcast resubscribe to #{old_stream}: #{e.message}")
     end
-  end
-
-  def broadcast_admin_view(visibility:)
-    begin
-      payload = visibility.for_admin
-
-      send_broadcast(
-        self.class.admin_stream_key(experience),
-        WebsocketMessageService.experience_updated(
-          payload,
-          stream_key: "admin_view",
-          stream_type: :admin,
-          participant_id: nil,
-          role: :host,
-          segments: []
-        )
-      )
-    rescue => e
-      Rails.logger.error(
-        "Error broadcasting to admin view: #{e.message}"
-      )
-      Rails.logger.error(
-        "[Broadcaster] Backtrace: #{e.backtrace.first(3).join(', ')}"
-      )
-
-      return
-    end
-  end
-
-  def broadcast_to_profile(stream_key, role:, segments:, user_id: nil, visibility:)
-    begin
-      payload = visibility.for_profile(role: role, segments: segments, user_id: user_id)
-
-      send_broadcast(
-        stream_key,
-        WebsocketMessageService.experience_updated(
-          payload,
-          stream_key: stream_key,
-          stream_type: :profile,
-          participant_id: nil,
-          role: role.to_sym,
-          segments: segments
-        )
-      )
-    rescue => e
-      Rails.logger.error(
-        "Error broadcasting to profile #{stream_key}: #{e.message}"
-      )
-
-      return
-    end
-  end
-
-  def send_broadcast(stream_key, message)
-    Rails.logger.info(
-      "[Broadcaster] Broadcasting to stream #{stream_key}: #{message[:type]}"
-    )
-
-    ActionCable.server.broadcast(stream_key, message)
-  rescue => e
-    Rails.logger.error(
-      "[Broadcaster] Failed to broadcast to #{stream_key}: #{e.message}"
-    )
-
-    Rails.logger.error(
-      "[Broadcaster] Backtrace: #{e.backtrace.first(3).join(', ')}"
-    )
-
-    raise
   end
 end

@@ -6,7 +6,7 @@ RSpec.describe Experiences::Broadcaster do
   let(:broadcast_calls) { [] }
 
   before do
-    allow(broadcaster).to receive(:send_broadcast) do |stream_key, message|
+    allow(ActionCable.server).to receive(:broadcast) do |stream_key, message|
       broadcast_calls << { stream_key: stream_key, message: message }
     end
   end
@@ -68,6 +68,18 @@ RSpec.describe Experiences::Broadcaster do
         expect(message[:message][:experience][:blocks].first[:id]).to eq(
           block.id
         )
+      end
+    end
+
+    context "when visibility serialization raises" do
+      before do
+        allow_any_instance_of(Experiences::Visibility).to receive(:for_profile)
+          .and_raise(StandardError, "serialization boom")
+      end
+
+      it "propagates the error instead of swallowing it" do
+        create(:experience_participant, experience: experience)
+        expect { broadcaster.broadcast_experience_update }.to raise_error(StandardError, "serialization boom")
       end
     end
 

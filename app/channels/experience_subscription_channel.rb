@@ -152,7 +152,7 @@ class ExperienceSubscriptionChannel < ApplicationCable::Channel
     )
 
     if is_manager
-      @current_stream = admin_stream_key(@experience)
+      @current_stream = Experiences::Broadcaster.admin_stream_key(@experience)
       @view_type = 'admin'
       Rails.logger.info("[ExperienceChannel] Routed to admin stream: #{@current_stream}")
     else
@@ -173,10 +173,6 @@ class ExperienceSubscriptionChannel < ApplicationCable::Channel
       "[ExperienceChannel] is_host_or_moderator? participant_role=#{@participant&.role}, result=#{result}"
     )
     result
-  end
-
-  def admin_stream_key(experience)
-    "experience_#{experience.id}_admins"
   end
 
   def send_initial_experience_state
