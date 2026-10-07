@@ -191,11 +191,7 @@ class ExperienceSubscriptionChannel < ApplicationCable::Channel
         )
       )
 
-      # TODO: Making this part of the initial experience code path helps show
-      # the default state and start applying live drawing updates. However, it
-      # doesn't scale, so this should be de-coupled from the initial fetch in
-      # the future
-      @experience.experience_participants.includes(:user).each do |p|
+      avatars = @experience.experience_participants.includes(:user).filter_map do |p|
         next unless p.avatar.present?
 
         data =
@@ -206,13 +202,9 @@ class ExperienceSubscriptionChannel < ApplicationCable::Channel
           end
         next unless data
 
-        transmit({
-          type: 'drawing_update',
-          participant_id: p.id,
-          operation: 'avatar_committed',
-          data: data
-        })
+        { participant_id: p.id, operation: 'avatar_committed', data: data }
       end
+      transmit(WebsocketMessageService.avatars_state(avatars)) unless avatars.empty?
     when 'impersonation'
       transmit(
         WebsocketMessageService.experience_state(

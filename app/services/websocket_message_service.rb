@@ -18,6 +18,9 @@ class WebsocketMessageService
     # Participant-side state
     SUBMISSION_STATE: 'submission_state',
 
+    # Monitor avatar batch
+    AVATARS_STATE: 'avatars_state',
+
     # ActionCable built-ins
     CONFIRM_SUBSCRIPTION: 'confirm_subscription',
     PING: 'ping'
@@ -100,6 +103,14 @@ class WebsocketMessageService
       block_id: block_id,
       leader_fill: leader_fill,
       timestamp: Time.current.to_f
+    }
+  end
+
+  # Build avatars state message (batched monitor subscription)
+  def self.avatars_state(avatars)
+    {
+      type:    MESSAGE_TYPES[:AVATARS_STATE],
+      avatars: avatars
     }
   end
 

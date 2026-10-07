@@ -16,6 +16,7 @@ import {
   FamilyFeudActionType,
 } from '@cctv/pages/Block/FamilyFeudManager/familyFeudReducer';
 import {
+  AvatarsStateMessage,
   DrawingUpdateMessage,
   ExperienceChannelMessage,
   JsonObject,
@@ -55,6 +56,7 @@ const DRAWING_OPERATIONS: ReadonlySet<string> = new Set<DrawingAction['operation
 const CHANNEL_MESSAGE_TYPES: ReadonlySet<string> = new Set<ExperienceChannelMessage['type']>([
   ...Object.values(WebSocketMessageTypes),
   'drawing_update',
+  'avatars_state',
 ]);
 
 /** ActionCable envelope: protocol frames carry `type`, broadcasts carry `message`. */
@@ -276,6 +278,22 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
       if (target === 'monitor') {
         const channelMsg = parseChannelMessage(raw);
         if (!channelMsg) return;
+
+        if (channelMsg.type === 'avatars_state') {
+          // SAFETY: parseChannelMessage verified channelMsg.type is in CHANNEL_MESSAGE_TYPES,
+          // and CHANNEL_MESSAGE_TYPES includes 'avatars_state', which is the discriminant for
+          // AvatarsStateMessage. The shape is validated by the channel before transmission.
+          const msg = channelMsg as AvatarsStateMessage;
+          msg.avatars.forEach((entry) => {
+            lobbyDrawingDispatch({
+              type: 'drawing_update',
+              participant_id: entry.participant_id,
+              operation: entry.operation,
+              data: entry.data,
+            });
+          });
+          return;
+        }
 
         if (isDrawingUpdateMessage(channelMsg)) {
           if (isDrawingAction(channelMsg)) {

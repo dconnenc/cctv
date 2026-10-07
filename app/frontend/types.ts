@@ -1013,6 +1013,7 @@ export const WebSocketMessageTypes = {
   FAMILY_FEUD_UPDATED: 'family_feud_updated',
   SUBMISSION_STATE: 'submission_state',
   MINIGAME_BALLOON_PUMP_LEADER_UPDATED: 'minigame_balloon_pump_leader_updated',
+  AVATARS_STATE: 'avatars_state',
 } as const;
 
 export type WebSocketMessageType =
@@ -1137,7 +1138,19 @@ export type WebSocketMessage =
   | PingMessage
   | FamilyFeudUpdatedMessage
   | SubmissionStateMessage
-  | MinigameBalloonPumpLeaderUpdatedMessage;
+  | MinigameBalloonPumpLeaderUpdatedMessage
+  | AvatarsStateMessage;
+
+export type AvatarsEntry = {
+  participant_id: string;
+  operation: string;
+  data: JsonObject;
+};
+
+export type AvatarsStateMessage = {
+  type: 'avatars_state';
+  avatars: AvatarsEntry[];
+};
 
 export interface DrawingUpdateMessage {
   type: 'drawing_update';
