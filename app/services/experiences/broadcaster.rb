@@ -49,7 +49,7 @@ class Experiences::Broadcaster
       .where("target_user_ids IS NOT NULL AND cardinality(target_user_ids) > 0")
       .pluck(:id, :target_user_ids)
 
-    experience.experience_participants.includes(:experience_segments)
+    experience.experience_participants.where.not(role: %w[host moderator]).includes(:experience_segments)
       .group_by { |p| self.class.visibility_fingerprint(experience, p, targeted_block_data: targeted_block_data) }
       .each do |fingerprint, participants|
         rep        = participants.first
@@ -104,9 +104,11 @@ class Experiences::Broadcaster
     )
     stream_key = self.class.admin_stream_key(experience)
     Rails.logger.info("[Broadcaster] Broadcasting to stream #{stream_key}: #{message[:type]}")
-    ActionCable.server.broadcast(stream_key, message)
-  rescue => e
-    Rails.logger.error("[Broadcaster] Failed to broadcast to #{stream_key}: #{e.message}")
+    begin
+      ActionCable.server.broadcast(stream_key, message)
+    rescue => e
+      Rails.logger.error("[Broadcaster] Failed to broadcast to #{stream_key}: #{e.message}")
+    end
   end
 
   def broadcast_family_feud_update(block_id:, operation:, data:)
@@ -120,9 +122,11 @@ class Experiences::Broadcaster
     )
     stream_key = self.class.admin_stream_key(experience)
     Rails.logger.info("[Broadcaster] Broadcasting to stream #{stream_key}: #{message[:type]}")
-    ActionCable.server.broadcast(stream_key, message)
-  rescue => e
-    Rails.logger.error("[Broadcaster] Failed to broadcast to #{stream_key}: #{e.message}")
+    begin
+      ActionCable.server.broadcast(stream_key, message)
+    rescue => e
+      Rails.logger.error("[Broadcaster] Failed to broadcast to #{stream_key}: #{e.message}")
+    end
   end
 
   def self.monitor_stream_key(experience)
