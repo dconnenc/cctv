@@ -464,6 +464,39 @@ RSpec.describe Experiences::Visibility do
     end
   end
 
+  describe "guess_who_user_summary (private)" do
+    let(:participant) { create(:experience_participant, experience: experience) }
+    let(:visibility)  { described_class.new(experience) }
+
+    it "returns name and user_id for a known participant" do
+      result = visibility.send(:guess_who_user_summary, participant.user_id)
+      expect(result).to include(
+        "user_id" => participant.user_id,
+        "name"    => participant.name
+      )
+    end
+
+    it "returns nil for an unknown user_id" do
+      result = visibility.send(:guess_who_user_summary, 0)
+      expect(result).to be_nil
+    end
+
+    it "returns nil for a blank user_id" do
+      expect(visibility.send(:guess_who_user_summary, nil)).to be_nil
+      expect(visibility.send(:guess_who_user_summary, "")).to be_nil
+    end
+  end
+
+  describe "#for_monitor (private active block sharing)" do
+    let(:visibility) { described_class.new(experience) }
+
+    it "returns the same object from monitor_active_blocks on repeated calls" do
+      first  = visibility.send(:monitor_active_blocks)
+      second = visibility.send(:monitor_active_blocks)
+      expect(first).to equal(second)  # object identity — memoized
+    end
+  end
+
   describe ".block_visible_to_user?" do
     let(:user) { create(:user, :user) }
     let!(:participant) { create(:experience_participant, user: user, experience: experience, role: :audience) }
