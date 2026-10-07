@@ -71,6 +71,34 @@ RSpec.describe Experiences::Broadcaster do
       end
     end
 
+    context "with a host participant" do
+      let!(:host) { create(:experience_participant, :host, experience: experience) }
+
+      it "does not broadcast to the host's profile stream" do
+        broadcaster.broadcast_experience_update
+
+        fingerprint = described_class.visibility_fingerprint(experience, host)
+        host_stream = described_class.profile_stream_key(experience, fingerprint)
+        stream_keys = broadcast_calls.map { |c| c[:stream_key] }
+
+        expect(stream_keys).not_to include(host_stream)
+      end
+    end
+
+    context "with a moderator participant" do
+      let!(:moderator) { create(:experience_participant, :moderator, experience: experience) }
+
+      it "does not broadcast to the moderator's profile stream" do
+        broadcaster.broadcast_experience_update
+
+        fingerprint = described_class.visibility_fingerprint(experience, moderator)
+        mod_stream  = described_class.profile_stream_key(experience, fingerprint)
+        stream_keys = broadcast_calls.map { |c| c[:stream_key] }
+
+        expect(stream_keys).not_to include(mod_stream)
+      end
+    end
+
     context "when visibility serialization raises" do
       before do
         allow_any_instance_of(Experiences::Visibility).to receive(:for_profile)

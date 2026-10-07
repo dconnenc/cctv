@@ -75,7 +75,9 @@ class Experiences::Broadcaster
 
     visibility = Experiences::Visibility.new(experience)
 
-    experience.experience_participants.includes(:user, :experience_segments)
+    experience.experience_participants
+      .where.not(role: %w[host moderator])
+      .includes(:user, :experience_segments)
       .group_by { |p| self.class.visibility_fingerprint(experience, p, targeted_block_data: targeted_block_data) }
       .each do |fingerprint, participants|
         rep = participants.first
