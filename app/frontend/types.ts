@@ -1465,9 +1465,6 @@ export interface ExperienceContextType {
 
   // Manage page specific properties
   monitorView?: Experience;
-  participantView?: Experience;
-  impersonatedParticipantId?: string;
-  setImpersonatedParticipantId: (id: string | undefined) => void;
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   registerFamilyFeudDispatch?: (blockId: string, dispatch: (action: any) => void) => void;
@@ -1476,6 +1473,6 @@ export interface ExperienceContextType {
   experiencePerform?: (
     action: string,
     payload?: JsonObject,
-    target?: 'primary' | 'monitor' | 'impersonation',
+    target?: 'primary' | 'monitor',
   ) => void;
 }

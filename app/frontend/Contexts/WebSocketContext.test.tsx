@@ -97,7 +97,6 @@ const stableSetParticipant = vi.fn();
 const stableSetExperienceStatus = vi.fn();
 const stableSetError = vi.fn();
 const stableSetMonitorView = vi.fn();
-const stableSetParticipantView = vi.fn();
 const stableSetWsReady = vi.fn();
 
 vi.mock('./ExperienceStateContext', () => ({
@@ -107,9 +106,7 @@ vi.mock('./ExperienceStateContext', () => ({
     setExperienceStatus: stableSetExperienceStatus,
     setError: stableSetError,
     setMonitorView: stableSetMonitorView,
-    setParticipantView: stableSetParticipantView,
     setWsReady: stableSetWsReady,
-    impersonatedParticipantId: null,
   }),
 }));
 
