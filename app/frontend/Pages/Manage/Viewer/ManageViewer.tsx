@@ -51,7 +51,7 @@ export default function ManageViewer() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [editingBlock, setEditingBlock] = useState<Block | null>(null);
   const [dismissedError, setDismissedError] = useState(false);
-  const [viewMode, setViewMode] = useState<'monitor' | 'participant' | 'block'>('block');
+  const [viewMode, setViewMode] = useState<'monitor' | 'block'>('block');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(
     () => 'window' in globalThis && window.innerWidth < 768,
   );
@@ -71,15 +71,7 @@ export default function ManageViewer() {
   const navigate = useNavigate();
   const redirectedRef = useRef(false);
 
-  const {
-    experience,
-    code,
-    error: experienceError,
-    isLoading,
-    wsReady,
-    impersonatedParticipantId,
-    setImpersonatedParticipantId,
-  } = useExperience();
+  const { experience, code, error: experienceError, isLoading, wsReady } = useExperience();
 
   const { error: startError } = useExperienceStart();
   const { error: pauseError } = useExperiencePause();
@@ -144,12 +136,6 @@ export default function ManageViewer() {
     () => [...(experience?.hosts || []), ...(experience?.participants || [])],
     [experience],
   );
-
-  useEffect(() => {
-    if (participantsCombined.length > 0 && !impersonatedParticipantId) {
-      setImpersonatedParticipantId(participantsCombined[0].id);
-    }
-  }, [participantsCombined, impersonatedParticipantId, setImpersonatedParticipantId]);
 
   const flattenedBlocks = useMemo(() => {
     return (experience?.blocks || []).map((block) => ({
@@ -313,10 +299,8 @@ export default function ManageViewer() {
               <BlockDetailPanel
                 selectedBlock={selectedBlock}
                 viewMode={viewMode}
-                impersonatedParticipantId={impersonatedParticipantId}
                 participants={participantsCombined}
                 onViewModeChange={setViewMode}
-                onImpersonatedParticipantChange={setImpersonatedParticipantId}
                 onEdit={setEditingBlock}
                 onDetach={handleDetachBlock}
                 detachingBlockId={detachingBlockId}

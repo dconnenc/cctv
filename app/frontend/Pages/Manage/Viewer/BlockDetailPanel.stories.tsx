@@ -6,10 +6,8 @@ import BlockDetailPanel from './BlockDetailPanel';
 
 const sharedArgs = {
   viewMode: 'block' as const,
-  impersonatedParticipantId: undefined,
   participants: [],
   onViewModeChange: fn(),
-  onImpersonatedParticipantChange: fn(),
   onEdit: fn(),
   onDelete: fn(),
 };

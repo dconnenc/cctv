@@ -27,11 +27,9 @@ function getStatusColor(status: string) {
 
 interface BlockDetailPanelProps {
   selectedBlock: Block;
-  viewMode: 'monitor' | 'participant' | 'block';
-  impersonatedParticipantId?: string;
+  viewMode: 'monitor' | 'block';
   participants: ParticipantSummary[];
-  onViewModeChange: (mode: 'monitor' | 'participant' | 'block') => void;
-  onImpersonatedParticipantChange: (id: string) => void;
+  onViewModeChange: (mode: 'monitor' | 'block') => void;
   onEdit: (block: Block) => void;
   onDetach?: (block: Block) => void;
   detachingBlockId?: string;
@@ -42,10 +40,8 @@ interface BlockDetailPanelProps {
 export default function BlockDetailPanel({
   selectedBlock,
   viewMode,
-  impersonatedParticipantId,
   participants,
   onViewModeChange,
-  onImpersonatedParticipantChange,
   onEdit,
   onDetach,
   detachingBlockId,
@@ -138,52 +134,16 @@ export default function BlockDetailPanel({
         </div>
 
         <div className={styles.subNav}>
-          {viewMode === 'block' ? (
+          {viewMode === 'block' && (
             <div className={styles.subNavMeta}>
               <MetadataRow block={selectedBlock} />
             </div>
-          ) : (
-            <>
-              <button
-                className={classNames(styles.tab, { [styles.selected]: viewMode === 'monitor' })}
-                onClick={() => onViewModeChange('monitor')}
-              >
-                Monitor
-              </button>
-              <button
-                className={classNames(styles.tab, {
-                  [styles.selected]: viewMode === 'participant',
-                })}
-                onClick={() => onViewModeChange('participant')}
-              >
-                Participant
-              </button>
-              {viewMode === 'participant' && (
-                <select
-                  aria-label="View as participant"
-                  value={impersonatedParticipantId || ''}
-                  onChange={(e) => onImpersonatedParticipantChange(e.target.value)}
-                  className="ml-2 px-3 py-1 text-sm rounded-md bg-[hsl(var(--muted))] border border-[hsl(var(--border))] text-white"
-                >
-                  {participants.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.name} ({p.role})
-                    </option>
-                  ))}
-                </select>
-              )}
-            </>
           )}
         </div>
 
         <div className="p-4 bg-[hsl(var(--card))] min-h-[420px]">
           {viewMode === 'block' ? (
             <BlockContextTab block={selectedBlock} participants={participants} />
-          ) : viewMode === 'participant' ? (
-            <BlockPreview
-              block={selectedBlock}
-              participant={participants.find((p) => p.id === impersonatedParticipantId)}
-            />
           ) : selectedBlock.kind === BlockKind.ANNOUNCEMENT &&
             selectedBlock.payload.show_on_monitor === false ? (
             <p className="text-sm text-[hsl(var(--muted-foreground))]">

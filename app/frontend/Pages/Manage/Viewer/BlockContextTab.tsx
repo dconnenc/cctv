@@ -1,5 +1,6 @@
 import { useExperience } from '@cctv/contexts/ExperienceContext';
-import { Block, BlockKind, ParticipantSummary } from '@cctv/types';
+import TheScene from '@cctv/experiences/TheScene/TheScene';
+import { Block, BlockKind, ParticipantSummary, TheSceneBlock } from '@cctv/types';
 
 import CollaborativeDrawingManager from '../../Block/CollaborativeDrawingManager/CollaborativeDrawingManager';
 import FamilyFeudManager from '../../Block/FamilyFeudManager/FamilyFeudManager';
@@ -108,6 +109,11 @@ export default function BlockContextTab({ block, participants }: BlockContextTab
           <BlockResponsesList block={block} participants={participants} />
         </div>
       );
+    case BlockKind.THE_SCENE: {
+      // SAFETY: block.kind === BlockKind.THE_SCENE guarantees this is a TheSceneBlock
+      const theSceneBlock = block as TheSceneBlock;
+      return <TheScene block={theSceneBlock} viewContext="manage" />;
+    }
     case BlockKind.ANNOUNCEMENT:
       return null;
     default:
