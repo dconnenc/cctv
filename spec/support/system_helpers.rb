@@ -225,11 +225,6 @@ module SystemHelpers
     click_button 'Monitor'
   end
 
-  def switch_to_participant_preview
-    click_button 'Screens' unless page.has_button?('Participant', exact: true, wait: 0)
-    click_button 'Participant', exact: true
-  end
-
   # Opens the participants panel, yields, then closes it.
   # Requires the manage page (/manage) to be the current path.
   def within_participants_panel(&block)

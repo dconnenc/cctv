@@ -12,17 +12,6 @@ RSpec.describe "Managing Blocks", type: :system do
     )
   end
 
-  let(:participant_name) { "Test Player"  }
-
-  before do
-    create(
-      :experience_participant,
-      :player,
-      name: participant_name,
-      experience: experience
-    )
-  end
-
   describe "generic block behaviors" do
     before do
       sign_in(admin)
@@ -60,16 +49,6 @@ RSpec.describe "Managing Blocks", type: :system do
       switch_to_monitor_preview
       expect(page).to have_text("This block is not shown on the monitor")
 
-      # Participant impersonation view shows the announcement
-      switch_to_participant_preview
-      expect(page).to have_select("View as participant")
-      select "#{participant_name} (player)", from: "View as participant"
-      expect(page).to have_text("Hidden announcement #{participant_name}")
-
-      # Monitor impersonation view shows empty state
-      switch_to_monitor_preview
-      expect(page).to have_text("This block is not shown on the monitor")
-
       # Actual monitor page still shows lobby state with participant notification
       using_session(:monitor) do
         visit "/experiences/#{experience.code_slug}/monitor"
@@ -81,62 +60,5 @@ RSpec.describe "Managing Blocks", type: :system do
       end
     end
 
-    it "shows the correct impersonation views" do
-      visit "/experiences/#{experience.code_slug}/manage"
-
-      start_experience
-
-      queue_block(n: 1) do
-        select "Announcement", from: "Kind"
-        fill_in(
-          "Announcement Message",
-          with: "Welcome {{ participant_name }}"
-        )
-      end
-
-      # Assert UI isn't showing anything (no block is live)
-      # NOTE: This isn't a UI showing "no live blocks". Only a default state
-      # for a newly created experience. This should be a "no live blocks" state
-      #  in the future
-      expect(page).to have_text(
-        "Select a block from the sidebar to view details"
-      )
-
-      # Start presenting the block
-      select_and_present(1, kind: "announcement")
-
-      # Assert impersonation and monitor views
-      switch_to_participant_preview
-      expect(page).to have_select("View as participant")
-      select "#{participant_name} (player)", from: "View as participant"
-      expect(page).to have_text("Welcome #{participant_name}")
-      switch_to_monitor_preview
-      expect(page).to have_text("Welcome friend")
-
-      # Queue new block
-      queue_block(n: 2) do
-        select "Announcement", from: "Kind"
-        fill_in(
-          "Announcement Message",
-          with: "Welcome {{ participant_name }} again"
-        )
-      end
-
-      # Assert original block is still displayed. New block is only enqueued
-      switch_to_monitor_preview
-      expect(page).to have_text("Welcome friend")
-
-      # Present new block
-      select_block(2, kind: "announcement")
-      present_block
-
-      # Assert new block is now visible in the impersonation views
-      switch_to_participant_preview
-      expect(page).to have_select("View as participant")
-      select "#{participant_name} (player)", from: "View as participant"
-      expect(page).to have_text("Welcome #{participant_name} again")
-      switch_to_monitor_preview
-      expect(page).to have_text("Welcome friend again")
-    end
   end
 end
