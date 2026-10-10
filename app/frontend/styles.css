@@ -24,7 +24,7 @@
   --space-sm: 1rem;
   --space-md: 2rem;
   --space-lg: 4rem;
-  --tv-glow: 0 0 4px rgba(200, 240, 96, 0.45), 0 0 10px rgba(200, 240, 96, 0.3);
+  --tv-glow: none;
 }
 
 /* Shadcn theme tokens (HSL triplets) */
