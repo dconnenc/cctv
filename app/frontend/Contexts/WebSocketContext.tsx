@@ -16,6 +16,7 @@ import {
   FamilyFeudActionType,
 } from '@cctv/pages/Block/FamilyFeudManager/familyFeudReducer';
 import {
+  AvatarsStateMessage,
   DrawingUpdateMessage,
   ExperienceChannelMessage,
   JsonObject,
@@ -55,6 +56,7 @@ const DRAWING_OPERATIONS: ReadonlySet<string> = new Set<DrawingAction['operation
 const CHANNEL_MESSAGE_TYPES: ReadonlySet<string> = new Set<ExperienceChannelMessage['type']>([
   ...Object.values(WebSocketMessageTypes),
   'drawing_update',
+  'avatars_state',
 ]);
 
 /** ActionCable envelope: protocol frames carry `type`, broadcasts carry `message`. */
@@ -185,11 +187,7 @@ export interface WebSocketContextType {
   wsConnected: boolean;
   wsError?: string;
   reconnecting: boolean;
-  experiencePerform: (
-    action: string,
-    payload?: JsonObject,
-    target?: 'primary' | 'monitor' | 'impersonation',
-  ) => void;
+  experiencePerform: (action: string, payload?: JsonObject, target?: 'primary' | 'monitor') => void;
 }
 
 const WebSocketContext = createContext<WebSocketContextType | undefined>(undefined);
@@ -204,10 +202,8 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
     setExperienceStatus,
     setError,
     setMonitorView,
-    setParticipantView,
     setWsReady,
     setSubmissionState,
-    impersonatedParticipantId,
   } = useExperienceState();
   const { getFamilyFeudDispatch, getBalloonPumpLeaderDispatch } = useDispatchRegistry();
   const lobbyDrawingDispatch = useLobbyDrawingDispatch();
@@ -218,14 +214,11 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
 
   const wsRef = useRef<WebSocket>(undefined);
   const monitorWsRef = useRef<WebSocket>(undefined);
-  const impersonationWsRef = useRef<WebSocket>(undefined);
   const wsIdentifierRef = useRef<string>(undefined);
   const monitorIdentifierRef = useRef<string>(undefined);
-  const impersonationIdentifierRef = useRef<string>(undefined);
 
   const mainDisposeRef = useRef(false);
   const monitorDisposeRef = useRef(false);
-  const impersonationDisposeRef = useRef(false);
 
   const reconnectParticipantWs = useCallback(() => {
     if (!wsRef.current || !wsIdentifierRef.current) return;
@@ -261,7 +254,7 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const handleExperienceMessage = useCallback(
-    (raw: ChannelFrame, label: string, target: 'main' | 'monitor' | 'impersonation') => {
+    (raw: ChannelFrame, label: string, target: 'main' | 'monitor') => {
       if (raw.type === 'ping' || raw.type === 'welcome') return;
 
       if (raw.type === 'confirm_subscription') {
@@ -276,6 +269,17 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
       if (target === 'monitor') {
         const channelMsg = parseChannelMessage(raw);
         if (!channelMsg) return;
+
+        if (channelMsg.type === 'avatars_state') {
+          // SAFETY: parseChannelMessage verified channelMsg.type is in CHANNEL_MESSAGE_TYPES,
+          // and CHANNEL_MESSAGE_TYPES includes 'avatars_state', which is the discriminant for
+          // AvatarsStateMessage. The shape is validated by the channel before transmission.
+          const msg = channelMsg as AvatarsStateMessage;
+          msg.avatars.forEach((entry) => {
+            lobbyDrawingDispatch({ type: 'drawing_update', ...entry });
+          });
+          return;
+        }
 
         if (isDrawingUpdateMessage(channelMsg)) {
           if (isDrawingAction(channelMsg)) {
@@ -310,17 +314,13 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
             `[${label}] Updating experience: status=${updatedExperience.status}, blocks=${updatedExperience.blocks?.length || 0}`,
           );
 
-          if (target === 'impersonation') {
-            setParticipantView(updatedExperience);
-          } else {
-            setExperience(updatedExperience);
-            setExperienceStatus(updatedExperience.status === 'live' ? 'live' : 'lobby');
-            setError(undefined);
-            setWsReady(true);
+          setExperience(updatedExperience);
+          setExperienceStatus(updatedExperience.status === 'live' ? 'live' : 'lobby');
+          setError(undefined);
+          setWsReady(true);
 
-            if (wsMessage.participant) {
-              setParticipant(wsMessage.participant);
-            }
+          if (wsMessage.participant) {
+            setParticipant(wsMessage.participant);
           }
         }
       } else if (
@@ -357,7 +357,6 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
       setExperienceStatus,
       setError,
       setMonitorView,
-      setParticipantView,
       setWsReady,
       setSubmissionState,
       getFamilyFeudDispatch,
@@ -503,59 +502,11 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
     };
   }, [adminJWT, jwt, code, isLoading, isAdminLoading, isManagePage, isMonitorPage, setWsReady]);
 
-  // Impersonation effect: manages the impersonation connection independently.
-  // Changing the impersonated participant only affects this connection.
-  useEffect(() => {
-    if (!code || isLoading || !isManagePage) return;
-
-    if (impersonatedParticipantId) {
-      qaLogger(`[IMPERSONATION WS] Connecting for participant ${impersonatedParticipantId}`);
-      impersonationDisposeRef.current = false;
-
-      if (impersonationWsRef.current) {
-        impersonationWsRef.current.close(1000);
-      }
-
-      const impersonationId = {
-        channel: 'ExperienceSubscriptionChannel',
-        code,
-        token: (adminJWT ?? jwt) || undefined,
-        as_participant_id: impersonatedParticipantId,
-      };
-      createWebSocketConnection(
-        {
-          label: 'IMPERSONATION WS',
-          identifier: impersonationId,
-          onMessage: (msg) => handleMessageRef.current(msg, 'IMPERSONATION WS', 'impersonation'),
-        },
-        impersonationWsRef,
-        impersonationIdentifierRef,
-        impersonationDisposeRef,
-      );
-    }
-
-    return () => {
-      impersonationDisposeRef.current = true;
-      if (impersonationWsRef.current) {
-        qaLogger('[IMPERSONATION WS] Disconnecting');
-        impersonationWsRef.current.close(1000);
-        impersonationWsRef.current = undefined;
-        impersonationIdentifierRef.current = undefined;
-      }
-      setParticipantView(undefined);
-    };
-  }, [adminJWT, jwt, code, isLoading, isManagePage, impersonatedParticipantId, setParticipantView]);
-
   const experiencePerform = useCallback(
-    (
-      action: string,
-      payload?: JsonObject,
-      target: 'primary' | 'monitor' | 'impersonation' = 'primary',
-    ) => {
+    (action: string, payload?: JsonObject, target: 'primary' | 'monitor' = 'primary') => {
       const frames = {
         primary: { sock: wsRef.current, id: wsIdentifierRef.current },
         monitor: { sock: monitorWsRef.current, id: monitorIdentifierRef.current },
-        impersonation: { sock: impersonationWsRef.current, id: impersonationIdentifierRef.current },
       } as const;
       const f = frames[target];
       if (!f.sock || !f.id) return;

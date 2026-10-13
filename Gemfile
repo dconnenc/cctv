@@ -35,6 +35,7 @@ end
 group :test do
   gem "cuprite"
   gem "knapsack"
+  gem "rspec-retry"
 end
 
 group :development do

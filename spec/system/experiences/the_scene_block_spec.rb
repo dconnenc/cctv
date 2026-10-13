@@ -49,10 +49,10 @@ RSpec.describe "The Scene Block", type: :system do
       expect(page).to have_text("Waiting for the next scene")
     end
 
-    # The ManageView is accessed via the Participant preview tab, where TheScene
-    # renders its manage UI (phase controls, performers, suggestions) and buttons
-    # remain interactive.
-    switch_to_participant_preview
+    # The ManageView is accessed via the Block tab, where TheScene renders its
+    # manage UI (phase controls, performers, suggestions) and buttons remain
+    # interactive.
+    click_button 'Block'
     expect(page).to have_text("Phase: idle")
 
     # Admin: assign Alex as performer.

@@ -2,6 +2,7 @@ require 'spec_helper'
 ENV['RAILS_ENV'] ||= 'test'
 require_relative '../config/environment'
 require "capybara/cuprite"
+require "rspec/retry"
 
 # Prevent database truncation if the environment is production
 abort("The Rails environment is running in production mode!") if Rails.env.production?
@@ -63,7 +64,26 @@ Capybara.default_max_wait_time = 6
 # This is needed so we can assert on aria attributes
 Capybara.enable_aria_label = true
 
+def reset_system_spec_state
+  Sidekiq::Queue.all.each(&:clear)
+
+  ActiveRecord::Base.connection.truncate_tables(
+    *ActiveRecord::Base.connection.tables
+      .reject { |t| %w[schema_migrations ar_internal_metadata].include?(t) }
+  )
+
+  Sidekiq::Queue.all.each(&:clear)
+end
+
 RSpec.configure do |config|
+  # GitHub Actions periodically produces browser-level failures that are hard
+  # to account for in code. Retry once, and only for browser infrastructure
+  # errors so that failing assertions surface immediately.
+  config.verbose_retry = true
+  config.display_try_failure_messages = true
+  config.exceptions_to_retry = [Ferrum::Error, Capybara::Cuprite::Error]
+  config.retry_callback = proc { reset_system_spec_state }
+
   # Boot embedded Sidekiq once for the suite. Embedded sidekiq shares the
   # process. This is a slightly easier setup to maintain for testing, rather
   # than independently managing a process outside of the main tests
@@ -127,19 +147,9 @@ RSpec.configure do |config|
     # See above, we need to manually clear the queue to avoid state leaking
     Sidekiq::Queue.all.each(&:clear)
 
-    example.run
-
-    # Retry on CI. Tests shouldn't be flakey, however github actions periodically
-    # seems to run into failure states that are hard to account for in code.
-    example.run if ENV["CI"].present? && example.exception
+    example.run_with_retry(retry: ENV["CI"].present? ? 2 : 1)
 
     # Truncate instead of rollback since we disabled transactions
-    ActiveRecord::Base.connection.truncate_tables(
-      *ActiveRecord::Base.connection.tables
-        .reject { |t| %w[schema_migrations ar_internal_metadata].include?(t) }
-    )
-
-    # Catch all, we clear pre run, may as well clear post as well
-    Sidekiq::Queue.all.each(&:clear)
+    reset_system_spec_state
   end
 end

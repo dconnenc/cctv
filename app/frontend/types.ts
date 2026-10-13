@@ -1013,6 +1013,7 @@ export const WebSocketMessageTypes = {
   FAMILY_FEUD_UPDATED: 'family_feud_updated',
   SUBMISSION_STATE: 'submission_state',
   MINIGAME_BALLOON_PUMP_LEADER_UPDATED: 'minigame_balloon_pump_leader_updated',
+  AVATARS_STATE: 'avatars_state',
 } as const;
 
 export type WebSocketMessageType =
@@ -1137,7 +1138,19 @@ export type WebSocketMessage =
   | PingMessage
   | FamilyFeudUpdatedMessage
   | SubmissionStateMessage
-  | MinigameBalloonPumpLeaderUpdatedMessage;
+  | MinigameBalloonPumpLeaderUpdatedMessage
+  | AvatarsStateMessage;
+
+export type AvatarsEntry = {
+  participant_id: string;
+  operation: 'avatar_committed';
+  data: { strokes: AvatarStroke[] } | { image: string; cosmetics: CosmeticPlacement[] };
+};
+
+export type AvatarsStateMessage = {
+  type: 'avatars_state';
+  avatars: AvatarsEntry[];
+};
 
 export interface DrawingUpdateMessage {
   type: 'drawing_update';
@@ -1452,9 +1465,6 @@ export interface ExperienceContextType {
 
   // Manage page specific properties
   monitorView?: Experience;
-  participantView?: Experience;
-  impersonatedParticipantId?: string;
-  setImpersonatedParticipantId: (id: string | undefined) => void;
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   registerFamilyFeudDispatch?: (blockId: string, dispatch: (action: any) => void) => void;
@@ -1463,6 +1473,6 @@ export interface ExperienceContextType {
   experiencePerform?: (
     action: string,
     payload?: JsonObject,
-    target?: 'primary' | 'monitor' | 'impersonation',
+    target?: 'primary' | 'monitor',
   ) => void;
 }

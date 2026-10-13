@@ -41,4 +41,15 @@ RSpec.describe Experiences::BroadcastUpdateJob do
 
     expect(broadcast_calls).to be_empty
   end
+
+  it "discards the job silently when the experience no longer exists" do
+    expect {
+      described_class.perform_now(-1)
+    }.not_to raise_error
+    expect(broadcast_calls).to be_empty
+  end
+
+  it "is enqueued on the broadcasts queue" do
+    expect(described_class.queue_name).to eq("broadcasts")
+  end
 end

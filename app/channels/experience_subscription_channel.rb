@@ -5,8 +5,6 @@ class ExperienceSubscriptionChannel < ApplicationCable::Channel
 
     if monitor_view_subscription?
       setup_monitor_view_subscription
-    elsif impersonation_subscription?
-      setup_impersonation_subscription
     else
       unless @is_admin || @participant
         reject
@@ -113,28 +111,9 @@ class ExperienceSubscriptionChannel < ApplicationCable::Channel
     params[:view_type] == 'monitor'
   end
 
-  def impersonation_subscription?
-    params[:as_participant_id].present?
-  end
-
   def setup_monitor_view_subscription
     @current_stream = Experiences::Broadcaster.monitor_stream_key(@experience)
     @view_type = 'monitor'
-    stream_from @current_stream
-    log_stream_subscription
-  end
-
-  def setup_impersonation_subscription
-    authorize_admin_or_host_or_reject
-    target_participant = find_target_participant_or_reject
-    return unless target_participant
-
-    @impersonated_participant = target_participant
-    fingerprint = Experiences::Broadcaster.visibility_fingerprint(
-      @experience, target_participant
-    )
-    @current_stream = Experiences::Broadcaster.profile_stream_key(@experience, fingerprint)
-    @view_type = 'impersonation'
     stream_from @current_stream
     log_stream_subscription
   end
@@ -152,7 +131,7 @@ class ExperienceSubscriptionChannel < ApplicationCable::Channel
     )
 
     if is_manager
-      @current_stream = admin_stream_key(@experience)
+      @current_stream = Experiences::Broadcaster.admin_stream_key(@experience)
       @view_type = 'admin'
       Rails.logger.info("[ExperienceChannel] Routed to admin stream: #{@current_stream}")
     else
@@ -175,10 +154,6 @@ class ExperienceSubscriptionChannel < ApplicationCable::Channel
     result
   end
 
-  def admin_stream_key(experience)
-    "experience_#{experience.id}_admins"
-  end
-
   def send_initial_experience_state
     Rails.logger.info(
       "[ExperienceChannel] send_initial_experience_state: view_type=#{@view_type}, " \
@@ -195,11 +170,7 @@ class ExperienceSubscriptionChannel < ApplicationCable::Channel
         )
       )
 
-      # TODO: Making this part of the initial experience code path helps show
-      # the default state and start applying live drawing updates. However, it
-      # doesn't scale, so this should be de-coupled from the initial fetch in
-      # the future
-      @experience.experience_participants.includes(:user).each do |p|
+      avatars = @experience.experience_participants.includes(:user).filter_map do |p|
         next unless p.avatar.present?
 
         data =
@@ -210,21 +181,9 @@ class ExperienceSubscriptionChannel < ApplicationCable::Channel
           end
         next unless data
 
-        transmit({
-          type: 'drawing_update',
-          participant_id: p.id,
-          operation: 'avatar_committed',
-          data: data
-        })
+        { participant_id: p.id, operation: 'avatar_committed', data: data }
       end
-    when 'impersonation'
-      transmit(
-        WebsocketMessageService.experience_state(
-          Experiences::Visibility.for_participant(@experience, @impersonated_participant),
-          logical_stream: "participant_#{@impersonated_participant.id}",
-          participant_id: @impersonated_participant.id
-        )
-      )
+      transmit(WebsocketMessageService.avatars_state(avatars)) unless avatars.empty?
     when 'admin'
       Rails.logger.info("[ExperienceChannel] Sending admin initial state")
       transmit(
@@ -432,7 +391,7 @@ class ExperienceSubscriptionChannel < ApplicationCable::Channel
 
   def find_participant_record_or_reject
     return nil unless @user
-    return nil if monitor_view_subscription? || impersonation_subscription?
+    return nil if monitor_view_subscription?
 
     # Admins don't need participant records
     return nil if @is_admin
@@ -446,56 +405,6 @@ class ExperienceSubscriptionChannel < ApplicationCable::Channel
     )
     reject
     nil
-  end
-
-  def authorize_admin_or_host_or_reject
-    unless @user
-      Rails.logger.warn(
-        "[ExperienceChannel] No authenticated user for admin/host operation"
-      )
-      reject
-      return
-    end
-
-    # If authenticated with admin JWT (system admin), allow immediately
-    if @is_admin
-      return
-    end
-
-    # Otherwise, check if user is a host/moderator for this experience
-    participant_record = @experience.experience_participants.find_by(
-      user: @user
-    )
-
-    is_system_admin = @user.admin? || @user.superadmin?
-    is_experience_host = participant_record&.role == 'host'
-    is_experience_moderator = participant_record&.role == 'moderator'
-
-    unless is_system_admin || is_experience_host || is_experience_moderator
-      Rails.logger.warn(
-        "[ExperienceChannel] User #{@user.id} not authorized " \
-        "for admin/host operation (not a system admin, host, or moderator)"
-      )
-      reject
-      return
-    end
-  end
-
-  def find_target_participant_or_reject
-    target = @experience.experience_participants.includes(:user, :experience_segments).find_by(
-      id: params[:as_participant_id]
-    )
-
-    unless target
-      Rails.logger.warn(
-        "[ExperienceChannel] Target participant " \
-        "#{params[:as_participant_id]} not found"
-      )
-      reject
-      return nil
-    end
-
-    target
   end
 
   def log_stream_subscription

@@ -1,5 +1,5 @@
 class Minigames::BroadcastBalloonPumpLeaderJob < ApplicationJob
-  queue_as :default
+  queue_as :broadcasts
 
   discard_on ActiveRecord::RecordNotFound
 

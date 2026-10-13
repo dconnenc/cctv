@@ -66,6 +66,12 @@ jobs:
           DATABASE_URL: 'postgres://postgres:password@localhost:5432/test'
         run: bundle exec rspec --exclude-pattern "spec/system/**/*_spec.rb"
 
+      - name: Check autoloading
+        env:
+          RAILS_ENV: test
+          DATABASE_URL: 'postgres://postgres:password@localhost:5432/test'
+        run: bin/rails zeitwerk:check
+
   rspec-system:
     runs-on: ubuntu-latest
     strategy:

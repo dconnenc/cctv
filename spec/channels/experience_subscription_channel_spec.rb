@@ -260,39 +260,42 @@ RSpec.describe ExperienceSubscriptionChannel, type: :channel do
       end.not_to raise_error
     end
 
-    context "when participants have committed avatars" do
-      let(:participant_with_avatar) do
-        create(
-          :experience_participant,
-          user: regular_user,
-          experience: experience,
-          role: :audience,
-          avatar: { "strokes" => [{ "points" => [1, 2, 3, 4], "color" => "#ff0000", "width" => 4 }] }
-        )
+    context "when participants have avatars" do
+      let(:participant_with_strokes) do
+        create(:experience_participant, experience: experience,
+               avatar: { "strokes" => [{ "points" => [0, 0, 1, 1], "color" => "#fff", "width" => 2 }] })
+      end
+      let(:participant_with_image) do
+        create(:experience_participant, experience: experience,
+               avatar: { "image" => "data:image/png;base64,abc", "cosmetics" => [] })
+      end
+      let(:participant_no_avatar) do
+        create(:experience_participant, experience: experience, avatar: {})
       end
 
-      before { participant_with_avatar }
-
-      it "transmits avatar_committed drawing_update for each participant with strokes" do
+      before do
+        participant_with_strokes
+        participant_with_image
+        participant_no_avatar
         subscribe(code: experience.code_slug, view_type: "monitor")
-
-        avatar_transmissions = transmissions.select { |t| t["type"] == "drawing_update" }
-        expect(avatar_transmissions).to include(
-          hash_including(
-            "type" => "drawing_update",
-            "participant_id" => participant_with_avatar.id,
-            "operation" => "avatar_committed"
-          )
-        )
       end
 
-      it "does not transmit avatar_committed for participants with no avatar" do
-        create(:experience_participant, user: create(:user, :user), experience: experience, role: :audience)
+      it "sends a single avatars_state message instead of per-participant transmits" do
+        avatar_messages = transmissions.select { |t| t[:type] == "avatars_state" }
+        expect(avatar_messages.size).to eq(1)
+      end
 
-        subscribe(code: experience.code_slug, view_type: "monitor")
+      it "includes all participants with avatars in the single message" do
+        msg = transmissions.find { |t| t[:type] == "avatars_state" }
+        participant_ids = msg[:avatars].map { |a| a[:participant_id] }
+        expect(participant_ids).to include(participant_with_strokes.id, participant_with_image.id)
+        expect(participant_ids).not_to include(participant_no_avatar.id)
+      end
 
-        avatar_transmissions = transmissions.select { |t| t["type"] == "drawing_update" }
-        expect(avatar_transmissions.length).to eq(1)
+      it "includes stroke data for stroke-based avatars" do
+        msg   = transmissions.find { |t| t[:type] == "avatars_state" }
+        entry = msg[:avatars].find { |a| a[:participant_id] == participant_with_strokes.id }
+        expect(entry[:data]).to have_key(:strokes)
       end
     end
   end

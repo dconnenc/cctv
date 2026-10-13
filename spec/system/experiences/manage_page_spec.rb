@@ -23,10 +23,9 @@ RSpec.describe 'Manage page UI', type: :system do
     expect(page).to have_text('What is your favourite colour?')
     expect(page).to have_text('Public')
 
-    # Screens tab reveals Monitor and Participant sub-tabs
-    click_button 'Screens'
-    expect(page).to have_button('Monitor')
-    expect(page).to have_button('Participant')
+    switch_to_monitor_preview
+    expect(page).to have_text('What is your favourite colour?')
+    expect(page).not_to have_text('Public')
 
     # Block tab restores metadata view
     click_button 'Block'

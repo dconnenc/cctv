@@ -6,7 +6,7 @@ RSpec.describe Experiences::Broadcaster do
   let(:broadcast_calls) { [] }
 
   before do
-    allow(broadcaster).to receive(:send_broadcast) do |stream_key, message|
+    allow(ActionCable.server).to receive(:broadcast) do |stream_key, message|
       broadcast_calls << { stream_key: stream_key, message: message }
     end
   end
@@ -68,6 +68,46 @@ RSpec.describe Experiences::Broadcaster do
         expect(message[:message][:experience][:blocks].first[:id]).to eq(
           block.id
         )
+      end
+    end
+
+    context "with a host participant" do
+      let!(:host) { create(:experience_participant, :host, experience: experience) }
+
+      it "does not broadcast to the host's profile stream" do
+        broadcaster.broadcast_experience_update
+
+        fingerprint = described_class.visibility_fingerprint(experience, host)
+        host_stream = described_class.profile_stream_key(experience, fingerprint)
+        stream_keys = broadcast_calls.map { |c| c[:stream_key] }
+
+        expect(stream_keys).not_to include(host_stream)
+      end
+    end
+
+    context "with a moderator participant" do
+      let!(:moderator) { create(:experience_participant, :moderator, experience: experience) }
+
+      it "does not broadcast to the moderator's profile stream" do
+        broadcaster.broadcast_experience_update
+
+        fingerprint = described_class.visibility_fingerprint(experience, moderator)
+        mod_stream  = described_class.profile_stream_key(experience, fingerprint)
+        stream_keys = broadcast_calls.map { |c| c[:stream_key] }
+
+        expect(stream_keys).not_to include(mod_stream)
+      end
+    end
+
+    context "when visibility serialization raises" do
+      before do
+        allow_any_instance_of(Experiences::Visibility).to receive(:for_profile)
+          .and_raise(StandardError, "serialization boom")
+      end
+
+      it "propagates the error instead of swallowing it" do
+        create(:experience_participant, experience: experience)
+        expect { broadcaster.broadcast_experience_update }.to raise_error(StandardError, "serialization boom")
       end
     end
 

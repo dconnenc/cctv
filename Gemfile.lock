@@ -296,6 +296,8 @@ GEM
       rspec-expectations (~> 3.13)
       rspec-mocks (~> 3.13)
       rspec-support (~> 3.13)
+    rspec-retry (0.6.2)
+      rspec-core (> 3.3)
     rspec-support (3.13.5)
     ruby-next-core (1.1.2)
     ruby-vips (2.3.0)
@@ -369,6 +371,7 @@ DEPENDENCIES
   rails (~> 7.2.2, >= 7.2.2.2)
   redis (>= 4.0)
   rspec-rails
+  rspec-retry
   sidekiq
   sidekiq-unique-jobs
   tzinfo-data

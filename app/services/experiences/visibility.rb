@@ -257,25 +257,24 @@ module Experiences
       first.has_visibility_rules? ? [parent] : [first]
     end
 
-    def participant_block_active?
-      @experience.experience_blocks
+    def monitor_active_blocks
+      @monitor_active_blocks ||= @experience.experience_blocks
         .where(status: "open")
         .where(visible_to_roles: [], target_user_ids: [])
         .where.missing(:experience_block_segments)
-        .any? { |b| b.payload["show_on_monitor"] == false }
+        .to_a
+    end
+
+    def participant_block_active?
+      monitor_active_blocks.any? { |b| b.payload["show_on_monitor"] == false }
     end
 
     def responded_participant_ids
-      active_block_ids = @experience.experience_blocks
-        .where(status: "open")
-        .where(visible_to_roles: [], target_user_ids: [])
-        .where.missing(:experience_block_segments)
-        .pluck(:id)
-
+      active_block_ids = monitor_active_blocks.map(&:id)
       return [] if active_block_ids.empty?
 
-      child_block_ids  = ExperienceBlock.where(parent_block_id: active_block_ids).pluck(:id)
-      all_block_ids    = (active_block_ids + child_block_ids).uniq
+      child_block_ids = ExperienceBlock.where(parent_block_id: active_block_ids).pluck(:id)
+      all_block_ids   = (active_block_ids + child_block_ids).uniq
 
       [
         ExperiencePollSubmission,
@@ -400,22 +399,23 @@ module Experiences
     def the_scene_performer_summaries(performer_participant_ids)
       return [] if performer_participant_ids.empty?
 
-      participants = @experience.experience_participants
-        .includes(:user)
-        .where(id: performer_participant_ids)
-        .to_a
+      id_set       = performer_participant_ids.map(&:to_i).to_set
+      participants = loaded_participants.select { |p| id_set.include?(p.id) }
+      user_ids     = participants.map(&:user_id)
 
-      user_ids = participants.map(&:user_id)
-      performers_by_user_id = Performer.includes(photo_attachment: :blob).where(user_id: user_ids).index_by(&:user_id)
+      performers_by_user_id = Performer
+        .includes(photo_attachment: :blob)
+        .where(user_id: user_ids)
+        .index_by(&:user_id)
 
       participants.map do |p|
         performer = performers_by_user_id[p.user_id]
         {
-          "participant_id" => p.id,
-          "user_id"        => p.user_id,
-          "name"           => performer&.name.presence || p.name,
-          "slug"           => performer&.slug,
-          "photo_url"      => performer&.photo_url,
+          "participant_id"        => p.id,
+          "user_id"               => p.user_id,
+          "name"                  => performer&.name.presence || p.name,
+          "slug"                  => performer&.slug,
+          "photo_url"             => performer&.photo_url,
           "has_performer_profile" => performer.present?
         }
       end
@@ -612,14 +612,12 @@ module Experiences
 
     def guess_who_user_summary(user_id)
       return nil if user_id.blank?
-
-      participant = @experience.experience_participants.includes(:user).find_by(user_id: user_id)
+      participant = participants_by_user_id[user_id.to_s]
       return nil unless participant
-
       {
         "user_id" => participant.user_id,
-        "name" => participant.name,
-        "avatar" => participant.avatar.presence
+        "name"    => participant.name,
+        "avatar"  => participant.avatar.presence
       }
     end
 
@@ -944,6 +942,10 @@ module Experiences
       @loaded_participants ||= @experience.experience_participants
         .includes(:user, :experience_segments)
         .to_a
+    end
+
+    def participants_by_user_id
+      @participants_by_user_id ||= loaded_participants.index_by { |p| p.user_id.to_s }
     end
 
     def loaded_segments

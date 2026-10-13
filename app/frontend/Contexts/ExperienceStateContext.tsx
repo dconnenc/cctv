@@ -17,16 +17,12 @@ export interface ExperienceStateContextType {
   experienceStatus: 'lobby' | 'live';
   error?: string;
   monitorView?: Experience;
-  participantView?: Experience;
-  impersonatedParticipantId?: string;
   wsReady: boolean;
   setExperience: (exp: Experience | undefined) => void;
   setParticipant: (p: ParticipantSummary | undefined) => void;
   setExperienceStatus: (s: 'lobby' | 'live') => void;
   setError: (err: string | undefined) => void;
   setMonitorView: (exp: Experience | undefined) => void;
-  setParticipantView: (exp: Experience | undefined) => void;
-  setImpersonatedParticipantId: (id: string | undefined) => void;
   setWsReady: (ready: boolean) => void;
   submissionState: SubmissionState;
   setSubmissionState: Dispatch<SetStateAction<SubmissionState>>;
@@ -41,8 +37,6 @@ export function ExperienceStateProvider({ children }: { children: ReactNode }) {
   const [experienceStatus, setExperienceStatus] = useState<'lobby' | 'live'>('lobby');
   const [error, setError] = useState<string>();
   const [monitorView, setMonitorView] = useState<Experience>();
-  const [participantView, setParticipantView] = useState<Experience>();
-  const [impersonatedParticipantId, setImpersonatedParticipantId] = useState<string>();
   const [wsReady, setWsReady] = useState(false);
   const [submissionState, setSubmissionState] = useState<SubmissionState>({});
 
@@ -50,7 +44,6 @@ export function ExperienceStateProvider({ children }: { children: ReactNode }) {
     setExperience(undefined);
     setParticipant(undefined);
     setMonitorView(undefined);
-    setParticipantView(undefined);
     setError(undefined);
     setWsReady(false);
     setSubmissionState({});
@@ -63,16 +56,12 @@ export function ExperienceStateProvider({ children }: { children: ReactNode }) {
       experienceStatus,
       error,
       monitorView,
-      participantView,
-      impersonatedParticipantId,
       wsReady,
       setExperience,
       setParticipant,
       setExperienceStatus,
       setError,
       setMonitorView,
-      setParticipantView,
-      setImpersonatedParticipantId,
       setWsReady,
       submissionState,
       setSubmissionState,
@@ -84,8 +73,6 @@ export function ExperienceStateProvider({ children }: { children: ReactNode }) {
       experienceStatus,
       error,
       monitorView,
-      participantView,
-      impersonatedParticipantId,
       wsReady,
       submissionState,
       resetState,
