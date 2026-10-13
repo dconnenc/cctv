@@ -1143,8 +1143,8 @@ export type WebSocketMessage =
 
 export type AvatarsEntry = {
   participant_id: string;
-  operation: string;
-  data: JsonObject;
+  operation: 'avatar_committed';
+  data: { strokes: AvatarStroke[] } | { image: string; cosmetics: CosmeticPlacement[] };
 };
 
 export type AvatarsStateMessage = {

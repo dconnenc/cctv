@@ -276,12 +276,7 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
           // AvatarsStateMessage. The shape is validated by the channel before transmission.
           const msg = channelMsg as AvatarsStateMessage;
           msg.avatars.forEach((entry) => {
-            lobbyDrawingDispatch({
-              type: 'drawing_update',
-              participant_id: entry.participant_id,
-              operation: entry.operation,
-              data: entry.data,
-            });
+            lobbyDrawingDispatch({ type: 'drawing_update', ...entry });
           });
           return;
         }
