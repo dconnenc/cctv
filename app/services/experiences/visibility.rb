@@ -612,7 +612,7 @@ module Experiences
 
     def guess_who_user_summary(user_id)
       return nil if user_id.blank?
-      participant = participants_by_user_id[user_id.to_i]
+      participant = participants_by_user_id[user_id.to_s]
       return nil unless participant
       {
         "user_id" => participant.user_id,
@@ -945,7 +945,7 @@ module Experiences
     end
 
     def participants_by_user_id
-      @participants_by_user_id ||= loaded_participants.index_by { |p| p.user_id.to_i }
+      @participants_by_user_id ||= loaded_participants.index_by { |p| p.user_id.to_s }
     end
 
     def loaded_segments

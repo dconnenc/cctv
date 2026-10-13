@@ -485,6 +485,28 @@ RSpec.describe Experiences::Visibility do
       expect(visibility.send(:guess_who_user_summary, nil)).to be_nil
       expect(visibility.send(:guess_who_user_summary, "")).to be_nil
     end
+
+    context "when user UUIDs share a leading numeric prefix" do
+      let(:user_ids) do
+        %w[
+          dc668a26-19da-4f47-8ac8-02614ac58eec
+          ee363534-5c14-4fab-ad6d-ace5240d5d3e
+          1a08b294-7e5a-4953-81fd-a1f7771b856b
+          1e5ec2cd-90db-4548-932e-b14292d8c860
+        ]
+      end
+      let!(:participants) do
+        user_ids.map do |id|
+          create(:experience_participant, experience: experience, user: create(:user, id: id))
+        end
+      end
+
+      it "resolves each user_id to its own participant" do
+        summaries = participants.map { |p| visibility.send(:guess_who_user_summary, p.user_id) }
+
+        expect(summaries.pluck("user_id")).to eq(user_ids)
+      end
+    end
   end
 
   describe "#for_monitor (private active block sharing)" do
