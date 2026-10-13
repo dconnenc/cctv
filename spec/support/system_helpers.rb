@@ -221,8 +221,7 @@ module SystemHelpers
   end
 
   def switch_to_monitor_preview
-    click_button 'Screens' unless page.has_button?('Monitor', wait: 0)
-    click_button 'Monitor'
+    click_button 'Screens'
   end
 
   # Opens the participants panel, yields, then closes it.
