@@ -797,7 +797,7 @@ module Experiences
     # --- Experience serialization ---
 
     def experience_payload(blocks:, **extra)
-      base_url     = Rails.application.config.app_base_url
+      base_url     = Tenants::Hosts.url_for(@experience.tenant)
       participants = loaded_participants
 
       result = {

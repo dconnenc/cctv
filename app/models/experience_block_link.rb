@@ -49,19 +49,24 @@ class ExperienceBlockLink < ApplicationRecord
       WITH RECURSIVE ancestors(ancestor_id) AS (
         SELECT parent_block_id
         FROM experience_block_links
-        WHERE child_block_id = :child_id
+        WHERE child_block_id = :child_id AND tenant_id = :tenant_id
 
         UNION
 
         SELECT ebl.parent_block_id
         FROM experience_block_links ebl
         JOIN ancestors a ON ebl.child_block_id = a.ancestor_id
+        WHERE ebl.tenant_id = :tenant_id
       )
       SELECT 1 FROM ancestors WHERE ancestor_id = :parent_id LIMIT 1
     SQL
 
     result = connection.execute(
-      sanitize_sql([sql, { parent_id: parent_id, child_id: child_id }])
+      sanitize_sql([sql, {
+        parent_id: parent_id,
+        child_id: child_id,
+        tenant_id: ActsAsTenant.current_tenant.id,
+      }])
     )
 
     result.any?
