@@ -23,6 +23,9 @@ gem "jwt"
 
 gem "action_policy"
 
+gem "dry-struct"
+gem "acts_as_tenant"
+
 gem "image_processing", "~> 1.2"
 
 gem "aws-sdk-s3", require: false

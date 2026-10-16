@@ -1,6 +1,7 @@
 import { useId } from 'react';
 
 import { useExperience } from '@cctv/contexts/ExperienceContext';
+import { useTenant } from '@cctv/contexts/TenantContext';
 import { DialogDescription, DialogTitle, SegmentMultiSelect, Switch } from '@cctv/core';
 import { Button } from '@cctv/core/Button/Button';
 import { Dropdown } from '@cctv/core/Dropdown/Dropdown';
@@ -44,6 +45,7 @@ interface CreateBlockFormProps {
 function CreateBlockForm({ onClose }: CreateBlockFormProps) {
   const { blockData, setKind, submit, error, viewAdditionalDetails, setViewAdditionalDetails } =
     useCreateBlockContext();
+  const { isBlockAllowed } = useTenant();
 
   return (
     <div className={styles.root}>
@@ -55,10 +57,12 @@ function CreateBlockForm({ onClose }: CreateBlockFormProps) {
 
       <Dropdown
         label="Kind"
-        options={Object.values(BlockKind).map((kind) => ({
-          label: BLOCK_KIND_LABELS[kind],
-          value: kind,
-        }))}
+        options={Object.values(BlockKind)
+          .filter((kind) => isBlockAllowed(kind))
+          .map((kind) => ({
+            label: BLOCK_KIND_LABELS[kind],
+            value: kind,
+          }))}
         value={blockData.kind}
         onChange={setKind}
         required

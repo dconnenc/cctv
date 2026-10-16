@@ -1,4 +1,6 @@
 class UserCosmetic < ApplicationRecord
+  include Tenanted
+
   belongs_to :user
   belongs_to :cosmetic
 

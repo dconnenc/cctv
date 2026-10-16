@@ -1,4 +1,5 @@
 class ApplicationController < ActionController::Base
+  include TenantScoped
   include Passwordless::ControllerHelpers
   include ActionPolicy::Controller
 

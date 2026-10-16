@@ -7,6 +7,7 @@ import { MotionConfig } from 'motion/react';
 import { AnalyticsIdentity, ExperienceAnalytics, RouteAnalytics } from '@cctv/analytics';
 import { RouteWink, TopNav } from '@cctv/components';
 import { ExperienceProvider } from '@cctv/contexts/ExperienceContext';
+import { useTenant } from '@cctv/contexts/TenantContext';
 import { UserProvider } from '@cctv/contexts/UserContext';
 import { FeedbackExperienceBridge, FeedbackProvider } from '@cctv/feedback';
 import Calendar from '@cctv/pages/Calendar/Calendar';
@@ -60,6 +61,7 @@ function App() {
   }, []);
 
   const currentRoute = useLocation();
+  const { hasFeature } = useTenant();
 
   return (
     <UserProvider>
@@ -80,23 +82,39 @@ function App() {
                   <Route path="/stylesheet" element={<Stylesheet />} />
 
                   {/* Public event & performer pages */}
-                  <Route path="/events" element={<Calendar />} />
-                  <Route path="/events/:slug" element={<EventDetail />} />
-                  <Route path="/performers" element={<PerformersList />} />
-                  <Route path="/performers/:slug" element={<PerformerProfile />} />
+                  {hasFeature('events') && (
+                    <>
+                      <Route path="/events" element={<Calendar />} />
+                      <Route path="/events/:slug" element={<EventDetail />} />
+                    </>
+                  )}
+                  {hasFeature('performers') && (
+                    <>
+                      <Route path="/performers" element={<PerformersList />} />
+                      <Route path="/performers/:slug" element={<PerformerProfile />} />
+                    </>
+                  )}
 
                   {/* Logged-in user routes */}
                   <Route element={<RequireAuth />}>
-                    <Route path="/performers/new" element={<CreatePerformer />} />
-                    <Route path="/performers/:slug/edit" element={<EditPerformer />} />
+                    {hasFeature('performers') && (
+                      <>
+                        <Route path="/performers/new" element={<CreatePerformer />} />
+                        <Route path="/performers/:slug/edit" element={<EditPerformer />} />
+                      </>
+                    )}
                   </Route>
 
                   {/* Admin-only */}
                   <Route element={<RequireAdmin />}>
                     <Route path="/experiences" element={<ExperiencesList />} />
                     <Route path="/create" element={<Create />} />
-                    <Route path="/events/new" element={<CreateEvent />} />
-                    <Route path="/events/:slug/edit" element={<EditEvent />} />
+                    {hasFeature('events') && (
+                      <>
+                        <Route path="/events/new" element={<CreateEvent />} />
+                        <Route path="/events/:slug/edit" element={<EditEvent />} />
+                      </>
+                    )}
                   </Route>
 
                   <Route

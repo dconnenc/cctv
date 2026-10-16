@@ -1,4 +1,6 @@
 class Cosmetic < ApplicationRecord
+  include Tenanted
+
   KINDS = %w[hat sunglasses frame].freeze
   CATEGORIES = %w[clothing frame].freeze
 
@@ -6,7 +8,7 @@ class Cosmetic < ApplicationRecord
   has_many :users, through: :user_cosmetics
 
   validates :name, presence: true
-  validates :slug, presence: true, uniqueness: true
+  validates :slug, presence: true, uniqueness: { scope: :tenant_id }
   validates :kind, presence: true, inclusion: { in: KINDS }
   validates :category, presence: true, inclusion: { in: CATEGORIES }
   validates :asset_key, presence: true

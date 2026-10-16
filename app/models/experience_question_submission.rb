@@ -1,4 +1,6 @@
 class ExperienceQuestionSubmission < ApplicationRecord
+  include Tenanted
+
   AI_GENERATED_SOURCE = "ai_generated".freeze
   PARTICIPANT_SOURCE = "participant".freeze
 

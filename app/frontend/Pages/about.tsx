@@ -1,11 +1,15 @@
+import { useTenant } from '@cctv/contexts';
+
 import styles from './about.module.scss';
 
 export default function About() {
+  const { config } = useTenant();
+
   return (
     <section className={`page flex-centered ${styles.about}`}>
       <div className={styles.intro}>
-        <h1 className={styles.title}>{'CCTV'}</h1>
-        <p className={styles.tagline}>{'Chicago Comedy . TV'}</p>
+        <h1 className={styles.title}>{config.theme.displayName}</h1>
+        {config.theme.tagline && <p className={styles.tagline}>{config.theme.tagline}</p>}
         <p className={styles.lead}>
           {
             'We build interactive experiences for live audiences — shows where the crowd is part of the cast. Pull out your phone, join the broadcast, and help shape what happens on stage in real time.'

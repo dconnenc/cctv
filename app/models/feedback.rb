@@ -1,4 +1,6 @@
 class Feedback < ApplicationRecord
+  include Tenanted
+
   # Repeat occurrences of the same client error roll up into the first feedback
   # carrying that fingerprint, so one bad render loop during a show produces one
   # Linear issue with a comment trail rather than hundreds of issues.

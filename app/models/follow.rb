@@ -1,4 +1,6 @@
 class Follow < ApplicationRecord
+  include Tenanted
+
   belongs_to :user
   belongs_to :performer
 

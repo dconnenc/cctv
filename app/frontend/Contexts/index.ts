@@ -6,3 +6,4 @@ export * from './WebSocketContext';
 export * from './DispatchRegistryContext';
 export * from './UserContext';
 export * from './ThemeContext';
+export * from './TenantContext';
