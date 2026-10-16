@@ -1,5 +1,5 @@
 vite: ruby bin/vite dev
 tailwind: yarn tailwind:watch
-web: ruby bin/rails s -b 0.0.0.0
+web: PORT=$RAILS_PORT ruby bin/rails s -b 0.0.0.0
 storybook: yarn storybook
 worker: bundle exec sidekiq -C config/sidekiq.yml

@@ -11,7 +11,7 @@ RSpec.describe Tenants::Hosts do
   end
 
   it "reads the configured base url" do
-    expect(Rails.configuration.x.tenants.base_url).to eq("http://localhost")
+    expect(described_class.base_url).to eq("http://localhost")
   end
 
   it "derives the base domain from the base url host" do
@@ -30,6 +30,18 @@ RSpec.describe Tenants::Hosts do
 
   it "returns the unchanged base url for the default tenant" do
     Rails.configuration.x.tenants.base_url = "https://chicagocomedy.tv"
+
+    expect(described_class.url_for(Tenant.default)).to eq("https://chicagocomedy.tv")
+  end
+
+  it "keeps an explicit port in the default tenant url" do
+    Rails.configuration.x.tenants.base_url = "http://localhost:5200"
+
+    expect(described_class.url_for(Tenant.default)).to eq("http://localhost:5200")
+  end
+
+  it "drops a trailing slash from the default tenant url" do
+    Rails.configuration.x.tenants.base_url = "https://chicagocomedy.tv/"
 
     expect(described_class.url_for(Tenant.default)).to eq("https://chicagocomedy.tv")
   end
@@ -77,6 +89,25 @@ RSpec.describe Tenants::Hosts do
       Rails.configuration.x.tenants.base_url = "chicagocomedy.tv"
 
       expect { described_class.validate! }.to raise_error(ArgumentError, /must include a scheme/)
+    end
+
+    it "accepts a trailing slash and an explicit port" do
+      Rails.configuration.x.tenants.base_url = "http://localhost:5200/"
+
+      expect(described_class.validate!).to be(true)
+    end
+
+    [
+      "https://chicagocomedy.tv/app",
+      "https://chicagocomedy.tv?ref=x",
+      "https://chicagocomedy.tv#top",
+      "https://user:pass@chicagocomedy.tv",
+    ].each do |url|
+      it "rejects #{url}" do
+        Rails.configuration.x.tenants.base_url = url
+
+        expect { described_class.validate! }.to raise_error(ArgumentError, /only a scheme, host and optional port/)
+      end
     end
 
     it "rejects a www host" do

@@ -33,6 +33,9 @@ module Tenants
       if base_uri.scheme.blank? || base_uri.host.blank?
         raise ArgumentError, "APP_BASE_URL must include a scheme, e.g. https://chicagocomedy.tv (got #{base_url.inspect})"
       end
+      if ["", "/"].exclude?(base_uri.path) || base_uri.query || base_uri.fragment || base_uri.userinfo
+        raise ArgumentError, "APP_BASE_URL must contain only a scheme, host and optional port (got #{base_url.inspect})"
+      end
       raise ArgumentError, "APP_BASE_URL host must not start with www. (got #{base_url.inspect})" if base_domain.start_with?("www.")
 
       true

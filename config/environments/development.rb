@@ -1,7 +1,7 @@
 require "active_support/core_ext/integer/time"
 
 Rails.application.configure do
-  config.x.tenants.base_url = "http://localhost:#{ENV.fetch("PORT", 3000)}"
+  config.x.tenants.base_url = "http://localhost:#{ENV.fetch("RAILS_PORT", 3000)}"
 
   # Settings specified here will take precedence over those in config/application.rb.
 
