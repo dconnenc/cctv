@@ -44,11 +44,7 @@ RSpec.describe "feature gating", type: :request do
     get "/api/users/following", as: :json
 
     expect(response).to have_http_status(:unauthorized)
-    expect(response.parsed_body).to eq(
-      "type" => "error",
-      "success" => false,
-      "message" => "Not authenticated",
-    )
+    expect(response.parsed_body).to eq("success" => false, "error" => "unauthorized")
   end
 
   it "serves ungated routes on a tenant without the features" do

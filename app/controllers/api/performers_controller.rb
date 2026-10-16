@@ -25,8 +25,6 @@ class Api::PerformersController < Api::BaseController
       success: true,
       performer: PerformerSerializer.serialize(performer, current_user: current_user, include_events: true)
     }
-  rescue ActiveRecord::RecordNotFound
-    render json: { type: 'error', success: false, message: "Performer not found" }, status: :not_found
   end
 
   # POST /api/performers
@@ -88,8 +86,6 @@ class Api::PerformersController < Api::BaseController
         error: performer.errors.full_messages.to_sentence
       }, status: :unprocessable_entity
     end
-  rescue ActiveRecord::RecordNotFound
-    render json: { type: 'error', success: false, message: "Performer not found" }, status: :not_found
   end
 
   # DELETE /api/performers/:slug
@@ -101,8 +97,6 @@ class Api::PerformersController < Api::BaseController
     performer.destroy!
 
     render json: { type: 'success', success: true, message: "Performer profile deleted" }
-  rescue ActiveRecord::RecordNotFound
-    render json: { type: 'error', success: false, message: "Performer not found" }, status: :not_found
   end
 
   # POST /api/performers/:slug/follow
@@ -125,8 +119,6 @@ class Api::PerformersController < Api::BaseController
       message: "Now following #{performer.name}",
       follower_count: performer.follower_count
     }
-  rescue ActiveRecord::RecordNotFound
-    render json: { type: 'error', success: false, message: "Performer not found" }, status: :not_found
   end
 
   # DELETE /api/performers/:slug/follow
@@ -150,8 +142,6 @@ class Api::PerformersController < Api::BaseController
       message: "Unfollowed #{performer.name}",
       follower_count: performer.follower_count
     }
-  rescue ActiveRecord::RecordNotFound
-    render json: { type: 'error', success: false, message: "Performer not found" }, status: :not_found
   end
 
   private

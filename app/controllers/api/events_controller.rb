@@ -33,8 +33,6 @@ class Api::EventsController < Api::BaseController
       success: true,
       event: EventSerializer.serialize(event, current_user: current_user)
     }
-  rescue ActiveRecord::RecordNotFound
-    render json: { type: 'error', success: false, message: "Event not found" }, status: :not_found
   end
 
   # POST /api/events
@@ -95,8 +93,6 @@ class Api::EventsController < Api::BaseController
         error: event.errors.full_messages.to_sentence
       }, status: :unprocessable_entity
     end
-  rescue ActiveRecord::RecordNotFound
-    render json: { type: 'error', success: false, message: "Event not found" }, status: :not_found
   end
 
   # DELETE /api/events/:slug
@@ -116,8 +112,6 @@ class Api::EventsController < Api::BaseController
     )
 
     render json: { type: 'success', success: true, message: "Event deleted" }
-  rescue ActiveRecord::RecordNotFound
-    render json: { type: 'error', success: false, message: "Event not found" }, status: :not_found
   end
 
   # GET /api/events/:slug/ical
@@ -145,8 +139,6 @@ class Api::EventsController < Api::BaseController
               type: 'text/calendar; charset=utf-8',
               disposition: "attachment; filename=\"#{event.slug}.ics\"",
               filename: "#{event.slug}.ics"
-  rescue ActiveRecord::RecordNotFound
-    render json: { type: 'error', success: false, message: "Event not found" }, status: :not_found
   end
 
   private

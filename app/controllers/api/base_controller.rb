@@ -5,21 +5,25 @@ class Api::BaseController < ApplicationController
 
   authorize :user, through: :policy_user
 
-  rescue_from ActionPolicy::Unauthorized, with: :render_forbidden
-
   class UnauthorizedError < StandardError; end
   class NotFoundError < StandardError; end
 
+  rescue_from UnauthorizedError,
+              Experiences::AuthService::TokenInvalid,
+              Experiences::AuthService::TokenExpired,
+              Experiences::AuthService::Unauthorized,
+              Experiences::AuthService::NotFound,
+              with: :render_unauthorized
+  rescue_from NotFoundError, ActiveRecord::RecordNotFound, with: :render_not_found
+  rescue_from ActionController::ParameterMissing, with: :render_bad_request
+  rescue_from ActionPolicy::Unauthorized, with: :render_forbidden
+
   # Expected control-flow errors that already map to a deliberate response.
   # Everything else that escapes an action is an unexpected bug worth tracking.
-  # Matched by name (including ancestors) to avoid forcing autoload of the
-  # Experiences::* error constants at class-load time.
+  # Errors with a rescue_from handler are expected by definition; these are the
+  # remaining ones, matched by name (including ancestors) to avoid forcing
+  # autoload of the Experiences::* error constants at class-load time.
   IGNORED_EXCEPTION_NAMES = %w[
-    Api::BaseController::UnauthorizedError
-    Api::BaseController::NotFoundError
-    ActionPolicy::Unauthorized
-    ActionController::ParameterMissing
-    ActiveRecord::RecordNotFound
     ActiveRecord::RecordInvalid
     Experiences::InvalidTransitionError
     Experiences::MysteryNotRespondedError
@@ -32,16 +36,7 @@ class Api::BaseController < ApplicationController
     # JWT takes precedence over session auth when present
     # This allows simulating requests as different users while logged in as admin
     if bearer_token
-      claims = Experiences::AuthService.decode!(bearer_token)
-
-      case claims[:scope]
-      when Experiences::AuthService::PARTICIPANT
-        set_as_jwt_participant(claims)
-      when Experiences::AuthService::ADMIN
-        set_as_jwt_admin(claims)
-      else
-        raise UnauthorizedError, "unknown or missing scope"
-      end
+      authenticate_with_bearer_token
     elsif session_admin_signed_in?
       set_as_session_admin
     else
@@ -55,8 +50,38 @@ class Api::BaseController < ApplicationController
     @user || current_user
   end
 
-  def render_forbidden
-    render json: { success: false, error: "forbidden" }, status: :forbidden
+  def render_unauthorized(error)
+    render_error(error, "unauthorized", :unauthorized)
+  end
+
+  def render_not_found(error)
+    render_error(error, "not found", :not_found)
+  end
+
+  def render_bad_request(error)
+    render_error(error, "bad request", :bad_request)
+  end
+
+  def render_forbidden(error)
+    render_error(error, "forbidden", :forbidden)
+  end
+
+  def render_error(error, message, status)
+    logger.info("#{error.class}: #{error.message}")
+    render json: { success: false, error: message }, status: status
+  end
+
+  def authenticate_with_bearer_token
+    claims = Experiences::AuthService.decode!(bearer_token)
+
+    case claims[:scope]
+    when Experiences::AuthService::PARTICIPANT
+      set_as_jwt_participant(claims)
+    when Experiences::AuthService::ADMIN
+      set_as_jwt_admin(claims)
+    else
+      raise UnauthorizedError, "unknown or missing scope"
+    end
   end
 
   def session_admin_signed_in?
@@ -66,7 +91,7 @@ class Api::BaseController < ApplicationController
   def set_as_session_admin
     @auth_source = :session_admin
     @user        = current_user
-    @experience  = find_experience_by_slug!(experience_slug)
+    @experience  = find_experience_by_slug!
   end
 
   def set_as_jwt_participant(claims)
@@ -82,7 +107,7 @@ class Api::BaseController < ApplicationController
   def set_as_jwt_admin(claims)
     @auth_source = :jwt_admin
     @user = Experiences::AuthService.admin_from_claims!(claims)
-    @experience = find_experience_by_slug!(experience_slug)
+    @experience = find_experience_by_slug!
   end
 
   def bearer_token
@@ -99,10 +124,8 @@ class Api::BaseController < ApplicationController
     request.headers["Authorization"] || request.headers["HTTP_AUTHORIZATION"]
   end
 
-  def find_experience_by_slug!(slug)
-    ::Experience.find_by!(code_slug: slug)
-  rescue ActiveRecord::RecordNotFound
-    raise NotFoundError, "experience not found"
+  def find_experience_by_slug!
+    ::Experience.find_by!(code_slug: experience_slug)
   end
 
   def experience_slug
@@ -144,11 +167,11 @@ class Api::BaseController < ApplicationController
   end
 
   # Reports genuinely unexpected exceptions to PostHog error tracking, then
-  # re-raises so existing rendering/rescue behavior is unchanged.
+  # re-raises so rescue_from (or the framework) renders the response.
   def report_unexpected_errors
     yield
   rescue StandardError => e
-    unless ignored_exception?(e)
+    unless handler_for_rescue(e) || ignored_exception?(e)
       Analytics::Tracker.capture_exception(
         e,
         distinct_id: @user&.id,

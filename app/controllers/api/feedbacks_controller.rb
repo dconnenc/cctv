@@ -27,8 +27,7 @@ class Api::FeedbacksController < Api::BaseController
   # Adds detail to a report the user already triggered — in practice, filling in
   # the prompt shown after a client error.
   def update
-    feedback = Feedback.find_by(id: params[:id], user_id: @user.id)
-    return render json: { success: false, error: "feedback not found" }, status: :not_found unless feedback
+    feedback = Feedback.find_by!(id: params[:id], user_id: @user.id)
 
     feedback.attachments.attach(attachment_signed_ids) if attachment_signed_ids.any?
 

@@ -39,10 +39,6 @@ class Api::ExperienceAvatarController < Api::BaseController
   private
 
   def set_participant!
-    @participant = @experience.experience_participants.find_by(user: @user)
-    unless @participant
-      skip_verify_authorized!
-      render json: { success: false, error: 'participant not found' }, status: :not_found
-    end
+    @participant = @experience.experience_participants.find_by!(user: @user)
   end
 end

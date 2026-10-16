@@ -212,3 +212,92 @@ RSpec.describe Api::ExperiencesController, type: :controller do
     end
   end
 end
+
+RSpec.describe Api::ExperiencesController, "GET #show", type: :controller do
+  include Passwordless::ControllerHelpers
+
+  let!(:experience) { create(:experience, status: :lobby) }
+
+  before { allow(Analytics::Tracker).to receive(:capture_exception) }
+
+  def bearer(token)
+    request.headers["Authorization"] = "Bearer #{token}"
+  end
+
+  def participant_token(target: experience, ttl: 7.days)
+    user = create(:user)
+    create(:experience_participant, experience: target, user: user, role: :audience)
+    Experiences::AuthService.jwt_for_participant(experience: target, user: user, ttl: ttl)
+  end
+
+  def expect_error(status, error)
+    get :show, params: { id: experience.code_slug }
+
+    expect(response).to have_http_status(status)
+    expect(response.parsed_body).to eq("success" => false, "error" => error)
+    expect(Analytics::Tracker).not_to have_received(:capture_exception)
+  end
+
+  it "rejects a request without credentials" do
+    expect_error(:unauthorized, "unauthorized")
+  end
+
+  it "rejects a malformed token" do
+    bearer("not-a-jwt")
+
+    expect_error(:unauthorized, "unauthorized")
+  end
+
+  it "rejects an expired token" do
+    bearer(participant_token(ttl: -1.hour))
+
+    expect_error(:unauthorized, "unauthorized")
+  end
+
+  it "rejects a token minted in another tenant" do
+    other_tenant = create(:tenant)
+    bearer(ActsAsTenant.with_tenant(other_tenant) { participant_token(target: create(:experience)) })
+
+    expect_error(:unauthorized, "unauthorized")
+  end
+
+  it "rejects a participant token for a different experience" do
+    bearer(participant_token(target: create(:experience)))
+
+    expect_error(:unauthorized, "unauthorized")
+  end
+
+  it "returns not found for an unknown experience with an admin token" do
+    bearer(Experiences::AuthService.jwt_for_admin(user: create(:user, :admin)))
+
+    get :show, params: { id: "missing" }
+
+    expect(response).to have_http_status(:not_found)
+    expect(response.parsed_body).to eq("success" => false, "error" => "not found")
+  end
+
+  it "returns not found for an unknown experience with a session" do
+    sign_in(create_passwordless_session(create(:user, :admin)))
+
+    get :show, params: { id: "missing" }
+
+    expect(response).to have_http_status(:not_found)
+  end
+
+  it "renders the participant view for a valid participant token" do
+    bearer(participant_token)
+
+    get :show, params: { id: experience.code_slug }
+
+    expect(response).to have_http_status(:ok)
+    expect(response.parsed_body["code"]).to eq(experience.code)
+  end
+
+  it "renders the admin view for a valid admin token" do
+    bearer(Experiences::AuthService.jwt_for_admin(user: create(:user, :admin)))
+
+    get :show, params: { id: experience.code_slug }
+
+    expect(response).to have_http_status(:ok)
+  end
+end

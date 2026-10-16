@@ -39,8 +39,9 @@ RSpec.describe Api::ExperiencesController, type: :controller do
       create(:experience_participant, experience: experience, user: user, role: :host)
       request.headers["Authorization"] = "Bearer #{Experiences::AuthService.jwt_for_participant(experience: experience, user: user)}"
 
-      expect { post :start, params: { id: experience.code_slug } }
-        .to raise_error(Experiences::AuthService::Unauthorized, "tenant mismatch")
+      post :start, params: { id: experience.code_slug }
+
+      expect(response).to have_http_status(:unauthorized)
       expect(experience.reload.status).to eq("lobby")
     end
 
@@ -48,8 +49,9 @@ RSpec.describe Api::ExperiencesController, type: :controller do
       admin = ActsAsTenant.with_tenant(other) { create(:user, :admin) }
       request.headers["Authorization"] = "Bearer #{Experiences::AuthService.jwt_for_admin(user: admin)}"
 
-      expect { post :start, params: { id: experience.code_slug } }
-        .to raise_error(Api::BaseController::NotFoundError)
+      post :start, params: { id: experience.code_slug }
+
+      expect(response).to have_http_status(:not_found)
       expect(experience.reload.status).to eq("lobby")
     end
 

@@ -9,6 +9,7 @@ class Api::ExperiencesController < Api::BaseController
       :clear_avatars,
       :update_playbill
     ]
+  before_action :authenticate_for_experience_show, only: [:show]
 
   before_action -> { authorize! Experience, to: :index? }, only: [:index]
   before_action -> { authorize! Experience, to: :create? }, only: [:create]
@@ -196,19 +197,16 @@ class Api::ExperiencesController < Api::BaseController
 
   # GET /api/experiences/:id
   def show
-    authenticated_user, experience = authenticate_for_experience_show
-    return unless authenticated_user && experience # Early return if authentication failed
+    authorize! @experience, to: :show?
 
-    authorize! experience, to: :show?
+    participant = @experience.experience_participants.find_by(user: @user)
 
-    participant = experience.experience_participants.find_by(user: authenticated_user)
-
-    payload = if authenticated_user.admin? || authenticated_user.superadmin?
-      Experiences::Visibility.for_admin(experience)
+    payload = if @user.admin? || @user.superadmin?
+      Experiences::Visibility.for_admin(@experience)
     elsif participant
-      Experiences::Visibility.for_participant(experience, participant)
+      Experiences::Visibility.for_participant(@experience, participant)
     else
-      Experiences::Visibility.for_admin(experience)
+      Experiences::Visibility.for_admin(@experience)
     end
 
     render json: payload
@@ -218,11 +216,7 @@ class Api::ExperiencesController < Api::BaseController
   def join
     code = join_params
     experience = Experience.find_by_code_or_slug(code)
-
-    if experience.nil?
-      render json: { type: 'error', error: "Invalid experience code" }, status: :not_found
-      return
-    end
+    raise NotFoundError, "invalid experience code" if experience.nil?
 
     if current_user && experience.user_registered?(current_user)
       render json: {
@@ -247,12 +241,7 @@ class Api::ExperiencesController < Api::BaseController
 
   # GET /api/experiences/:id/registration_info
   def registration_info
-    experience = Experience.find_by(code_slug: params[:id])
-
-    if experience.nil?
-      render json: { type: 'error', error: "Experience not found" }, status: :not_found
-      return
-    end
+    experience = Experience.find_by!(code_slug: params[:id])
 
     render json: {
       type: 'success',
@@ -268,12 +257,7 @@ class Api::ExperiencesController < Api::BaseController
 
   # POST /api/experiences/:id/register
   def register
-    experience = Experience.find_by(code_slug: params[:id])
-
-    if experience.nil?
-      render json: { type: 'error', error: "Experience not found" }, status: :not_found
-      return
-    end
+    experience = Experience.find_by!(code_slug: params[:id])
 
     authorize! experience, to: :register?
 
@@ -341,66 +325,12 @@ class Api::ExperiencesController < Api::BaseController
 
   def authenticate_for_experience_show
     if bearer_token
-      authenticate_with_jwt_for_show
+      authenticate_with_bearer_token
+    elsif current_user
+      @user = current_user
+      @experience = find_experience_by_slug!
     else
-      authenticate_with_session_for_show
+      raise UnauthorizedError, "no credentials"
     end
-  end
-
-  def authenticate_with_jwt_for_show
-    claims = Experiences::AuthService.decode!(bearer_token)
-
-    case claims[:scope]
-    when Experiences::AuthService::PARTICIPANT
-      authorize_participant_for_show(claims)
-    when Experiences::AuthService::ADMIN
-      authorize_admin_for_show(claims)
-    else
-      render json: { type: 'error', error: "Invalid token scope" }, status: :unauthorized
-      nil
-    end
-  rescue Experiences::AuthService::TokenInvalid, Experiences::AuthService::TokenExpired
-    render json: { type: 'error', error: "Invalid or expired token" }, status: :unauthorized
-    nil
-  rescue Experiences::AuthService::Unauthorized, Experiences::AuthService::NotFound => e
-    render json: { type: 'error', error: e.message }, status: :unauthorized
-    nil
-  end
-
-  def authorize_participant_for_show(claims)
-    user, experience = Experiences::AuthService.authorize_participant!(claims)
-
-    if params[:id] != experience.code_slug
-      render json: { type: 'error', error: "Experience mismatch" }, status: :unauthorized
-      return nil
-    end
-
-    [user, experience]
-  end
-
-  def authorize_admin_for_show(claims)
-    user = Experiences::AuthService.admin_from_claims!(claims)
-    experience = find_experience_by_code_or_render_error(params[:id])
-
-    return nil unless experience
-    [user, experience]
-  end
-
-  def authenticate_with_session_for_show
-    experience = find_experience_by_code_or_render_error(params[:id])
-    return nil unless experience
-
-    [current_user, experience]
-  end
-
-  def find_experience_by_code_or_render_error(slug)
-    experience = Experience.find_by(code_slug: slug)
-
-    if experience.nil?
-      render json: { type: 'error', error: "Experience not found" }, status: :not_found
-      return nil
-    end
-
-    experience
   end
 end
