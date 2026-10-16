@@ -80,6 +80,7 @@ class ExperienceBlock < ApplicationRecord
 
   validates :kind, presence: true, inclusion: { in: KINDS }
   validate :visibility_roles
+  validate :kind_allowed_for_tenant, on: :create
 
   validates :position,
     presence: true,
@@ -197,6 +198,12 @@ class ExperienceBlock < ApplicationRecord
   end
 
   private
+
+  def kind_allowed_for_tenant
+    return if tenant.nil? || tenant.config.block_allowed?(kind)
+
+    errors.add(:kind, "is not available for this tenant")
+  end
 
   def sync_parent_from_links
     if parent_links.any? && parent_block_id.nil?

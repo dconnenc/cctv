@@ -7,6 +7,12 @@ class Api::BaseController < ApplicationController
 
   rescue_from ActionPolicy::Unauthorized, with: :render_forbidden
 
+  def self.requires_feature(feature, **filter_options)
+    before_action(**filter_options) do
+      head :not_found unless ActsAsTenant.current_tenant.config.feature?(feature)
+    end
+  end
+
   class UnauthorizedError < StandardError; end
   class NotFoundError < StandardError; end
 

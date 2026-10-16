@@ -20,6 +20,14 @@ RSpec.describe Tenants::Registry do
     expect(described_class.fetch("cctv").name).to eq("CCTV")
   end
 
+  it "registers social-quiztancing without public features" do
+    config = described_class.fetch("social-quiztancing")
+
+    expect(config.features).to be_empty
+    expect(config.block_allowed?("family_feud")).to be(true)
+    expect(config.block_allowed?("the_scene")).to be(false)
+  end
+
   it "raises for an unknown key" do
     expect { described_class.fetch("nope") }.to raise_error(described_class::UnknownTenant)
   end

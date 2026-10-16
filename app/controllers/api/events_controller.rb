@@ -1,5 +1,6 @@
 class Api::EventsController < Api::BaseController
   authorize :user, through: :current_user
+  requires_feature :events
 
   # GET /api/events
   def index

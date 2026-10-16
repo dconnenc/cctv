@@ -1,5 +1,6 @@
 class Api::PerformersController < Api::BaseController
   authorize :user, through: :current_user
+  requires_feature :performers
 
   # GET /api/performers
   def index
