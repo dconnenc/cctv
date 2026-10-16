@@ -26,28 +26,36 @@ Rails.application.routes.draw do
   get "manifest" => "rails/pwa#manifest", as: :pwa_manifest
 
   namespace :api do
-    get "discover", to: "discover#index"
+    constraints Tenants::FeatureConstraint.new(:discover) do
+      get "discover", to: "discover#index"
+    end
 
     resources :feedbacks, only: [:create, :update]
 
     resources :users, only: [] do
       get "me", on: :collection
       post "sign_out_user", on: :collection
-      get "following", on: :collection
     end
 
-    resources :events, param: :slug, only: [:index, :show, :create, :update, :destroy] do
-      member do
-        get :ical
+    constraints Tenants::FeatureConstraint.new(:events) do
+      resources :events, param: :slug, only: [:index, :show, :create, :update, :destroy] do
+        member do
+          get :ical
+        end
       end
     end
 
-    resources :performers, param: :slug, only: [:index, :show, :create, :update, :destroy] do
-      member do
-        post :follow
-        delete :follow, action: :unfollow
+    constraints Tenants::FeatureConstraint.new(:performers) do
+      get "users/following", to: "users#following"
+
+      resources :performers, param: :slug, only: [:index, :show, :create, :update, :destroy] do
+        member do
+          post :follow
+          delete :follow, action: :unfollow
+        end
       end
     end
+
     resources :experiences, only: [:index, :create, :show] do
       collection do
         post :join

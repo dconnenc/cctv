@@ -1,6 +1,5 @@
 class Api::DiscoverController < Api::BaseController
   authorize :user, through: :current_user
-  requires_feature :discover
 
   # GET /api/discover
   def index

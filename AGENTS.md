@@ -152,6 +152,10 @@ tenanted query with no tenant raises.
   acts_as_tenant ActiveJob extension applies when the job runs.
   Raw SQL must filter by `tenant_id`.
 - Cookies are host-only; never set `domain:`.
+- Features (`Tenants::Config#feature?`) are gated in `config/routes.rb` by wrapping routes in
+  `constraints Tenants::FeatureConstraint.new(:feature)`; a tenant without the feature gets a
+  routing 404. Every `/api` route must be feature-gated or listed as ungated in
+  `spec/routing/feature_gating_convention_spec.rb`.
 
 ## Frontend Context Management
 
