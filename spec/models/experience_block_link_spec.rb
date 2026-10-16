@@ -2,7 +2,7 @@ require "rails_helper"
 
 RSpec.describe ExperienceBlockLink, ".would_create_cycle?" do
   it "does not follow links belonging to another tenant" do
-    other = create(:tenant)
+    other = Tenant.find_by!(key: "social-quiztancing")
     parent = create(:experience_block)
     child = create(:experience_block, experience: parent.experience)
     ActsAsTenant.with_tenant(other) do
@@ -15,7 +15,7 @@ RSpec.describe ExperienceBlockLink, ".would_create_cycle?" do
   end
 
   it "does not see another tenant's ancestry when given its block ids" do
-    other = create(:tenant)
+    other = Tenant.find_by!(key: "social-quiztancing")
     foreign_a, foreign_b = ActsAsTenant.with_tenant(other) do
       a = create(:experience_block)
       b = create(:experience_block, experience: a.experience)
