@@ -1,5 +1,7 @@
 module Tenants
   class FeatureConstraint
+    attr_reader :feature
+
     def initialize(feature)
       @feature = feature
     end

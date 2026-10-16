@@ -1,8 +1,35 @@
 require "rails_helper"
 
-RSpec.describe "api route feature classification" do
-  def ungated_api_routes
+RSpec.describe "route feature classification" do
+  def mounted_paths
+    ["/cable"]
+  end
+
+  def gated_routes
     [
+      "GET /api/discover api/discover#index [discover]",
+      "GET /api/events api/events#index [events]",
+      "POST /api/events api/events#create [events]",
+      "GET /api/events/:slug api/events#show [events]",
+      "PATCH /api/events/:slug api/events#update [events]",
+      "PUT /api/events/:slug api/events#update [events]",
+      "DELETE /api/events/:slug api/events#destroy [events]",
+      "GET /api/events/:slug/ical api/events#ical [events]",
+      "GET /api/users/following api/users#following [performers]",
+      "GET /api/performers api/performers#index [performers]",
+      "POST /api/performers api/performers#create [performers]",
+      "GET /api/performers/:slug api/performers#show [performers]",
+      "PATCH /api/performers/:slug api/performers#update [performers]",
+      "PUT /api/performers/:slug api/performers#update [performers]",
+      "DELETE /api/performers/:slug api/performers#destroy [performers]",
+      "POST /api/performers/:slug/follow api/performers#follow [performers]",
+      "DELETE /api/performers/:slug/follow api/performers#unfollow [performers]",
+    ]
+  end
+
+  def ungated_routes
+    [
+      # Core experience API: experiences, blocks, segments, participants, feedback, current user.
       "DELETE /api/experiences/:experience_id/blocks/:id api/experience_blocks#destroy",
       "DELETE /api/experiences/:experience_id/blocks/:id/clear_buzzer_responses api/experience_blocks#clear_buzzer_responses",
       "DELETE /api/experiences/:experience_id/blocks/:id/family_feud/buckets/:bucket_id api/experience_blocks#delete_bucket",
@@ -100,26 +127,68 @@ RSpec.describe "api route feature classification" do
       "PUT /api/experiences/:experience_id/blocks/:id api/experience_blocks#update",
       "PUT /api/experiences/:experience_id/segments/:id api/experience_segments#update",
       "PUT /api/feedbacks/:id api/feedbacks#update",
+
+      # Health check for load balancers.
+      "GET /up rails/health#show",
+
+      # PWA manifest and service worker, served on every tenant.
+      "GET /manifest rails/pwa#manifest",
+      "GET /service-worker rails/pwa#service_worker",
+
+      # Passwordless user sign-in and sign-out.
+      "GET /users/sign_in passwordless/sessions#new",
+      "GET /users/sign_in/:id passwordless/sessions#show",
+      "GET /users/sign_in/:id/:token passwordless/sessions#confirm",
+      "GET|DELETE /users/sign_out passwordless/sessions#destroy",
+      "PATCH /users/sign_in/:id passwordless/sessions#update",
+      "POST /users/sign_in passwordless/sessions#create",
+
+      # Admin session sign-in.
+      "POST /admin/sign_in admin_sessions#create",
+
+      # Direct uploads used by blocks, avatars and feedback.
+      "POST /rails/active_storage/direct_uploads active_storage/direct_uploads#create",
+      "POST /rails/active_storage/direct_uploads api/direct_uploads#create",
+      "POST /rails/active_storage/feedback_direct_uploads api/feedback_direct_uploads#create",
+
+      # Active Storage blob, representation and disk serving.
+      "GET /rails/active_storage/blobs/:signed_id/*filename active_storage/blobs/redirect#show",
+      "GET /rails/active_storage/blobs/proxy/:signed_id/*filename active_storage/blobs/proxy#show",
+      "GET /rails/active_storage/blobs/redirect/:signed_id/*filename active_storage/blobs/redirect#show",
+      "GET /rails/active_storage/disk/:encoded_key/*filename active_storage/disk#show",
+      "GET /rails/active_storage/representations/:signed_blob_id/:variation_key/*filename active_storage/representations/redirect#show",
+      "GET /rails/active_storage/representations/proxy/:signed_blob_id/:variation_key/*filename active_storage/representations/proxy#show",
+      "GET /rails/active_storage/representations/redirect/:signed_blob_id/:variation_key/*filename active_storage/representations/redirect#show",
+      "PUT /rails/active_storage/disk/:encoded_token active_storage/disk#update",
     ]
   end
 
-  def api_routes
-    Rails.application.routes.routes.select { |route| route.path.spec.to_s.start_with?("/api/") }
+  def classifiable_routes
+    RouteClassification.routes.reject do |route|
+      RouteClassification.mounted?(route) || RouteClassification.spa?(route)
+    end
   end
 
-  def gated?(route)
-    route.app.is_a?(ActionDispatch::Routing::Mapper::Constraints) &&
-      route.app.constraints.any?(Tenants::FeatureConstraint)
+  it "mounts only the known Rack apps" do
+    mounted = RouteClassification.routes.select { |route| RouteClassification.mounted?(route) }
+
+    expect(mounted.map { |route| RouteClassification.path(route) }.uniq).to eq(mounted_paths)
   end
 
-  def label(route)
-    path = route.path.spec.to_s.delete_suffix("(.:format)")
-    "#{route.verb} #{path} #{route.defaults[:controller]}##{route.defaults[:action]}"
+  it "gates each feature route under its feature" do
+    gated = classifiable_routes.filter_map do |route|
+      feature = RouteClassification.feature_for(route)
+      "#{RouteClassification.label(route)} [#{feature}]" if feature
+    end
+
+    expect(gated.sort).to eq(gated_routes.sort)
   end
 
-  it "requires every /api route to be inside a feature constraint or on the ungated list" do
-    ungated = api_routes.reject { |route| gated?(route) }.map { |route| label(route) }
+  it "lists every route that is not feature-gated, apart from mounts and SPA routes" do
+    ungated = classifiable_routes
+      .reject { |route| RouteClassification.feature_for(route) }
+      .map { |route| RouteClassification.label(route) }
 
-    expect(ungated.sort).to eq(ungated_api_routes.sort)
+    expect(ungated.sort).to eq(ungated_routes.sort)
   end
 end
