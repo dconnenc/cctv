@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_09_20_000001) do
+ActiveRecord::Schema[7.2].define(version: 2026_10_16_000001) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "citext"
   enable_extension "plpgsql"
@@ -409,6 +409,15 @@ ActiveRecord::Schema[7.2].define(version: 2026_09_20_000001) do
     t.datetime "updated_at", null: false
     t.index ["slug"], name: "index_performers_on_slug", unique: true
     t.index ["user_id"], name: "index_performers_on_user_id", unique: true
+  end
+
+  create_table "tenants", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.string "key", null: false
+    t.string "name", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["key"], name: "index_tenants_on_key", unique: true
+    t.check_constraint "key::text ~ '^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$'::text", name: "tenants_key_format"
   end
 
   create_table "user_cosmetics", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
