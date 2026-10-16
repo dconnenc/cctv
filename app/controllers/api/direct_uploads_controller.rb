@@ -1,5 +1,6 @@
 class Api::DirectUploadsController < ActiveStorage::DirectUploadsController
   skip_forgery_protection
+  include TenantScoped
   include Passwordless::ControllerHelpers
 
   before_action :authenticate_jwt
@@ -11,13 +12,14 @@ class Api::DirectUploadsController < ActiveStorage::DirectUploadsController
     token = request.headers["Authorization"]&.to_s&.match(/\ABearer\s+(.+)\z/i)&.captures&.first
 
     if token
-      Experiences::AuthService.decode!(token)
+      claims = Experiences::AuthService.decode!(token)
+      Experiences::AuthService.verify_tenant!(claims)
     elsif session_admin?
       # Session-authenticated admin, allow
     else
       render json: { error: "Missing authorization token" }, status: :unauthorized
     end
-  rescue Experiences::AuthService::TokenInvalid, Experiences::AuthService::TokenExpired
+  rescue Experiences::AuthService::TokenInvalid, Experiences::AuthService::TokenExpired, Experiences::AuthService::Unauthorized
     render json: { error: "Invalid or expired token" }, status: :unauthorized
   end
 
