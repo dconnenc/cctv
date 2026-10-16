@@ -1,4 +1,6 @@
 class ExperienceBlockLink < ApplicationRecord
+  include Tenanted
+
   belongs_to :parent_block, class_name: "ExperienceBlock"
   belongs_to :child_block, class_name: "ExperienceBlock"
 

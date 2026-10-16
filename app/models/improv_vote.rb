@@ -1,4 +1,6 @@
 class ImprovVote < ApplicationRecord
+  include Tenanted
+
   belongs_to :experience_block
   belongs_to :experience_participant
   belongs_to :improv_suggestion

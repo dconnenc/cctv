@@ -1,4 +1,6 @@
 class Performer < ApplicationRecord
+  include Tenanted
+
   belongs_to :user
   has_many :event_performers, dependent: :destroy
   has_many :events, through: :event_performers
@@ -8,7 +10,7 @@ class Performer < ApplicationRecord
   has_one_attached :photo
 
   validates :name, presence: true, length: { maximum: 255 }
-  validates :slug, presence: true, uniqueness: true
+  validates :slug, presence: true, uniqueness: { scope: :tenant_id }
   validates :user_id, uniqueness: { message: "already has a performer profile" }
 
   before_validation :generate_slug, on: :create

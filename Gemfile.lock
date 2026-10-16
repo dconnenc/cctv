@@ -76,6 +76,8 @@ GEM
       minitest (>= 5.1, < 6)
       securerandom (>= 0.3)
       tzinfo (~> 2.0, >= 2.0.5)
+    acts_as_tenant (2.2.1)
+      rails (>= 6.0)
     addressable (2.9.0)
       public_suffix (>= 2.0.2, < 8.0)
     aws-eventstream (1.4.0)
@@ -377,6 +379,7 @@ PLATFORMS
 
 DEPENDENCIES
   action_policy
+  acts_as_tenant
   aws-sdk-s3
   bootsnap
   cuprite

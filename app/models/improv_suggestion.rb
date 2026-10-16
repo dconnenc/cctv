@@ -1,4 +1,6 @@
 class ImprovSuggestion < ApplicationRecord
+  include Tenanted
+
   MAX_LENGTH = 100
 
   belongs_to :experience_block

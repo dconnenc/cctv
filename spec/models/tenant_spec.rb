@@ -1,8 +1,6 @@
 require "rails_helper"
 
 RSpec.describe Tenant do
-  before { Tenants::Sync.call }
-
   it "has a default tenant" do
     expect(described_class.default.key).to eq("cctv")
     expect(described_class.default).to be_default

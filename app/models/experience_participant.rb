@@ -1,4 +1,6 @@
 class ExperienceParticipant < ApplicationRecord
+  include Tenanted
+
   belongs_to :experience
   belongs_to :user
 

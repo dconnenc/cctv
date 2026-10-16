@@ -1,4 +1,6 @@
 class Event < ApplicationRecord
+  include Tenanted
+
   belongs_to :creator, class_name: "User"
   belongs_to :experience, optional: true
   has_many :event_performers, -> { order(position: :asc) }, dependent: :destroy
@@ -7,7 +9,7 @@ class Event < ApplicationRecord
   validates :title, presence: true, length: { maximum: 255 }
   validates :starts_at, presence: true
   validates :ends_at, presence: true
-  validates :slug, presence: true, uniqueness: true
+  validates :slug, presence: true, uniqueness: { scope: :tenant_id }
   validate :ends_at_after_starts_at, if: -> { starts_at.present? && ends_at.present? }
 
   before_validation :generate_slug, on: :create

@@ -1,4 +1,6 @@
 class EventPerformer < ApplicationRecord
+  include Tenanted
+
   belongs_to :event
   belongs_to :performer
 

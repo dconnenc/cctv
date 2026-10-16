@@ -1,4 +1,6 @@
 class ExperienceBlock < ApplicationRecord
+  include Tenanted
+
   MAX_DEPENDENCY_DEPTH = 5
 
   KINDS = [

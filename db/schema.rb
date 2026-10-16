@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_10_16_000001) do
+ActiveRecord::Schema[7.2].define(version: 2026_10_16_000002) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "citext"
   enable_extension "plpgsql"
@@ -69,9 +69,12 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_16_000001) do
     t.datetime "updated_at", null: false
     t.string "category", default: "clothing", null: false
     t.boolean "beta_only", default: false, null: false
+    t.uuid "tenant_id", null: false
     t.index ["category"], name: "index_cosmetics_on_category"
     t.index ["default_grant"], name: "index_cosmetics_on_default_grant"
-    t.index ["slug"], name: "index_cosmetics_on_slug", unique: true
+    t.index ["tenant_id", "id"], name: "index_cosmetics_on_tenant_id_and_id", unique: true
+    t.index ["tenant_id", "slug"], name: "index_cosmetics_on_tenant_id_and_slug", unique: true
+    t.index ["tenant_id"], name: "index_cosmetics_on_tenant_id"
   end
 
   create_table "event_performers", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -80,8 +83,10 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_16_000001) do
     t.integer "position", default: 0, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.uuid "tenant_id", null: false
     t.index ["event_id", "performer_id"], name: "index_event_performers_on_event_id_and_performer_id", unique: true
     t.index ["performer_id"], name: "index_event_performers_on_performer_id"
+    t.index ["tenant_id"], name: "index_event_performers_on_tenant_id"
   end
 
   create_table "events", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -99,11 +104,14 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_16_000001) do
     t.boolean "published", default: false, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.uuid "tenant_id", null: false
     t.index ["creator_id"], name: "index_events_on_creator_id"
     t.index ["experience_id"], name: "index_events_on_experience_id"
     t.index ["published", "starts_at"], name: "index_events_on_published_and_starts_at"
-    t.index ["slug"], name: "index_events_on_slug", unique: true
     t.index ["starts_at"], name: "index_events_on_starts_at"
+    t.index ["tenant_id", "id"], name: "index_events_on_tenant_id_and_id", unique: true
+    t.index ["tenant_id", "slug"], name: "index_events_on_tenant_id_and_slug", unique: true
+    t.index ["tenant_id"], name: "index_events_on_tenant_id"
   end
 
   create_table "experience_block_links", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -113,10 +121,12 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_16_000001) do
     t.jsonb "meta", default: {}, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.uuid "tenant_id", null: false
     t.index ["child_block_id"], name: "idx_eb_links_unique_child", unique: true
     t.index ["child_block_id"], name: "index_experience_block_links_on_child_block_id"
     t.index ["parent_block_id", "child_block_id"], name: "idx_eb_links_parent_child", unique: true
     t.index ["parent_block_id"], name: "index_experience_block_links_on_parent_block_id"
+    t.index ["tenant_id"], name: "index_experience_block_links_on_tenant_id"
   end
 
   create_table "experience_block_segments", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -124,9 +134,11 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_16_000001) do
     t.uuid "experience_segment_id", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.uuid "tenant_id", null: false
     t.index ["experience_block_id", "experience_segment_id"], name: "idx_block_segments_unique", unique: true
     t.index ["experience_block_id"], name: "index_experience_block_segments_on_experience_block_id"
     t.index ["experience_segment_id"], name: "index_experience_block_segments_on_experience_segment_id"
+    t.index ["tenant_id"], name: "index_experience_block_segments_on_tenant_id"
   end
 
   create_table "experience_blocks", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -143,12 +155,15 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_16_000001) do
     t.boolean "show_in_lobby", default: false, null: false
     t.boolean "add_to_playbill", default: false, null: false
     t.boolean "playbill_mysterious", default: false, null: false
+    t.uuid "tenant_id", null: false
     t.index ["experience_id", "position"], name: "index_experience_blocks_on_experience_id_and_position"
     t.index ["experience_id", "status"], name: "index_experience_blocks_on_experience_id_and_status"
     t.index ["experience_id"], name: "index_experience_blocks_on_experience_id"
     t.index ["kind"], name: "index_experience_blocks_on_kind"
     t.index ["parent_block_id"], name: "index_experience_blocks_on_parent_block_id"
     t.index ["target_user_ids"], name: "index_experience_blocks_on_target_user_ids", using: :gin
+    t.index ["tenant_id", "id"], name: "index_experience_blocks_on_tenant_id_and_id", unique: true
+    t.index ["tenant_id"], name: "index_experience_blocks_on_tenant_id"
     t.index ["visible_to_roles"], name: "index_experience_blocks_on_visible_to_roles", using: :gin
   end
 
@@ -158,9 +173,11 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_16_000001) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.uuid "experience_participant_id", null: false
+    t.uuid "tenant_id", null: false
     t.index ["experience_block_id", "experience_participant_id"], name: "index_buzzer_submissions_on_block_and_participant", unique: true
     t.index ["experience_block_id"], name: "index_experience_buzzer_submissions_on_experience_block_id"
     t.index ["experience_participant_id"], name: "index_buzzer_submissions_on_participant_id"
+    t.index ["tenant_id"], name: "index_experience_buzzer_submissions_on_tenant_id"
   end
 
   create_table "experience_collaborative_drawing_assignments", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -174,10 +191,12 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_16_000001) do
     t.datetime "submitted_at"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.uuid "tenant_id", null: false
     t.index ["experience_block_id", "experience_participant_id"], name: "index_collab_drawing_assignments_unique", unique: true
     t.index ["experience_block_id", "group_index", "slice_index"], name: "index_collab_drawing_assignments_on_slot"
     t.index ["experience_block_id"], name: "index_collab_drawing_assignments_on_block_id"
     t.index ["experience_participant_id"], name: "index_collab_drawing_assignments_on_participant_id"
+    t.index ["tenant_id"], name: "idx_on_tenant_id_aaf4af7841"
   end
 
   create_table "experience_collaborative_drawing_photos", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -186,9 +205,11 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_16_000001) do
     t.jsonb "answer", default: {}, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.uuid "tenant_id", null: false
     t.index ["experience_block_id", "experience_participant_id"], name: "index_collab_drawing_photos_unique", unique: true
     t.index ["experience_block_id"], name: "index_collab_drawing_photos_on_block_id"
     t.index ["experience_participant_id"], name: "index_collab_drawing_photos_on_participant_id"
+    t.index ["tenant_id"], name: "index_experience_collaborative_drawing_photos_on_tenant_id"
   end
 
   create_table "experience_minigame_balloon_results", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -197,10 +218,12 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_16_000001) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.uuid "experience_participant_id", null: false
+    t.uuid "tenant_id", null: false
     t.index ["experience_block_id", "experience_participant_id"], name: "index_balloon_results_unique", unique: true
     t.index ["experience_block_id", "fill_amount"], name: "index_balloon_results_by_fill", order: { fill_amount: :desc }
     t.index ["experience_block_id"], name: "idx_on_experience_block_id_7a1bd4ca9d"
     t.index ["experience_participant_id"], name: "index_balloon_results_on_participant_id"
+    t.index ["tenant_id"], name: "index_experience_minigame_balloon_results_on_tenant_id"
   end
 
   create_table "experience_minigame_submissions", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -212,9 +235,11 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_16_000001) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.uuid "experience_participant_id", null: false
+    t.uuid "tenant_id", null: false
     t.index ["experience_block_id", "experience_participant_id", "question_index"], name: "index_minigame_submissions_unique", unique: true
     t.index ["experience_block_id"], name: "index_experience_minigame_submissions_on_experience_block_id"
     t.index ["experience_participant_id"], name: "index_minigame_submissions_on_participant_id"
+    t.index ["tenant_id"], name: "index_experience_minigame_submissions_on_tenant_id"
   end
 
   create_table "experience_newsletter_submissions", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -223,9 +248,11 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_16_000001) do
     t.jsonb "answer", default: {}, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.uuid "tenant_id", null: false
     t.index ["experience_block_id", "experience_participant_id"], name: "index_newsletter_submissions_on_block_and_participant", unique: true
     t.index ["experience_block_id"], name: "index_experience_newsletter_submissions_on_experience_block_id"
     t.index ["experience_participant_id"], name: "idx_on_experience_participant_id_00a6732869"
+    t.index ["tenant_id"], name: "index_experience_newsletter_submissions_on_tenant_id"
   end
 
   create_table "experience_participant_segments", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -233,9 +260,11 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_16_000001) do
     t.uuid "experience_segment_id", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.uuid "tenant_id", null: false
     t.index ["experience_participant_id", "experience_segment_id"], name: "idx_participant_segments_unique", unique: true
     t.index ["experience_participant_id"], name: "idx_on_experience_participant_id_8a3a1e02cd"
     t.index ["experience_segment_id"], name: "index_experience_participant_segments_on_experience_segment_id"
+    t.index ["tenant_id"], name: "index_experience_participant_segments_on_tenant_id"
   end
 
   create_table "experience_participants", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -249,11 +278,14 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_16_000001) do
     t.enum "role", default: "audience", null: false, enum_type: "experience_participant_roles"
     t.string "name", null: false
     t.jsonb "avatar", default: {}, null: false
+    t.uuid "tenant_id", null: false
     t.index ["avatar"], name: "index_experience_participants_on_avatar", using: :gin
     t.index ["experience_id", "status"], name: "index_experience_participants_on_experience_id_and_status"
     t.index ["experience_id"], name: "index_experience_participants_on_experience_id"
     t.index ["fingerprint"], name: "index_experience_participants_on_fingerprint"
     t.index ["role"], name: "index_experience_participants_on_role"
+    t.index ["tenant_id", "id"], name: "index_experience_participants_on_tenant_id_and_id", unique: true
+    t.index ["tenant_id"], name: "index_experience_participants_on_tenant_id"
     t.index ["user_id", "experience_id"], name: "index_experience_participants_on_user_id_and_experience_id", unique: true
     t.index ["user_id"], name: "index_experience_participants_on_user_id"
   end
@@ -264,8 +296,10 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_16_000001) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.uuid "experience_participant_id", null: false
+    t.uuid "tenant_id", null: false
     t.index ["experience_block_id"], name: "index_experience_photo_upload_submissions_on_block_id"
     t.index ["experience_participant_id"], name: "index_photo_upload_submissions_on_participant_id"
+    t.index ["tenant_id"], name: "index_experience_photo_upload_submissions_on_tenant_id"
   end
 
   create_table "experience_poll_submissions", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -274,8 +308,10 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_16_000001) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.uuid "experience_participant_id", null: false
+    t.uuid "tenant_id", null: false
     t.index ["experience_block_id"], name: "index_experience_poll_submissions_on_experience_block_id"
     t.index ["experience_participant_id"], name: "index_poll_submissions_on_participant_id"
+    t.index ["tenant_id"], name: "index_experience_poll_submissions_on_tenant_id"
   end
 
   create_table "experience_question_submissions", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -285,8 +321,10 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_16_000001) do
     t.datetime "updated_at", null: false
     t.uuid "experience_participant_id"
     t.string "source", default: "participant", null: false
+    t.uuid "tenant_id", null: false
     t.index ["experience_block_id"], name: "index_experience_question_submissions_on_experience_block_id"
     t.index ["experience_participant_id"], name: "index_question_submissions_on_participant_id"
+    t.index ["tenant_id"], name: "index_experience_question_submissions_on_tenant_id"
   end
 
   create_table "experience_segments", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -296,8 +334,11 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_16_000001) do
     t.integer "position", default: 0, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.uuid "tenant_id", null: false
     t.index ["experience_id", "name"], name: "index_experience_segments_on_experience_id_and_name", unique: true
     t.index ["experience_id", "position"], name: "index_experience_segments_on_experience_id_and_position", unique: true
+    t.index ["tenant_id", "id"], name: "index_experience_segments_on_tenant_id_and_id", unique: true
+    t.index ["tenant_id"], name: "index_experience_segments_on_tenant_id"
   end
 
   create_table "experiences", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -315,10 +356,14 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_16_000001) do
     t.jsonb "playbill", default: [], null: false
     t.boolean "playbill_enabled", default: true, null: false
     t.uuid "default_segment_id"
-    t.index ["code_slug"], name: "index_experiences_on_code_slug", unique: true
+    t.uuid "tenant_id", null: false
     t.index ["creator_id"], name: "index_experiences_on_creator_id"
     t.index ["default_segment_id"], name: "index_experiences_on_default_segment_id"
     t.index ["status"], name: "index_experiences_on_status"
+    t.index ["tenant_id", "code"], name: "index_experiences_on_tenant_id_and_code", unique: true
+    t.index ["tenant_id", "code_slug"], name: "index_experiences_on_tenant_id_and_code_slug", unique: true
+    t.index ["tenant_id", "id"], name: "index_experiences_on_tenant_id_and_id", unique: true
+    t.index ["tenant_id"], name: "index_experiences_on_tenant_id"
   end
 
   create_table "feedbacks", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -343,11 +388,13 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_16_000001) do
     t.datetime "linear_synced_at"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.uuid "tenant_id", null: false
     t.index ["error_fingerprint", "created_at"], name: "index_feedbacks_on_error_fingerprint_and_created_at"
     t.index ["experience_block_id"], name: "index_feedbacks_on_experience_block_id"
     t.index ["experience_id"], name: "index_feedbacks_on_experience_id"
     t.index ["linear_parent_feedback_id"], name: "index_feedbacks_on_linear_parent_feedback_id"
     t.index ["sync_status"], name: "index_feedbacks_on_sync_status"
+    t.index ["tenant_id"], name: "index_feedbacks_on_tenant_id"
     t.index ["user_id"], name: "index_feedbacks_on_user_id"
   end
 
@@ -356,7 +403,9 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_16_000001) do
     t.uuid "performer_id", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.uuid "tenant_id", null: false
     t.index ["performer_id"], name: "index_follows_on_performer_id"
+    t.index ["tenant_id"], name: "index_follows_on_tenant_id"
     t.index ["user_id", "performer_id"], name: "index_follows_on_user_id_and_performer_id", unique: true
   end
 
@@ -367,9 +416,12 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_16_000001) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.uuid "experience_participant_id", null: false
+    t.uuid "tenant_id", null: false
     t.index ["experience_block_id", "experience_participant_id"], name: "index_improv_suggestions_one_active_per_participant", unique: true, where: "(cleared_at IS NULL)"
     t.index ["experience_block_id"], name: "index_improv_suggestions_on_experience_block_id"
     t.index ["experience_participant_id"], name: "index_improv_suggestions_on_participant_id"
+    t.index ["tenant_id", "id"], name: "index_improv_suggestions_on_tenant_id_and_id", unique: true
+    t.index ["tenant_id"], name: "index_improv_suggestions_on_tenant_id"
   end
 
   create_table "improv_votes", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -379,11 +431,13 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_16_000001) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.uuid "experience_participant_id", null: false
+    t.uuid "tenant_id", null: false
     t.index ["experience_block_id", "experience_participant_id", "scene_started_at"], name: "index_improv_votes_one_per_participant_per_scene", unique: true
     t.index ["experience_block_id", "scene_started_at", "improv_suggestion_id"], name: "index_improv_votes_for_tally"
     t.index ["experience_block_id"], name: "index_improv_votes_on_experience_block_id"
     t.index ["experience_participant_id"], name: "index_improv_votes_on_participant_id"
     t.index ["improv_suggestion_id"], name: "index_improv_votes_on_improv_suggestion_id"
+    t.index ["tenant_id"], name: "index_improv_votes_on_tenant_id"
   end
 
   create_table "passwordless_sessions", force: :cascade do |t|
@@ -407,7 +461,10 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_16_000001) do
     t.string "slug", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["slug"], name: "index_performers_on_slug", unique: true
+    t.uuid "tenant_id", null: false
+    t.index ["tenant_id", "id"], name: "index_performers_on_tenant_id_and_id", unique: true
+    t.index ["tenant_id", "slug"], name: "index_performers_on_tenant_id_and_slug", unique: true
+    t.index ["tenant_id"], name: "index_performers_on_tenant_id"
     t.index ["user_id"], name: "index_performers_on_user_id", unique: true
   end
 
@@ -427,7 +484,9 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_16_000001) do
     t.string "source", default: "grant", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.uuid "tenant_id", null: false
     t.index ["cosmetic_id"], name: "index_user_cosmetics_on_cosmetic_id"
+    t.index ["tenant_id"], name: "index_user_cosmetics_on_tenant_id"
     t.index ["user_id", "cosmetic_id"], name: "index_user_cosmetics_on_user_id_and_cosmetic_id", unique: true
   end
 
@@ -439,55 +498,84 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_16_000001) do
     t.enum "role", default: "user", null: false, enum_type: "user_roles"
     t.virtual "admin", type: :boolean, as: "\nCASE\n    WHEN (role = 'admin'::user_roles) THEN true\n    ELSE false\nEND", stored: true
     t.virtual "super_admin", type: :boolean, as: "\nCASE\n    WHEN (role = 'superadmin'::user_roles) THEN true\n    ELSE false\nEND", stored: true
-    t.index ["email"], name: "index_users_on_email", unique: true
+    t.uuid "tenant_id", null: false
+    t.index ["tenant_id", "email"], name: "index_users_on_tenant_id_and_email", unique: true
+    t.index ["tenant_id", "id"], name: "index_users_on_tenant_id_and_id", unique: true
+    t.index ["tenant_id"], name: "index_users_on_tenant_id"
   end
 
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
-  add_foreign_key "event_performers", "events", on_delete: :cascade
-  add_foreign_key "event_performers", "performers", on_delete: :cascade
+  add_foreign_key "cosmetics", "tenants", on_delete: :restrict
+  add_foreign_key "event_performers", "events", column: ["tenant_id", "event_id"], primary_key: ["tenant_id", "id"], on_delete: :cascade
+  add_foreign_key "event_performers", "performers", column: ["tenant_id", "performer_id"], primary_key: ["tenant_id", "id"], on_delete: :cascade
+  add_foreign_key "event_performers", "tenants", on_delete: :restrict
   add_foreign_key "events", "experiences", on_delete: :nullify
-  add_foreign_key "events", "users", column: "creator_id", on_delete: :cascade
-  add_foreign_key "experience_block_links", "experience_blocks", column: "child_block_id", on_delete: :cascade
-  add_foreign_key "experience_block_links", "experience_blocks", column: "parent_block_id", on_delete: :cascade
-  add_foreign_key "experience_block_segments", "experience_blocks", on_delete: :cascade
-  add_foreign_key "experience_block_segments", "experience_segments", on_delete: :cascade
-  add_foreign_key "experience_blocks", "experience_blocks", column: "parent_block_id"
-  add_foreign_key "experience_blocks", "experiences", on_delete: :cascade
-  add_foreign_key "experience_buzzer_submissions", "experience_blocks", on_delete: :cascade
-  add_foreign_key "experience_buzzer_submissions", "experience_participants", on_delete: :cascade
-  add_foreign_key "experience_minigame_balloon_results", "experience_blocks", on_delete: :cascade
-  add_foreign_key "experience_minigame_balloon_results", "experience_participants", on_delete: :cascade
-  add_foreign_key "experience_minigame_submissions", "experience_blocks", on_delete: :cascade
-  add_foreign_key "experience_minigame_submissions", "experience_participants", on_delete: :cascade
-  add_foreign_key "experience_newsletter_submissions", "experience_blocks", on_delete: :cascade
-  add_foreign_key "experience_newsletter_submissions", "experience_participants", on_delete: :cascade
-  add_foreign_key "experience_participant_segments", "experience_participants", on_delete: :cascade
-  add_foreign_key "experience_participant_segments", "experience_segments", on_delete: :cascade
-  add_foreign_key "experience_participants", "experiences", on_delete: :cascade
-  add_foreign_key "experience_participants", "users", on_delete: :cascade
-  add_foreign_key "experience_photo_upload_submissions", "experience_blocks", on_delete: :cascade
-  add_foreign_key "experience_photo_upload_submissions", "experience_participants", on_delete: :cascade
-  add_foreign_key "experience_poll_submissions", "experience_blocks", on_delete: :cascade
-  add_foreign_key "experience_poll_submissions", "experience_participants", on_delete: :cascade
-  add_foreign_key "experience_question_submissions", "experience_blocks", on_delete: :cascade
-  add_foreign_key "experience_question_submissions", "experience_participants", on_delete: :cascade
-  add_foreign_key "experience_segments", "experiences", on_delete: :cascade
+  add_foreign_key "events", "tenants", on_delete: :restrict
+  add_foreign_key "events", "users", column: ["tenant_id", "creator_id"], primary_key: ["tenant_id", "id"], on_delete: :cascade
+  add_foreign_key "experience_block_links", "experience_blocks", column: ["tenant_id", "child_block_id"], primary_key: ["tenant_id", "id"], on_delete: :cascade
+  add_foreign_key "experience_block_links", "experience_blocks", column: ["tenant_id", "parent_block_id"], primary_key: ["tenant_id", "id"], on_delete: :cascade
+  add_foreign_key "experience_block_links", "tenants", on_delete: :restrict
+  add_foreign_key "experience_block_segments", "experience_blocks", column: ["tenant_id", "experience_block_id"], primary_key: ["tenant_id", "id"], on_delete: :cascade
+  add_foreign_key "experience_block_segments", "experience_segments", column: ["tenant_id", "experience_segment_id"], primary_key: ["tenant_id", "id"], on_delete: :cascade
+  add_foreign_key "experience_block_segments", "tenants", on_delete: :restrict
+  add_foreign_key "experience_blocks", "experience_blocks", column: ["tenant_id", "parent_block_id"], primary_key: ["tenant_id", "id"]
+  add_foreign_key "experience_blocks", "experiences", column: ["tenant_id", "experience_id"], primary_key: ["tenant_id", "id"], on_delete: :cascade
+  add_foreign_key "experience_blocks", "tenants", on_delete: :restrict
+  add_foreign_key "experience_buzzer_submissions", "experience_blocks", column: ["tenant_id", "experience_block_id"], primary_key: ["tenant_id", "id"], on_delete: :cascade
+  add_foreign_key "experience_buzzer_submissions", "experience_participants", column: ["tenant_id", "experience_participant_id"], primary_key: ["tenant_id", "id"], on_delete: :cascade
+  add_foreign_key "experience_buzzer_submissions", "tenants", on_delete: :restrict
+  add_foreign_key "experience_collaborative_drawing_assignments", "tenants", on_delete: :restrict
+  add_foreign_key "experience_collaborative_drawing_photos", "tenants", on_delete: :restrict
+  add_foreign_key "experience_minigame_balloon_results", "experience_blocks", column: ["tenant_id", "experience_block_id"], primary_key: ["tenant_id", "id"], on_delete: :cascade
+  add_foreign_key "experience_minigame_balloon_results", "experience_participants", column: ["tenant_id", "experience_participant_id"], primary_key: ["tenant_id", "id"], on_delete: :cascade
+  add_foreign_key "experience_minigame_balloon_results", "tenants", on_delete: :restrict
+  add_foreign_key "experience_minigame_submissions", "experience_blocks", column: ["tenant_id", "experience_block_id"], primary_key: ["tenant_id", "id"], on_delete: :cascade
+  add_foreign_key "experience_minigame_submissions", "experience_participants", column: ["tenant_id", "experience_participant_id"], primary_key: ["tenant_id", "id"], on_delete: :cascade
+  add_foreign_key "experience_minigame_submissions", "tenants", on_delete: :restrict
+  add_foreign_key "experience_newsletter_submissions", "experience_blocks", column: ["tenant_id", "experience_block_id"], primary_key: ["tenant_id", "id"], on_delete: :cascade
+  add_foreign_key "experience_newsletter_submissions", "experience_participants", column: ["tenant_id", "experience_participant_id"], primary_key: ["tenant_id", "id"], on_delete: :cascade
+  add_foreign_key "experience_newsletter_submissions", "tenants", on_delete: :restrict
+  add_foreign_key "experience_participant_segments", "experience_participants", column: ["tenant_id", "experience_participant_id"], primary_key: ["tenant_id", "id"], on_delete: :cascade
+  add_foreign_key "experience_participant_segments", "experience_segments", column: ["tenant_id", "experience_segment_id"], primary_key: ["tenant_id", "id"], on_delete: :cascade
+  add_foreign_key "experience_participant_segments", "tenants", on_delete: :restrict
+  add_foreign_key "experience_participants", "experiences", column: ["tenant_id", "experience_id"], primary_key: ["tenant_id", "id"], on_delete: :cascade
+  add_foreign_key "experience_participants", "tenants", on_delete: :restrict
+  add_foreign_key "experience_participants", "users", column: ["tenant_id", "user_id"], primary_key: ["tenant_id", "id"], on_delete: :cascade
+  add_foreign_key "experience_photo_upload_submissions", "experience_blocks", column: ["tenant_id", "experience_block_id"], primary_key: ["tenant_id", "id"], on_delete: :cascade
+  add_foreign_key "experience_photo_upload_submissions", "experience_participants", column: ["tenant_id", "experience_participant_id"], primary_key: ["tenant_id", "id"], on_delete: :cascade
+  add_foreign_key "experience_photo_upload_submissions", "tenants", on_delete: :restrict
+  add_foreign_key "experience_poll_submissions", "experience_blocks", column: ["tenant_id", "experience_block_id"], primary_key: ["tenant_id", "id"], on_delete: :cascade
+  add_foreign_key "experience_poll_submissions", "experience_participants", column: ["tenant_id", "experience_participant_id"], primary_key: ["tenant_id", "id"], on_delete: :cascade
+  add_foreign_key "experience_poll_submissions", "tenants", on_delete: :restrict
+  add_foreign_key "experience_question_submissions", "experience_blocks", column: ["tenant_id", "experience_block_id"], primary_key: ["tenant_id", "id"], on_delete: :cascade
+  add_foreign_key "experience_question_submissions", "experience_participants", column: ["tenant_id", "experience_participant_id"], primary_key: ["tenant_id", "id"], on_delete: :cascade
+  add_foreign_key "experience_question_submissions", "tenants", on_delete: :restrict
+  add_foreign_key "experience_segments", "experiences", column: ["tenant_id", "experience_id"], primary_key: ["tenant_id", "id"], on_delete: :cascade
+  add_foreign_key "experience_segments", "tenants", on_delete: :restrict
   add_foreign_key "experiences", "experience_segments", column: "default_segment_id", on_delete: :nullify
-  add_foreign_key "experiences", "users", column: "creator_id", on_delete: :cascade
-  add_foreign_key "feedbacks", "experience_blocks", on_delete: :cascade
+  add_foreign_key "experiences", "tenants", on_delete: :restrict
+  add_foreign_key "experiences", "users", column: ["tenant_id", "creator_id"], primary_key: ["tenant_id", "id"], on_delete: :cascade
+  add_foreign_key "feedbacks", "experience_blocks", column: ["tenant_id", "experience_block_id"], primary_key: ["tenant_id", "id"], on_delete: :cascade
   add_foreign_key "feedbacks", "experience_participants", on_delete: :nullify
-  add_foreign_key "feedbacks", "experiences", on_delete: :cascade
+  add_foreign_key "feedbacks", "experiences", column: ["tenant_id", "experience_id"], primary_key: ["tenant_id", "id"], on_delete: :cascade
   add_foreign_key "feedbacks", "feedbacks", column: "linear_parent_feedback_id", on_delete: :nullify
+  add_foreign_key "feedbacks", "tenants", on_delete: :restrict
   add_foreign_key "feedbacks", "users", on_delete: :nullify
-  add_foreign_key "follows", "performers", on_delete: :cascade
-  add_foreign_key "follows", "users", on_delete: :cascade
-  add_foreign_key "improv_suggestions", "experience_blocks", on_delete: :cascade
-  add_foreign_key "improv_suggestions", "experience_participants", on_delete: :cascade
-  add_foreign_key "improv_votes", "experience_blocks", on_delete: :cascade
-  add_foreign_key "improv_votes", "experience_participants", on_delete: :cascade
-  add_foreign_key "improv_votes", "improv_suggestions", on_delete: :cascade
-  add_foreign_key "performers", "users", on_delete: :cascade
-  add_foreign_key "user_cosmetics", "cosmetics", on_delete: :cascade
-  add_foreign_key "user_cosmetics", "users", on_delete: :cascade
+  add_foreign_key "follows", "performers", column: ["tenant_id", "performer_id"], primary_key: ["tenant_id", "id"], on_delete: :cascade
+  add_foreign_key "follows", "tenants", on_delete: :restrict
+  add_foreign_key "follows", "users", column: ["tenant_id", "user_id"], primary_key: ["tenant_id", "id"], on_delete: :cascade
+  add_foreign_key "improv_suggestions", "experience_blocks", column: ["tenant_id", "experience_block_id"], primary_key: ["tenant_id", "id"], on_delete: :cascade
+  add_foreign_key "improv_suggestions", "experience_participants", column: ["tenant_id", "experience_participant_id"], primary_key: ["tenant_id", "id"], on_delete: :cascade
+  add_foreign_key "improv_suggestions", "tenants", on_delete: :restrict
+  add_foreign_key "improv_votes", "experience_blocks", column: ["tenant_id", "experience_block_id"], primary_key: ["tenant_id", "id"], on_delete: :cascade
+  add_foreign_key "improv_votes", "experience_participants", column: ["tenant_id", "experience_participant_id"], primary_key: ["tenant_id", "id"], on_delete: :cascade
+  add_foreign_key "improv_votes", "improv_suggestions", column: ["tenant_id", "improv_suggestion_id"], primary_key: ["tenant_id", "id"], on_delete: :cascade
+  add_foreign_key "improv_votes", "tenants", on_delete: :restrict
+  add_foreign_key "performers", "tenants", on_delete: :restrict
+  add_foreign_key "performers", "users", column: ["tenant_id", "user_id"], primary_key: ["tenant_id", "id"], on_delete: :cascade
+  add_foreign_key "user_cosmetics", "cosmetics", column: ["tenant_id", "cosmetic_id"], primary_key: ["tenant_id", "id"], on_delete: :cascade
+  add_foreign_key "user_cosmetics", "tenants", on_delete: :restrict
+  add_foreign_key "user_cosmetics", "users", column: ["tenant_id", "user_id"], primary_key: ["tenant_id", "id"], on_delete: :cascade
+  add_foreign_key "users", "tenants", on_delete: :restrict
 end
