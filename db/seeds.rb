@@ -10,14 +10,6 @@
 Tenants::Sync.call
 
 ActsAsTenant.with_tenant(Tenant.default) do
-  superadmins = [
-    ["jared.shay@gmail.com", "Jared"],
-    ["dconnenc@gmail.com", "Dillon"],
-    ["cam9548@gmail.com", "Cam"]
-  ].map do |email, name|
-    User.find_or_create_by!(name: name, email: email, role: "superadmin")
-  end
-
   Cosmetic.find_or_create_by!(slug: "top-hat") do |cosmetic|
     cosmetic.name             = "Top Hat"
     cosmetic.kind             = "hat"
@@ -87,6 +79,6 @@ ActsAsTenant.with_tenant(Tenant.default) do
     event.venue_address = "1331 N Milwaukee Ave, Chicago, IL 60622"
     event.ticket_url    = "https://thedentheatre.com/performances/2026/6/11/chicago-comedy-social-technical-expo-the-den-theatre-comedy-club-chicago"
     event.published     = true
-    event.creator       = superadmins.first
+    event.creator       = User.where(role: "superadmin").order(:id).first!
   end
 end
