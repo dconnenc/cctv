@@ -134,7 +134,7 @@ function drawAdmitOneBand(
 
 interface TicketBrand {
   displayName: string;
-  tagline: string;
+  ticketTagline: string;
 }
 
 function createTopHalfTexture(
@@ -178,7 +178,7 @@ function createTopHalfTexture(
   ctx.font = '700 26px "Bebas Neue", Impact, sans-serif';
   ctx.fillText(`★  ${brand.displayName.toUpperCase()}  ★`, contentCenter, headerTop);
   ctx.font = '500 14px "Bebas Neue", Impact, sans-serif';
-  ctx.fillText(brand.tagline, contentCenter, headerTop + 34);
+  if (brand.ticketTagline) ctx.fillText(brand.ticketTagline, contentCenter, headerTop + 34);
 
   ctx.strokeStyle = colors.ink;
   ctx.lineWidth = 1.5;

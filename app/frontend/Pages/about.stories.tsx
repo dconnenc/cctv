@@ -22,7 +22,7 @@ export const TenantWithoutTagline: Story = {
         config={{
           ...DEFAULT_TENANT_CONFIG,
           features: [],
-          theme: { displayName: 'Social Quiztancing', tagline: '' },
+          theme: { displayName: 'Social Quiztancing', tagline: '', ticketTagline: '' },
         }}
       >
         <Story />

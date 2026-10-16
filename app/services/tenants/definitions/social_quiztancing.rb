@@ -8,6 +8,7 @@ module Tenants
       theme: {
         display_name: "Social Quiztancing",
         tagline: "",
+        ticket_tagline: "",
         site_name: "Social Quiztancing",
         description: "Live interactive quizzes for distanced crowds.",
         css_variables: {

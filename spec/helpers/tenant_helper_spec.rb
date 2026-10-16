@@ -12,7 +12,11 @@ RSpec.describe TenantHelper, type: :helper do
     expect(json).to include("key" => "cctv", "name" => "CCTV")
     expect(json["features"]).to match_array(Tenants::Config::FEATURES)
     expect(json["blocks"]).to match_array(ExperienceBlock::KINDS)
-    expect(json["theme"]).to eq("displayName" => "CCTV", "tagline" => "CHICAGO COMEDY . TV")
+    expect(json["theme"]).to eq(
+      "displayName" => "CCTV",
+      "tagline" => "CHICAGO COMEDY . TV",
+      "ticketTagline" => "CHICAGO COMEDY TV",
+    )
   end
 
   it "reflects a restricted tenant" do

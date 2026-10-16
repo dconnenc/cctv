@@ -7,6 +7,7 @@ module Tenants
 
     attribute :display_name, Types::Strict::String.constrained(min_size: 1)
     attribute :tagline, Types::Strict::String
+    attribute :ticket_tagline, Types::Strict::String
     attribute :site_name, Types::Strict::String.constrained(min_size: 1)
     attribute :description, Types::Strict::String.constrained(min_size: 1)
     attribute :css_variables,

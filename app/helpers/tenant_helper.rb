@@ -8,7 +8,11 @@ module TenantHelper
       name: config.name,
       features: config.features,
       blocks: config.blocks,
-      theme: { displayName: config.theme.display_name, tagline: config.theme.tagline },
+      theme: {
+        displayName: config.theme.display_name,
+        tagline: config.theme.tagline,
+        ticketTagline: config.theme.ticket_tagline,
+      },
     }
 
     content_tag(

@@ -7,7 +7,7 @@ RSpec.describe Tenants::Config do
       name: "Acme",
       blocks: %w[poll question],
       features: %w[events],
-      theme: { display_name: "Acme", tagline: "ACME TV", site_name: "acme.tv", description: "About Acme" },
+      theme: { display_name: "Acme", tagline: "ACME TV", ticket_tagline: "ACME", site_name: "acme.tv", description: "About Acme" },
     }
   end
 
@@ -56,7 +56,7 @@ RSpec.describe Tenants::Config do
 
   describe "theme" do
     let(:theme) do
-      { display_name: "Acme", tagline: "ACME TV", site_name: "acme.tv", description: "About Acme" }
+      { display_name: "Acme", tagline: "ACME TV", ticket_tagline: "ACME", site_name: "acme.tv", description: "About Acme" }
     end
 
     it "defaults css variables to empty" do
@@ -81,6 +81,12 @@ RSpec.describe Tenants::Config do
         expect { described_class.new(attributes.merge(theme: theme.merge(css_variables: { "--x" => value }))) }
           .to raise_error(Dry::Struct::Error), "expected #{value.inspect} to be rejected"
       end
+    end
+
+    it "requires a ticket tagline but allows it to be empty" do
+      expect { described_class.new(attributes.merge(theme: theme.except(:ticket_tagline))) }
+        .to raise_error(Dry::Struct::Error)
+      expect(described_class.new(attributes.merge(theme: theme.merge(ticket_tagline: ""))).theme.ticket_tagline).to eq("")
     end
 
     it "requires site name and description" do

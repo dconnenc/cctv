@@ -7,7 +7,7 @@ RSpec.describe Tenants::Registry do
       name: key,
       blocks: %w[poll],
       features: [],
-      theme: { display_name: key, tagline: key, site_name: key, description: key },
+      theme: { display_name: key, tagline: key, ticket_tagline: key, site_name: key, description: key },
     )
   end
 

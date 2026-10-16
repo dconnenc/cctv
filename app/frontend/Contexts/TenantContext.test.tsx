@@ -47,7 +47,7 @@ describe('readTenantConfig', () => {
         name: 'Quiz',
         features: [],
         blocks: ['poll'],
-        theme: { displayName: 'Quiz', tagline: '' },
+        theme: { displayName: 'Quiz', tagline: '', ticketTagline: '' },
       }),
     );
 
@@ -56,7 +56,7 @@ describe('readTenantConfig', () => {
       name: 'Quiz',
       features: [],
       blocks: ['poll'],
-      theme: { displayName: 'Quiz', tagline: '' },
+      theme: { displayName: 'Quiz', tagline: '', ticketTagline: '' },
     });
   });
 
@@ -67,11 +67,15 @@ describe('readTenantConfig', () => {
         name: 'Quiz',
         features: [],
         blocks: ['poll'],
-        theme: { displayName: 'Quiz', tagline: 'QUIZ NIGHT' },
+        theme: { displayName: 'Quiz', tagline: 'QUIZ NIGHT', ticketTagline: 'QUIZ' },
       }),
     );
 
-    expect(readTenantConfig().theme).toEqual({ displayName: 'Quiz', tagline: 'QUIZ NIGHT' });
+    expect(readTenantConfig().theme).toEqual({
+      displayName: 'Quiz',
+      tagline: 'QUIZ NIGHT',
+      ticketTagline: 'QUIZ',
+    });
   });
 
   it('falls back to the default config when the tagline is missing', () => {
@@ -88,6 +92,28 @@ describe('readTenantConfig', () => {
     expect(readTenantConfig()).toEqual(DEFAULT_TENANT_CONFIG);
   });
 
+  it('falls back to the default config when the ticket tagline is missing', () => {
+    writeConfig(
+      JSON.stringify({
+        key: 'quiz',
+        name: 'Quiz',
+        features: [],
+        blocks: ['poll'],
+        theme: { displayName: 'Quiz', tagline: '' },
+      }),
+    );
+
+    expect(readTenantConfig()).toEqual(DEFAULT_TENANT_CONFIG);
+  });
+
+  it('defaults to the CCTV brand', () => {
+    expect(DEFAULT_TENANT_CONFIG.theme).toEqual({
+      displayName: 'CCTV',
+      tagline: 'CHICAGO COMEDY . TV',
+      ticketTagline: 'CHICAGO COMEDY TV',
+    });
+  });
+
   it('drops unknown features and non-string blocks', () => {
     writeConfig(
       JSON.stringify({
@@ -95,7 +121,7 @@ describe('readTenantConfig', () => {
         name: 'Quiz',
         features: ['events', 'teleport'],
         blocks: ['poll', 7],
-        theme: { displayName: 'Quiz', tagline: '' },
+        theme: { displayName: 'Quiz', tagline: '', ticketTagline: '' },
       }),
     );
 
@@ -109,7 +135,7 @@ describe('useTenant', () => {
     name: 'Quiz',
     features: [],
     blocks: ['poll'],
-    theme: { displayName: 'Quiz', tagline: '' },
+    theme: { displayName: 'Quiz', tagline: '', ticketTagline: '' },
   };
 
   it('answers feature and block queries from the provided config', () => {
