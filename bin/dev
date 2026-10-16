@@ -13,9 +13,8 @@ set +a
 offset=$(printf '%s' "$PWD" | cksum | awk '{print $1 % 100}')
 export PORT="${PORT:-$((3000 + offset))}"
 export VITE_RUBY_PORT="${VITE_RUBY_PORT:-$((3100 + offset))}"
-export APP_BASE_URL="${APP_BASE_URL:-http://127.0.0.1:${PORT}}"
 
-echo "→ Rails http://127.0.0.1:${PORT}  Vite http://127.0.0.1:${VITE_RUBY_PORT}  DB ${DATABASE_NAME:-cctv_development}"
+echo "→ Rails http://localhost:${PORT}  Vite http://127.0.0.1:${VITE_RUBY_PORT}  DB ${DATABASE_NAME:-cctv_development}"
 
 command -v foreman &>/dev/null || gem install foreman
 

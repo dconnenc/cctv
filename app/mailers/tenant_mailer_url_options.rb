@@ -1,9 +1,8 @@
 module TenantMailerUrlOptions
   def default_url_options
-    options = super
     tenant = ActsAsTenant.current_tenant
-    return options if tenant.nil? || tenant.default?
+    raise ActsAsTenant::Errors::NoTenantSet if tenant.nil?
 
-    options.merge(host: Tenants::Hosts.host_for(tenant))
+    super.merge(Tenants::Hosts.mailer_options(tenant))
   end
 end

@@ -1,7 +1,7 @@
 require "active_support/core_ext/integer/time"
 
 Rails.application.configure do
-  config.x.tenants.base_domain = "localhost"
+  config.x.tenants.base_url = "http://localhost:#{ENV.fetch("PORT", 3000)}"
 
   # Settings specified here will take precedence over those in config/application.rb.
 
@@ -19,7 +19,6 @@ Rails.application.configure do
   # Enable server timing.
   config.server_timing = true
 
-  config.action_mailer.default_url_options = { host: "localhost", port: 5100 }
   config.action_mailer.delivery_method = :letter_opener
   config.action_mailer.perform_deliveries = true
   config.action_mailer.raise_delivery_errors = true

@@ -139,7 +139,7 @@ tenanted query with no tenant raises.
 
 - Tenant is resolved from the request host (`Tenants::Resolver`): the base domain or
   any non-matching host is `cctv`; `<key>.<base>` is that tenant; unknown subdomains 404.
-  `TENANT_BASE_DOMAIN` is the base domain.
+  The site host comes from `APP_BASE_URL` (required in production, apex only); `Tenants::Hosts` is the only reader.
 - Tenants are defined in code: `app/services/tenants/definitions/<name>.rb` builds a
   `Tenants::Config` (Dry::Struct). `rails tenants:sync` (run on deploy) upserts the
   `tenants` rows and one superadmin per `SUPERADMIN_EMAILS` entry per tenant.
