@@ -1,20 +1,20 @@
 class SpaController < ApplicationController
-  SITE_NAME = "chicagocomedy.tv".freeze
-  DEFAULT_TITLE = "chicagocomedy.tv".freeze
-  DEFAULT_DESCRIPTION = "Interactive comedy experiences for live audiences.".freeze
-
   def index
-    @og_site_name = SITE_NAME
+    @og_site_name = theme.site_name
     @og_url = request.original_url
     @og_image = "#{request.base_url}/icon.png"
     @og_type = "website"
-    @og_title = DEFAULT_TITLE
-    @og_description = DEFAULT_DESCRIPTION
+    @og_title = theme.site_name
+    @og_description = theme.description
 
     apply_route_metadata
   end
 
   private
+
+  def theme
+    ActsAsTenant.current_tenant.config.theme
+  end
 
   def apply_route_metadata
     case request.path
@@ -37,7 +37,7 @@ class SpaController < ApplicationController
         end
       @og_description =
         experience.description.presence ||
-        "Join \"#{base_title}\" — a live interactive experience on #{SITE_NAME}."
+        "Join \"#{base_title}\" — a live interactive experience on #{theme.site_name}."
     when %r{\A/events/(?<slug>[^/]+)\z}
       event = Event.published.find_by(slug: Regexp.last_match[:slug])
       return unless event
@@ -52,7 +52,7 @@ class SpaController < ApplicationController
       @og_type = "profile"
       @og_title = performer.name
       @og_description = performer.bio.presence ||
-                        "#{performer.name} on #{SITE_NAME}."
+                        "#{performer.name} on #{theme.site_name}."
       if performer.photo.attached?
         @og_image = Rails.application.routes.url_helpers.rails_blob_url(
           performer.photo,
@@ -61,16 +61,16 @@ class SpaController < ApplicationController
       end
     when "/events"
       @og_title = "Events"
-      @og_description = "Upcoming live comedy events on #{SITE_NAME}."
+      @og_description = "Upcoming live comedy events on #{theme.site_name}."
     when "/performers"
       @og_title = "Performers"
-      @og_description = "Comedians and performers on #{SITE_NAME}."
+      @og_description = "Comedians and performers on #{theme.site_name}."
     when "/about"
       @og_title = "About"
-      @og_description = DEFAULT_DESCRIPTION
+      @og_description = theme.description
     when "/join"
       @og_title = "Join a show"
-      @og_description = "Enter a code to join a live experience on #{SITE_NAME}."
+      @og_description = "Enter a code to join a live experience on #{theme.site_name}."
     end
   end
 
@@ -83,7 +83,7 @@ class SpaController < ApplicationController
     if event.description.present?
       [summary.presence, event.description].compact.join(" — ")
     else
-      summary.presence || "Live event on #{SITE_NAME}."
+      summary.presence || "Live event on #{theme.site_name}."
     end
   end
 end

@@ -2,7 +2,7 @@ import { Suspense, lazy } from 'react';
 
 import { Link } from 'react-router-dom';
 
-import { useTenant } from '@cctv/contexts/TenantContext';
+import { useTenant } from '@cctv/contexts';
 import { Button } from '@cctv/core/Button/Button';
 import { useMediaQuery } from '@cctv/hooks';
 
@@ -26,10 +26,12 @@ export default function Home() {
 }
 
 function HomeMobile() {
+  const { config } = useTenant();
+
   return (
     <section className="page flex-centered">
-      <h1>{'CCTV'}</h1>
-      <p className="hero-subtitle">{'CHICAGO COMEDY . TV'}</p>
+      <h1>{config.theme.displayName}</h1>
+      {config.theme.tagline && <p className="hero-subtitle">{config.theme.tagline}</p>}
       <div
         style={{
           position: 'absolute',

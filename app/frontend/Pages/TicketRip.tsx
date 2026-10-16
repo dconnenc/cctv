@@ -3,6 +3,8 @@ import { KeyboardEvent, PointerEvent, useCallback, useEffect, useRef, useState }
 import * as THREE from 'three';
 import * as Tone from 'tone';
 
+import { useTenant } from '@cctv/contexts';
+
 import styles from './TicketRip.module.scss';
 
 const PAPER_DK = '#dcd7c2';
@@ -130,7 +132,16 @@ function drawAdmitOneBand(
   ctx.restore();
 }
 
-function createTopHalfTexture(experienceName: string, colors: TicketColors): THREE.CanvasTexture {
+interface TicketBrand {
+  displayName: string;
+  tagline: string;
+}
+
+function createTopHalfTexture(
+  experienceName: string,
+  brand: TicketBrand,
+  colors: TicketColors,
+): THREE.CanvasTexture {
   const W = 700;
   const H = 1120;
   const canvas = document.createElement('canvas');
@@ -165,9 +176,9 @@ function createTopHalfTexture(experienceName: string, colors: TicketColors): THR
   ctx.textAlign = 'center';
   ctx.textBaseline = 'top';
   ctx.font = '700 26px "Bebas Neue", Impact, sans-serif';
-  ctx.fillText('★  CCTV  ★', contentCenter, headerTop);
+  ctx.fillText(`★  ${brand.displayName.toUpperCase()}  ★`, contentCenter, headerTop);
   ctx.font = '500 14px "Bebas Neue", Impact, sans-serif';
-  ctx.fillText('CHICAGO COMEDY TV', contentCenter, headerTop + 34);
+  ctx.fillText(brand.tagline, contentCenter, headerTop + 34);
 
   ctx.strokeStyle = colors.ink;
   ctx.lineWidth = 1.5;
@@ -538,6 +549,8 @@ interface TicketRipProps {
 const SUCCESS_HOLD_DURATION = 7.1;
 
 export default function TicketRip({ code, experienceName = '', onComplete }: TicketRipProps) {
+  const { config } = useTenant();
+  const brand = config.theme;
   const mountRef = useRef<HTMLDivElement | null>(null);
   const threeRef = useRef<ThreeRefs | null>(null);
   const soundRef = useRef<{ kit: SoundKit | null; ready: boolean }>({ kit: null, ready: false });
@@ -651,7 +664,7 @@ export default function TicketRip({ code, experienceName = '', onComplete }: Tic
     const TOP_H = 3.84;
     const BOT_H = 1.5;
 
-    const topTex = createTopHalfTexture(experienceName, colors);
+    const topTex = createTopHalfTexture(experienceName, brand, colors);
     const botTex = createBottomHalfTexture(code, colors);
 
     const topGeom = new THREE.PlaneGeometry(TW, TOP_H, 10, 20);
@@ -1026,7 +1039,7 @@ export default function TicketRip({ code, experienceName = '', onComplete }: Tic
         soundRef.current = { kit: null, ready: false };
       }
     };
-  }, [fontsReady, code, experienceName, fireComplete]);
+  }, [fontsReady, code, experienceName, brand, fireComplete]);
 
   const captionText =
     caption === 'tap-rip'

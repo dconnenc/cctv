@@ -3,6 +3,7 @@ import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 
 import { ChicagoMap, ShowCard } from '@cctv/components';
+import { useTenant } from '@cctv/contexts';
 import { Button } from '@cctv/core';
 import { useDiscover } from '@cctv/hooks';
 
@@ -21,6 +22,7 @@ const TAGLINES = [
 
 export default function HomeDesktop() {
   const { theaters, events, isLoading } = useDiscover();
+  const { config } = useTenant();
   const [focusedId, setFocusedId] = useState<string | null>(null);
   const [hoverSlug, setHoverSlug] = useState<string | null>(null);
 
@@ -54,7 +56,7 @@ export default function HomeDesktop() {
         scrim
       />
       <div className={styles.hero}>
-        <h1 className={styles.wordmark}>CCTV</h1>
+        <h1 className={styles.wordmark}>{config.theme.displayName}</h1>
         <p className={styles.tagline}>{tagline}</p>
         <div className={styles.heroActions}>
           <Button to="/join" size="lg">

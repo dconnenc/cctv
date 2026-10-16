@@ -7,7 +7,7 @@ RSpec.describe Tenants::Config do
       name: "Acme",
       blocks: %w[poll question],
       features: %w[events],
-      theme: { display_name: "Acme" },
+      theme: { display_name: "Acme", tagline: "ACME TV", site_name: "acme.tv", description: "About Acme" },
     }
   end
 
@@ -52,5 +52,42 @@ RSpec.describe Tenants::Config do
   it "rejects unknown attributes so typos fail loudly" do
     expect { described_class.new(attributes.merge(bloks: %w[poll])) }
       .to raise_error(Dry::Struct::Error)
+  end
+
+  describe "theme" do
+    let(:theme) do
+      { display_name: "Acme", tagline: "ACME TV", site_name: "acme.tv", description: "About Acme" }
+    end
+
+    it "defaults css variables to empty" do
+      expect(described_class.new(attributes).theme.css_variables).to eq({})
+    end
+
+    it "accepts css variables" do
+      config = described_class.new(attributes.merge(theme: theme.merge(css_variables: { "--phosphor" => "#fff" })))
+
+      expect(config.theme.css_variables).to eq("--phosphor" => "#fff")
+    end
+
+    it "rejects css variable names that are not custom properties" do
+      ["color", "--Upper", "--x;", "--x:y", "--x}", "--</style>", "-- x"].each do |name|
+        expect { described_class.new(attributes.merge(theme: theme.merge(css_variables: { name => "red" }))) }
+          .to raise_error(Dry::Struct::Error), "expected #{name.inspect} to be rejected"
+      end
+    end
+
+    it "rejects css variable values that could break out of a declaration" do
+      ["red; } body { display:none", "</style>", "{x}", "a<b", "a>b", "", "red\n}"].each do |value|
+        expect { described_class.new(attributes.merge(theme: theme.merge(css_variables: { "--x" => value }))) }
+          .to raise_error(Dry::Struct::Error), "expected #{value.inspect} to be rejected"
+      end
+    end
+
+    it "requires site name and description" do
+      expect { described_class.new(attributes.merge(theme: theme.merge(site_name: ""))) }
+        .to raise_error(Dry::Struct::Error)
+      expect { described_class.new(attributes.merge(theme: theme.except(:description))) }
+        .to raise_error(Dry::Struct::Error)
+    end
   end
 end

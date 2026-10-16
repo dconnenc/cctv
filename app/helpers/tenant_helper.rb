@@ -8,7 +8,7 @@ module TenantHelper
       name: config.name,
       features: config.features,
       blocks: config.blocks,
-      theme: { displayName: config.theme.display_name },
+      theme: { displayName: config.theme.display_name, tagline: config.theme.tagline },
     }
 
     content_tag(
@@ -17,5 +17,14 @@ module TenantHelper
       type: "application/json",
       id: "tenant-config",
     )
+  end
+
+  def tenant_theme_style_tag
+    variables = ActsAsTenant.current_tenant&.config&.theme&.css_variables
+    return if variables.blank?
+
+    declarations = variables.map { |name, value| "#{name}: #{value};" }.join(" ")
+
+    content_tag(:style, raw("html:root { #{declarations} }"), nonce: content_security_policy_nonce)
   end
 end

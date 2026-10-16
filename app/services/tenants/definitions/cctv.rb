@@ -5,7 +5,12 @@ module Tenants
       name: "CCTV",
       blocks: ExperienceBlock::KINDS,
       features: Config::FEATURES,
-      theme: { display_name: "CCTV" },
+      theme: {
+        display_name: "CCTV",
+        tagline: "CHICAGO COMEDY . TV",
+        site_name: "chicagocomedy.tv",
+        description: "Interactive comedy experiences for live audiences.",
+      },
     )
   end
 end

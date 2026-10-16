@@ -11,7 +11,7 @@ export interface TenantConfig {
   name: string;
   features: TenantFeature[];
   blocks: string[];
-  theme: { displayName: string };
+  theme: { displayName: string; tagline: string };
 }
 
 export const DEFAULT_TENANT_CONFIG: TenantConfig = {
@@ -19,7 +19,7 @@ export const DEFAULT_TENANT_CONFIG: TenantConfig = {
   name: 'CCTV',
   features: [...TENANT_FEATURES],
   blocks: Object.values(BlockKind),
-  theme: { displayName: 'CCTV' },
+  theme: { displayName: 'CCTV', tagline: 'CHICAGO COMEDY . TV' },
 };
 
 const isTenantFeature = (value: JsonValue): value is TenantFeature =>
@@ -35,15 +35,15 @@ function parseTenantConfig(raw: JsonValue): TenantConfig | null {
   if (!Array.isArray(features) || !Array.isArray(blocks)) return null;
   if (theme === null || Array.isArray(theme) || !(theme instanceof Object)) return null;
 
-  const { displayName } = theme;
-  if (!isString(displayName) || !displayName) return null;
+  const { displayName, tagline } = theme;
+  if (!isString(displayName) || !displayName || !isString(tagline)) return null;
 
   return {
     key,
     name,
     features: features.filter(isTenantFeature),
     blocks: blocks.filter(isString),
-    theme: { displayName },
+    theme: { displayName, tagline },
   };
 }
 

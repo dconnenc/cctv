@@ -47,7 +47,7 @@ describe('readTenantConfig', () => {
         name: 'Quiz',
         features: [],
         blocks: ['poll'],
-        theme: { displayName: 'Quiz' },
+        theme: { displayName: 'Quiz', tagline: '' },
       }),
     );
 
@@ -56,8 +56,36 @@ describe('readTenantConfig', () => {
       name: 'Quiz',
       features: [],
       blocks: ['poll'],
-      theme: { displayName: 'Quiz' },
+      theme: { displayName: 'Quiz', tagline: '' },
     });
+  });
+
+  it('reads the theme tagline', () => {
+    writeConfig(
+      JSON.stringify({
+        key: 'quiz',
+        name: 'Quiz',
+        features: [],
+        blocks: ['poll'],
+        theme: { displayName: 'Quiz', tagline: 'QUIZ NIGHT' },
+      }),
+    );
+
+    expect(readTenantConfig().theme).toEqual({ displayName: 'Quiz', tagline: 'QUIZ NIGHT' });
+  });
+
+  it('falls back to the default config when the tagline is missing', () => {
+    writeConfig(
+      JSON.stringify({
+        key: 'quiz',
+        name: 'Quiz',
+        features: [],
+        blocks: ['poll'],
+        theme: { displayName: 'Quiz' },
+      }),
+    );
+
+    expect(readTenantConfig()).toEqual(DEFAULT_TENANT_CONFIG);
   });
 
   it('drops unknown features and non-string blocks', () => {
@@ -67,7 +95,7 @@ describe('readTenantConfig', () => {
         name: 'Quiz',
         features: ['events', 'teleport'],
         blocks: ['poll', 7],
-        theme: { displayName: 'Quiz' },
+        theme: { displayName: 'Quiz', tagline: '' },
       }),
     );
 
@@ -81,7 +109,7 @@ describe('useTenant', () => {
     name: 'Quiz',
     features: [],
     blocks: ['poll'],
-    theme: { displayName: 'Quiz' },
+    theme: { displayName: 'Quiz', tagline: '' },
   };
 
   it('answers feature and block queries from the provided config', () => {

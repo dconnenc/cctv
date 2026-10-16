@@ -12,7 +12,7 @@ RSpec.describe TenantHelper, type: :helper do
     expect(json).to include("key" => "cctv", "name" => "CCTV")
     expect(json["features"]).to match_array(Tenants::Config::FEATURES)
     expect(json["blocks"]).to match_array(ExperienceBlock::KINDS)
-    expect(json["theme"]).to eq("displayName" => "CCTV")
+    expect(json["theme"]).to eq("displayName" => "CCTV", "tagline" => "CHICAGO COMEDY . TV")
   end
 
   it "reflects a restricted tenant" do
@@ -37,5 +37,24 @@ RSpec.describe TenantHelper, type: :helper do
 
   it "renders nothing without a current tenant" do
     expect(ActsAsTenant.without_tenant { helper.tenant_config_tag }).to be_nil
+  end
+
+  describe "#tenant_theme_style_tag" do
+    it "emits nothing when the tenant has no css variables" do
+      expect(ActsAsTenant.with_tenant(Tenant.default) { helper.tenant_theme_style_tag }).to be_nil
+    end
+
+    it "emits nothing without a current tenant" do
+      expect(ActsAsTenant.without_tenant { helper.tenant_theme_style_tag }).to be_nil
+    end
+
+    it "emits a high-specificity :root override for tenant variables" do
+      quiz = Tenant.find_by!(key: "social-quiztancing")
+      html = ActsAsTenant.with_tenant(quiz) { helper.tenant_theme_style_tag }
+
+      expect(html).to include("html:root")
+      expect(html).to include("--phosphor: #5cc8ff;")
+      expect(Nokogiri::HTML.fragment(html).css("style").size).to eq(1)
+    end
   end
 end
