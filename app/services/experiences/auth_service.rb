@@ -23,6 +23,7 @@ module Experiences
         sub: user.id,
         scope: PARTICIPANT,
         experience_code: experience.code,
+        tenant_id: experience.tenant_id,
         iat: now, # issued at
         nbf: now,
         exp: now + ttl.to_i,
@@ -46,6 +47,7 @@ module Experiences
       claims = {
         sub: user.id,
         scope: ADMIN,
+        tenant_id: user.tenant_id,
         perms: perms,
         iat: now, # issued at
         nbf: now,
@@ -90,6 +92,7 @@ module Experiences
       scope = claims[:scope]
 
       raise Unauthorized, "invalid scope" unless scope == "participant"
+      verify_tenant!(claims)
 
       user_id = claims[:sub]
       experience_code = claims[:experience_code]
@@ -119,6 +122,7 @@ module Experiences
     def self.admin_from_claims!(claims)
       scope = claims[:scope]
       raise Unauthorized, "invalid scope" unless scope == "admin"
+      verify_tenant!(claims)
 
       user_id = claims[:sub]
       raise Unauthorized, "missing subject" if user_id.nil?
@@ -146,6 +150,13 @@ module Experiences
       else
         raise Unauthorized, "unknown scope"
       end
+    end
+
+    def self.verify_tenant!(claims)
+      current = ActsAsTenant.current_tenant
+      return if current && claims[:tenant_id] == current.id
+
+      raise Unauthorized, "tenant mismatch"
     end
 
     def self.symbolize_keys(obj)
