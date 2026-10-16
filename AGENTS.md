@@ -131,6 +131,26 @@ When any action occurs (start/pause/resume, block status change, etc.):
 - Monitor view parameter (`view_type: 'monitor'`) → monitor stream
 - Impersonation parameter (`as_participant_id: X`) → that participant's profile stream
 
+## Tenancy
+
+Every domain table has `tenant_id uuid NOT NULL` (FK to `tenants`) and every model
+includes `Tenanted` (`acts_as_tenant`). `ActsAsTenant.require_tenant` is on: a
+tenanted query with no tenant raises.
+
+- Tenant is resolved from the request host (`Tenants::Resolver`): the base domain or
+  any non-matching host is `cctv`; `<key>.<base>` is that tenant; unknown subdomains 404.
+  `TENANT_BASE_DOMAIN` is the base domain.
+- Tenants are defined in code: `app/services/tenants/definitions/<name>.rb` builds a
+  `Tenants::Config` (Dry::Struct). `rails tenants:sync` (run on deploy) upserts the
+  `tenants` rows and one superadmin per `SUPERADMIN_EMAILS` entry per tenant.
+- Child tables reference parents with composite `(tenant_id, parent_id)` FKs. New tables
+  must add `tenant_id`, include `Tenanted`, and use composite FKs; the convention spec
+  (`spec/models/tenancy_convention_spec.rb`) fails otherwise.
+- `insert_all`/`upsert_all` stamp the current tenant. Jobs carry `tenant_id`, which the
+  acts_as_tenant ActiveJob extension applies when the job runs.
+  Raw SQL must filter by `tenant_id`.
+- Cookies are host-only; never set `domain:`.
+
 ## Frontend Context Management
 
 `ExperienceContext` (`app/frontend/Contexts/ExperienceContext.tsx`) manages:
