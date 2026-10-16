@@ -29,9 +29,17 @@ interface CreateBlockProps {
   onEndCurrentBlock: () => Promise<void>;
 }
 
+function useAllowedBlockKinds(): BlockKind[] {
+  const { isBlockAllowed } = useTenant();
+  return Object.values(BlockKind).filter((kind) => isBlockAllowed(kind));
+}
+
 export default function CreateBlock(props: CreateBlockProps) {
+  const allowedKinds = useAllowedBlockKinds();
+  const initialKind = allowedKinds.includes(BlockKind.POLL) ? BlockKind.POLL : allowedKinds[0];
+
   return (
-    <CreateBlockProvider {...props}>
+    <CreateBlockProvider {...props} initialKind={initialKind}>
       <CreateBlockForm onClose={props.onClose} />
     </CreateBlockProvider>
   );
@@ -44,7 +52,7 @@ interface CreateBlockFormProps {
 function CreateBlockForm({ onClose }: CreateBlockFormProps) {
   const { blockData, setKind, submit, error, viewAdditionalDetails, setViewAdditionalDetails } =
     useCreateBlockContext();
-  const { isBlockAllowed } = useTenant();
+  const allowedKinds = useAllowedBlockKinds();
 
   return (
     <div className={styles.root}>
@@ -56,12 +64,10 @@ function CreateBlockForm({ onClose }: CreateBlockFormProps) {
 
       <Dropdown
         label="Kind"
-        options={Object.values(BlockKind)
-          .filter((kind) => isBlockAllowed(kind))
-          .map((kind) => ({
-            label: BLOCK_KIND_LABELS[kind],
-            value: kind,
-          }))}
+        options={allowedKinds.map((kind) => ({
+          label: BLOCK_KIND_LABELS[kind],
+          value: kind,
+        }))}
         value={blockData.kind}
         onChange={setKind}
         required
