@@ -146,6 +146,8 @@ tenanted query with no tenant raises.
 - Child tables reference parents with composite `(tenant_id, parent_id)` FKs. New tables
   must add `tenant_id`, include `Tenanted`, and use composite FKs; the convention spec
   (`spec/models/tenancy_convention_spec.rb`) fails otherwise.
+- Console, rake tasks and scripts have no request tenant: wrap them in `Tenants.with('cctv') { ... }`,
+  or `Tenants.each { |tenant| ... }` to run for every tenant.
 - `insert_all`/`upsert_all` stamp the current tenant. Jobs carry `tenant_id`, which the
   acts_as_tenant ActiveJob extension applies when the job runs.
   Raw SQL must filter by `tenant_id`.

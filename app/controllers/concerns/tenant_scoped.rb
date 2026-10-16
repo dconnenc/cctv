@@ -9,7 +9,7 @@ module TenantScoped
   private
 
   def with_current_tenant(&block)
-    ActsAsTenant.with_tenant(Tenants::Resolver.call(request.host), &block)
+    Tenants.with(Tenants::Resolver.call(request.host), &block)
   end
 
   def render_unknown_tenant

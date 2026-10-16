@@ -15,7 +15,7 @@ module ApplicationCable
     private
 
     def with_tenant(&block)
-      ActsAsTenant.with_tenant(tenant, &block)
+      Tenants.with(tenant, &block)
     end
 
     def find_verified_user

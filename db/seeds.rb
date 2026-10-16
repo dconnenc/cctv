@@ -9,7 +9,7 @@
 #   end
 Tenants::Sync.call
 
-ActsAsTenant.with_tenant(Tenant.default) do
+Tenants.with(Tenant.default) do
   Cosmetic.find_or_create_by!(slug: "top-hat") do |cosmetic|
     cosmetic.name             = "Top Hat"
     cosmetic.kind             = "hat"

@@ -9,7 +9,7 @@ module Tenants
         tenant
       end
 
-      tenants.each { |tenant| ActsAsTenant.with_tenant(tenant) { provision_superadmins } }
+      Tenants.each { provision_superadmins }
       tenants
     end
 
