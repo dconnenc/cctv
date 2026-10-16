@@ -1,7 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
-import { DEFAULT_TENANT_CONFIG, TenantProvider } from '@cctv/contexts/TenantContext';
-import { ThemeProvider } from '@cctv/contexts/ThemeContext';
+import { DEFAULT_TENANT_CONFIG, TenantProvider, ThemeProvider } from '@cctv/contexts';
 
 import { TopNav } from './TopNav';
 

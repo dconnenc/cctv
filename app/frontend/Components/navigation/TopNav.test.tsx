@@ -4,9 +4,7 @@ import { render, screen } from '@testing-library/react';
 import { HttpResponse, http } from 'msw';
 import { describe, expect, it } from 'vitest';
 
-import { DEFAULT_TENANT_CONFIG, TenantProvider } from '@cctv/contexts/TenantContext';
-import { ThemeProvider } from '@cctv/contexts/ThemeContext';
-import { UserProvider } from '@cctv/contexts/UserContext';
+import { DEFAULT_TENANT_CONFIG, TenantProvider, ThemeProvider, UserProvider } from '@cctv/contexts';
 
 import { server } from '../../test-msw';
 import { TopNav } from './TopNav';

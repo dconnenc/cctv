@@ -15,9 +15,7 @@ import {
   Users,
 } from 'lucide-react';
 
-import { useTenant } from '@cctv/contexts/TenantContext';
-import { useTheme } from '@cctv/contexts/ThemeContext';
-import { useUser } from '@cctv/contexts/UserContext';
+import { useTenant, useTheme, useUser } from '@cctv/contexts';
 import { Switch } from '@cctv/core';
 import { getSessionCreatedExperiences } from '@cctv/utils';
 

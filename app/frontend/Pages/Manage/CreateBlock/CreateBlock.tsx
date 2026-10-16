@@ -1,7 +1,6 @@
 import { useId } from 'react';
 
-import { useExperience } from '@cctv/contexts/ExperienceContext';
-import { useTenant } from '@cctv/contexts/TenantContext';
+import { useExperience, useTenant } from '@cctv/contexts';
 import { DialogDescription, DialogTitle, SegmentMultiSelect, Switch } from '@cctv/core';
 import { Button } from '@cctv/core/Button/Button';
 import { Dropdown } from '@cctv/core/Dropdown/Dropdown';
