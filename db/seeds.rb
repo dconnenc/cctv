@@ -70,15 +70,19 @@ ActsAsTenant.with_tenant(Tenant.default) do
     cosmetics_tester.user_cosmetics.find_or_create_by!(cosmetic: cosmetic) { |uc| uc.source = "grant" }
   end
 
-  Event.find_or_create_by!(slug: "chicago-comedy-social-technical-expo-2026") do |event|
-    event.title         = "Chicago Comedy Social & Technical Expo"
-    event.description   = "A celebration of Chicago's comedy community at The Den Theatre."
-    event.starts_at     = Time.zone.local(2026, 6, 11, 19, 0)
-    event.ends_at       = Time.zone.local(2026, 6, 11, 23, 0)
-    event.venue_name    = "The Den Theatre"
-    event.venue_address = "1331 N Milwaukee Ave, Chicago, IL 60622"
-    event.ticket_url    = "https://thedentheatre.com/performances/2026/6/11/chicago-comedy-social-technical-expo-the-den-theatre-comedy-club-chicago"
-    event.published     = true
-    event.creator       = User.where(role: "superadmin").order(:id).first!
+  creator = User.where(role: "superadmin").order(:id).first
+
+  if creator
+    Event.find_or_create_by!(slug: "chicago-comedy-social-technical-expo-2026") do |event|
+      event.title         = "Chicago Comedy Social & Technical Expo"
+      event.description   = "A celebration of Chicago's comedy community at The Den Theatre."
+      event.starts_at     = Time.zone.local(2026, 6, 11, 19, 0)
+      event.ends_at       = Time.zone.local(2026, 6, 11, 23, 0)
+      event.venue_name    = "The Den Theatre"
+      event.venue_address = "1331 N Milwaukee Ave, Chicago, IL 60622"
+      event.ticket_url    = "https://thedentheatre.com/performances/2026/6/11/chicago-comedy-social-technical-expo-the-den-theatre-comedy-club-chicago"
+      event.published     = true
+      event.creator       = creator
+    end
   end
 end
