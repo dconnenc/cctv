@@ -3,6 +3,7 @@ import { BrowserRouter } from 'react-router-dom';
 import { createRoot } from 'react-dom/client';
 
 import { AnalyticsErrorBoundary, initAnalytics } from '@cctv/analytics';
+import { TenantProvider } from '@cctv/contexts/TenantContext';
 import { ThemeProvider } from '@cctv/contexts/ThemeContext';
 import { installConsoleBuffer, installGlobalErrorReporting } from '@cctv/feedback';
 
@@ -21,12 +22,14 @@ installGlobalErrorReporting();
 const root = document.getElementById('root');
 if (root) {
   createRoot(root).render(
-    <BrowserRouter>
-      <ThemeProvider>
-        <AnalyticsErrorBoundary>
-          <App />
-        </AnalyticsErrorBoundary>
-      </ThemeProvider>
-    </BrowserRouter>,
+    <TenantProvider>
+      <BrowserRouter>
+        <ThemeProvider>
+          <AnalyticsErrorBoundary>
+            <App />
+          </AnalyticsErrorBoundary>
+        </ThemeProvider>
+      </BrowserRouter>
+    </TenantProvider>,
   );
 }

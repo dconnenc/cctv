@@ -2,6 +2,7 @@ import { Suspense, lazy } from 'react';
 
 import { Link } from 'react-router-dom';
 
+import { useTenant } from '@cctv/contexts/TenantContext';
 import { Button } from '@cctv/core/Button/Button';
 import { useMediaQuery } from '@cctv/hooks';
 
@@ -11,8 +12,9 @@ const HomeDesktop = lazy(() => import('./HomeDesktop/HomeDesktop'));
 
 export default function Home() {
   const isDesktop = useMediaQuery('(min-width: 1024px)');
+  const { hasFeature } = useTenant();
 
-  if (isDesktop) {
+  if (isDesktop && hasFeature('discover')) {
     return (
       <Suspense fallback={null}>
         <HomeDesktop />
