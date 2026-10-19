@@ -32,7 +32,7 @@ RSpec.describe Api::BaseController, type: :controller do
     get :trigger, params: { expected: "true" }
 
     expect(response).to have_http_status(:not_found)
-    expect(response.parsed_body).to eq("success" => false, "error" => "not found")
+    expect(response.parsed_body).to eq("success" => false, "error" => "expected control flow")
     expect(Analytics::Tracker).not_to have_received(:capture_exception)
   end
 end

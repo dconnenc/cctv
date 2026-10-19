@@ -55,7 +55,8 @@ class Api::BaseController < ApplicationController
   end
 
   def render_not_found(error)
-    render_error(error, "not found", :not_found)
+    message = error.is_a?(NotFoundError) ? error.message : "not found"
+    render_error(error, message, :not_found)
   end
 
   def render_bad_request(error)

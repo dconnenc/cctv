@@ -17,6 +17,10 @@ RSpec.describe Api::BaseController, type: :controller do
       render json: { success: true }
     end
 
+    def named_missing
+      raise Api::BaseController::NotFoundError, "invalid thing"
+    end
+
     def required_param
       params.require(:thing)
       render json: { success: true }
@@ -30,6 +34,7 @@ RSpec.describe Api::BaseController, type: :controller do
       get "guarded/:experience_id" => "api/base#guarded"
       get "lookup/:id" => "api/base#lookup"
       get "required_param" => "api/base#required_param"
+      get "named_missing" => "api/base#named_missing"
     end
     allow(Analytics::Tracker).to receive(:capture_exception)
   end
@@ -160,6 +165,12 @@ RSpec.describe Api::BaseController, type: :controller do
 
       it_behaves_like "an unreported error response", :not_found, "not found"
     end
+  end
+
+  describe "a not found error raised with a message" do
+    subject { get :named_missing }
+
+    it_behaves_like "an unreported error response", :not_found, "invalid thing"
   end
 
   describe "a missing required parameter" do

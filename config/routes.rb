@@ -225,6 +225,6 @@ Rails.application.routes.draw do
   end
 
   get '*path', to: 'spa#not_found', constraints: ->(request) do
-    html_only.call(request) && !request.path.match?(%r{\A/api(/|\z)})
+    html_only.call(request) && !request.path.match?(%r{\A/(api|rails)(/|\z)})
   end
 end
