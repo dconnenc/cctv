@@ -63,6 +63,34 @@ RSpec.describe Tenanted do
     ActsAsTenant.test_tenant = previous
   end
 
+  it "raises on insert_all! with no tenant instead of writing NULL" do
+    previous = ActsAsTenant.test_tenant
+    user = create(:user)
+    cosmetic = create(:cosmetic)
+    ActsAsTenant.test_tenant = nil
+    ActsAsTenant.current_tenant = nil
+
+    expect {
+      UserCosmetic.insert_all!([{ user_id: user.id, cosmetic_id: cosmetic.id, source: "grant", acquired_at: Time.current }])
+    }.to raise_error(ActsAsTenant::Errors::NoTenantSet)
+  ensure
+    ActsAsTenant.test_tenant = previous
+  end
+
+  it "raises on upsert_all with no tenant instead of writing NULL" do
+    previous = ActsAsTenant.test_tenant
+    user = create(:user)
+    cosmetic = create(:cosmetic)
+    ActsAsTenant.test_tenant = nil
+    ActsAsTenant.current_tenant = nil
+
+    expect {
+      UserCosmetic.upsert_all([{ user_id: user.id, cosmetic_id: cosmetic.id, source: "grant", acquired_at: Time.current }])
+    }.to raise_error(ActsAsTenant::Errors::NoTenantSet)
+  ensure
+    ActsAsTenant.test_tenant = previous
+  end
+
   it "validates uniqueness per tenant, not globally" do
     create(:user, email: "same@example.com")
 
