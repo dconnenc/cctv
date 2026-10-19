@@ -1,6 +1,8 @@
 require "rails_helper"
 
 RSpec.describe "SPA routing", type: :request do
+  include_context "without vite assets"
+
   let(:cctv_host) { "localhost" }
   let(:quiz) { Tenant.find_by!(key: "social-quiztancing") }
   let(:quiz_host) { "social-quiztancing.localhost" }

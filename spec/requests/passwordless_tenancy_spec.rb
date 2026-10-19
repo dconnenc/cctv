@@ -1,6 +1,8 @@
 require "rails_helper"
 
 RSpec.describe "Sign-in links across tenants", type: :request do
+  include_context "without vite assets"
+
   let(:user) { create(:user) }
   let(:session) { Passwordless::Session.create!(authenticatable: user) }
   let(:link) { "/users/sign_in/#{session.identifier}/#{session.token}" }
