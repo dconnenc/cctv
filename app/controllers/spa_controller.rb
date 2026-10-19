@@ -1,16 +1,24 @@
 class SpaController < ApplicationController
   def index
+    apply_default_metadata
+    apply_route_metadata
+  end
+
+  def not_found
+    apply_default_metadata
+    render :index, status: :not_found
+  end
+
+  private
+
+  def apply_default_metadata
     @og_site_name = theme.site_name
     @og_url = request.original_url
     @og_image = "#{request.base_url}/icon.png"
     @og_type = "website"
     @og_title = theme.site_name
     @og_description = theme.description
-
-    apply_route_metadata
   end
-
-  private
 
   def theme
     ActsAsTenant.current_tenant.config.theme

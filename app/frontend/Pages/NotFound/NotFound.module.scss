@@ -1,0 +1,12 @@
+.notFound {
+  gap: var(--space-md);
+  text-align: center;
+}
+
+.title {
+  font-size: clamp(2.5rem, 8vw, 5rem);
+}
+
+.message {
+  color: hsl(var(--muted-foreground));
+}

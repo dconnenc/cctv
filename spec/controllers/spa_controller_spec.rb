@@ -98,4 +98,23 @@ RSpec.describe SpaController, type: :controller do
       end
     end
   end
+
+  describe "GET #not_found" do
+    it "responds 404 with the generic site metadata" do
+      request.path = "/events"
+      get :not_found, params: { path: "nope" }
+
+      expect(response).to have_http_status(:not_found)
+      expect(og(:title)).to eq("chicagocomedy.tv")
+      expect(og(:description)).to eq("Interactive comedy experiences for live audiences.")
+    end
+
+    it "uses the tenant's site name" do
+      request.host = "social-quiztancing.localhost"
+      get :not_found, params: { path: "nope" }
+
+      expect(response).to have_http_status(:not_found)
+      expect(og(:title)).to eq("Social Quiztancing")
+    end
+  end
 end

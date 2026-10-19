@@ -17,6 +17,7 @@ import Avatar from '@cctv/pages/Experience/Avatar';
 import Experience from '@cctv/pages/Experience/Experience';
 import ExperiencesList from '@cctv/pages/Experiences/ExperiencesList';
 import Monitor from '@cctv/pages/Monitor/Monitor';
+import NotFound from '@cctv/pages/NotFound/NotFound';
 import CreatePerformer from '@cctv/pages/Performers/CreatePerformer';
 import EditPerformer from '@cctv/pages/Performers/EditPerformer';
 import PerformerProfile from '@cctv/pages/Performers/PerformerProfile';
@@ -149,6 +150,8 @@ function App() {
                       </Route>
                     </Route>
                   </Route>
+
+                  <Route path="*" element={<NotFound />} />
                 </RouteWink>
               </Suspense>
             </div>
