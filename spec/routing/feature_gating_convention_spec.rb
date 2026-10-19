@@ -37,7 +37,6 @@ RSpec.describe "route feature classification" do
       "DELETE /api/experiences/:experience_id/segments/:id api/experience_segments#destroy",
       "GET /api/experiences api/experiences#index",
       "GET /api/experiences/:experience_id/participants/:id/submissions api/experience_participants#submissions",
-      "GET /api/experiences/:id api/experiences#show",
       "GET /api/experiences/:id/cosmetics api/experience_cosmetics#index",
       "GET /api/experiences/:id/registration_info api/experiences#registration_info",
       "GET /api/users/me api/users#me",

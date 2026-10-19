@@ -9,7 +9,6 @@ class Api::ExperiencesController < Api::BaseController
       :clear_avatars,
       :update_playbill
     ]
-  before_action :authenticate_for_experience_show, only: [:show]
 
   before_action -> { authorize! Experience, to: :index? }, only: [:index]
   before_action -> { authorize! Experience, to: :create? }, only: [:create]
@@ -195,23 +194,6 @@ class Api::ExperiencesController < Api::BaseController
     }, status: :ok
   end
 
-  # GET /api/experiences/:id
-  def show
-    authorize! @experience, to: :show?
-
-    participant = @experience.experience_participants.find_by(user: @user)
-
-    payload = if @user.admin? || @user.superadmin?
-      Experiences::Visibility.for_admin(@experience)
-    elsif participant
-      Experiences::Visibility.for_participant(@experience, participant)
-    else
-      Experiences::Visibility.for_admin(@experience)
-    end
-
-    render json: payload
-  end
-
   # POST /api/experiences/join
   def join
     code = join_params
@@ -321,16 +303,5 @@ class Api::ExperiencesController < Api::BaseController
 
   def register_params
     params.permit(:email, :name, :participant_name)
-  end
-
-  def authenticate_for_experience_show
-    if bearer_token
-      authenticate_with_bearer_token
-    elsif current_user
-      @user = current_user
-      @experience = find_experience_by_slug!
-    else
-      raise UnauthorizedError, "no credentials"
-    end
   end
 end

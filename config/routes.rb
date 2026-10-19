@@ -56,7 +56,7 @@ Rails.application.routes.draw do
       end
     end
 
-    resources :experiences, only: [:index, :create, :show] do
+    resources :experiences, only: [:index, :create] do
       collection do
         post :join
       end
