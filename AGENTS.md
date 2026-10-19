@@ -156,6 +156,11 @@ tenanted query with no tenant raises.
   `constraints Tenants::FeatureConstraint.new(:feature)`; a tenant without the feature gets a
   routing 404. Every `/api` route must be feature-gated or listed as ungated in
   `spec/routing/feature_gating_convention_spec.rb`.
+- Active Storage tables are tenanted like the rest; its controllers resolve the tenant from the host.
+- `Api::BaseController` maps auth, lookup, parameter and policy errors to JSON `{ success: false, error: }`
+  responses (401/404/400/403) via `rescue_from`; raise `UnauthorizedError`/`NotFoundError` instead of rendering ad hoc.
+- Client paths are listed explicitly in `config/routes.rb` (`spa#index`, HTML only); everything else 404s.
+  A new route in `app/frontend/App.tsx` needs a matching server route (`spec/routing/spa_routes_spec.rb`).
 
 ## Frontend Context Management
 
