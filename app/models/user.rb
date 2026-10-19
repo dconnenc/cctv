@@ -1,4 +1,6 @@
 class User < ApplicationRecord
+  include Tenanted
+
   has_many :experience_participants, dependent: :destroy
   has_many :experiences, through: :experience_participants
   has_many :created_experiences, class_name: "Experience", foreign_key: :creator_id, dependent: :destroy
@@ -25,7 +27,7 @@ class User < ApplicationRecord
   validates :email,
     presence: true,
     format: { with: URI::MailTo::EMAIL_REGEXP },
-    uniqueness: { case_sensitive: false }
+    uniqueness: { case_sensitive: false, scope: :tenant_id }
 
   passwordless_with :email
 

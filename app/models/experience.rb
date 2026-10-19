@@ -1,4 +1,6 @@
 class Experience < ApplicationRecord
+  include Tenanted
+
   has_many :experience_participants, dependent: :destroy
   has_many :users, through: :experience_participants
 
@@ -41,8 +43,8 @@ class Experience < ApplicationRecord
     archived: ARCHIVED = "archived"
   }
 
-  validates :code, presence: true, uniqueness: true, length: { minimum: 1, maximum: 255 }
-  validates :code_slug, presence: true, uniqueness: true
+  validates :code, presence: true, uniqueness: { scope: :tenant_id }, length: { minimum: 1, maximum: 255 }
+  validates :code_slug, presence: true, uniqueness: { scope: :tenant_id }
   validate :validate_playbill_structure
 
   before_validation :generate_code_slug, if: :code_changed?

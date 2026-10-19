@@ -4,6 +4,7 @@ export { default as Create } from './Create/Create';
 export { default as Experience } from './Experience/Experience';
 export { default as Home } from './home';
 export { default as Join } from './join';
+export { default as NotFound } from './NotFound/NotFound';
 export { default as Register } from './Register';
 export { default as Stylesheet } from './stylesheet';
 export { default as ManageCreateBlock } from './ManageCreateBlock/ManageCreateBlock';

@@ -1,4 +1,6 @@
 class ExperienceSegment < ApplicationRecord
+  include Tenanted
+
   belongs_to :experience
 
   has_many :experience_participant_segments, dependent: :destroy

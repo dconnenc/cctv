@@ -547,4 +547,14 @@ RSpec.describe Experiences::Visibility do
       end
     end
   end
+
+  describe "experience url" do
+    it "uses the experience's tenant host" do
+      other = create(:tenant, key: "other")
+      experience = ActsAsTenant.with_tenant(other) { create(:experience) }
+      payload = ActsAsTenant.with_tenant(other) { described_class.for_admin(experience) }
+
+      expect(payload[:url]).to start_with(Tenants::Hosts.url_for(other))
+    end
+  end
 end

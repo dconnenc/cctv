@@ -28,10 +28,11 @@ RSpec.describe Api::BaseController, type: :controller do
     )
   end
 
-  it "does not report expected control-flow errors, but still re-raises them" do
-    expect { get :trigger, params: { expected: "true" } }
-      .to raise_error(Api::BaseController::NotFoundError)
+  it "does not report expected control-flow errors and renders them as JSON" do
+    get :trigger, params: { expected: "true" }
 
+    expect(response).to have_http_status(:not_found)
+    expect(response.parsed_body).to eq("success" => false, "error" => "expected control flow")
     expect(Analytics::Tracker).not_to have_received(:capture_exception)
   end
 end

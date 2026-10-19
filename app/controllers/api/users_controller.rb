@@ -16,18 +16,16 @@ class Api::UsersController < Api::BaseController
   end
 
   def following
-    if current_user
-      performers = current_user.followed_performers
-                               .includes(photo_attachment: :blob)
-                               .order(name: :asc)
+    raise UnauthorizedError, "no session" unless current_user
 
-      render json: {
-        type: 'success',
-        success: true,
-        performers: performers.map { |p| PerformerSerializer.serialize_summary(p, current_user: current_user) }
-      }
-    else
-      render json: { type: 'error', success: false, message: "Not authenticated" }, status: :unauthorized
-    end
+    performers = current_user.followed_performers
+                             .includes(photo_attachment: :blob)
+                             .order(name: :asc)
+
+    render json: {
+      type: 'success',
+      success: true,
+      performers: performers.map { |p| PerformerSerializer.serialize_summary(p, current_user: current_user) }
+    }
   end
 end

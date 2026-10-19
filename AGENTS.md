@@ -131,6 +131,37 @@ When any action occurs (start/pause/resume, block status change, etc.):
 - Monitor view parameter (`view_type: 'monitor'`) → monitor stream
 - Impersonation parameter (`as_participant_id: X`) → that participant's profile stream
 
+## Tenancy
+
+Every domain table has `tenant_id uuid NOT NULL` (FK to `tenants`) and every model
+includes `Tenanted` (`acts_as_tenant`). `ActsAsTenant.require_tenant` is on: a
+tenanted query with no tenant raises.
+
+- Tenant is resolved from the request host (`Tenants::Resolver`): the base domain or
+  any non-matching host is `cctv`; `<key>.<base>` is that tenant; unknown subdomains 404.
+  The site host comes from `APP_BASE_URL` (required in production, apex only); `Tenants::Hosts` is the only reader.
+- Tenants are defined in code: `app/services/tenants/definitions/<name>.rb` builds a
+  `Tenants::Config` (Dry::Struct). `rails tenants:sync` (run on deploy) upserts the
+  `tenants` rows and one superadmin per `SUPERADMIN_EMAILS` entry per tenant.
+- Child tables reference parents with composite `(tenant_id, parent_id)` FKs. New tables
+  must add `tenant_id`, include `Tenanted`, and use composite FKs; the convention spec
+  (`spec/models/tenancy_convention_spec.rb`) fails otherwise.
+- Console, rake tasks and scripts have no request tenant: wrap them in `Tenants.with('cctv') { ... }`,
+  or `Tenants.each { |tenant| ... }` to run for every tenant.
+- `insert_all`/`upsert_all` stamp the current tenant. Jobs carry `tenant_id`, which the
+  acts_as_tenant ActiveJob extension applies when the job runs.
+  Raw SQL must filter by `tenant_id`.
+- Cookies are host-only; never set `domain:`.
+- Features (`Tenants::Config#feature?`) are gated in `config/routes.rb` by wrapping routes in
+  `constraints Tenants::FeatureConstraint.new(:feature)`; a tenant without the feature gets a
+  routing 404. Every `/api` route must be feature-gated or listed as ungated in
+  `spec/routing/feature_gating_convention_spec.rb`.
+- Active Storage tables are tenanted like the rest; its controllers resolve the tenant from the host.
+- `Api::BaseController` maps auth, lookup, parameter and policy errors to JSON `{ success: false, error: }`
+  responses (401/404/400/403) via `rescue_from`; raise `UnauthorizedError`/`NotFoundError` instead of rendering ad hoc.
+- Client paths are listed explicitly in `config/routes.rb` (`spa#index`, HTML only); everything else 404s.
+  A new route in `app/frontend/App.tsx` needs a matching server route (`spec/routing/spa_routes_spec.rb`).
+
 ## Frontend Context Management
 
 `ExperienceContext` (`app/frontend/Contexts/ExperienceContext.tsx`) manages:

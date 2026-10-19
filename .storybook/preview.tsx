@@ -6,7 +6,9 @@ import type { Preview } from '@storybook/react-vite';
 import { themes } from 'storybook/theming';
 
 import { ExperienceProvider } from '../app/frontend/Contexts/ExperienceContext';
+import { TenantProvider } from '../app/frontend/Contexts/TenantContext';
 import { UserProvider } from '../app/frontend/Contexts/UserContext';
+import { TEST_TENANT_CONFIG } from '../app/frontend/test-tenant';
 
 import '../app/frontend/styles.css';
 import '../app/frontend/tailwind.css';
@@ -37,20 +39,22 @@ const preview: Preview = {
     (Story) => {
       document.documentElement.setAttribute('data-theme', 'dark');
       return (
-        <MemoryRouter initialEntries={['/experience/DEMO']}>
-          <UserProvider>
-            <Routes>
-              <Route
-                path="/experience/:code"
-                element={
-                  <ExperienceProvider>
-                    <Story />
-                  </ExperienceProvider>
-                }
-              />
-            </Routes>
-          </UserProvider>
-        </MemoryRouter>
+        <TenantProvider config={TEST_TENANT_CONFIG}>
+          <MemoryRouter initialEntries={['/experience/DEMO']}>
+            <UserProvider>
+              <Routes>
+                <Route
+                  path="/experience/:code"
+                  element={
+                    <ExperienceProvider>
+                      <Story />
+                    </ExperienceProvider>
+                  }
+                />
+              </Routes>
+            </UserProvider>
+          </MemoryRouter>
+        </TenantProvider>
       );
     },
   ],

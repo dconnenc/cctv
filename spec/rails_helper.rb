@@ -69,7 +69,7 @@ def reset_system_spec_state
 
   ActiveRecord::Base.connection.truncate_tables(
     *ActiveRecord::Base.connection.tables
-      .reject { |t| %w[schema_migrations ar_internal_metadata].include?(t) }
+      .reject { |t| %w[schema_migrations ar_internal_metadata tenants].include?(t) }
   )
 
   Sidekiq::Queue.all.each(&:clear)

@@ -26,29 +26,37 @@ Rails.application.routes.draw do
   get "manifest" => "rails/pwa#manifest", as: :pwa_manifest
 
   namespace :api do
-    get "discover", to: "discover#index"
+    constraints Tenants::FeatureConstraint.new(:discover) do
+      get "discover", to: "discover#index"
+    end
 
     resources :feedbacks, only: [:create, :update]
 
     resources :users, only: [] do
       get "me", on: :collection
       post "sign_out_user", on: :collection
-      get "following", on: :collection
     end
 
-    resources :events, param: :slug, only: [:index, :show, :create, :update, :destroy] do
-      member do
-        get :ical
+    constraints Tenants::FeatureConstraint.new(:events) do
+      resources :events, param: :slug, only: [:index, :show, :create, :update, :destroy] do
+        member do
+          get :ical
+        end
       end
     end
 
-    resources :performers, param: :slug, only: [:index, :show, :create, :update, :destroy] do
-      member do
-        post :follow
-        delete :follow, action: :unfollow
+    constraints Tenants::FeatureConstraint.new(:performers) do
+      get "users/following", to: "users#following"
+
+      resources :performers, param: :slug, only: [:index, :show, :create, :update, :destroy] do
+        member do
+          post :follow
+          delete :follow, action: :unfollow
+        end
       end
     end
-    resources :experiences, only: [:index, :create, :show] do
+
+    resources :experiences, only: [:index, :create] do
       collection do
         post :join
       end
@@ -170,13 +178,53 @@ Rails.application.routes.draw do
     end
   end
 
-  get '/experiences/:code/register', to: 'spa#index', as: :experience_register
-  get '/experiences/register', to: 'spa#index'
-  get '/experiences/:code', to: 'spa#index', as: :experience_lobby
+  html_only = ->(request) { !request.xhr? && request.format.html? }
 
-  get '*path', to: 'spa#index', constraints: ->(request) do
-    !request.xhr? && request.format.html?
+  constraints html_only do
+    root 'spa#index'
+
+    get '/about', to: 'spa#index'
+    get '/join', to: 'spa#index'
+    get '/stylesheet', to: 'spa#index'
+    get '/create', to: 'spa#index'
+
+    constraints Tenants::FeatureConstraint.new(:events) do
+      get '/events', to: 'spa#index'
+      get '/events/new', to: 'spa#index'
+      get '/events/:slug', to: 'spa#index'
+      get '/events/:slug/edit', to: 'spa#index'
+    end
+
+    constraints Tenants::FeatureConstraint.new(:performers) do
+      get '/performers', to: 'spa#index'
+      get '/performers/new', to: 'spa#index'
+      get '/performers/:slug', to: 'spa#index'
+      get '/performers/:slug/edit', to: 'spa#index'
+    end
+
+    get '/experiences', to: 'spa#index'
+    get '/experiences/register', to: 'spa#index'
+    get '/experiences/:code', to: 'spa#index', as: :experience_lobby
+    get '/experiences/:code/register', to: 'spa#index', as: :experience_register
+
+    %w[
+      monitor
+      avatar
+      playbill
+      timeline
+      manage
+      manage/focus
+      manage/participants
+      manage/playbill
+      manage/debug
+      manage/blocks/new
+      manage/blocks/:block_id
+    ].each do |page|
+      get "/experiences/:code/#{page}", to: 'spa#index'
+    end
   end
 
-  root 'spa#index'
+  get '*path', to: 'spa#not_found', constraints: ->(request) do
+    html_only.call(request) && !request.path.match?(%r{\A/(api|rails)(/|\z)})
+  end
 end

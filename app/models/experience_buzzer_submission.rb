@@ -1,4 +1,6 @@
 class ExperienceBuzzerSubmission < ApplicationRecord
+  include Tenanted
+
   belongs_to :experience_block
   belongs_to :experience_participant
 end

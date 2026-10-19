@@ -15,8 +15,7 @@ import {
   Users,
 } from 'lucide-react';
 
-import { useTheme } from '@cctv/contexts/ThemeContext';
-import { useUser } from '@cctv/contexts/UserContext';
+import { useTenant, useTheme, useUser } from '@cctv/contexts';
 import { Switch } from '@cctv/core';
 import { getSessionCreatedExperiences } from '@cctv/utils';
 
@@ -34,6 +33,7 @@ export const TopNav = () => {
   const { user, logOut, isLoading } = useUser();
   const isAdmin = user?.role === 'admin' || user?.role === 'superadmin';
   const { theme, setTheme } = useTheme();
+  const { hasFeature } = useTenant();
   const adminExperiences = getSessionCreatedExperiences();
   const location = useLocation();
 
@@ -54,9 +54,15 @@ export const TopNav = () => {
     : '/performers/new';
   const profileLabel = user?.performer_slug ? 'Profile' : 'Become a Performer';
 
+  const showsPathPrefixes = SHOWS_PATH_PREFIXES.filter((prefix) => {
+    if (prefix === '/events') return hasFeature('events');
+    if (prefix === '/performers') return hasFeature('performers');
+    return true;
+  });
+
   const showsTabActive =
     activePanel === 'shows' ||
-    SHOWS_PATH_PREFIXES.some((prefix) => location.pathname.startsWith(prefix));
+    showsPathPrefixes.some((prefix) => location.pathname.startsWith(prefix));
 
   useEffect(() => {
     if (!openDropdown) return;
@@ -118,16 +124,24 @@ export const TopNav = () => {
                 Shows
               </button>
               <div className={styles.dropdownMenu} role="menu">
-                <NavLink to="/events" className={() => styles.dropdownItem} onClick={closeDropdown}>
-                  <CalendarDays size={14} /> Browse Events
-                </NavLink>
-                <NavLink
-                  to="/performers"
-                  className={() => styles.dropdownItem}
-                  onClick={closeDropdown}
-                >
-                  <Users size={14} /> Browse Performers
-                </NavLink>
+                {hasFeature('events') && (
+                  <NavLink
+                    to="/events"
+                    className={() => styles.dropdownItem}
+                    onClick={closeDropdown}
+                  >
+                    <CalendarDays size={14} /> Browse Events
+                  </NavLink>
+                )}
+                {hasFeature('performers') && (
+                  <NavLink
+                    to="/performers"
+                    className={() => styles.dropdownItem}
+                    onClick={closeDropdown}
+                  >
+                    <Users size={14} /> Browse Performers
+                  </NavLink>
+                )}
                 <NavLink to="/join" className={() => styles.dropdownItem} onClick={closeDropdown}>
                   <Ticket size={14} /> Join Show
                 </NavLink>
@@ -157,13 +171,15 @@ export const TopNav = () => {
                     >
                       <Plus size={14} /> Create Experience
                     </NavLink>
-                    <NavLink
-                      to="/events/new"
-                      className={() => styles.dropdownItem}
-                      onClick={closeDropdown}
-                    >
-                      <Plus size={14} /> New Event
-                    </NavLink>
+                    {hasFeature('events') && (
+                      <NavLink
+                        to="/events/new"
+                        className={() => styles.dropdownItem}
+                        onClick={closeDropdown}
+                      >
+                        <Plus size={14} /> New Event
+                      </NavLink>
+                    )}
                   </>
                 )}
               </div>
@@ -196,7 +212,7 @@ export const TopNav = () => {
                     title={theme === 'dark' ? 'Dark mode' : 'Light mode'}
                   />
                 </div>
-                {user && (
+                {user && hasFeature('performers') && (
                   <NavLink
                     to={profileHref}
                     className={() => styles.dropdownItem}
@@ -232,12 +248,16 @@ export const TopNav = () => {
 
       {activePanel === 'shows' && (
         <div className={styles.bottomPanel}>
-          <NavLink to="/events" className={styles.bottomPanelLink} onClick={closePanel}>
-            <CalendarDays size={16} /> Browse Events
-          </NavLink>
-          <NavLink to="/performers" className={styles.bottomPanelLink} onClick={closePanel}>
-            <Users size={16} /> Browse Performers
-          </NavLink>
+          {hasFeature('events') && (
+            <NavLink to="/events" className={styles.bottomPanelLink} onClick={closePanel}>
+              <CalendarDays size={16} /> Browse Events
+            </NavLink>
+          )}
+          {hasFeature('performers') && (
+            <NavLink to="/performers" className={styles.bottomPanelLink} onClick={closePanel}>
+              <Users size={16} /> Browse Performers
+            </NavLink>
+          )}
           <NavLink to="/join" className={styles.bottomPanelLink} onClick={closePanel}>
             <Ticket size={16} /> Join Show
           </NavLink>
@@ -263,9 +283,11 @@ export const TopNav = () => {
               <NavLink to="/create" className={styles.bottomPanelLink} onClick={closePanel}>
                 <Plus size={16} /> Create Experience
               </NavLink>
-              <NavLink to="/events/new" className={styles.bottomPanelLink} onClick={closePanel}>
-                <Plus size={16} /> New Event
-              </NavLink>
+              {hasFeature('events') && (
+                <NavLink to="/events/new" className={styles.bottomPanelLink} onClick={closePanel}>
+                  <Plus size={16} /> New Event
+                </NavLink>
+              )}
             </>
           )}
         </div>
@@ -284,7 +306,7 @@ export const TopNav = () => {
               title={theme === 'dark' ? 'Dark mode' : 'Light mode'}
             />
           </div>
-          {user && (
+          {user && hasFeature('performers') && (
             <NavLink to={profileHref} className={styles.bottomPanelLink} onClick={closePanel}>
               <UserIcon size={16} /> {profileLabel}
             </NavLink>

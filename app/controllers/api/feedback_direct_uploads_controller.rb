@@ -23,8 +23,10 @@ class Api::FeedbackDirectUploadsController < ActiveStorage::DirectUploadsControl
     token = request.headers["Authorization"]&.to_s&.match(/\ABearer\s+(.+)\z/i)&.captures&.first
     return false unless token
 
-    Experiences::AuthService.decode!(token).present?
-  rescue Experiences::AuthService::TokenInvalid, Experiences::AuthService::TokenExpired
+    claims = Experiences::AuthService.decode!(token)
+    Experiences::AuthService.verify_tenant!(claims)
+    true
+  rescue Experiences::AuthService::TokenInvalid, Experiences::AuthService::TokenExpired, Experiences::AuthService::Unauthorized
     false
   end
 

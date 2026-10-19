@@ -6,8 +6,7 @@ import { MotionConfig } from 'motion/react';
 
 import { AnalyticsIdentity, ExperienceAnalytics, RouteAnalytics } from '@cctv/analytics';
 import { RouteWink, TopNav } from '@cctv/components';
-import { ExperienceProvider } from '@cctv/contexts/ExperienceContext';
-import { UserProvider } from '@cctv/contexts/UserContext';
+import { ExperienceProvider, UserProvider, useTenant } from '@cctv/contexts';
 import { FeedbackExperienceBridge, FeedbackProvider } from '@cctv/feedback';
 import Calendar from '@cctv/pages/Calendar/Calendar';
 import Create from '@cctv/pages/Create/Create';
@@ -18,6 +17,7 @@ import Avatar from '@cctv/pages/Experience/Avatar';
 import Experience from '@cctv/pages/Experience/Experience';
 import ExperiencesList from '@cctv/pages/Experiences/ExperiencesList';
 import Monitor from '@cctv/pages/Monitor/Monitor';
+import NotFound from '@cctv/pages/NotFound/NotFound';
 import CreatePerformer from '@cctv/pages/Performers/CreatePerformer';
 import EditPerformer from '@cctv/pages/Performers/EditPerformer';
 import PerformerProfile from '@cctv/pages/Performers/PerformerProfile';
@@ -60,6 +60,7 @@ function App() {
   }, []);
 
   const currentRoute = useLocation();
+  const { hasFeature } = useTenant();
 
   return (
     <UserProvider>
@@ -80,23 +81,39 @@ function App() {
                   <Route path="/stylesheet" element={<Stylesheet />} />
 
                   {/* Public event & performer pages */}
-                  <Route path="/events" element={<Calendar />} />
-                  <Route path="/events/:slug" element={<EventDetail />} />
-                  <Route path="/performers" element={<PerformersList />} />
-                  <Route path="/performers/:slug" element={<PerformerProfile />} />
+                  {hasFeature('events') && (
+                    <>
+                      <Route path="/events" element={<Calendar />} />
+                      <Route path="/events/:slug" element={<EventDetail />} />
+                    </>
+                  )}
+                  {hasFeature('performers') && (
+                    <>
+                      <Route path="/performers" element={<PerformersList />} />
+                      <Route path="/performers/:slug" element={<PerformerProfile />} />
+                    </>
+                  )}
 
                   {/* Logged-in user routes */}
                   <Route element={<RequireAuth />}>
-                    <Route path="/performers/new" element={<CreatePerformer />} />
-                    <Route path="/performers/:slug/edit" element={<EditPerformer />} />
+                    {hasFeature('performers') && (
+                      <>
+                        <Route path="/performers/new" element={<CreatePerformer />} />
+                        <Route path="/performers/:slug/edit" element={<EditPerformer />} />
+                      </>
+                    )}
                   </Route>
 
                   {/* Admin-only */}
                   <Route element={<RequireAdmin />}>
                     <Route path="/experiences" element={<ExperiencesList />} />
                     <Route path="/create" element={<Create />} />
-                    <Route path="/events/new" element={<CreateEvent />} />
-                    <Route path="/events/:slug/edit" element={<EditEvent />} />
+                    {hasFeature('events') && (
+                      <>
+                        <Route path="/events/new" element={<CreateEvent />} />
+                        <Route path="/events/:slug/edit" element={<EditEvent />} />
+                      </>
+                    )}
                   </Route>
 
                   <Route
@@ -133,6 +150,8 @@ function App() {
                       </Route>
                     </Route>
                   </Route>
+
+                  <Route path="*" element={<NotFound />} />
                 </RouteWink>
               </Suspense>
             </div>

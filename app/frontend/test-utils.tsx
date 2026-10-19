@@ -5,6 +5,9 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { RenderOptions, render } from '@testing-library/react';
 
 import { ExperienceProvider } from '@cctv/contexts/ExperienceContext';
+import { TenantProvider } from '@cctv/contexts/TenantContext';
+
+import { TEST_TENANT_CONFIG } from './test-tenant';
 
 interface RenderWithProvidersOptions extends Omit<RenderOptions, 'wrapper'> {
   code?: string;
@@ -28,14 +31,16 @@ function TestProviders({
   }
 
   return (
-    <MemoryRouter initialEntries={[route]}>
-      <Routes>
-        <Route
-          path="/experience/:code/*"
-          element={<ExperienceProvider>{children}</ExperienceProvider>}
-        />
-      </Routes>
-    </MemoryRouter>
+    <TenantProvider config={TEST_TENANT_CONFIG}>
+      <MemoryRouter initialEntries={[route]}>
+        <Routes>
+          <Route
+            path="/experience/:code/*"
+            element={<ExperienceProvider>{children}</ExperienceProvider>}
+          />
+        </Routes>
+      </MemoryRouter>
+    </TenantProvider>
   );
 }
 
