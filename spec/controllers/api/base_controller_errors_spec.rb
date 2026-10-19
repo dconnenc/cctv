@@ -2,6 +2,7 @@ require "rails_helper"
 
 RSpec.describe Api::BaseController, type: :controller do
   include Passwordless::ControllerHelpers
+  include_context "without ambient tenant"
 
   controller(described_class) do
     before_action :authenticate_and_set_user_and_experience, only: [:guarded]
@@ -22,7 +23,7 @@ RSpec.describe Api::BaseController, type: :controller do
     end
   end
 
-  let!(:experience) { create(:experience) }
+  let!(:experience) { Tenants.with("cctv") { create(:experience) } }
 
   before do
     routes.draw do
@@ -38,16 +39,18 @@ RSpec.describe Api::BaseController, type: :controller do
   end
 
   def participant_token(role: :host, target: experience, ttl: 7.days)
-    user = create(:user)
-    create(:experience_participant, experience: target, user: user, role: role)
-    Experiences::AuthService.jwt_for_participant(experience: target, user: user, ttl: ttl)
+    Tenants.with(target.tenant) do
+      user = create(:user)
+      create(:experience_participant, experience: target, user: user, role: role)
+      Experiences::AuthService.jwt_for_participant(experience: target, user: user, ttl: ttl)
+    end
   end
 
   def unscoped_token
     now = Time.current.to_i
     JWT.encode(
       {
-        sub: create(:user).id,
+        sub: Tenants.with("cctv") { create(:user).id },
         scope: "other",
         tenant_id: Tenant.default.id,
         iat: now,
@@ -99,7 +102,7 @@ RSpec.describe Api::BaseController, type: :controller do
     context "with a token minted in another tenant" do
       before do
         other_tenant = create(:tenant)
-        token = ActsAsTenant.with_tenant(other_tenant) { participant_token(target: create(:experience)) }
+        token = participant_token(target: Tenants.with(other_tenant) { create(:experience) })
         bearer(token)
       end
 
@@ -107,7 +110,7 @@ RSpec.describe Api::BaseController, type: :controller do
     end
 
     context "with a participant token for a different experience" do
-      before { bearer(participant_token(target: create(:experience))) }
+      before { bearer(participant_token(target: Tenants.with("cctv") { create(:experience) })) }
 
       it_behaves_like "an unreported error response", :unauthorized, "unauthorized"
     end
@@ -115,7 +118,7 @@ RSpec.describe Api::BaseController, type: :controller do
     context "with a participant token whose user no longer exists" do
       before do
         token = participant_token
-        experience.experience_participants.each { |p| p.user.destroy! }
+        Tenants.with("cctv") { experience.experience_participants.each { |p| p.user.destroy! } }
         bearer(token)
       end
 
@@ -124,9 +127,10 @@ RSpec.describe Api::BaseController, type: :controller do
 
     context "with an admin token whose user is no longer an admin" do
       before do
-        user = create(:user, :admin)
-        token = Experiences::AuthService.jwt_for_admin(user: user)
-        user.update!(role: :user)
+        token = Tenants.with("cctv") do
+          user = create(:user, :admin)
+          Experiences::AuthService.jwt_for_admin(user: user).tap { user.update!(role: :user) }
+        end
         bearer(token)
       end
 
@@ -138,7 +142,7 @@ RSpec.describe Api::BaseController, type: :controller do
     context "with an admin token for an unknown experience" do
       subject { get :guarded, params: { experience_id: "missing" } }
 
-      before { bearer(Experiences::AuthService.jwt_for_admin(user: create(:user, :admin))) }
+      before { bearer(Tenants.with("cctv") { Experiences::AuthService.jwt_for_admin(user: create(:user, :admin)) }) }
 
       it_behaves_like "an unreported error response", :not_found, "not found"
     end
@@ -146,7 +150,7 @@ RSpec.describe Api::BaseController, type: :controller do
     context "with a session admin for an unknown experience" do
       subject { get :guarded, params: { experience_id: "missing" } }
 
-      before { sign_in(create_passwordless_session(create(:user, :admin))) }
+      before { sign_in(Tenants.with("cctv") { create_passwordless_session(create(:user, :admin)) }) }
 
       it_behaves_like "an unreported error response", :not_found, "not found"
     end

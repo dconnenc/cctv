@@ -1,6 +1,8 @@
 require "rails_helper"
 
 RSpec.describe "feature gating", type: :request do
+  include_context "without ambient tenant"
+
   def self.gated_requests
     RouteClassification.gated_routes.flat_map do |route|
       path = RouteClassification.path(route).gsub(/:\w+/, "any-slug")

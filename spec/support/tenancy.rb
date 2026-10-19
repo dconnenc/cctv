@@ -13,3 +13,14 @@ RSpec.configure do |config|
     ActsAsTenant.current_tenant = nil
   end
 end
+
+RSpec.shared_context "without ambient tenant" do
+  around do |example|
+    previous = ActsAsTenant.test_tenant
+    ActsAsTenant.test_tenant = nil
+    ActsAsTenant.current_tenant = nil
+    example.run
+  ensure
+    ActsAsTenant.test_tenant = previous
+  end
+end

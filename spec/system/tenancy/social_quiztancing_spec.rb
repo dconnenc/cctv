@@ -62,6 +62,51 @@ RSpec.describe "social-quiztancing tenant", type: :system do
     expect(page).to have_no_text("quiz-1")
   end
 
+  it "delivers block updates over the websocket on the tenant host only" do
+    quiz_admin = ActsAsTenant.with_tenant(quiz) { create(:user, :admin) }
+    sign_in_on_tenant(quiz_admin)
+    create_experience_and_go_to_manage(name: "Quiz Cable Night", code: "QUIZ-3")
+
+    queue_block(n: 1) do
+      select "Announcement", from: "Kind"
+      fill_in "Announcement Message", with: "Welcome {{ participant_name }} to quiz night!"
+    end
+
+    start_experience
+
+    using_session(:quiz_participant) do
+      register_participant(
+        code: "quiz-3",
+        name: "Alice",
+        email: "alice@example.com",
+        experience_name: "Quiz Cable Night"
+      )
+
+      expect(page).to have_text("Waiting for the next activity...")
+    end
+
+    visit current_path
+    select_and_present(1, kind: "announcement")
+
+    using_session(:quiz_participant) do
+      expect(page).to have_text("Welcome Alice to quiz night!")
+    end
+
+    use_host("localhost")
+
+    using_session(:cctv_participant) do
+      visit "/join?code=quiz-3"
+
+      expect(page).to have_text("Enter the secret code")
+      expect(page).to have_button("Submit", disabled: false)
+      click_button "Submit"
+
+      expect(page).to have_css("p.error-message[role='alert']")
+      expect(page).to have_current_path("/join?code=quiz-3")
+      expect(page).to have_no_text("Quiz Cable Night")
+    end
+  end
+
   it "only offers the tenant's allowed block kinds" do
     quiz_admin = ActsAsTenant.with_tenant(quiz) { create(:user, :admin) }
     sign_in_on_tenant(quiz_admin)

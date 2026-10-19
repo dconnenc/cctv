@@ -7,6 +7,8 @@ RSpec.describe ApplicationController, type: :controller do
     end
   end
 
+  include_context "without ambient tenant"
+
   let!(:other) { create(:tenant, key: "other") }
 
   before do
