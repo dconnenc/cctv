@@ -31,13 +31,14 @@ RSpec.describe "Tenant propagation through ActiveJob" do
   end
 
   it "performs in the enqueuing tenant even with no ambient tenant" do
-    ActsAsTenant.with_tenant(other) { create(:user) }
+    ActsAsTenant.with_tenant(other) { create_list(:user, 3) }
+    ActsAsTenant.with_tenant(Tenant.default) { create_list(:user, 2) }
     data = ActsAsTenant.with_tenant(other) { TenantProbeJob.new.serialize }
 
     without_ambient_tenant { ActiveJob::Base.execute(data) }
 
     expect(TenantProbeJob.seen_tenant_key).to eq(other.key)
-    expect(TenantProbeJob.seen_user_count).to eq(1)
+    expect(TenantProbeJob.seen_user_count).to eq(3)
   end
 
   it "locates GlobalID arguments inside the enqueuing tenant" do
@@ -50,13 +51,15 @@ RSpec.describe "Tenant propagation through ActiveJob" do
   end
 
   it "does not let a job see records from another tenant" do
-    ActsAsTenant.with_tenant(other) { create(:user) }
+    ActsAsTenant.with_tenant(other) { create_list(:user, 3) }
+    ActsAsTenant.with_tenant(Tenant.default) { create_list(:user, 2) }
     data = TenantProbeJob.new.serialize
 
     ActsAsTenant.with_tenant(other) { ActiveJob::Base.execute(data) }
 
     expect(TenantProbeJob.seen_tenant_key).to eq(Tenant.default.key)
-    expect(TenantProbeJob.seen_user_count).to eq(User.count)
+    expect(TenantProbeJob.seen_user_count).to eq(2)
+    expect(ActsAsTenant.with_tenant(other) { User.count }).to eq(3)
   end
 
   it "fails closed when the job has no tenant" do

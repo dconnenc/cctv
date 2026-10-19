@@ -23,11 +23,11 @@ RSpec.describe ApplicationCable::Connection, type: :channel do
   end
 
   it "runs every command inside the connection's tenant" do
+    original = ActsAsTenant.test_tenant
     connect "/cable", env: { "HTTP_HOST" => "other.localhost" }
     seen = []
     allow(connection.subscriptions).to receive(:execute_command) { seen << ActsAsTenant.current_tenant }
 
-    original = ActsAsTenant.test_tenant
     ActsAsTenant.test_tenant = nil
     %w[subscribe message unsubscribe].each do |command|
       connection.handle_channel_command("command" => command)

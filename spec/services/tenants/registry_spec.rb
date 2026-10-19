@@ -1,12 +1,12 @@
 require "rails_helper"
 
 RSpec.describe Tenants::Registry do
-  def config(key)
+  def config(key, blocks: %w[poll], features: [])
     Tenants::Config.new(
       key: key,
       name: key,
-      blocks: %w[poll],
-      features: [],
+      blocks: blocks,
+      features: features,
       theme: { display_name: key, tagline: key, ticket_tagline: key, site_name: key, description: key },
     )
   end
@@ -46,6 +46,18 @@ RSpec.describe Tenants::Registry do
     allow(described_class).to receive(:all).and_return([config("cctv"), config("cctv")])
 
     expect { described_class.validate! }.to raise_error(ArgumentError, /duplicate/)
+  end
+
+  it "rejects duplicate blocks" do
+    allow(described_class).to receive(:all).and_return([config("cctv", blocks: %w[poll poll])])
+
+    expect { described_class.validate! }.to raise_error(ArgumentError, /duplicate.*cctv/)
+  end
+
+  it "rejects duplicate features" do
+    allow(described_class).to receive(:all).and_return([config("cctv", features: %w[events events])])
+
+    expect { described_class.validate! }.to raise_error(ArgumentError, /duplicate.*cctv/)
   end
 
   it "requires the default tenant" do

@@ -31,6 +31,10 @@ module Tenants
 
       raise ArgumentError, "duplicate tenant keys: #{duplicates.join(', ')}" if duplicates.any?
       raise ArgumentError, "reserved tenant keys: #{reserved.join(', ')}" if reserved.any?
+      all.each do |config|
+        raise ArgumentError, "duplicate blocks in tenant #{config.key}" if config.blocks.uniq.size != config.blocks.size
+        raise ArgumentError, "duplicate features in tenant #{config.key}" if config.features.uniq.size != config.features.size
+      end
       raise ArgumentError, "default tenant #{DEFAULT_KEY} is not registered" unless registered.include?(DEFAULT_KEY)
 
       true

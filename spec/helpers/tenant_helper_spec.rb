@@ -39,6 +39,19 @@ RSpec.describe TenantHelper, type: :helper do
     expect(parse_config(html)["name"]).to eq("</script><!--<script>alert(1)</script>")
   end
 
+  it "neutralizes script terminators and comment openers in tenant strings" do
+    payload = "</script><script>alert(1)</script> <!--"
+    tenant = Tenant.default
+    allow(tenant).to receive(:config).and_return(tenant.config.new(name: payload))
+
+    html = ActsAsTenant.with_tenant(tenant) { helper.tenant_config_tag }.to_s
+
+    expect(html).not_to include("</script><script>")
+    expect(html).not_to include("<!--")
+    expect(html.scan("</script>").size).to eq(1)
+    expect(parse_config(html)["name"]).to eq(payload)
+  end
+
   it "renders nothing without a current tenant" do
     expect(ActsAsTenant.without_tenant { helper.tenant_config_tag }).to be_nil
   end

@@ -34,6 +34,10 @@ RSpec.describe Tenants::Config do
     end
   end
 
+  it "rejects an empty name" do
+    expect { described_class.new(attributes.merge(name: "")) }.to raise_error(Dry::Struct::Error)
+  end
+
   it "rejects an unknown block kind" do
     expect { described_class.new(attributes.merge(blocks: %w[poll nope])) }
       .to raise_error(Dry::Struct::Error)
@@ -87,6 +91,11 @@ RSpec.describe Tenants::Config do
       expect { described_class.new(attributes.merge(theme: theme.except(:ticket_tagline))) }
         .to raise_error(Dry::Struct::Error)
       expect(described_class.new(attributes.merge(theme: theme.merge(ticket_tagline: ""))).theme.ticket_tagline).to eq("")
+    end
+
+    it "rejects an empty display name" do
+      expect { described_class.new(attributes.merge(theme: theme.merge(display_name: ""))) }
+        .to raise_error(Dry::Struct::Error)
     end
 
     it "requires site name and description" do
