@@ -4,9 +4,6 @@ RSpec.describe "tenancy convention" do
   let(:exempt_tables) do
     %w[
       tenants
-      active_storage_attachments
-      active_storage_blobs
-      active_storage_variant_records
       passwordless_sessions
       schema_migrations
       ar_internal_metadata
@@ -42,7 +39,7 @@ RSpec.describe "tenancy convention" do
   it "includes Tenanted in every model on a tenanted table" do
     Rails.application.eager_load!
 
-    offenders = ApplicationRecord.descendants.reject(&:abstract_class?).filter_map do |model|
+    offenders = ActiveRecord::Base.descendants.reject(&:abstract_class?).filter_map do |model|
       next unless model.table_exists?
       next if exempt_tables.include?(model.table_name)
 

@@ -1,6 +1,5 @@
 class Api::DirectUploadsController < ActiveStorage::DirectUploadsController
   skip_forgery_protection
-  include TenantScoped
   include Passwordless::ControllerHelpers
 
   before_action :authenticate_jwt

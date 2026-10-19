@@ -4,7 +4,6 @@
 # image-only rule for everyone.
 class Api::FeedbackDirectUploadsController < ActiveStorage::DirectUploadsController
   skip_forgery_protection
-  include TenantScoped
   include Passwordless::ControllerHelpers
 
   ALLOWED_CONTENT_TYPES = Feedback::ATTACHMENT_CONTENT_TYPES
