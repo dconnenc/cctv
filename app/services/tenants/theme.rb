@@ -1,7 +1,7 @@
 module Tenants
   class Theme < Dry::Struct
     CSS_VARIABLE_NAME = /\A--[a-z0-9-]+\z/
-    CSS_VARIABLE_VALUE = /\A[^;{}<>]+\z/
+    CSS_VARIABLE_VALUE = %r{\A(?!.*/\*)(?!.*url\()[A-Za-z0-9#%.,()\s/\-]+\z}mi
 
     schema schema.strict
 

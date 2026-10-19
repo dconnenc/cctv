@@ -80,8 +80,19 @@ RSpec.describe Tenants::Config do
       end
     end
 
-    it "rejects css variable values that could break out of a declaration" do
-      ["red; } body { display:none", "</style>", "{x}", "a<b", "a>b", "", "red\n}"].each do |value|
+    it "accepts colors and lengths as css variable values" do
+      ["210 100% 55%", "#1a2b3c", "hsl(210 100% 55% / 0.5)", "12px", "0 0 8px rgba(0, 0, 0, 0.4)"].each do |value|
+        config = described_class.new(attributes.merge(theme: theme.merge(css_variables: { "--x" => value })))
+
+        expect(config.theme.css_variables).to eq("--x" => value)
+      end
+    end
+
+    it "rejects css variable values that could break out of a declaration or fetch resources" do
+      [
+        "red; } body { display:none", "</style>", "{x}", "a<b", "a>b", "", "red\n}",
+        "url(https://x.test/a.png)", "URL(x)", "\"quoted\"", "'single'", "red\\", "a /* b", "a\n/* b", "a\nurl(x)",
+      ].each do |value|
         expect { described_class.new(attributes.merge(theme: theme.merge(css_variables: { "--x" => value }))) }
           .to raise_error(Dry::Struct::Error), "expected #{value.inspect} to be rejected"
       end
