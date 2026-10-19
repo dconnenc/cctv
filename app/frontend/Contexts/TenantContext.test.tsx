@@ -1,15 +1,10 @@
 import { renderHook } from '@testing-library/react';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { BlockKind } from '@cctv/types';
 
-import {
-  DEFAULT_TENANT_CONFIG,
-  TenantConfig,
-  TenantProvider,
-  readTenantConfig,
-  useTenant,
-} from './TenantContext';
+import { TEST_TENANT_CONFIG } from '../test-tenant';
+import { TenantConfig, TenantProvider, readTenantConfig, useTenant } from './TenantContext';
 
 const writeConfig = (value: string) => {
   const script = document.createElement('script');
@@ -24,20 +19,26 @@ afterEach(() => {
 });
 
 describe('readTenantConfig', () => {
-  it('falls back to the default config when the tag is missing', () => {
-    expect(readTenantConfig()).toEqual(DEFAULT_TENANT_CONFIG);
+  it('throws when the tag is missing', () => {
+    expect(() => readTenantConfig()).toThrow('tenant-config script missing or invalid');
   });
 
-  it('falls back to the default config when the JSON is malformed', () => {
+  it('throws when the JSON is malformed', () => {
     writeConfig('{not json');
 
-    expect(readTenantConfig()).toEqual(DEFAULT_TENANT_CONFIG);
+    expect(() => readTenantConfig()).toThrow('tenant-config script missing or invalid');
   });
 
-  it('falls back to the default config when required fields are missing', () => {
+  it('throws when required fields are missing', () => {
     writeConfig(JSON.stringify({ key: 'quiz', features: [], blocks: ['poll'] }));
 
-    expect(readTenantConfig()).toEqual(DEFAULT_TENANT_CONFIG);
+    expect(() => readTenantConfig()).toThrow('tenant-config script missing or invalid');
+  });
+
+  it('round-trips the test fixture', () => {
+    writeConfig(JSON.stringify(TEST_TENANT_CONFIG));
+
+    expect(readTenantConfig()).toEqual(TEST_TENANT_CONFIG);
   });
 
   it('reads the tenant config from the page', () => {
@@ -78,7 +79,7 @@ describe('readTenantConfig', () => {
     });
   });
 
-  it('falls back to the default config when the tagline is missing', () => {
+  it('throws when the tagline is missing', () => {
     writeConfig(
       JSON.stringify({
         key: 'quiz',
@@ -89,10 +90,10 @@ describe('readTenantConfig', () => {
       }),
     );
 
-    expect(readTenantConfig()).toEqual(DEFAULT_TENANT_CONFIG);
+    expect(() => readTenantConfig()).toThrow('tenant-config script missing or invalid');
   });
 
-  it('falls back to the default config when the ticket tagline is missing', () => {
+  it('throws when the ticket tagline is missing', () => {
     writeConfig(
       JSON.stringify({
         key: 'quiz',
@@ -103,15 +104,7 @@ describe('readTenantConfig', () => {
       }),
     );
 
-    expect(readTenantConfig()).toEqual(DEFAULT_TENANT_CONFIG);
-  });
-
-  it('defaults to the CCTV brand', () => {
-    expect(DEFAULT_TENANT_CONFIG.theme).toEqual({
-      displayName: 'CCTV',
-      tagline: 'CHICAGO COMEDY . TV',
-      ticketTagline: 'CHICAGO COMEDY TV',
-    });
+    expect(() => readTenantConfig()).toThrow('tenant-config script missing or invalid');
   });
 
   it('drops unknown features and non-string blocks', () => {
@@ -148,10 +141,11 @@ describe('useTenant', () => {
     expect(result.current.isBlockAllowed(BlockKind.THE_SCENE)).toBe(false);
   });
 
-  it('allows everything under the default config', () => {
-    const { result } = renderHook(() => useTenant());
+  it('throws outside a provider', () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
 
-    expect(result.current.hasFeature('events')).toBe(true);
-    expect(result.current.isBlockAllowed(BlockKind.THE_SCENE)).toBe(true);
+    expect(() => renderHook(() => useTenant())).toThrow(
+      'useTenant must be used within a TenantProvider',
+    );
   });
 });

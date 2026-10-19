@@ -1,7 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
-import { DEFAULT_TENANT_CONFIG, TenantProvider, ThemeProvider } from '@cctv/contexts';
+import { TenantProvider, ThemeProvider } from '@cctv/contexts';
 
+import { TEST_TENANT_CONFIG } from '../../test-tenant';
 import { TopNav } from './TopNav';
 
 const meta: Meta<typeof TopNav> = {
@@ -25,7 +26,7 @@ export const AllFeatures: Story = {};
 export const NoPublicFeatures: Story = {
   decorators: [
     (Story) => (
-      <TenantProvider config={{ ...DEFAULT_TENANT_CONFIG, features: [] }}>
+      <TenantProvider config={{ ...TEST_TENANT_CONFIG, features: [] }}>
         <Story />
       </TenantProvider>
     ),

@@ -4,12 +4,13 @@ import { render, screen } from '@testing-library/react';
 import { HttpResponse, http } from 'msw';
 import { describe, expect, it } from 'vitest';
 
-import { DEFAULT_TENANT_CONFIG, TenantProvider, ThemeProvider, UserProvider } from '@cctv/contexts';
+import { TenantProvider, ThemeProvider, UserProvider } from '@cctv/contexts';
 
 import { server } from '../../test-msw';
+import { TEST_TENANT_CONFIG } from '../../test-tenant';
 import { TopNav } from './TopNav';
 
-const renderNav = (config = DEFAULT_TENANT_CONFIG) => {
+const renderNav = (config = TEST_TENANT_CONFIG) => {
   server.use(http.get('/api/users/me', () => new HttpResponse(null, { status: 401 })));
 
   return render(
@@ -39,7 +40,7 @@ describe('TopNav', () => {
   });
 
   it('hides every events and performers link when the features are disabled', () => {
-    renderNav({ ...DEFAULT_TENANT_CONFIG, features: [] });
+    renderNav({ ...TEST_TENANT_CONFIG, features: [] });
 
     expect(publicLinks()).toEqual([]);
   });

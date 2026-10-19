@@ -1,6 +1,6 @@
 import { PropsWithChildren, createContext, useContext, useMemo } from 'react';
 
-import { BlockKind, JsonValue } from '@cctv/types';
+import { JsonValue } from '@cctv/types';
 
 const TENANT_FEATURES = ['events', 'performers', 'discover'] as const;
 
@@ -13,18 +13,6 @@ export interface TenantConfig {
   blocks: string[];
   theme: { displayName: string; tagline: string; ticketTagline: string };
 }
-
-export const DEFAULT_TENANT_CONFIG: TenantConfig = {
-  key: 'cctv',
-  name: 'CCTV',
-  features: [...TENANT_FEATURES],
-  blocks: Object.values(BlockKind),
-  theme: {
-    displayName: 'CCTV',
-    tagline: 'CHICAGO COMEDY . TV',
-    ticketTagline: 'CHICAGO COMEDY TV',
-  },
-};
 
 const isTenantFeature = (value: JsonValue): value is TenantFeature =>
   TENANT_FEATURES.some((feature) => feature === value);
@@ -52,16 +40,22 @@ function parseTenantConfig(raw: JsonValue): TenantConfig | null {
   };
 }
 
+const TENANT_CONFIG_ERROR = 'tenant-config script missing or invalid';
+
 export function readTenantConfig(doc: Document = document): TenantConfig {
   const element = doc.getElementById('tenant-config');
-  if (!element?.textContent) return DEFAULT_TENANT_CONFIG;
+  if (!element?.textContent) throw new Error(TENANT_CONFIG_ERROR);
 
+  let parsed: JsonValue;
   try {
-    const parsed: JsonValue = JSON.parse(element.textContent);
-    return parseTenantConfig(parsed) ?? DEFAULT_TENANT_CONFIG;
+    parsed = JSON.parse(element.textContent);
   } catch {
-    return DEFAULT_TENANT_CONFIG;
+    throw new Error(TENANT_CONFIG_ERROR);
   }
+
+  const config = parseTenantConfig(parsed);
+  if (!config) throw new Error(TENANT_CONFIG_ERROR);
+  return config;
 }
 
 interface TenantContextValue {
@@ -76,7 +70,7 @@ const buildValue = (config: TenantConfig): TenantContextValue => ({
   isBlockAllowed: (kind) => config.blocks.includes(kind),
 });
 
-const TenantContext = createContext<TenantContextValue>(buildValue(DEFAULT_TENANT_CONFIG));
+const TenantContext = createContext<TenantContextValue | null>(null);
 
 interface TenantProviderProps extends PropsWithChildren {
   config?: TenantConfig;
@@ -89,5 +83,7 @@ export function TenantProvider({ config, children }: TenantProviderProps) {
 }
 
 export function useTenant(): TenantContextValue {
-  return useContext(TenantContext);
+  const value = useContext(TenantContext);
+  if (!value) throw new Error('useTenant must be used within a TenantProvider');
+  return value;
 }

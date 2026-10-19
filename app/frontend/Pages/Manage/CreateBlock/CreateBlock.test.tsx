@@ -1,11 +1,12 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
-import { DEFAULT_TENANT_CONFIG, TenantProvider } from '@cctv/contexts';
+import { TenantProvider } from '@cctv/contexts';
 import type { TenantConfig } from '@cctv/contexts';
 import { Dialog } from '@cctv/core';
 import { BlockKind } from '@cctv/types';
 
+import { TEST_TENANT_CONFIG } from '../../../test-tenant';
 import CreateBlock from './CreateBlock';
 
 vi.mock('@cctv/contexts/ExperienceContext', () => ({
@@ -33,13 +34,13 @@ function renderCreateBlock(config: TenantConfig) {
 
 describe('CreateBlock', () => {
   it('defaults to poll when every kind is allowed', () => {
-    renderCreateBlock(DEFAULT_TENANT_CONFIG);
+    renderCreateBlock(TEST_TENANT_CONFIG);
 
     expect(screen.getByLabelText('Kind:')).toHaveValue(BlockKind.POLL);
   });
 
   it('defaults to the first allowed kind when poll is not allowed', () => {
-    renderCreateBlock({ ...DEFAULT_TENANT_CONFIG, blocks: [BlockKind.QUESTION] });
+    renderCreateBlock({ ...TEST_TENANT_CONFIG, blocks: [BlockKind.QUESTION] });
 
     expect(screen.getByLabelText('Kind:')).toHaveValue(BlockKind.QUESTION);
     expect(screen.getByLabelText('Input Type:')).toBeInTheDocument();
