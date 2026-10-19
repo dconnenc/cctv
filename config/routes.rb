@@ -178,50 +178,53 @@ Rails.application.routes.draw do
     end
   end
 
-  root 'spa#index'
+  html_only = ->(request) { !request.xhr? && request.format.html? }
 
-  get '/about', to: 'spa#index'
-  get '/join', to: 'spa#index'
-  get '/stylesheet', to: 'spa#index'
-  get '/create', to: 'spa#index'
+  constraints html_only do
+    root 'spa#index'
 
-  constraints Tenants::FeatureConstraint.new(:events) do
-    get '/events', to: 'spa#index'
-    get '/events/new', to: 'spa#index'
-    get '/events/:slug', to: 'spa#index'
-    get '/events/:slug/edit', to: 'spa#index'
-  end
+    get '/about', to: 'spa#index'
+    get '/join', to: 'spa#index'
+    get '/stylesheet', to: 'spa#index'
+    get '/create', to: 'spa#index'
 
-  constraints Tenants::FeatureConstraint.new(:performers) do
-    get '/performers', to: 'spa#index'
-    get '/performers/new', to: 'spa#index'
-    get '/performers/:slug', to: 'spa#index'
-    get '/performers/:slug/edit', to: 'spa#index'
-  end
+    constraints Tenants::FeatureConstraint.new(:events) do
+      get '/events', to: 'spa#index'
+      get '/events/new', to: 'spa#index'
+      get '/events/:slug', to: 'spa#index'
+      get '/events/:slug/edit', to: 'spa#index'
+    end
 
-  get '/experiences', to: 'spa#index'
-  get '/experiences/register', to: 'spa#index'
-  get '/experiences/:code', to: 'spa#index', as: :experience_lobby
-  get '/experiences/:code/register', to: 'spa#index', as: :experience_register
+    constraints Tenants::FeatureConstraint.new(:performers) do
+      get '/performers', to: 'spa#index'
+      get '/performers/new', to: 'spa#index'
+      get '/performers/:slug', to: 'spa#index'
+      get '/performers/:slug/edit', to: 'spa#index'
+    end
 
-  %w[
-    monitor
-    avatar
-    playbill
-    timeline
-    manage
-    manage/focus
-    manage/participants
-    manage/playbill
-    manage/debug
-    manage/blocks/new
-    manage/blocks/:block_id
-  ].each do |page|
-    get "/experiences/:code/#{page}", to: 'spa#index'
+    get '/experiences', to: 'spa#index'
+    get '/experiences/register', to: 'spa#index'
+    get '/experiences/:code', to: 'spa#index', as: :experience_lobby
+    get '/experiences/:code/register', to: 'spa#index', as: :experience_register
+
+    %w[
+      monitor
+      avatar
+      playbill
+      timeline
+      manage
+      manage/focus
+      manage/participants
+      manage/playbill
+      manage/debug
+      manage/blocks/new
+      manage/blocks/:block_id
+    ].each do |page|
+      get "/experiences/:code/#{page}", to: 'spa#index'
+    end
   end
 
   get '*path', to: 'spa#not_found', constraints: ->(request) do
-    !request.xhr? && request.format.html? && !request.path.match?(%r{\A/api(/|\z)})
+    html_only.call(request) && !request.path.match?(%r{\A/api(/|\z)})
   end
-
 end

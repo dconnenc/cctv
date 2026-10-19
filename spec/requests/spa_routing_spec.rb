@@ -38,6 +38,20 @@ RSpec.describe "SPA routing", type: :request do
       expect(response).to have_http_status(:not_found)
     end
 
+    {
+      "/about" => { "Accept" => "application/json" },
+      "/about.json" => {},
+      "/events/x.json" => {},
+      "/experiences/ABC" => { "Accept" => "application/json" },
+      "/" => { "Accept" => "application/json" },
+    }.each do |path, headers|
+      it "returns 404 for a non-HTML request to #{path}" do
+        get path, headers: headers
+
+        expect(response).to have_http_status(:not_found)
+      end
+    end
+
     it "keeps serving the health check" do
       get "/up"
 
