@@ -92,7 +92,7 @@
     "oxlint": "1.78.0",
     "prettier": "^3.3.3",
     "sass": "^1.92.1",
-    "storybook": "^10.2.19",
+    "storybook": "^10.6.2",
     "typescript": "^5.9.3",
     "vite": "^6.4.3",
     "vite-plugin-ruby": "^5.1.1",
