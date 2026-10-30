@@ -48,10 +48,12 @@ export default function Monitor() {
     currentBlock?.kind === BlockKind.MINIGAME_BALLOON_PUMP &&
     !!currentBlock.payload.ended_at &&
     (currentBlock.payload.podium?.length ?? 0) > 0;
+  const showingFishy =
+    currentBlock?.kind === BlockKind.MINIGAME_FISHY && !!currentBlock.payload.started_at;
 
   return (
     <section className={styles.root}>
-      {!showingBalloonPodium && (
+      {!showingBalloonPodium && !showingFishy && (
         <AnalyticsErrorBoundary fallback={null}>
           <LobbyAvatars />
         </AnalyticsErrorBoundary>

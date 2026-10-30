@@ -205,7 +205,8 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
     setWsReady,
     setSubmissionState,
   } = useExperienceState();
-  const { getFamilyFeudDispatch, getBalloonPumpLeaderDispatch } = useDispatchRegistry();
+  const { getFamilyFeudDispatch, getBalloonPumpLeaderDispatch, dispatchFishyFrame } =
+    useDispatchRegistry();
   const lobbyDrawingDispatch = useLobbyDrawingDispatch();
 
   const [wsConnected, setWsConnected] = useState(false);
@@ -269,6 +270,11 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
       if (target === 'monitor') {
         const channelMsg = parseChannelMessage(raw);
         if (!channelMsg) return;
+
+        if (channelMsg.type === WebSocketMessageTypes.MINIGAME_FISHY_FRAME) {
+          dispatchFishyFrame(channelMsg);
+          return;
+        }
 
         if (channelMsg.type === 'avatars_state') {
           // SAFETY: parseChannelMessage verified channelMsg.type is in CHANNEL_MESSAGE_TYPES,
@@ -341,6 +347,8 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
             dispatch({ type: actionType, payload: data } as FamilyFeudAction);
           }
         }
+      } else if (wsMessage.type === WebSocketMessageTypes.MINIGAME_FISHY_FRAME) {
+        dispatchFishyFrame(wsMessage);
       } else if (target === 'main' && wsMessage.type === WebSocketMessageTypes.SUBMISSION_STATE) {
         setSubmissionState(wsMessage.submissions);
       } else if (
@@ -361,6 +369,7 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
       setSubmissionState,
       getFamilyFeudDispatch,
       getBalloonPumpLeaderDispatch,
+      dispatchFishyFrame,
       lobbyDrawingDispatch,
       reconnectParticipantWs,
     ],

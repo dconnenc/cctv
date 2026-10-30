@@ -11,6 +11,7 @@ class WebsocketMessageService
     # Block-specific updates
     FAMILY_FEUD_UPDATED: 'family_feud_updated',
     MINIGAME_BALLOON_PUMP_LEADER_UPDATED: 'minigame_balloon_pump_leader_updated',
+    MINIGAME_FISHY_FRAME: 'minigame_fishy_frame',
 
     # Subscription management
     RESUBSCRIBE_REQUIRED: 'resubscribe_required',
@@ -103,6 +104,15 @@ class WebsocketMessageService
       block_id: block_id,
       leader_fill: leader_fill,
       timestamp: Time.current.to_f
+    }
+  end
+
+  def self.minigame_fishy_frame(block_id:, started_at:, frame:)
+    {
+      type: MESSAGE_TYPES[:MINIGAME_FISHY_FRAME],
+      block_id: block_id,
+      started_at: started_at,
+      **frame.symbolize_keys
     }
   end
 

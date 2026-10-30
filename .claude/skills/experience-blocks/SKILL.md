@@ -326,6 +326,31 @@ full experience broadcast cannot touch them.
 See `DispatchRegistryContext.tsx`, `WebSocketContext.tsx` (FAMILY_FEUD_UPDATED handling), and
 `FamilyFeudManager` for the canonical implementation of this pattern.
 
+### 4. Authoritative tick loop (continuous shared simulation)
+
+The deliberate exception to "don't broadcast every N ms". Use it only when the
+game _is_ a shared, continuously moving world that every viewer must see
+consistently — positions, collisions, who-ate-whom — and no anchor timestamp
+can derive it. `minigame_fishy` is the reference implementation.
+
+- **One writer.** `Minigames::FishyTickJob` (queue `realtime`) owns the game for
+  its whole duration and steps a pure-Ruby `Simulation`. A Redis lease renewed
+  every tick guarantees a single loop; Sidekiq requeues resume from state
+  persisted in Redis each tick.
+- **Live state lives in Redis, not Postgres.** `Minigames::Fishy::Store` keys are
+  namespaced by game generation (`started_at`) so a restart can never be
+  clobbered by a loop still finishing the previous game. Postgres only learns
+  the outcome when `Finalizer` ends the game under `block.lock!`.
+- **Input over the socket, not HTTP.** Phones `perform` channel actions that
+  only `HSET` into Redis — no DB write, no broadcast. Clients send only when
+  input changes, rate-limited.
+- **One shared live stream.** Frames go to `Broadcaster.live_stream_key` (all
+  participants + monitor), carry no per-user data, and are skipped when nothing
+  changed. Periodic keyframes plus a keyframe on subscribe let any client
+  converge.
+- **Client holds the world outside React.** Frames fan out through
+  `DispatchRegistryContext` into a plain object read by a canvas rAF loop.
+
 ### Audit checklist for high-frequency blocks
 
 - Does any backend method read `block.payload` from the in-memory AR object and write the whole
