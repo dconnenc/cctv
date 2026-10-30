@@ -1,4 +1,5 @@
 import { useExperience } from '@cctv/contexts/ExperienceContext';
+import MinigameFishy from '@cctv/experiences/MinigameFishy/MinigameFishy';
 import TheScene from '@cctv/experiences/TheScene/TheScene';
 import { Block, BlockKind, ParticipantSummary, TheSceneBlock } from '@cctv/types';
 
@@ -46,7 +47,8 @@ export function MetadataRow({ block }: { block: Block }) {
     block.kind !== BlockKind.ANNOUNCEMENT &&
     block.kind !== BlockKind.FAMILY_FEUD &&
     block.kind !== BlockKind.MINIGAME_BALLOON_PUMP &&
-    block.kind !== BlockKind.MINIGAME_ARITHMETIC;
+    block.kind !== BlockKind.MINIGAME_ARITHMETIC &&
+    block.kind !== BlockKind.MINIGAME_FISHY;
 
   return (
     <div className="flex items-center gap-2 flex-wrap text-xs text-[hsl(var(--muted-foreground))]">
@@ -107,6 +109,13 @@ export default function BlockContextTab({ block, participants }: BlockContextTab
         <div className="space-y-4">
           <MinigameControls block={block} />
           <BlockResponsesList block={block} participants={participants} />
+        </div>
+      );
+    case BlockKind.MINIGAME_FISHY:
+      return (
+        <div className="space-y-4">
+          <MinigameControls block={block} />
+          <MinigameFishy block={block} viewContext="manage" />
         </div>
       );
     case BlockKind.THE_SCENE: {

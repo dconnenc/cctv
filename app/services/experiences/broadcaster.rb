@@ -111,6 +111,16 @@ class Experiences::Broadcaster
     end
   end
 
+  # High-frequency game frames go to the shared live stream, not the profile
+  # streams: the frame is identical for every viewer and carries no per-user
+  # data. Not logged per frame — this fires up to 15 times a second.
+  def broadcast_fishy_frame(block_id:, started_at:, frame:)
+    message = WebsocketMessageService.minigame_fishy_frame(block_id: block_id, started_at: started_at, frame: frame)
+    ActionCable.server.broadcast(self.class.live_stream_key(experience), message)
+  rescue => e
+    Rails.logger.error("[Broadcaster] Failed to broadcast fishy frame: #{e.message}")
+  end
+
   def broadcast_family_feud_update(block_id:, operation:, data:)
     Rails.logger.info(
       "[Broadcaster] Broadcasting family_feud_updated to experience #{experience.code}"
@@ -135,6 +145,10 @@ class Experiences::Broadcaster
 
   def self.admin_stream_key(experience)
     "experience_#{experience.id}_admins"
+  end
+
+  def self.live_stream_key(experience)
+    "experience_#{experience.id}_live"
   end
 
   private

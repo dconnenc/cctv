@@ -604,4 +604,73 @@ RSpec.describe ExperienceSubscriptionChannel, type: :channel do
       end
     end
   end
+
+  describe "minigame fishy" do
+    let(:participant) do
+      create(:experience_participant, user: regular_user, experience: experience, role: :audience)
+    end
+    let(:other) { create(:experience_participant, experience: experience, role: :audience) }
+    let(:token) { Experiences::AuthService.jwt_for_participant(experience: experience, user: regular_user) }
+    let(:started_at) { 1.second.ago.iso8601(3) }
+    let!(:block) do
+      create(:experience_block,
+        experience: experience,
+        kind: ExperienceBlock::MINIGAME_FISHY,
+        status: :open,
+        payload: { "started_at" => started_at, "ended_at" => nil, "roster" => [other.id, participant.id] })
+    end
+    let(:store) { Minigames::Fishy::Store.for(block) }
+
+    before do
+      store.write_state(Minigames::Fishy::Simulation.seed(slot_count: 2, started_at: started_at))
+      subscribe(code: experience.code_slug, token: token)
+    end
+
+    after { store.clear! }
+
+    it "streams from the live stream alongside the profile stream" do
+      expect(subscription).to have_stream_from("experience_#{experience.id}_live")
+    end
+
+    it "transmits a keyframe for the running game on subscribe" do
+      frame = transmissions.find { |t| t["type"] == "minigame_fishy_frame" }
+
+      expect(frame).to include("block_id" => block.id, "started_at" => started_at, "keyframe" => true)
+      expect(frame["players"].size).to eq(2)
+    end
+
+    it "writes a normalized direction for the sender's roster slot" do
+      perform(:fishy_input, { "block_id" => block.id, "started_at" => started_at, "dx" => 3, "dy" => 4 })
+
+      expect(store.read_inputs).to eq({ 1 => [0.6, 0.8] })
+    end
+
+    it "clears the direction when the finger lifts" do
+      store.set_input(1, 1.0, 0.0)
+
+      perform(:fishy_input, { "block_id" => block.id, "started_at" => started_at })
+
+      expect(store.read_inputs).to be_empty
+    end
+
+    it "queues a dash" do
+      perform(:fishy_dash, { "block_id" => block.id, "started_at" => started_at, "dx" => 0, "dy" => -2 })
+
+      expect(store.take_dashes).to eq({ 1 => [0.0, -1.0] })
+    end
+
+    it "ignores input for a stale game" do
+      perform(:fishy_input, { "block_id" => block.id, "started_at" => "2020-01-01T00:00:00.000Z", "dx" => 1, "dy" => 0 })
+
+      expect(store.read_inputs).to be_empty
+    end
+
+    it "ignores input from participants outside the roster" do
+      block.update!(payload: block.payload.merge("roster" => [other.id]))
+
+      perform(:fishy_input, { "block_id" => block.id, "started_at" => started_at, "dx" => 1, "dy" => 0 })
+
+      expect(store.read_inputs).to be_empty
+    end
+  end
 end

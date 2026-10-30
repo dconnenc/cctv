@@ -34,6 +34,7 @@ export enum BlockKind {
   GUESS_WHO = 'guess_who',
   MINIGAME_ARITHMETIC = 'minigame_arithmetic',
   MINIGAME_BALLOON_PUMP = 'minigame_balloon_pump',
+  MINIGAME_FISHY = 'minigame_fishy',
   COLLABORATIVE_DRAWING = 'collaborative_drawing',
   THE_SCENE = 'the_scene',
   FEEDBACK = 'feedback',
@@ -50,6 +51,7 @@ export const BLOCK_KIND_LABELS = {
   [BlockKind.GUESS_WHO]: 'Guess Who',
   [BlockKind.MINIGAME_ARITHMETIC]: 'Minigame: Arithmetic',
   [BlockKind.MINIGAME_BALLOON_PUMP]: 'Minigame: Balloon Pump',
+  [BlockKind.MINIGAME_FISHY]: 'Minigame: Fishy',
   [BlockKind.COLLABORATIVE_DRAWING]: 'Collaborative Drawing',
   [BlockKind.THE_SCENE]: 'The Scene',
   [BlockKind.FEEDBACK]: 'Feedback',
@@ -398,6 +400,25 @@ export interface MinigameBalloonPumpPayload {
   podium?: MinigameBalloonPumpPodiumEntry[];
 }
 
+export interface MinigameFishyStanding {
+  participant_id: string;
+  place: number;
+  size: number;
+}
+
+export interface MinigameFishyPayload {
+  title: string;
+  instructions: string;
+  max_players: number;
+  started_at: string | null;
+  ended_at: string | null;
+  // Participant ids indexed by slot; frames address players by slot.
+  roster: string[];
+  world_size: number;
+  standings?: MinigameFishyStanding[];
+  winner_participant_id?: string | null;
+}
+
 export interface BlockLink {
   id: string;
   parent_block_id: string;
@@ -484,6 +505,13 @@ export interface MinigameBalloonPumpApiPayload {
   target_units: number;
 }
 
+export interface MinigameFishyApiPayload {
+  type: 'minigame_fishy';
+  title: string;
+  instructions: string;
+  max_players: number;
+}
+
 export interface CollaborativeDrawingApiPayload {
   type: 'collaborative_drawing';
   prompt: string;
@@ -504,6 +532,7 @@ export type ApiPayload =
   | GuessWhoApiPayload
   | MinigameArithmeticApiPayload
   | MinigameBalloonPumpApiPayload
+  | MinigameFishyApiPayload
   | CollaborativeDrawingApiPayload
   | TheSceneApiPayload
   | FeedbackApiPayload
@@ -728,6 +757,14 @@ export interface MinigameBalloonPumpBlock extends BaseBlock {
   };
 }
 
+export interface MinigameFishyBlock extends BaseBlock {
+  kind: BlockKind.MINIGAME_FISHY;
+  payload: MinigameFishyPayload;
+  responses?: {
+    total: number;
+  };
+}
+
 export interface FeedbackBlock extends BaseBlock {
   kind: BlockKind.FEEDBACK;
   payload: FeedbackPayload;
@@ -769,6 +806,7 @@ export type Block =
   | GuessWhoBlock
   | MinigameArithmeticBlock
   | MinigameBalloonPumpBlock
+  | MinigameFishyBlock
   | CollaborativeDrawingBlock
   | TheSceneBlock
   | FeedbackBlock
@@ -845,6 +883,7 @@ export interface CreateBlockPayload {
     | GuessWhoPayload
     | MinigameArithmeticPayload
     | MinigameBalloonPumpPayload
+    | MinigameFishyPayload
     | CollaborativeDrawingPayload
     | TheScenePayload
     | FeedbackPayload
@@ -1013,6 +1052,7 @@ export const WebSocketMessageTypes = {
   FAMILY_FEUD_UPDATED: 'family_feud_updated',
   SUBMISSION_STATE: 'submission_state',
   MINIGAME_BALLOON_PUMP_LEADER_UPDATED: 'minigame_balloon_pump_leader_updated',
+  MINIGAME_FISHY_FRAME: 'minigame_fishy_frame',
   AVATARS_STATE: 'avatars_state',
 } as const;
 
@@ -1102,6 +1142,27 @@ export interface MinigameBalloonPumpLeaderUpdatedMessage
   leader_fill: number;
 }
 
+// [slot, x, y, size, dashing]
+export type MinigameFishyPlayerFrame = [number, number, number, number, 0 | 1];
+// [eaten slot, eater slot]
+export type MinigameFishyElimination = [number, number];
+
+// Live Fishy world state from the tick loop. Keyframes carry the whole pellet
+// field and every elimination so far; deltas carry only what changed.
+export interface MinigameFishyFrameMessage {
+  type: 'minigame_fishy_frame';
+  block_id: string;
+  started_at: string;
+  t: number;
+  players: MinigameFishyPlayerFrame[];
+  eliminated: MinigameFishyElimination[];
+  // [pellet index, x, y] respawns
+  pellets: Array<[number, number, number]>;
+  keyframe?: true;
+  pellet_field?: Array<[number, number]>;
+  out?: MinigameFishyElimination[];
+}
+
 export type SubmissionState = Record<
   string,
   {
@@ -1139,6 +1200,7 @@ export type WebSocketMessage =
   | FamilyFeudUpdatedMessage
   | SubmissionStateMessage
   | MinigameBalloonPumpLeaderUpdatedMessage
+  | MinigameFishyFrameMessage
   | AvatarsStateMessage;
 
 export type AvatarsEntry = {
@@ -1333,6 +1395,12 @@ export interface MinigameBalloonPumpData {
   target_units: number;
 }
 
+export interface MinigameFishyData {
+  title: string;
+  instructions: string;
+  max_players: number;
+}
+
 export interface CollaborativeDrawingData {
   prompt: string;
   min_subsections: number;
@@ -1364,6 +1432,7 @@ export type BlockComponentData =
   | GuessWhoData
   | MinigameArithmeticData
   | MinigameBalloonPumpData
+  | MinigameFishyData
   | CollaborativeDrawingData
   | TheSceneData
   | FeedbackData
@@ -1380,6 +1449,7 @@ export type FormBlockData =
   | { kind: BlockKind.GUESS_WHO; data: GuessWhoData }
   | { kind: BlockKind.MINIGAME_ARITHMETIC; data: MinigameArithmeticData }
   | { kind: BlockKind.MINIGAME_BALLOON_PUMP; data: MinigameBalloonPumpData }
+  | { kind: BlockKind.MINIGAME_FISHY; data: MinigameFishyData }
   | { kind: BlockKind.COLLABORATIVE_DRAWING; data: CollaborativeDrawingData }
   | { kind: BlockKind.THE_SCENE; data: TheSceneData }
   | { kind: BlockKind.FEEDBACK; data: FeedbackData }

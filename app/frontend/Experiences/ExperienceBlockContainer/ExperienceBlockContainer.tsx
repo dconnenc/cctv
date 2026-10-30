@@ -11,6 +11,7 @@ import FeedbackBlock from '../FeedbackBlock/FeedbackBlock';
 import GuessWho from '../GuessWho/GuessWho';
 import MinigameArithmetic from '../MinigameArithmetic/MinigameArithmetic';
 import MinigameBalloonPump from '../MinigameBalloonPump/MinigameBalloonPump';
+import MinigameFishy from '../MinigameFishy/MinigameFishy';
 import NewsletterSignup from '../NewsletterSignup/NewsletterSignup';
 import PhotoUpload from '../PhotoUpload/PhotoUpload';
 import Poll from '../Poll/Poll';
@@ -102,6 +103,8 @@ export default function ExperienceBlockContainer({
       return <MinigameArithmetic block={block} viewContext={viewContext} />;
     case BlockKind.MINIGAME_BALLOON_PUMP:
       return <MinigameBalloonPump block={block} viewContext={viewContext} />;
+    case BlockKind.MINIGAME_FISHY:
+      return <MinigameFishy block={block} viewContext={viewContext} />;
     case BlockKind.COLLABORATIVE_DRAWING:
       return <CollaborativeDrawing block={block} viewContext={viewContext} sounds={block.sounds} />;
     case BlockKind.THE_SCENE:

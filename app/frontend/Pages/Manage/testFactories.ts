@@ -12,6 +12,7 @@ import {
   GuessWhoBlock,
   MinigameArithmeticBlock,
   MinigameBalloonPumpBlock,
+  MinigameFishyBlock,
   NewsletterSignupBlock,
   PhotoUploadBlock,
   PollBlock,
@@ -130,6 +131,26 @@ export function minigameBalloonPumpBlock(
   };
 }
 
+export function minigameFishyBlock(
+  overrides: Partial<MinigameFishyBlock> = {},
+): MinigameFishyBlock {
+  return {
+    ...blockDefaults,
+    id: 'block-minigame-fishy',
+    kind: BlockKind.MINIGAME_FISHY,
+    payload: {
+      title: 'Fishy',
+      instructions: '',
+      max_players: 50,
+      started_at: null,
+      ended_at: null,
+      roster: [],
+      world_size: 4000,
+    },
+    ...overrides,
+  };
+}
+
 export function feedbackBlock(overrides: Partial<FeedbackBlock> = {}): FeedbackBlock {
   return {
     ...blockDefaults,
@@ -222,6 +243,8 @@ export function blockOfKind(kind: BlockKind): Block {
       return minigameArithmeticBlock();
     case BlockKind.MINIGAME_BALLOON_PUMP:
       return minigameBalloonPumpBlock();
+    case BlockKind.MINIGAME_FISHY:
+      return minigameFishyBlock();
     case BlockKind.COLLABORATIVE_DRAWING:
       return collaborativeDrawingBlock();
     case BlockKind.THE_SCENE:

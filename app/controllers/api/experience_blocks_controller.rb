@@ -10,6 +10,7 @@ class Api::ExperienceBlocksController < Api::BaseController
     set_guess_who_theme_music restart_guess_who_theme_music
     start_minigame_arithmetic end_minigame_arithmetic restart_minigame_arithmetic
     start_minigame_balloon_pump end_minigame_balloon_pump restart_minigame_balloon_pump
+    start_minigame_fishy end_minigame_fishy restart_minigame_fishy
     start_collaborative_drawing_round end_collaborative_drawing_round restart_collaborative_drawing
     select_collaborative_drawing_photos reveal_collaborative_drawing_composites
     start_the_scene end_the_scene force_next_the_scene update_the_scene_performers
@@ -860,6 +861,45 @@ class Api::ExperienceBlocksController < Api::BaseController
       end
 
       render json: { success: true, result: outcome[:result] }, status: 200
+    end
+  end
+
+  # POST /api/experiences/:experience_id/blocks/:id/minigame/fishy/start
+  def start_minigame_fishy
+    with_experience_orchestration do
+      block = Experiences::Orchestrator.new(
+        experience: @experience, actor: @user
+      ).start_minigame_fishy!(block: @block)
+
+      Experiences::Broadcaster.enqueue_update(@experience)
+
+      render json: { success: true, data: block }, status: 200
+    end
+  end
+
+  # POST /api/experiences/:experience_id/blocks/:id/minigame/fishy/end
+  def end_minigame_fishy
+    with_experience_orchestration do
+      block = Experiences::Orchestrator.new(
+        experience: @experience, actor: @user
+      ).end_minigame_fishy!(block: @block)
+
+      Experiences::Broadcaster.enqueue_update(@experience)
+
+      render json: { success: true, data: block }, status: 200
+    end
+  end
+
+  # POST /api/experiences/:experience_id/blocks/:id/minigame/fishy/restart
+  def restart_minigame_fishy
+    with_experience_orchestration do
+      block = Experiences::Orchestrator.new(
+        experience: @experience, actor: @user
+      ).restart_minigame_fishy!(block: @block)
+
+      Experiences::Broadcaster.enqueue_update(@experience)
+
+      render json: { success: true, data: block }, status: 200
     end
   end
 

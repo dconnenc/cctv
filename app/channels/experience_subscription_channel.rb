@@ -84,6 +84,25 @@ class ExperienceSubscriptionChannel < ApplicationCable::Channel
     )
   end
 
+  # Fishy steering. Phones send only when their direction changes; this writes
+  # straight to Redis for the tick loop — no DB write, no broadcast.
+  def fishy_input(data)
+    slot = fishy_slot(data)
+    return unless slot
+
+    store     = Minigames::Fishy::Store.new(data["block_id"], data["started_at"])
+    direction = fishy_direction(data)
+    direction ? store.set_input(slot, *direction) : store.clear_input(slot)
+  end
+
+  def fishy_dash(data)
+    slot = fishy_slot(data)
+    return unless slot
+
+    direction = fishy_direction(data) || [0.0, 0.0]
+    Minigames::Fishy::Store.new(data["block_id"], data["started_at"]).queue_dash(slot, *direction)
+  end
+
   def resubscribe
     return reject unless valid_resubscription_request?
 
@@ -115,6 +134,7 @@ class ExperienceSubscriptionChannel < ApplicationCable::Channel
     @current_stream = Experiences::Broadcaster.monitor_stream_key(@experience)
     @view_type = 'monitor'
     stream_from @current_stream
+    stream_from Experiences::Broadcaster.live_stream_key(@experience)
     log_stream_subscription
   end
 
@@ -141,6 +161,7 @@ class ExperienceSubscriptionChannel < ApplicationCable::Channel
       @current_stream = Experiences::Broadcaster.profile_stream_key(@experience, fingerprint)
       @view_type = 'participant'
       Rails.logger.info("[ExperienceChannel] Routed to participant stream: #{@current_stream}")
+      stream_from Experiences::Broadcaster.live_stream_key(@experience)
     end
     stream_from @current_stream
     log_stream_subscription
@@ -184,6 +205,7 @@ class ExperienceSubscriptionChannel < ApplicationCable::Channel
         { participant_id: p.id, operation: 'avatar_committed', data: data }
       end
       transmit(WebsocketMessageService.avatars_state(avatars)) unless avatars.empty?
+      transmit_fishy_keyframes
     when 'admin'
       Rails.logger.info("[ExperienceChannel] Sending admin initial state")
       transmit(
@@ -229,7 +251,54 @@ class ExperienceSubscriptionChannel < ApplicationCable::Channel
         )
       )
       transmit(WebsocketMessageService.submission_state(build_client_state(@participant)))
+      transmit_fishy_keyframes
     end
+  end
+
+  # Running Fishy games stream deltas, so a fresh subscriber needs the full
+  # world before the next keyframe.
+  def transmit_fishy_keyframes
+    @experience.experience_blocks.where(kind: ExperienceBlock::MINIGAME_FISHY).each do |block|
+      payload = block.payload || {}
+      next unless payload["started_at"].present? && payload["ended_at"].blank?
+
+      state = Minigames::Fishy::Store.for(block).read_state
+      next unless state
+
+      transmit(WebsocketMessageService.minigame_fishy_frame(
+        block_id: block.id,
+        started_at: payload["started_at"],
+        frame: Minigames::Fishy::Simulation.new(state).keyframe
+      ))
+    end
+  end
+
+  # The sender's roster slot for a running game, memoized per game so steering
+  # at 10Hz doesn't query Postgres. nil for spectators, staff, and stale games.
+  def fishy_slot(data)
+    return unless @participant && !monitor_view_subscription? && !@is_admin
+
+    key = [data["block_id"].to_s, data["started_at"].to_s]
+    @fishy_slots ||= {}
+    return @fishy_slots[key] if @fishy_slots.key?(key)
+
+    block   = @experience.experience_blocks.find_by(id: key[0], kind: ExperienceBlock::MINIGAME_FISHY)
+    payload = block&.payload || {}
+    running = payload["started_at"].present? && payload["started_at"] == key[1] && payload["ended_at"].blank?
+
+    @fishy_slots[key] = running ? Array(payload["roster"]).index(@participant.id.to_s) : nil
+  end
+
+  # A unit vector from client-supplied components, or nil for "no direction".
+  def fishy_direction(data)
+    dx = Float(data["dx"], exception: false)
+    dy = Float(data["dy"], exception: false)
+    return unless dx&.finite? && dy&.finite?
+
+    magnitude = Math.hypot(dx, dy)
+    return if magnitude < 1e-6
+
+    [(dx / magnitude).round(4), (dy / magnitude).round(4)]
   end
 
   def valid_resubscription_request?
