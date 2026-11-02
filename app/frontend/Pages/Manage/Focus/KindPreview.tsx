@@ -103,6 +103,8 @@ function renderPreview(kind: BlockKind) {
           <div className={classNames(styles.balloon, styles.balloonSmall)} />
         </div>
       );
+    case BlockKind.MINIGAME_FISHY:
+      return <div className={styles.glyph}>&gt;o)) ·· o</div>;
     case BlockKind.COLLABORATIVE_DRAWING:
       return <div className={styles.glyph}>✎▦</div>;
     case BlockKind.THE_SCENE:

@@ -11,6 +11,7 @@ class ExperienceBlock < ApplicationRecord
     GUESS_WHO = "guess_who",
     MINIGAME_ARITHMETIC = "minigame_arithmetic",
     MINIGAME_BALLOON_PUMP = "minigame_balloon_pump",
+    MINIGAME_FISHY = "minigame_fishy",
     COLLABORATIVE_DRAWING = "collaborative_drawing",
     THE_SCENE = "the_scene",
     FEEDBACK = "feedback",

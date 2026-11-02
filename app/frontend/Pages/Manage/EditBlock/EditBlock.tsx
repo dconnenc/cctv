@@ -14,6 +14,7 @@ import CreateFeedback from '../CreateBlock/CreateFeedback/CreateFeedback';
 import CreateGuessWho from '../CreateBlock/CreateGuessWho/CreateGuessWho';
 import CreateMinigameArithmetic from '../CreateBlock/CreateMinigameArithmetic/CreateMinigameArithmetic';
 import CreateMinigameBalloonPump from '../CreateBlock/CreateMinigameBalloonPump/CreateMinigameBalloonPump';
+import CreateMinigameFishy from '../CreateBlock/CreateMinigameFishy/CreateMinigameFishy';
 import CreateNewsletterSignup from '../CreateBlock/CreateNewsletterSignup/CreateNewsletterSignup';
 import CreatePhotoUpload from '../CreateBlock/CreatePhotoUpload/CreatePhotoUpload';
 import CreatePoll from '../CreateBlock/CreatePoll/CreatePoll';
@@ -227,6 +228,19 @@ function BlockEditor() {
           onChange={(updates) =>
             setBlockData((prev) =>
               prev.kind === BlockKind.MINIGAME_BALLOON_PUMP
+                ? { ...prev, data: { ...prev.data, ...updates } }
+                : prev,
+            )
+          }
+        />
+      );
+    case BlockKind.MINIGAME_FISHY:
+      return (
+        <CreateMinigameFishy
+          data={data}
+          onChange={(updates) =>
+            setBlockData((prev) =>
+              prev.kind === BlockKind.MINIGAME_FISHY
                 ? { ...prev, data: { ...prev.data, ...updates } }
                 : prev,
             )

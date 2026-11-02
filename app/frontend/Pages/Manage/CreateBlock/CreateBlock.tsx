@@ -15,6 +15,7 @@ import CreateFeedback from './CreateFeedback/CreateFeedback';
 import CreateGuessWho from './CreateGuessWho/CreateGuessWho';
 import CreateMinigameArithmetic from './CreateMinigameArithmetic/CreateMinigameArithmetic';
 import CreateMinigameBalloonPump from './CreateMinigameBalloonPump/CreateMinigameBalloonPump';
+import CreateMinigameFishy from './CreateMinigameFishy/CreateMinigameFishy';
 import CreateNewsletterSignup from './CreateNewsletterSignup/CreateNewsletterSignup';
 import CreatePhotoUpload from './CreatePhotoUpload/CreatePhotoUpload';
 import CreatePoll from './CreatePoll/CreatePoll';
@@ -124,6 +125,8 @@ function BlockEditor() {
       return <CreateMinigameArithmetic data={blockData.data} onChange={onChange} />;
     case BlockKind.MINIGAME_BALLOON_PUMP:
       return <CreateMinigameBalloonPump data={blockData.data} onChange={onChange} />;
+    case BlockKind.MINIGAME_FISHY:
+      return <CreateMinigameFishy data={blockData.data} onChange={onChange} />;
     case BlockKind.COLLABORATIVE_DRAWING:
       return <CreateCollaborativeDrawing data={blockData.data} onChange={onChange} />;
     case BlockKind.THE_SCENE:

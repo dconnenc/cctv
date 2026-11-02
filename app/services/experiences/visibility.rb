@@ -309,6 +309,8 @@ module Experiences
         shape_minigame_arithmetic_payload(block, participant_role, view_context)
       when ExperienceBlock::MINIGAME_BALLOON_PUMP
         shape_minigame_balloon_pump_payload(block, participant_role, view_context)
+      when ExperienceBlock::MINIGAME_FISHY
+        shape_minigame_fishy_payload(block)
       when ExperienceBlock::THE_SCENE
         shape_the_scene_payload(block, participant_role, view_context)
       when ExperienceBlock::COLLABORATIVE_DRAWING
@@ -447,6 +449,30 @@ module Experiences
       if ended
         shaped["leader_fill"] = payload["leader_fill"].to_i
         shaped["podium"]      = balloon_pump_podium(block, shaped["winner_participant_ids"])
+      end
+
+      shaped
+    end
+
+    # Live positions never ride the payload — they stream as minigame_fishy_frame
+    # messages. The roster is public (same for every viewer) so clients can map
+    # frame slots to participants; standings appear only once final.
+    def shape_minigame_fishy_payload(block)
+      payload = block.payload || {}
+
+      shaped = {
+        "title"        => payload["title"],
+        "instructions" => payload["instructions"],
+        "max_players"  => payload["max_players"].to_i,
+        "started_at"   => payload["started_at"],
+        "ended_at"     => payload["ended_at"],
+        "roster"       => Array(payload["roster"]),
+        "world_size"   => payload["world_size"].to_f
+      }
+
+      if payload["ended_at"].present?
+        shaped["standings"]             = Array(payload["standings"])
+        shaped["winner_participant_id"] = payload["winner_participant_id"]
       end
 
       shaped
@@ -682,6 +708,9 @@ module Experiences
       when ExperienceBlock::MINIGAME_BALLOON_PUMP
         results = block.experience_minigame_balloon_results.to_a
         { total: results.count }
+
+      when ExperienceBlock::MINIGAME_FISHY
+        { total: Array(block.payload&.dig("roster")).size }
 
       when ExperienceBlock::COLLABORATIVE_DRAWING
         if block.payload["phase"] == "intake"

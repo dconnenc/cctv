@@ -416,6 +416,42 @@ RSpec.describe Experiences::Visibility do
     end
   end
 
+  describe "minigame fishy payload shaping" do
+    let!(:fishy_block) do
+      create(:experience_block,
+        experience: experience,
+        kind: ExperienceBlock::MINIGAME_FISHY,
+        status: :open,
+        payload: {
+          "title" => "Fishy",
+          "max_players" => 50,
+          "started_at" => Time.current.iso8601,
+          "ended_at" => nil,
+          "roster" => %w[a b],
+          "world_size" => 4000.0,
+          "standings" => [{ "participant_id" => "a", "place" => 1, "size" => 1.5 }],
+          "winner_participant_id" => "a"
+        })
+    end
+
+    def shaped_block_payload
+      described_class.for_monitor(experience)[:blocks].find { |b| b[:id] == fishy_block.id }[:payload]
+    end
+
+    it "exposes the roster but hides standings while running" do
+      expect(shaped_block_payload).to include("roster" => %w[a b], "max_players" => 50)
+      expect(shaped_block_payload).not_to have_key("standings")
+      expect(shaped_block_payload).not_to have_key("winner_participant_id")
+    end
+
+    it "includes standings and the winner once ended" do
+      fishy_block.update!(payload: fishy_block.payload.merge("ended_at" => Time.current.iso8601))
+
+      expect(shaped_block_payload).to include("winner_participant_id" => "a")
+      expect(shaped_block_payload["standings"].size).to eq(1)
+    end
+  end
+
   describe "minigame balloon pump payload shaping" do
     let!(:balloon_block) do
       create(:experience_block,

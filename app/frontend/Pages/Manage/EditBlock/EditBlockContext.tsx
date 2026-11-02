@@ -60,6 +60,11 @@ import {
   validateMinigameBalloonPump,
 } from '../CreateBlock/CreateMinigameBalloonPump/CreateMinigameBalloonPump';
 import {
+  buildMinigameFishyPayload,
+  minigameFishyPayloadToFormData,
+  validateMinigameFishy,
+} from '../CreateBlock/CreateMinigameFishy/CreateMinigameFishy';
+import {
   buildNewsletterSignupPayload,
   newsletterSignupPayloadToFormData,
   validateNewsletterSignup,
@@ -141,6 +146,11 @@ function blockToFormData(block: Block): FormBlockData {
         kind: BlockKind.MINIGAME_BALLOON_PUMP,
         data: minigameBalloonPumpPayloadToFormData(payload),
       };
+    case BlockKind.MINIGAME_FISHY:
+      return {
+        kind: BlockKind.MINIGAME_FISHY,
+        data: minigameFishyPayloadToFormData(block.payload),
+      };
     case BlockKind.COLLABORATIVE_DRAWING:
       return {
         kind: BlockKind.COLLABORATIVE_DRAWING,
@@ -192,6 +202,8 @@ function buildUpdatePayload(blockData: FormBlockData): BlockUpdateFields {
       return { payload: buildMinigameArithmeticPayload(data) };
     case BlockKind.MINIGAME_BALLOON_PUMP:
       return { payload: buildMinigameBalloonPumpPayload(data) };
+    case BlockKind.MINIGAME_FISHY:
+      return { payload: buildMinigameFishyPayload(data) };
     case BlockKind.COLLABORATIVE_DRAWING:
       return { payload: buildCollaborativeDrawingPayload(data) };
     case BlockKind.THE_SCENE:
@@ -283,6 +295,9 @@ export function EditBlockProvider({
         break;
       case BlockKind.MINIGAME_BALLOON_PUMP:
         validationError = validateMinigameBalloonPump(data);
+        break;
+      case BlockKind.MINIGAME_FISHY:
+        validationError = validateMinigameFishy(data);
         break;
       case BlockKind.COLLABORATIVE_DRAWING:
         validationError = validateCollaborativeDrawing(blockData.data);

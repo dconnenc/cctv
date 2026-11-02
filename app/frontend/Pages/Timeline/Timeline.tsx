@@ -83,6 +83,7 @@ function blockLabel(block: Block): string {
     case BlockKind.ANNOUNCEMENT:
       return block.payload.message || block.kind;
     case BlockKind.FAMILY_FEUD:
+    case BlockKind.MINIGAME_FISHY:
       return block.payload.title || block.kind;
     case BlockKind.PHOTO_UPLOAD:
     case BlockKind.BUZZER:

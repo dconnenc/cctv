@@ -2,13 +2,17 @@ import { useState } from 'react';
 
 import { Pause, Play, RotateCcw } from 'lucide-react';
 
+import { useExperience } from '@cctv/contexts/ExperienceContext';
 import { Button } from '@cctv/core/Button/Button';
 import {
   useCollaborativeDrawing,
   useMinigameArithmetic,
   useMinigameBalloonPump,
+  useMinigameFishy,
 } from '@cctv/hooks';
 import { Block, BlockKind } from '@cctv/types';
+
+import { FISHY_MIN_PLAYERS } from '../CreateBlock/CreateMinigameFishy/CreateMinigameFishy';
 
 type MinigameAction = 'start' | 'end' | 'restart';
 
@@ -22,6 +26,8 @@ export default function MinigameControls({ block }: { block: Block }) {
   const balloon = useMinigameBalloonPump();
   const arithmetic = useMinigameArithmetic();
   const collaborativeDrawing = useCollaborativeDrawing();
+  const fishy = useMinigameFishy();
+  const { experience } = useExperience();
   const [pending, setPending] = useState<MinigameAction | null>(null);
 
   let game: MinigameActions;
@@ -45,6 +51,16 @@ export default function MinigameControls({ block }: { block: Block }) {
     startLabel = 'Start round';
     endLabel = 'End round now';
     startDisabled = (block.responses?.total ?? 0) === 0;
+  } else if (block.kind === BlockKind.MINIGAME_FISHY) {
+    game = fishy;
+    const { started_at, ended_at } = block.payload;
+    status = !started_at ? 'queued' : ended_at ? 'ended' : 'running';
+    startLabel = 'Start Fishy';
+    endLabel = 'End now (biggest wins)';
+    const eligiblePlayers = (experience?.participants ?? []).filter(
+      (p) => p.role !== 'host' && p.role !== 'moderator',
+    ).length;
+    startDisabled = eligiblePlayers < FISHY_MIN_PLAYERS;
   } else if (
     block.kind === BlockKind.MINIGAME_BALLOON_PUMP ||
     block.kind === BlockKind.MINIGAME_ARITHMETIC

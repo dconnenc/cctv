@@ -69,6 +69,13 @@ import {
   validateMinigameBalloonPump,
 } from './CreateMinigameBalloonPump/CreateMinigameBalloonPump';
 import {
+  buildMinigameFishyPayload,
+  canMinigameFishyOpenImmediately,
+  getDefaultMinigameFishyState,
+  processMinigameFishyBeforeSubmit,
+  validateMinigameFishy,
+} from './CreateMinigameFishy/CreateMinigameFishy';
+import {
   buildNewsletterSignupPayload,
   canNewsletterSignupOpenImmediately,
   getDefaultNewsletterSignupState,
@@ -157,6 +164,8 @@ export function CreateBlockProvider({
           kind: BlockKind.MINIGAME_BALLOON_PUMP,
           data: getDefaultMinigameBalloonPumpState(),
         };
+      case BlockKind.MINIGAME_FISHY:
+        return { kind: BlockKind.MINIGAME_FISHY, data: getDefaultMinigameFishyState() };
       case BlockKind.COLLABORATIVE_DRAWING:
         return {
           kind: BlockKind.COLLABORATIVE_DRAWING,
@@ -235,6 +244,9 @@ export function CreateBlockProvider({
         case BlockKind.MINIGAME_BALLOON_PUMP:
           validationError = validateMinigameBalloonPump(blockData.data);
           break;
+        case BlockKind.MINIGAME_FISHY:
+          validationError = validateMinigameFishy(blockData.data);
+          break;
         case BlockKind.COLLABORATIVE_DRAWING:
           validationError = validateCollaborativeDrawing(blockData.data);
           break;
@@ -286,6 +298,9 @@ export function CreateBlockProvider({
           break;
         case BlockKind.MINIGAME_BALLOON_PUMP:
           canOpenImmediately = canMinigameBalloonPumpOpenImmediately(blockData.data, participants);
+          break;
+        case BlockKind.MINIGAME_FISHY:
+          canOpenImmediately = canMinigameFishyOpenImmediately(blockData.data, participants);
           break;
         case BlockKind.COLLABORATIVE_DRAWING:
           canOpenImmediately = canCollaborativeDrawingOpenImmediately(blockData.data, participants);
@@ -371,6 +386,12 @@ export function CreateBlockProvider({
             data: processMinigameBalloonPumpBeforeSubmit(blockData.data, status, participants),
           };
           break;
+        case BlockKind.MINIGAME_FISHY:
+          processedFormData = {
+            kind: BlockKind.MINIGAME_FISHY,
+            data: processMinigameFishyBeforeSubmit(blockData.data, status, participants),
+          };
+          break;
         case BlockKind.COLLABORATIVE_DRAWING:
           processedFormData = {
             kind: BlockKind.COLLABORATIVE_DRAWING,
@@ -430,6 +451,9 @@ export function CreateBlockProvider({
           break;
         case BlockKind.MINIGAME_BALLOON_PUMP:
           payload = buildMinigameBalloonPumpPayload(processedFormData.data);
+          break;
+        case BlockKind.MINIGAME_FISHY:
+          payload = buildMinigameFishyPayload(processedFormData.data);
           break;
         case BlockKind.COLLABORATIVE_DRAWING:
           payload = buildCollaborativeDrawingPayload(processedFormData.data);

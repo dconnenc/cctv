@@ -112,6 +112,14 @@ module Experiences
         payload["winner_participant_ids"]    = []
         payload["leader_fill"]               = 0
         payload["leader_participant_id"]     = nil
+      when ExperienceBlock::MINIGAME_FISHY
+        payload = payload.merge(prepare_minigame_fishy_config(payload))
+        payload["started_at"]            = nil
+        payload["ended_at"]              = nil
+        payload["roster"]                = []
+        payload["world_size"]            = Minigames::Fishy::Config::WORLD_SIZE
+        payload["standings"]             = []
+        payload["winner_participant_id"] = nil
       when ExperienceBlock::THE_SCENE
         leaderboard_size = payload["leaderboard_size"].to_i
         raise ArgumentError, "leaderboard_size must be positive" unless leaderboard_size.positive?
@@ -1413,6 +1421,78 @@ module Experiences
       { result: :accepted, winners: winners, leader_updated: leader_updated }
     end
 
+    # Minigame: fishy --------------------------------------------------------
+
+    # Seeds the live state in Redis and hands the game to FishyTickJob. Play
+    # begins after a short countdown so every phone sees the same start.
+    def start_minigame_fishy!(block:)
+      raise ArgumentError, "Block is not a fishy minigame" unless block.kind == ExperienceBlock::MINIGAME_FISHY
+
+      previous_generation = nil
+      started_at          = nil
+      roster              = nil
+
+      transaction do
+        block.lock!
+        payload = block.payload || {}
+
+        roster = minigame_fishy_roster(block, payload["max_players"].to_i)
+        if roster.size < Minigames::Fishy::Config::MIN_PLAYERS
+          raise Experiences::InvalidTransitionError,
+            "Fishy needs at least #{Minigames::Fishy::Config::MIN_PLAYERS} players"
+        end
+
+        previous_generation = payload["started_at"]
+        started_at          = (Time.current + Minigames::Fishy::Config::COUNTDOWN_SECONDS).iso8601(3)
+
+        payload["started_at"]            = started_at
+        payload["ended_at"]              = nil
+        payload["roster"]                = roster.map { |p| p.id.to_s }
+        payload["world_size"]            = Minigames::Fishy::Config::WORLD_SIZE
+        payload["standings"]             = []
+        payload["winner_participant_id"] = nil
+        block.update!(payload: payload, status: :open)
+      end
+
+      Minigames::Fishy::Store.new(block.id, previous_generation).clear! if previous_generation
+      Minigames::Fishy::Store.for(block).write_state(
+        Minigames::Fishy::Simulation.seed(slot_count: roster.size, started_at: started_at)
+      )
+      Minigames::FishyTickJob.perform_later(block.id, started_at)
+
+      block
+    end
+
+    def end_minigame_fishy!(block:)
+      raise ArgumentError, "Block is not a fishy minigame" unless block.kind == ExperienceBlock::MINIGAME_FISHY
+
+      Minigames::Fishy::Finalizer.call(block)
+      block.reload
+    end
+
+    def restart_minigame_fishy!(block:)
+      raise ArgumentError, "Block is not a fishy minigame" unless block.kind == ExperienceBlock::MINIGAME_FISHY
+
+      previous_generation = nil
+
+      transaction do
+        block.lock!
+        payload = block.payload || {}
+        previous_generation = payload["started_at"]
+
+        payload["started_at"]            = nil
+        payload["ended_at"]              = nil
+        payload["roster"]                = []
+        payload["standings"]             = []
+        payload["winner_participant_id"] = nil
+        block.update!(payload: payload)
+      end
+
+      Minigames::Fishy::Store.new(block.id, previous_generation).clear! if previous_generation
+
+      block
+    end
+
     # The Scene -------------------------------------------------------------
 
     SCENE_PHASES = %w[idle collecting winner_reveal ended].freeze
@@ -1605,6 +1685,11 @@ module Experiences
     def update_block!(block:, payload:, visible_to_segment_ids:, questions: nil)
       transaction do
         safety_check_edit!(block, payload)
+
+        # The edit form only sends config; keep the game state alongside it.
+        if block.kind == ExperienceBlock::MINIGAME_FISHY
+          payload = block.payload.merge(prepare_minigame_fishy_config(payload))
+        end
 
         block.update!(payload: payload)
 
@@ -2005,6 +2090,32 @@ module Experiences
         "eliminated_user_ids" => [],
         "unanswered_user_ids" => []
       }
+    end
+
+    def prepare_minigame_fishy_config(payload)
+      max_players = payload["max_players"].presence&.to_i || Minigames::Fishy::Config::DEFAULT_MAX_PLAYERS
+      unless max_players.between?(Minigames::Fishy::Config::MIN_PLAYERS, Minigames::Fishy::Config::MAX_PLAYERS_LIMIT)
+        raise ArgumentError,
+          "max_players must be between #{Minigames::Fishy::Config::MIN_PLAYERS} " \
+          "and #{Minigames::Fishy::Config::MAX_PLAYERS_LIMIT}"
+      end
+
+      {
+        "title"        => payload["title"].to_s.strip.presence || "Fishy",
+        "instructions" => payload["instructions"].to_s.strip,
+        "max_players"  => max_players
+      }
+    end
+
+    # Non-staff participants the block is visible to, first-joined first, up to
+    # the block's player cap. Everyone else spectates.
+    def minigame_fishy_roster(block, max_players)
+      experience.experience_participants
+        .includes(:experience_segments)
+        .where.not(role: %w[host moderator])
+        .order(Arel.sql("joined_at ASC NULLS LAST, created_at ASC"))
+        .select { |p| block.visible_to?(role: p.role, segments: p.segment_names, user_id: p.user_id) }
+        .first(max_players)
     end
 
     def close_balloon_pump_with_winners!(block, target_units, winner)

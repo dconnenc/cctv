@@ -125,6 +125,10 @@ Rails.application.routes.draw do
           post 'minigame/balloon_pump/restart', action: :restart_minigame_balloon_pump
           post 'minigame/balloon_pump/pump', action: :submit_minigame_balloon_pump_update
 
+          post 'minigame/fishy/start', action: :start_minigame_fishy
+          post 'minigame/fishy/end', action: :end_minigame_fishy
+          post 'minigame/fishy/restart', action: :restart_minigame_fishy
+
           post 'collaborative_drawing/photos', action: :submit_collaborative_drawing_photo
           post 'collaborative_drawing/select_photos', action: :select_collaborative_drawing_photos
           post 'collaborative_drawing/start', action: :start_collaborative_drawing_round
